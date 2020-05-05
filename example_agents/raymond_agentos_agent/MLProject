@@ -1,0 +1,9 @@
+name: Raymond
+
+conda_env: conda_env.yaml
+
+entry_points:
+  start:
+    command: "agentos-core start"
+  stop:
+    command: "agentos-core stop"

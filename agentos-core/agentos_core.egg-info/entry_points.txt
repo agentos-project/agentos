@@ -1,0 +1,4 @@
+
+        [console_scripts]
+        agentos-core=cli:agentos_cmd
+    

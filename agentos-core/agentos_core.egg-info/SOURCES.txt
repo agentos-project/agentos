@@ -1,0 +1,7 @@
+setup.py
+agentos_core.egg-info/PKG-INFO
+agentos_core.egg-info/SOURCES.txt
+agentos_core.egg-info/dependency_links.txt
+agentos_core.egg-info/entry_points.txt
+agentos_core.egg-info/requires.txt
+agentos_core.egg-info/top_level.txt
