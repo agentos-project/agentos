@@ -1,3 +1,4 @@
 *.swp
 mlruns
 *.pyc
+.idea
