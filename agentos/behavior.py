@@ -1,7 +1,6 @@
 class Behavior:
     """A Behavior can only be paired with one environment at a time."""
-    def __init__(self, agent, config={}):
-        self.agent = agent
+    def __init__(self, config={}):
         self.config = config
         self.env = None
 
@@ -12,7 +11,7 @@ class Behavior:
         self.env.last_obs, reward, done, _ = self.env.step(action)
 
     def set_env(self, env):
-        raise NotImplementedError
+        self.env = env
 
     def get_action(self, obs):
         raise NotImplementedError

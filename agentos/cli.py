@@ -15,7 +15,7 @@ def start():
 @agentos_cmd.command()
 def stop():
     """Stops the agent."""
-    click.echo("Stoping the agent.")
+    click.echo("Stopping the agent.")
 
 if __name__ == "__main__":
     agentos_cmd()

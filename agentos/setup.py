@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 version = '0.0.1'
 
 setup(
-    name='agentos-core',
+    name='agentos',
     author='Andy Konwinski',
     version=version,
     #packages=find_packages(),
@@ -12,7 +12,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        agentos-core=cli:agentos_cmd
+        agentos=cli:agentos_cmd
     ''',
     license='Apache License 2.0',
 )
