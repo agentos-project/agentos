@@ -6,13 +6,13 @@ setup(
     name='agentos',
     author='Andy Konwinski',
     version=version,
-    #packages=find_packages(),
+    packages=find_packages(),
     install_requires=[
-            'click>=7.0',
+        'click>=7.0',
     ],
     entry_points='''
         [console_scripts]
-        agentos=cli:agentos_cmd
+        agentos=agentos.cli:agentos_cmd
     ''',
     license='Apache License 2.0',
 )

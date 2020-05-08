@@ -2,4 +2,4 @@
 mlruns
 *.pyc
 .idea
-agentos/agentos.egg-info/
+*.egg-info

@@ -2,6 +2,7 @@ from agentos.behavior import Behavior
 import ray
 from ray.rllib.agents.ppo import PPOTrainer, DEFAULT_CONFIG
 
+
 class RLlibPPOBehavior(Behavior):
     def __init__(self):
         """Init a Ray PPO agent."""
@@ -9,15 +10,18 @@ class RLlibPPOBehavior(Behavior):
         if not ray.is_initialized():
             ray.init()
         self.config["ray_config"] = DEFAULT_CONFIG.copy()
-        self.ray_agent = PPOTrainer(config=self.config["ray_config"])
+        self.ray_agent = None
 
-    # Override parent's implementation.
+    # Override parent implementation.
     def set_env(self, env):
         """Accepts a gym env and updates the ray agent to use that env."""
         super().set_env(env)
         ray_conf = self.ray_agent.config
         ray_conf["env"] = type(env)
-        self.ray_agent.reset_config(ray_conf)
+        if self.ray_agent:
+            self.ray_agent.reset_config(ray_conf)
+        else:
+            self.ray_agent = PPOTrainer(config=self.config["ray_config"])
 
     def get_action(self, obs):
         """Returns next action, given an observation."""

@@ -1,8 +1,9 @@
 name: ray_rllib_agent
 
 dependencies:
-  - python=3.7
-  - pip
+  - python=3.7.3
+  - pip=19.0.3
   - pip:
-    - -e ../../agentos
-    - ray[rllib]
+    - -e ../../
+    - requests==2.21.0  # Needed till https://github.com/ray-project/ray/issues/8373 fixed.
+    - ray[rllib]==0.8.5
