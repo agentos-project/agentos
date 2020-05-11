@@ -4,6 +4,6 @@ conda_env: conda_env.yaml
 
 entry_points:
   start:
-    command: "agentos-core start"
+    command: "python -c 'agentos.agent.AgentCore.start"
   stop:
-    command: "agentos-core stop"
+    command: "agentos stop"

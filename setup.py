@@ -9,6 +9,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'click>=7.0',
+        'mlflow>=1.8.0'
     ],
     entry_points='''
         [console_scripts]

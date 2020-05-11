@@ -1,8 +1,7 @@
 import click
 from datetime import datetime
-from agentos import agent
+import mlflow.projects
 from pathlib import Path
-from subprocess import Popen, PIPE
 from sys import stdin
 
 info_dir = Path("./.agentos")
@@ -14,8 +13,11 @@ agent_instances_content = \
 # Use `mlflow ui` from inside this agent directory to start the MLflow UI
 # and, if necessary, filter for the tag 'agent_instance'.
 #
-# AgentOS also writes the PID of each agent instance below, one per line.
-# If there are no lines below, this agent has not successfully been started.
+# Each time an instance of this agent is launched as a background process
+# via the agentos CLI, the PID of the process is appended below, one per
+# line. If there are no lines below, this agent has not successfully been
+# started as a background process via the CLI.
+
 """
 
 conda_env_file = Path("./conda_env.yaml")
@@ -49,18 +51,6 @@ all_agent_files = {agent_instances_file: agent_instances_content,
                    conda_env_file: conda_env_content,
                    mlflow_project_file: mlflow_project_content}
 
-agent_instance = None
-
-
-def start_agent():
-    global agent_instance
-    agent_instance = agent.Agent()
-    agent_instance.start()
-
-
-def stop_agent():
-    global agent_instance
-    agent_instance.stop()
 
 @click.group()
 def agentos_cmd():
@@ -94,29 +84,25 @@ def init(name):
                                conda_env=conda_env_file.name,
                                file_header=header))
         f.flush()
-    print(f"Finished initializing agent '{name}' in current working directory.")
+    click.echo(f"Finished initializing agent '{name}' in current working directory.")
+
 
 @agentos_cmd.command()
 def start():
-    """Starts the agent."""
-    click.echo("Starting agent")
-    start_agent()
-
-
-@agentos_cmd.command()
-def start_in_background():
-    """Starts the agent as a headless background process."""
-    # TODO: use MLflow to record meta-data about agent instances (including pid, stderr/out, etc.)
-    bg_proc = Popen(["python agentos/cli.py start"], shell=True, stderr=PIPE, stdout=PIPE)
-    print(f"Started agent as background process with pid {bg_proc.pid}")
-
-
-    f = open('agent-instances.txt', 'rw')
+    """Main entry point from CLI via `agentos start`. Runs agent as MLflow project."""
+    # We use MLflow because it takes care of setting up the conda env and logging
+    # useful info about this run of the agent (start time, etc.). It also makes it
+    # easy for somebody else to run our agent.
+    mlflow.projects.run(".", entry_point="main")
+    click.echo(f"Started agent as a background process with pid {bg_proc.pid}."
+                "MLflow was used to start agent via: `mlflow run`")
 
 @agentos_cmd.command()
 def stop():
     """Stops the agent."""
     click.echo("Stopping the agent.")
+    global agent_instance
+    agent_instance.stop()
 
 
 if __name__ == "__main__":
