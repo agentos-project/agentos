@@ -66,4 +66,4 @@ def test_rllib_ppo_behavior():
 
 
 if __name__ == "__main__":
-    test_RLlibPPOBehavior()
+    test_rllib_ppo_behavior()
