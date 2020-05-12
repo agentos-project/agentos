@@ -1,9 +1,9 @@
-name: Raymond
+name: ray_rllib_agent
 
 conda_env: conda_env.yaml
 
 entry_points:
   start:
-    command: "python -c 'agentos.agent.AgentCore.start"
+    command: "agentos start"
   stop:
     command: "agentos stop"

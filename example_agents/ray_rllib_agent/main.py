@@ -1,14 +1,14 @@
-from agentos.behavior import AsyncioBehavior
+import agentos.behavior
 import ray
-from ray.rllib.agents.ppo import PPOTrainer, DEFAULT_CONFIG
-from ray.tune.logger import pretty_print
+import ray.rllib.agents.ppo as ppo  # for DEFAULT_CONFIG
+from ray.rllib.agents.ppo import PPOTrainer
 from ray.tune.registry import register_env
 
 
-class RLlibPPOBehavior(AsyncioBehavior):
-    def __init__(self):
+class RLlibPPOBehavior(agentos.behavior.Behavior):
+    def __init__(self, config=agentos.behavior.DEFAULT_CONFIG):
         """Init a Ray PPO agent."""
-        super().__init__()
+        super().__init__(config)
         if not ray.is_initialized():
             ray.init()
         # RLlib agents require an env to be initialized, so we do it in set_env().
@@ -32,25 +32,38 @@ class RLlibPPOBehavior(AsyncioBehavior):
             conf["env"] = str(id(env))
             self.ray_agent.reset_config(conf)
         else:
-            conf = DEFAULT_CONFIG.copy()
+            conf = ppo.DEFAULT_CONFIG.copy()
             conf["env"] = str(id(env))
-            print(f"conf is now: {pretty_print(conf)}")
             self.ray_agent = PPOTrainer(config=conf)
 
     def get_action(self, obs):
         """Returns next action, given an observation."""
-        self.ray_agent.compute_action(obs)
+        action = self.ray_agent.compute_action(obs)
+        print(f"get_action returning {action}")
+        return action
 
     def train(self, num_iterations):
         """Causes Ray to simulate """
         if self.env:
             self.ray_agent.train(num_iterations)
 
-def test_RLlibPPOBehavior():
+
+def test_rllib_ppo_behavior():
     from agentos.agent import Agent
     from gym.envs.classic_control import CartPoleEnv
+    import time
     a = Agent()
     e_id = a.add_env(CartPoleEnv())
-    b = RLlibPPOBehavior()
+    conf = agentos.behavior.DEFAULT_CONFIG
+    conf["stop_when_done"] = True
+    b = RLlibPPOBehavior(config=conf)
     a.add_behavior(b, e_id)
     a.start()
+    assert a.running
+    time.sleep(1)
+    a.stop()
+    assert not a.running
+
+
+if __name__ == "__main__":
+    test_RLlibPPOBehavior()

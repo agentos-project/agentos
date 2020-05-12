@@ -89,13 +89,16 @@ def init(name):
 
 @agentos_cmd.command()
 def start():
+    #TODO: start agent as background process???
+    click.echo(f"Started agent as a background process with pid {bg_proc.pid}."
+
+@agentos_cmd.command()
+def start_with_mlflow():
     """Main entry point from CLI via `agentos start`. Runs agent as MLflow project."""
     # We use MLflow because it takes care of setting up the conda env and logging
     # useful info about this run of the agent (start time, etc.). It also makes it
     # easy for somebody else to run our agent.
-    mlflow.projects.run(".", entry_point="main")
-    click.echo(f"Started agent as a background process with pid {bg_proc.pid}."
-                "MLflow was used to start agent via: `mlflow run`")
+    mlflow.projects.run(".", entry_point="start")
 
 @agentos_cmd.command()
 def stop():
