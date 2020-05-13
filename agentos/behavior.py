@@ -36,7 +36,7 @@ class Behavior:
         self.thread.start()
 
     def stop(self):
-        """Returns after behavior has complete shut down."""
+        """Initiates a thread shutdown and returns after self.thread is shutdown."""
         if not self.running:
             print("Nothing for stop() to do, behavior "
                   f"{id(self)}'s thread not running.")
@@ -70,7 +70,7 @@ class Behavior:
         print(env)
         if not self.last_obs:
             try:
-                self.last_obs, _, _, _ = env.step(env.action_space.sample())
+                self.last_obs, self.last_reward, self.last_done, _ = env.step(env.action_space.sample())
             except TypeError:
                 self.last_obs = env.reset()
         print(f"In behavior, self.last_obs just set to {self.last_obs}")

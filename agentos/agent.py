@@ -47,3 +47,4 @@ class Agent:
         behavior = self.envs.pop(behavior_id)
         print(f"Removed behavior {behavior_id}.")
         return behavior
+

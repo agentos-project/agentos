@@ -1,25 +1,24 @@
+from agentos.server import run_agent_server
 import click
 from datetime import datetime
 import mlflow.projects
+import os, signal
 from pathlib import Path
+import requests
 from sys import stdin
+import time
+import yaml
 
 info_dir = Path("./.agentos")
-
 agent_instances_file = info_dir / "agent_instances.txt"
 agent_instances_content = \
 """{file_header}
-# AgentOS uses MLflow for tracking data about agent instances.
-# Use `mlflow ui` from inside this agent directory to start the MLflow UI
-# and, if necessary, filter for the tag 'agent_instance'.
-#
 # Each time an instance of this agent is launched as a background process
 # via the agentos CLI, the PID of the process is appended below, one per
 # line. If there are no lines below, this agent has not successfully been
 # started as a background process via the CLI.
 
 """
-
 conda_env_file = Path("./conda_env.yaml")
 conda_env_content = \
 """{file_header}
@@ -31,7 +30,6 @@ dependencies
     - pip: 
       - agentos
 """
-
 mlflow_project_file = Path("./MLProject")
 mlflow_project_content = \
 """{file_header}
@@ -41,15 +39,35 @@ name: {name}
 conda_env: {conda_env}
 
 entry_points:
-  start:
+  main:
     command: "agentos start"
-  stop:
-    command: "agentos stop"
 """
-
 all_agent_files = {agent_instances_file: agent_instances_content,
                    conda_env_file: conda_env_content,
                    mlflow_project_file: mlflow_project_content}
+
+
+def agent_running(host, port):
+    try:
+        r = requests.get(f"http://{host}:{port}/health")
+        if r.status_code == 200:
+            return True
+    except requests.exceptions.ConnectionError:
+        pass
+    return False
+
+
+def get_agent_info(warn_if_none=True):
+    """Return info dict about most recent agent proc if it exists, else None."""
+    with open(agent_instances_file, "r") as f:
+        agent_infos = yaml.safe_load(f.read())
+        if len(agent_infos) > 0:
+            return agent_infos[-1]
+        if warn_if_none:
+            click.echo("No agent instances history found in "
+                       f"{agent_instances_file}. Perhaps agent "
+                       "was never started, or that file was edited.")
+        return None
 
 
 @click.group()
@@ -68,7 +86,7 @@ def init(name):
         print("An agent has already been initialized in this directory.\n"
               "Re-initializing will delete and replace the following files:\n" +
               "\n".join([str(f) for f in all_agent_files.keys()]) + "\n\n" +
-              "Are you sure you want to proceed? y/[n]?")
+              "Are you sure you want to proceed? y/[n]")
         response = stdin.readline()
         if response.lower() not in ["y\n", "yes\n"]:
             print(response.lower())
@@ -88,9 +106,37 @@ def init(name):
 
 
 @agentos_cmd.command()
-def start():
-    #TODO: start agent as background process???
-    click.echo(f"Started agent as a background process with pid {bg_proc.pid}."
+@click.option("--host", "-h", default="127.0.0.1",
+              help="The network address to listen on (default: 127.0.0.1). "
+                   "Use 0.0.0.0 to bind to all addresses if you want to interact "
+                   "with the agent from other machines.")
+@click.option("--port", "-p", default=8002,
+              help="The port to listen on (default: 8002).")
+@click.option("--no_daemon", "-n", is_flag=True,
+              help="Don't run as a background (\"daemon\") process. Instead run "
+                   "this as a foreground blocking process and stream the stdin "
+                   "and stdout from the agent.")
+def start(host, port, no_daemon):
+    """Start agent as background process. Log to .agentos/agent_instances.txt"""
+    agent_info = get_agent_info(warn_if_none=False)
+    if agent_info:
+        if agent_running(agent_info["host"], agent_info["port"]):
+            click.echo(f"Agent already running with pid {agent_info['pid']} "
+                       f"on {agent_info['host']}:{agent_info['port']}.\n"
+                       "Aborting.")
+            return
+    proc = run_agent_server(host, port, no_daemon)
+    health_check_timer = 10
+    for i in range(health_check_timer):
+        if agent_running(host, port):
+            with open(agent_instances_file, "a+") as f:
+                f.write('- {pid: %s, host: %s, port: %s}\n' % (proc.pid, host, port))
+            return
+        time.sleep(1)
+    click.echo("AgentOS health check failed after starting with pid "
+               f"{proc.pid}. Giving up after {health_check_timer} "
+               "seconds, and leaving Agent in unknown state.")
+
 
 @agentos_cmd.command()
 def start_with_mlflow():
@@ -98,14 +144,49 @@ def start_with_mlflow():
     # We use MLflow because it takes care of setting up the conda env and logging
     # useful info about this run of the agent (start time, etc.). It also makes it
     # easy for somebody else to run our agent.
-    mlflow.projects.run(".", entry_point="start")
+    mlflow.projects.run(".")
 
 @agentos_cmd.command()
-def stop():
+def status():
+    """Prints status of Agent in current directory."""
+    agent_info = get_agent_info(warn_if_none=False)
+    if agent_info:
+        if agent_running(agent_info["host"], agent_info["port"]):
+            click.echo(f"Agent is running with pid {agent_info['pid']} "
+                       f"on {agent_info['host']}:{agent_info['port']}.")
+        else:
+            click.echo(f"Agent not running. Last run with pid {agent_info['pid']} " 
+                       f"on {agent_info['host']}:{agent_info['port']}.")
+    else:
+        click.echo(f"Agent not running. Or at least no run history was "
+                   f"found in {agent_instances_file}.")
+
+
+@agentos_cmd.command()
+@click.option("--force", "-f", default=False, is_flag=True,
+              help="Don't confirmation with user before stopping agent.")
+def stop(force):
     """Stops the agent."""
-    click.echo("Stopping the agent.")
-    global agent_instance
-    agent_instance.stop()
+    agent_info = get_agent_info()
+    if agent_info:
+        if not agent_running(agent_info["host"], agent_info["port"]):
+            click.echo(f"Most recent agent (with pid {agent_info['pid']} "
+                       f"on {agent_info['host']}:{agent_info['port']}) "
+                       "is not currently running.")
+            return
+        response = "y\n"
+        if not force:
+           click.echo(f"Stopping this Agent (with pid {agent_info['pid']} on "
+                  f"{agent_info['host']}:{agent_info['port']}) may cause "
+                  "state loss.\nAre you sure you want to proceed? y/[n]")
+           response = stdin.readline()
+        if response.lower() in ["y\n", "yes\n"]:
+            os.kill(agent_info['pid'], signal.SIGTERM)
+            click.echo("Sent SIGTERM to Agent process with pid " 
+                       f"{agent_info['pid']} on "
+                       f"{agent_info['host']}:{agent_info['port']}.")
+        else:
+            click.echo("Aborted. Agent not stopped.")
 
 
 if __name__ == "__main__":

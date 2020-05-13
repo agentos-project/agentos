@@ -9,7 +9,11 @@ setup(
     packages=find_packages(),
     install_requires=[
         'click>=7.0',
-        'mlflow>=1.8.0'
+        'Flask>=1.1.2',
+        'mlflow',
+        'pyyaml',
+        'requests>=2.17.3',
+        'waitress',
     ],
     entry_points='''
         [console_scripts]
