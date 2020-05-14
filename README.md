@@ -1,6 +1,6 @@
-AgentOS is a python API and a command line interface for building, running, and sharing intelligent agents. AgentOS is written in python.
+AgentOS is a python API and a command line interface for building, running, and sharing learning agents.
 
-Requirements: Python >= 3.5 (because we use pathlib)
+Requirements: Python >= 3.5
 
 To install:
 
