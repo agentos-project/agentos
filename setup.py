@@ -1,6 +1,9 @@
+import os
+from importlib.machinery import SourceFileLoader
 from setuptools import setup, find_packages
 
-version = '0.0.1'
+version = SourceFileLoader(
+    'agentos.version', os.path.join('agentos', 'version.py')).load_module().VERSION
 
 setup(
     name='agentos',

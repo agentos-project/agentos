@@ -3,7 +3,5 @@ name: ray_rllib_agent
 conda_env: conda_env.yaml
 
 entry_points:
-  start:
+  main:
     command: "agentos start"
-  stop:
-    command: "agentos stop"

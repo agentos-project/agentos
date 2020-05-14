@@ -2,21 +2,22 @@ from agentos.server import run_agent_server
 import click
 from datetime import datetime
 import mlflow.projects
-import os, signal
+import os
 from pathlib import Path
 import requests
+import signal
 from sys import stdin
 import time
 import yaml
 
 info_dir = Path("./.agentos")
-agent_instances_file = info_dir / "agent_instances.txt"
+agent_instances_file = info_dir / "agent_instances.yaml"
 agent_instances_content = \
 """{file_header}
 # Each time an instance of this agent is launched as a background process
-# via the agentos CLI, the PID of the process is appended below, one per
-# line. If there are no lines below, this agent has not successfully been
-# started as a background process via the CLI.
+# via the agentos CLI, information about the process, including its PID
+# is appended below. If there are no lines below, this agent has not
+# successfully been started.
 
 """
 conda_env_file = Path("./conda_env.yaml")

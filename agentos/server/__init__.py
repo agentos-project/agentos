@@ -1,5 +1,5 @@
 # Design and some code copied from MLflow's server codebase.
-from agentos.agent import Agent
+from agentos import Agent
 from flask import Flask, request, send_from_directory
 import os
 from subprocess import Popen, PIPE
@@ -29,18 +29,10 @@ def status():
     return f"Agent {agent.name} is {running_flag}running.", 200
 
 
-def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
-
-
-@app.route('/stop', methods=['POST'])
-def shutdown():
+@app.route('/stop')
+def stop():
     agent.stop()
-    shutdown_server()
-    return 'Server shutting down...'
+    return 'Agent stopped.', 200
 
 
 @app.route('/static_content/<path:path>')

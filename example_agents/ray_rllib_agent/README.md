@@ -2,7 +2,7 @@
 
 This directory is a functional AgentOS agent.
 
-That means it is also an MLflow Project.
+It is also an MLflow Project.
 
 If you are going to do any developing on this Agent, I recommend you create a conda
 env to use for dev -- and update it whenever necessary -- per the following instructions:

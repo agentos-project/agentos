@@ -4,6 +4,7 @@ import time
 DEFAULT_CONFIG = {"stop_when_done": False,
                   "hz": 2}
 
+
 class Behavior:
     """A Behavior can only be paired with one environment at a time."""
     def __init__(self, config=DEFAULT_CONFIG):
