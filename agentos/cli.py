@@ -197,7 +197,7 @@ def status():
 @click.option("--force", "-f", default=False, is_flag=True,
               help="Don't confirmation with user before stopping agent.")
 def stop(force):
-    """Stops the agent."""
+    """Stops the agentOS."""
     agent_info = get_agent_info()
     if agent_info:
         if not agent_running(agent_info["host"], agent_info["port"]):

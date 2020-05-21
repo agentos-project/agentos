@@ -1,7 +1,7 @@
 import time
 from threading import Thread, Condition, get_ident
 
-DEFAULT_BEHAVIOR_CONFIG = {"stop_when_done": False, "hz": 2}
+DEFAULT_AGENT_CONFIG = {"stop_when_done": False, "hz": 2}
 
 
 class AgentManager:
@@ -38,7 +38,7 @@ class AgentManager:
         print(f"Removed env {env_id}.")
         return env
 
-    def add_behavior(self, behavior, env_id):
+    def add_agent(self, behavior, env_id):
         """Adds behavior with given env, which means it starts running."""
         assert env_id in self.envs.keys(), "Specified env not registered."
         behavior.set_env(self.envs[env_id])
@@ -49,16 +49,16 @@ class AgentManager:
             behavior.start()
         return id(behavior)
 
-    def remove_behavior(self, behavior_id):
+    def remove_agent(self, behavior_id):
         """ Removes & returns behavior."""
         behavior = self.envs.pop(behavior_id)
         print(f"Removed behavior {behavior_id}.")
         return behavior
 
 
-class Behavior:
-    """A Behavior can only be paired with one environment at a time."""
-    def __init__(self, config=DEFAULT_BEHAVIOR_CONFIG):
+class Agent:
+    """A Agent can only be paired with one environment at a time."""
+    def __init__(self, config=DEFAULT_AGENT_CONFIG):
         self.config = config
         self.env = None
         self.last_done = None
@@ -100,12 +100,12 @@ class Behavior:
         while self._thread.is_alive():
             time.sleep(.01)
         self._shutting_down = False
-        print(f"Behavior {id(self)} stopped.")
+        print(f"Agent {id(self)} stopped.")
 
     def step(self):
         """Decide on next action and take it in the environment."""
-        assert self.env, "To step a Behavior, you must pair it with an env."
-        assert self.last_obs is not None, "Behavior.step() requires a last_obs."
+        assert self.env, "To step a Agent, you must pair it with an env."
+        assert self.last_obs is not None, "Agent.step() requires a last_obs."
         if not self.running:
             print(f"Warning: step() was called on behavior {id(self)} while it "
                   "was not running, which results in a no-op.")
@@ -113,9 +113,9 @@ class Behavior:
         action = self.get_action(self.last_obs)
         print(f"next action is {action}")
         self.last_obs, self.last_reward, self.last_done, _ = self.env.step(action)
-        print(f"Behavior {id(self)} took step in env {id(self.env)}")
+        print(f"Agent {id(self)} took step in env {id(self.env)}")
         if self.last_done and self.config["stop_when_done"]:
-            print(f"Behavior {id(self)}'s env.step() returned "
+            print(f"Agent {id(self)}'s env.step() returned "
                   "done = True, so shutting down thread.")
             self._shutting_down = True
 
