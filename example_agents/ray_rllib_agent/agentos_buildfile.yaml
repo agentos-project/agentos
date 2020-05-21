@@ -1,0 +1,9 @@
+- package-module: gym.envs.classic_control
+  class: CartPoleEnv
+  name: cartpole
+
+- package-module: agentos.behaviors
+  class: Random
+  config:
+    env-name: cartpole
+

@@ -1,6 +1,6 @@
 name: ray_rllib_agent
 
-conda_env: conda_env.yaml
+conda_env: ../conda_env.yaml
 
 entry_points:
   main:

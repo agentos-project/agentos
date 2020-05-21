@@ -1,13 +1,13 @@
-from agentos import Behavior
-import agentos.behavior as behavior
+import core
+from agentos.core import Behavior, DEFAULT_BEHAVIOR_CONFIG
 import ray
-import ray.rllib.agents.ppo as ppo  # for DEFAULT_CONFIG
+import ray.rllib.agents.ppo as ppo  # for ppo.DEFAULT_CONFIG
 from ray.rllib.agents.ppo import PPOTrainer
 from ray.tune.registry import register_env
 
 
 class RLlibPPOBehavior(Behavior):
-    def __init__(self, config=behavior.DEFAULT_CONFIG):
+    def __init__(self, config=DEFAULT_BEHAVIOR_CONFIG):
         """Init a Ray PPO agent."""
         super().__init__(config)
         if not ray.is_initialized():
@@ -50,12 +50,12 @@ class RLlibPPOBehavior(Behavior):
 
 
 def test_rllib_ppo_behavior():
-    from agentos import Agent
+    from agentos import AgentManager, DEFAULT_BEHAVIOR_CONFIG
     from gym.envs.classic_control import CartPoleEnv
     import time
-    a = Agent()
+    a = AgentManager()
     e_id = a.add_env(CartPoleEnv())
-    conf = behavior.DEFAULT_CONFIG
+    conf = DEFAULT_BEHAVIOR_CONFIG
     conf["stop_when_done"] = True
     b = RLlibPPOBehavior(config=conf)
     a.add_behavior(b, e_id)

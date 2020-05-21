@@ -1,5 +1,5 @@
 # Design and some code copied from MLflow's server codebase.
-from agentos import Agent
+from agentos import AgentManager
 from flask import Flask, request, send_from_directory
 import os
 from subprocess import Popen, PIPE
@@ -10,7 +10,7 @@ REL_STATIC_DIR = "static_content"
 app = Flask(__name__, static_folder=REL_STATIC_DIR)
 STATIC_DIR = os.path.join(app.root_path, REL_STATIC_DIR)
 
-agent = Agent()
+agent = AgentManager()
 
 @app.route('/')
 def home():
@@ -26,13 +26,13 @@ def health():
 @app.route('/status')
 def status():
     running_flag = "" if agent.running else "not "
-    return f"Agent {agent.name} is {running_flag}running.", 200
+    return f"AgentManager {agent.name} is {running_flag}running.", 200
 
 
 @app.route('/stop')
 def stop():
     agent.stop()
-    return 'Agent stopped.', 200
+    return 'AgentManager stopped.', 200
 
 
 @app.route('/static_content/<path:path>')
