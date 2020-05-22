@@ -2,8 +2,8 @@
   class: CartPoleEnv
   name: cartpole
 
-- package-module: agentos.behaviors
-  class: Random
+- package-module: agentos.agents
+  class: RandomAgent
   config:
     env-name: cartpole
 

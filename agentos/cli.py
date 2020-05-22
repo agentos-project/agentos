@@ -1,4 +1,4 @@
-from agentos.server import run_agent_server
+import agentos.server
 import click
 from datetime import datetime
 import mlflow.projects
@@ -10,9 +10,9 @@ from sys import stdin
 import time
 import yaml
 
-AGENTOS_DIR = Path("./.agentos")
-AGENT_INSTANCES_FILE = AGENTOS_DIR / "agent_instances.yaml"
-AGENT_INSTANCES_CONTENT = \
+DOT_DIR = Path("./.agentos")
+AGENT_MGR_INSTANCES = DOT_DIR / "agent_mgr_instances.yaml"
+AGENT_MGR_CONTENT = \
 """{file_header}
 # Each time a new instance of this agent is created by AgentOS (e.g., via
 # the agentos CLI) using this AgentManager Directory, information about the AgentManager 
@@ -21,8 +21,8 @@ AGENT_INSTANCES_CONTENT = \
 # out of this AgentManager Directory.
 
 """
-AGENT_BUILDFILE_FILE = "agent_buildfile.yaml"
-AGENT_BUILDFILE_CONTENT = \
+BUILDFILE_FILE = "agentos_buildfile.yaml"
+BUILDFILE_CONTENT = \
     """{file_header}
     # Use this file to Add agents and environments to your AgentOS.
     # See the AgentOS documentation for details.
@@ -62,7 +62,7 @@ entry_points:
   main:
     command: "agentos start"
 """
-ALL_AGENT_FILES = {AGENT_INSTANCES_FILE: AGENT_INSTANCES_CONTENT,
+ALL_AGENT_FILES = {AGENT_MGR_INSTANCES: AGENT_MGR_CONTENT,
                    CONDA_ENV_FILE: CONDA_ENV_CONTENT,
                    MLFLOW_PROJECT_FILE: MLFLOW_PROJECT_CONTENT}
 
@@ -79,40 +79,62 @@ def agent_running(host, port):
 
 def get_agent_info(warn_if_none=True):
     """Return info dict about most recent agent proc if it exists, else None."""
-    with open(AGENT_INSTANCES_FILE, "r") as f:
-        agent_infos = yaml.safe_load(f.read())
-        if len(agent_infos) > 0:
-            return agent_infos[-1]
+    try:
+        with open(AGENT_MGR_INSTANCES, "r") as f:
+            agent_infos = yaml.safe_load(f.read())
+            if len(agent_infos) > 0:
+                return agent_infos[-1]
+            if warn_if_none:
+                click.echo("No agent instances history found in "
+                           f"{AGENT_MGR_INSTANCES}. Perhaps agent "
+                           "was never started, or that file was edited.")
+            return None
+    except FileNotFoundError:
         if warn_if_none:
-            click.echo("No agent instances history found in "
-                       f"{AGENT_INSTANCES_FILE}. Perhaps agent "
+            click.echo("No agent manager history found in "
+                       f"{AGENT_MGR_INSTANCES}. Perhaps agent "
                        "was never started, or that file was edited.")
-        return None
 
 
 @click.group()
 def agentos_cmd():
     pass
 
+@agentos_cmd.group()
+def dir():
+    """
+    Commands to work with a given directory (by default,
+    the current working directory) as an AgentOS Directory,
+    which is what the AgentOS Server and CLI use for
+    various state, logs, etc.
+    """
+    pass
+
 
 def validate_agent_name(ctx, param, value):
     if ' ' in value or ':' in value or '/' in value:
         raise click.BadParameter("name may not contain ' ', ':', or '/'.")
+    return value
 
 
-@agentos_cmd.command()
+@dir.command()
 @click.option("--name", "-n", metavar="AGENTOS_NAME", default="new_agentos",
               callback=validate_agent_name,
-              help="Name of this agent. This is also the name of "
+              help="Name of this agentOS. This is also the name of "
                    "this agentOS's MLflow Project and Conda env. "
                    "AGENTOS_NAME may not contain ' ', ':', or '/'.")
-@click.option("--agentos_dir", "-a", metavar="DIR", default=AGENTOS_DIR,
+@click.option("--dot_dir", "-d", metavar="DOT_DIR", default=DOT_DIR,
               help="Directory where agent-specific files live. "
                    "These files typically should not live in "
-                   "version control.")
+                   f"version control. Default is {DOT_DIR}")
 def init(name, agentos_dir):
-    """Initialize a new AgentOS in this directory."""
-    if AGENTOS_DIR.exists():
+    """
+    Initialize current directory as an AgentOS Directory.
+    This creates everything necessary to run an AgentOS
+    Server that uses this directory for its configuration
+    and its state.
+    """
+    if DOT_DIR.exists():
         print("An AgentOS has already been initialized in this directory.\n"
               "Re-initializing will delete and replace the following files:\n" +
               "\n".join([str(f) for f in ALL_AGENT_FILES.keys()]) + "\n\n" +
@@ -135,31 +157,47 @@ def init(name, agentos_dir):
     click.echo(f"Finished initializing AgentOS '{name}' in current working directory.")
 
 
-@agentos_cmd.command()
+@agentos_cmd.group()
 @click.option("--host", "-h", default="127.0.0.1",
               help="The network address to listen on (default: 127.0.0.1). "
                    "Use 0.0.0.0 to bind to all addresses if you want to interact "
                    "with the agent from other machines.")
 @click.option("--port", "-p", default=8002,
               help="The port to listen on (default: 8002).")
-@click.option("--no_daemon", "-n", is_flag=True,
-              help="Don't run as a background (\"daemon\") process. Instead run "
-                   "this as a foreground blocking process and stream the stdin "
+@click.pass_context
+def server(ctx, host, port):
+    """
+    The server command provides sub-commands to start, stop,
+    or otherwise interact with an AgentOS server.
+    """
+    ctx.ensure_object(dict)
+    ctx.obj['host'] = host
+    ctx.obj['port'] = port
+
+
+@server.command()
+@click.option("--daemon/--no-daemon", "-d/-n", default=True,
+              help="Whether to run as a background (\"daemon\") process. "
+                   "Default is to run as daemon."
+                   "When --no-daemon is passed, the server is started as a "
+                   "foreground blocking process and stream the stdin "
                    "and stdout from the agent.")
-def start(host, port, no_daemon):
-    """Start agent service as background process. Log to `agent_instances_file`."""
+@click.pass_context
+def start(ctx, daemon):
+    """Start the AgentOS Server."""
+    host, port = ctx.obj["host"], ctx.obj["port"]
     agent_info = get_agent_info(warn_if_none=False)
     if agent_info:
         if agent_running(agent_info["host"], agent_info["port"]):
-            click.echo(f"AgentManager already running with pid {agent_info['pid']} "
-                       f"on {agent_info['host']}:{agent_info['port']}.\n"
-                       "Aborting.")
+            click.echo(f"AgentOS Server already running with pid "
+                       f"{agent_info['pid']} at "
+                       f"{agent_info['host']}:{agent_info['port']}.")
             return
-    proc = run_agent_server(host, port, no_daemon)
+    proc = agentos.server.start(host, port, daemon=daemon)
     health_check_timer = 10
     for i in range(health_check_timer):
         if agent_running(host, port):
-            with open(AGENT_INSTANCES_FILE, "a+") as f:
+            with open(AGENT_MGR_INSTANCES, "a+") as f:
                 f.write('- {pid: %s, host: %s, port: %s}\n' % (proc.pid, host, port))
             return
         time.sleep(1)
@@ -168,7 +206,7 @@ def start(host, port, no_daemon):
                "seconds, and leaving AgentManager in unknown state.")
 
 
-@agentos_cmd.command()
+@server.command()
 def start_with_mlflow():
     """Main entry point from CLI via `agentos start`. Runs agent as MLflow project."""
     # We use MLflow because it takes care of setting up the conda env and logging
@@ -177,23 +215,7 @@ def start_with_mlflow():
     mlflow.projects.run(".")
 
 
-@agentos_cmd.command()
-def status():
-    """Prints status of AgentManager in current directory."""
-    agent_info = get_agent_info(warn_if_none=False)
-    if agent_info:
-        if agent_running(agent_info["host"], agent_info["port"]):
-            click.echo(f"AgentManager is running with pid {agent_info['pid']} "
-                       f"on {agent_info['host']}:{agent_info['port']}.")
-        else:
-            click.echo(f"AgentManager not running. Last run with pid {agent_info['pid']} " 
-                       f"on {agent_info['host']}:{agent_info['port']}.")
-    else:
-        click.echo(f"AgentManager not running. Or at least no run history was "
-                   f"found in {AGENT_INSTANCES_FILE}.")
-
-
-@agentos_cmd.command()
+@server.command()
 @click.option("--force", "-f", default=False, is_flag=True,
               help="Don't confirmation with user before stopping agent.")
 def stop(force):
@@ -201,23 +223,42 @@ def stop(force):
     agent_info = get_agent_info()
     if agent_info:
         if not agent_running(agent_info["host"], agent_info["port"]):
-            click.echo(f"Most recent agent (with pid {agent_info['pid']} "
-                       f"on {agent_info['host']}:{agent_info['port']}) "
-                       "is not currently running.")
+            click.echo(f"No AgentOS Server to stop. Most recent server "
+                       f"for this AgentOS Directory was run with "
+                       f"pid {agent_info['pid']} "
+                       f"at {agent_info['host']}:{agent_info['port']}.")
             return
         response = "y\n"
         if not force:
-            click.echo(f"Stopping this AgentManager (with pid {agent_info['pid']} on "
+            click.echo(f"Stopping this AgentOS Server (with "
+                       f"pid {agent_info['pid']} on "
                        f"{agent_info['host']}:{agent_info['port']}) may cause "
                        "state loss.\nAre you sure you want to proceed? y/[n]")
             response = stdin.readline()
         if response.lower() in ["y\n", "yes\n"]:
             os.kill(agent_info['pid'], signal.SIGTERM)
-            click.echo("Sent SIGTERM to AgentManager process with pid " 
+            click.echo("Sent SIGTERM to AgentOS Server process with pid " 
                        f"{agent_info['pid']} on "
                        f"{agent_info['host']}:{agent_info['port']}.")
         else:
             click.echo("Aborted. AgentManager not stopped.")
+
+
+@server.command()
+def status():
+    """Prints status of AgentManager in current directory."""
+    agent_info = get_agent_info(warn_if_none=False)
+    if agent_info:
+        if agent_running(agent_info["host"], agent_info["port"]):
+            click.echo(f"AgentOS Server running with pid {agent_info['pid']} "
+                       f"on {agent_info['host']}:{agent_info['port']}.")
+        else:
+            click.echo(f"AgentOS Server not running. Last run " 
+                       f"with pid {agent_info['pid']} "
+                       f"on {agent_info['host']}:{agent_info['port']}.")
+    else:
+        click.echo(f"AgentManager not running. Or at least no run history was "
+                   f"found in {AGENT_MGR_INSTANCES}.")
 
 
 if __name__ == "__main__":

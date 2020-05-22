@@ -1,6 +1,7 @@
+# AgentOS Server RESTfully hosts an AgentManager.
 # Design and some code copied from MLflow's server codebase.
 from agentos import AgentManager
-from flask import Flask, request, send_from_directory
+from flask import Flask, send_from_directory
 import os
 from subprocess import Popen, PIPE
 import shlex
@@ -12,32 +13,42 @@ STATIC_DIR = os.path.join(app.root_path, REL_STATIC_DIR)
 
 agent = AgentManager()
 
+
 @app.route('/')
-def home():
-    return send_from_directory(STATIC_DIR, 'index.html')
+@app.route("/index.html")
+def _home():
+    home_content = \
+        """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>AgentOS Hompage</title>
+        </head>
+        <body>
+            <p>Your agentOS is running!</p>
+        </body>
+        </html>
+        """
+    return home_content, 200
 
 
 # Provide a health check endpoint to ensure the application is responsive
 @app.route("/health")
-def health():
+def _health():
     return "OK", 200
 
 
 @app.route('/status')
-def status():
+def _status():
     running_flag = "" if agent.running else "not "
     return f"AgentManager {agent.name} is {running_flag}running.", 200
 
 
 @app.route('/stop')
-def stop():
+def _stop():
     agent.stop()
     return 'AgentManager stopped.', 200
-
-
-@app.route('/static_content/<path:path>')
-def serve_static_file(path):
-    return send_from_directory(STATIC_DIR, path)
 
 
 # Copied from MLflow
@@ -57,17 +68,17 @@ class ShellCommandException(Exception):
     pass
 
 
-def run_agent_server(host, port, no_daemon=False, waitress_opts=None):
+def start(host='100.0.0.1', port=8002, daemon=True, waitress_opts=None):
     """Use Waitress + Flask to run the AgentOS. Should work on Windows."""
     command = _build_waitress_command(waitress_opts, host, port)
     cmd_env = os.environ.copy()
-    if no_daemon:
+    if daemon:
+        return Popen(command, universal_newlines=True)
+    else:
         child = Popen(command, env=cmd_env, universal_newlines=True,
                       stdin=PIPE, stderr=PIPE)
         exit_code = child.wait()
         if exit_code != 0:
             raise ShellCommandException("Non-zero exitcode: %s" % (exit_code))
         return exit_code
-    else:
-        return Popen(command, universal_newlines=True)
 
