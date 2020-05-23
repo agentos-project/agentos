@@ -1,9 +1,5 @@
-- package-module: gym.envs.classic_control
-  class: CartPoleEnv
-  name: cartpole
-
-- package-module: agentos.agents
-  class: RandomAgent
-  config:
-    env-name: cartpole
+agent create:
+  name: andy
+  class: agentos.agents.RandomAgent
+  env-class: gym.envs.classic_control.CartPoleEnv
 

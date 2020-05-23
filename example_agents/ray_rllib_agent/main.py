@@ -58,10 +58,9 @@ def test_rllib_ppo_agent():
     conf = DEFAULT_AGENT_CONFIG
     conf["stop_when_done"] = True
     b = RLlibPPOAgent(config=conf)
-    a.add_agent(b, e_id)
-    a.start()
-    assert a.running
+    a.add_agent(b, env_id=e_id, auto_start=True)
+    assert b.running
     time.sleep(1)
-    a.stop()
-    assert not a.running
+    b.stop()
+    assert not b.running
 

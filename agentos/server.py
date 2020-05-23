@@ -1,21 +1,18 @@
-# AgentOS Server RESTfully hosts an AgentManager.
-# Design and some code copied from MLflow's server codebase.
+"""AgentOS Server RESTfully hosts an AgentManager."""
 from agentos import AgentManager
-from flask import Flask, send_from_directory
+from flask import Flask
+from importlib import import_module
+from pathlib import Path
 import os
 from subprocess import Popen, PIPE
 import shlex
+import yaml
 
-REL_STATIC_DIR = "static_content"
-
-app = Flask(__name__, static_folder=REL_STATIC_DIR)
-STATIC_DIR = os.path.join(app.root_path, REL_STATIC_DIR)
-
+app = Flask(__name__)
 agent = AgentManager()
 
 
 @app.route('/')
-@app.route("/index.html")
 def _home():
     home_content = \
         """
@@ -69,7 +66,12 @@ class ShellCommandException(Exception):
 
 
 def start(host='100.0.0.1', port=8002, daemon=True, waitress_opts=None):
-    """Use Waitress + Flask to run the AgentOS. Should work on Windows."""
+    """Use Waitress + Flask to run the AgentOS Server. Should work on Windows.
+
+    If daemon=True, returns the Popen class used to launch the server.
+    If daemon=False, this is a blocking call that runs till the server
+    process exists and then the exit_code of the server process is returned.
+    """
     command = _build_waitress_command(waitress_opts, host, port)
     cmd_env = os.environ.copy()
     if daemon:
@@ -81,4 +83,5 @@ def start(host='100.0.0.1', port=8002, daemon=True, waitress_opts=None):
         if exit_code != 0:
             raise ShellCommandException("Non-zero exitcode: %s" % (exit_code))
         return exit_code
+
 

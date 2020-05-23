@@ -1,3 +1,4 @@
+"""Implementation of agents available in AgentOS. See core.py for Agent API."""
 from agentos import Agent
 
 
