@@ -1,0 +1,8 @@
+name: chatbot
+
+dependencies:
+  - python
+  - pip
+  - pip:
+    - -e ../../
+    - numpy

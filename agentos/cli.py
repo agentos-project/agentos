@@ -1,110 +1,30 @@
-"""AgentOS command line interface (CLI)."""
-import agentos.server
+"""AgentOS command line interface (CLI).
+
+The CLI handles user interface hygiene, and then beyond
+that primarily passes functionality provided by the
+agentos.server API. This way anything a user can do via
+the CLI, they can also do directly via the server API.
+"""
+from agentos.server import *
+from agentos.server import start as agentos_server_start
 import click
 from datetime import datetime
 import mlflow.projects
 import os
-from pathlib import Path
-import requests
 import signal
 from sys import stdin
 import time
-import yaml
-
-DOT_DIR = Path("./.agentos")
-AGENT_MGR_INSTANCES = DOT_DIR / "agent_mgr_instances.yaml"
-AGENT_MGR_CONTENT = \
-"""{file_header}
-# Each time a new instance of this agent is created by AgentOS (e.g., via
-# the agentos CLI) using this AgentManager Directory, information about the AgentManager 
-# process, including its PID is appended below. If there are no
-# lines below, no AgentManager Instance has been successfully been started 
-# out of this AgentManager Directory.
-
-"""
-BUILDFILE_FILE = "agentos_buildfile.yaml"
-BUILDFILE_CONTENT = \
-    """{file_header}
-    # Use this file to Add agents and environments to your AgentOS.
-    # See the AgentOS documentation for details.
-    # For example, to add a simple agent, uncomment the following:
-    #
-    # env create:
-    #   name: cartpole
-    #   package-module: gym.envs.classic_control
-    #   class: CartPoleEnv
-    # 
-    # agent create:
-    #   package-module: agentos.agents
-    #   class: RandomAgent
-    #   env-name: cartpole
-    
-    """
-CONDA_ENV_FILE = Path("./conda_env.yaml")
-CONDA_ENV_CONTENT = \
-"""{file_header}
-
-name: {name}
-
-dependencies
-    - pip
-    - pip: 
-      - agentos
-"""
-MLFLOW_PROJECT_FILE = Path("./MLProject")
-MLFLOW_PROJECT_CONTENT = \
-"""{file_header}
-
-name: {name}
-
-conda_env: {conda_env}
-
-entry_points:
-  main:
-    command: "agentos start"
-"""
-ALL_AGENT_FILES = {AGENT_MGR_INSTANCES: AGENT_MGR_CONTENT,
-                   CONDA_ENV_FILE: CONDA_ENV_CONTENT,
-                   MLFLOW_PROJECT_FILE: MLFLOW_PROJECT_CONTENT}
-
-
-def agent_running(host, port):
-    try:
-        r = requests.get(f"http://{host}:{port}/health")
-        if r.status_code == 200:
-            return True
-    except requests.exceptions.ConnectionError:
-        pass
-    return False
-
-
-def get_agent_info(warn_if_none=True):
-    """Return info dict about most recent agent proc if it exists, else None."""
-    try:
-        with open(AGENT_MGR_INSTANCES, "r") as f:
-            agent_infos = yaml.safe_load(f.read())
-            if agent_infos and len(agent_infos) > 0:
-                return agent_infos[-1]
-            if warn_if_none:
-                click.echo("No AgentManager instance history entries found in "
-                           f"{AGENT_MGR_INSTANCES}. Perhaps this AgentOS "
-                           "Server was never started, or perhaps the "
-                           f"{AGENT_MGR_INSTANCES} was edited manually?")
-            return None
-    except FileNotFoundError:
-        if warn_if_none:
-            click.echo("No agent manager history found in "
-                       f"{AGENT_MGR_INSTANCES}. Perhaps agent "
-                       "was never started, or that file was edited.")
 
 
 @click.group()
 def agentos_cmd():
     pass
 
+
 @agentos_cmd.group()
 def dir():
-    """
+    """Init and an manage AgentOS Directory.
+
     Commands to work with a given directory (by default,
     the current working directory) as an AgentOS Directory,
     which is what the AgentOS Server and CLI use for
@@ -168,9 +88,10 @@ def init(name, agentos_dir):
               help="The port to listen on (default: 8002).")
 @click.pass_context
 def server(ctx, host, port):
-    """
+    """Manage AgentOS Server.
+
     The server command provides sub-commands to start, stop,
-    or otherwise interact with an AgentOS server.
+    or otherwise interact with an AgentOS
     """
     ctx.ensure_object(dict)
     ctx.obj['host'] = host
@@ -183,9 +104,9 @@ def apply(buildfile):
     """
     Apply buildfile to running agentOS.
 
-    BUILDFILE is the name of a YAML buildfile to apply.
+    BUILDFILE - the name of a YAML buildfile to apply.
     """
-    agentos.server.apply_buildfile(buildfile)
+    apply_buildfile(buildfile)
 
 @server.command()
 @click.option("--daemon/--no-daemon", "-d/-n", default=True,
@@ -205,7 +126,7 @@ def start(ctx, daemon):
                        f"{agent_info['pid']} at "
                        f"{agent_info['host']}:{agent_info['port']}.")
             return
-    proc = agentos.server.start(host, port, daemon=daemon)
+    proc = agentos_server_start(host, port, daemon=daemon)
     health_check_timer = 10
     for i in range(health_check_timer):
         if agent_running(host, port):
@@ -220,8 +141,7 @@ def start(ctx, daemon):
 
 @server.command()
 def start_with_mlflow():
-    """
-    Run as MLflow project.
+    """Run as MLflow project.
 
     We use MLflow because it takes care of setting up the conda
     env and logging useful info about this run of the agentOS
@@ -250,9 +170,9 @@ def status():
 
 @server.command()
 @click.option("--force", "--yes", "-f", "-y", default=False, is_flag=True,
-              help="Don't double check with user before stopping server.")
+              help="Don't double check with user before stopping ")
 def stop(force):
-    """Stops the agentOS."""
+    """Stops the agentOS Server."""
     agent_info = get_agent_info()
     if agent_info:
         if not agent_running(agent_info["host"], agent_info["port"]):
@@ -275,6 +195,28 @@ def stop(force):
                        f"{agent_info['host']}:{agent_info['port']}.")
         else:
             click.echo("Aborted. AgentManager not stopped.")
+
+
+@agentos_cmd.group()
+def env():
+    """Manage environments."""
+    pass
+
+
+@agentos_cmd.group()
+def agent():
+    """Manage agents."""
+    pass
+
+
+@agent.command()
+@click.argument("classname", metavar="CLASSNAME")
+def create(classname):
+    """Instantiate & add agent to agentOS server's AgentManger.
+
+    CLASSNAME - a python class for AgentOS AgentManger to instantiate.")
+    """
+    click.echo(f"TODO: Creating agent {classname}")
 
 
 if __name__ == "__main__":

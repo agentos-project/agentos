@@ -1,4 +1,4 @@
-name: ray_rllib_agent
+name: rllib_agent
 
 dependencies:
   - python=3.7.3
