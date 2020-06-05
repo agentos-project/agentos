@@ -13,10 +13,10 @@ class Agent:
         raise NotImplementedError
 
 
-def run_agent(agent_class, env, hz=40, as_thread=False):
+def run_agent(agent_class, env, hz=40, as_thread=False, **kwargs):
     """Run an agent in this thread."""
     def runner():
-        agent_instance = agent_class(env)
+        agent_instance = agent_class(env, **kwargs)
         done = False
         while not done:
             done = agent_instance.step()

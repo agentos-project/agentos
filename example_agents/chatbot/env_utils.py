@@ -54,6 +54,6 @@ class CommandLineClient(threading.Thread):
             msg_in = stdin.readline()
             msgs_out, _, _, _ = self.env.step(msg_in)
             if msgs_out:
-                print(msgs_out)
+                print(f"Agent: {msgs_out}")
 
 
