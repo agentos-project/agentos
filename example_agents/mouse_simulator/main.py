@@ -90,7 +90,7 @@ class Mouse(agentos.Agent):
        are implemented using synaptic plasticity, analogous to the way
        params are updated via backprop in TensorFlow.
     """
-    def __init__(self, env, steps=1):
+    def __init__(self, env, num_steps=100):
         super().__init__(env)
         self.light_intensity_error_belief = Decimal(0)  # epsilon_u
         self.cookie_size_error_belief = Decimal(0)  # epsilon_p
@@ -102,18 +102,18 @@ class Mouse(agentos.Agent):
         self.area_to_light_belief_fn = lambda x: x ** Decimal(2)  # g()
         self.area_to_light_deriv_belief_fn = lambda x: Decimal(2) * x  # g'()
 
-        self.target_steps = steps
+        self.num_steps = num_steps
         self.step_size = Decimal(0.05)
-        self.num_steps = 0
+        self.step_count = 0
 
     def step(self):
-        while self.num_steps < self.target_steps:
+        if self.step_count < self.num_steps:
             obs, reward, done, _ = self.env.step('')
             self.update_world_model(obs)
-            self.num_steps += 1
-            if done:
-                break
-        return True
+            self.step_count += 1
+            return self.step_count >= self.num_steps
+        else:
+            return True
 
     def update_world_model(self, obs):
         try:
@@ -153,11 +153,11 @@ class Mouse(agentos.Agent):
 
 # Create a mouse agent and see what it learns as its best guess of the
 # size of cookies it is seeing.
-num_steps = 1000
+num_steps = 150
 print(f"Running mouse agent  for {num_steps} steps...")
 print("------------------------------------------------")
 
-agentos.run_agent(Mouse, CookieSensorEnv, steps=num_steps)
+agentos.run_agent(Mouse, CookieSensorEnv, num_steps=num_steps)
 
 plt.figure(figsize=(15, 10))
 for k, v in mouse_stats.items():

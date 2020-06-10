@@ -10,11 +10,18 @@ class Agent:
         self.init_obs = self.env.reset()
 
     def step(self):
+        """Returns True when agent is done."""
         raise NotImplementedError
 
 
 def run_agent(agent_class, env, hz=40, as_thread=False, **kwargs):
-    """Run an agent in this thread."""
+    """Run an agent, optionally in a new thread.
+
+    If as_thread is True, agent is run in a thread, and the
+    thread object is returned to the caller. The caller may
+    need to call join on that that thread depending on their
+    use case for this agent_run.
+    """
     def runner():
         agent_instance = agent_class(env, **kwargs)
         done = False
@@ -22,6 +29,6 @@ def run_agent(agent_class, env, hz=40, as_thread=False, **kwargs):
             done = agent_instance.step()
             time.sleep(1 / hz)
     if as_thread:
-        Thread(target=runner).start()
+        return Thread(target=runner).start()
     else:
         runner()

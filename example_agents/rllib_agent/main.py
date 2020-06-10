@@ -1,6 +1,7 @@
 from agentos import Agent, run_agent
 import argparse
 import gym
+import importlib
 import ray
 import ray.rllib.agents.registry as rllib_registry
 from ray.tune.registry import register_env as rllib_reg_env
@@ -29,7 +30,10 @@ class RLlibAgent(Agent):
     def step(self):
         action = self.ray_trainer.compute_action(self._last_obs)
         self._last_obs, _, done, _ = self.env.step(action)
-        return done
+        if done:
+            self._last_obs = self.env.reset()
+            self.num_plays += 1
+        return False
 
     def train(self, num_iterations):
         """Causes Ray to learn"""
@@ -40,7 +44,7 @@ def test_rllib_agent():
     from gym.envs.classic_control import CartPoleEnv
     agent = RLlibAgent(CartPoleEnv, "PPO")
     done = agent.step()
-    assert not done, "CartPole never finishes after one random step."
+    assert not done, "CartPole should not finish after one random step."
     agent.train(1)
     while not done:
         print("stepping agent")
@@ -50,12 +54,21 @@ def test_rllib_agent():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Run an RLlibAgent.")
-    parser.add_argument('gym_env_name', metavar='ENV', type=str,
-                        help="The name of gym env.")
+    parser.add_argument('env_module', metavar='ENV_MODULE', type=str,
+                        help="The python module of env, will be imported. "
+                             "Must be on pythonpath. If this is empty string, "
+                             "ENV_CLASSNAME is assumed to be a Gym Env id "
+                             "instead of a classname (e.g., CartPole-v1)")
+    parser.add_argument('env_classname', metavar='ENV_CLASSNAME', type=str,
+                        help="The env class for agent to use.")
     parser.add_argument('algorithm', metavar='ALGO', type=str,
                         help="The name of an RLlib algo. For list of algos, "
                              "see https://github.com/ray-project/ray/blob/"
                              "master/rllib/agents/registry.py")
     args = parser.parse_args()
-    run_agent(RLlibAgent, args.gym_env_name, algo_name=args.algorithm)
+    env = args.env_classname
+    if args.env_module:
+        module = importlib.import_module(args.env_module)
+        env = getattr(module, args.env_classname)
+    run_agent(RLlibAgent, env, algo_name=args.algorithm)
 

@@ -13,9 +13,7 @@ setup(
     install_requires=[
         'click>=7.0',
         'Flask>=1.1.2',
-        'mlflow',
         'pyyaml',
-        'ray',
         'requests>=2.17.3',
         'waitress',
     ],
