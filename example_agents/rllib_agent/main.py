@@ -26,14 +26,14 @@ class RLlibAgent(Agent):
         rllib_reg_env(env_class.__name__, wrapper)
         self.ray_trainer = trainer_class(config=rllib_config, env=env_class.__name__)
         self._last_obs = self.init_obs
+        self.done = False
 
     def step(self):
+        if self.done:
+            return True
         action = self.ray_trainer.compute_action(self._last_obs)
-        self._last_obs, _, done, _ = self.env.step(action)
-        if done:
-            self._last_obs = self.env.reset()
-            self.num_plays += 1
-        return False
+        self._last_obs, _, self.done, _ = self.env.step(action)
+        return self.done
 
     def train(self, num_iterations):
         """Causes Ray to learn"""

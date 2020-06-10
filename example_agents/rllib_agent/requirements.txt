@@ -1,0 +1,5 @@
+# When updating here, also update conda_env.yaml
+-e ../../
+requests==2.21.0  # Needed till https://github.com/ray-project/ray/issues/8373 fixed.
+tensorflow==2.2.0
+ray[rllib]==0.8.5
