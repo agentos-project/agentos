@@ -119,7 +119,7 @@ def init(name):
     click.echo(f"Finished initializing AgentOS '{name}' in current working directory.")
 
 
-def get_subclass_from_file(filename, parent_class):
+def _get_subclass_from_file(filename, parent_class):
     """Return first subclass of `parent_class` found in filename, else None."""
     path = Path(filename)
     assert path.is_file(), "Make sure value passed to --py_target is a valid file."
@@ -132,6 +132,16 @@ def get_subclass_from_file(filename, parent_class):
         if type(elt) is type and issubclass(elt, parent_class):
             print(f"Found first subclass class {elt}; returning it.")
             return elt
+
+
+def _handle_single_run_arg(filename):
+    # The file must contain >= 1 agentos.Agent subclass and >= 1 gym.Env subclass.
+    agent_cls = _get_subclass_from_file(filename, agentos.Agent)
+    env_cls = _get_subclass_from_file(filename, gym.Env)
+    assert agent_cls and env_cls, \
+        f" {filename} must contain >= 1 agentos.Agent subclass " \
+        f"and >= 1 gym.Env subclass."
+    agentos.run_agent(agent_cls, env_cls)
 
 
 @agentos_cmd.command()
@@ -148,7 +158,8 @@ def run(run_args):
         - look for file named MLProject in the current working directory and
           if found run this directory as an MLflow project.
         - else, if file with name MLProject not found, look for main.py in
-          current working directory and execute it by running `python main.py`
+          current working directory and then behave in the same was as if
+          1 argument (i.e., main.py) was provided, as described below.
     Else, if 1 arg is specified:
         - if it is a filename, search that file for the first subclass of
           agentos.Agent, as well as first subclass of gym.Env and call
@@ -172,30 +183,17 @@ def run(run_args):
             return
         else:
             assert AGENT_MAIN_FILE.is_file(), "No agent main.py file or MLProject file found."
-            print(f"Running: python {AGENT_MAIN_FILE}")
-            p = Popen(["python", AGENT_MAIN_FILE], stderr=PIPE, stdout=PIPE, text=True)
-            out, err = p.communicate()
-            if out:
-                print(str(out))
-            if err:
-                print(str(err))
+            _handle_single_run_arg(AGENT_MAIN_FILE)
     elif len(run_args) == 1:
-        agent_arg = run_args[0]
-        if Path(agent_arg).is_file():
-            # The file must contain >= 1 agentos.Agent subclass and >= 1 gym.Env subclass.
-            agent_cls = get_subclass_from_file(agent_arg, agentos.Agent)
-            env_cls = get_subclass_from_file(agent_arg, gym.Env)
-            assert agent_cls and env_cls, \
-                f" {agent_arg} must contain >= 1 agentos.Agent subclass " \
-                f"and >= 1 gym.Env subclass."
-            agentos.run_agent(agent_cls, env_cls)
+        if Path(run_args[0]).is_file():
+            _handle_single_run_arg(run_args[0])
         else:
             raise click.UsageError("1 argument was passed to run; it must be "
                                    "a filename and it is not.")
     elif len(run_args) == 2:
         agent_arg, env_arg = run_args[0], run_args[1]
         if Path(agent_arg).is_file():
-            agent_cls = get_subclass_from_file(agent_arg, agentos.Agent)
+            agent_cls = _get_subclass_from_file(agent_arg, agentos.Agent)
             assert agent_cls, f"{agent_arg} must contain a subclass of agentos.Agent"
         else:
             ag_mod_name = ".".join(agent_arg.split(".")[:-1])
@@ -203,7 +201,7 @@ def run(run_args):
             ag_mod = importlib.import_module(ag_mod_name)
             agent_cls = getattr(ag_mod, ag_cls_name)
         if Path(env_arg).is_file():
-            env_cls = get_subclass_from_file(env_arg, gym.Env)
+            env_cls = _get_subclass_from_file(env_arg, gym.Env)
             assert env_cls, f"{env_arg} must contain a subclass of gym.Env"
         else:
             env_mod_name = ".".join(env_arg.split(".")[:-1])
