@@ -2,11 +2,14 @@
 
 The CLI allows creation of a simple template agent.
 """
+import agentos
 import click
 from datetime import datetime
+import gym
 import mlflow.projects
+import importlib.util
 from pathlib import Path
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 
 CONDA_ENV_FILE = Path("./conda_env.yaml")
@@ -116,10 +119,100 @@ def init(name):
     click.echo(f"Finished initializing AgentOS '{name}' in current working directory.")
 
 
+def get_subclass_from_file(filename, parent_class):
+    """Return first subclass of `parent_class` found in filename, else None."""
+    path = Path(filename)
+    assert path.is_file(), "Make sure value passed to --py_target is a valid file."
+    assert path.suffix == ".py", "Filename must end in .py"
+
+    spec = importlib.util.spec_from_file_location(path.stem, path.absolute())
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for elt in module.__dict__.values():
+        if type(elt) is type and issubclass(elt, parent_class):
+            print(f"Found first subclass class {elt}; returning it.")
+            return elt
+
+
 @agentos_cmd.command()
-def run():
-    """ Use MLflow for dependency management."""
-    mlflow.projects.run(".")
+@click.argument("run_args", nargs=-1, metavar="RUN_ARGS")
+def run(run_args):
+    """ Run an Agentos Agent (agentos.Agent) with an environment (gym.Env).
+
+    \b
+    Arguments:
+        RUN_ARGS: 0, 1, or 2 space delimited arguments, parse as follows:
+
+    \b
+    If no args are specified:
+        - look for file named MLProject in the current working directory and
+          if found run this directory as an MLflow project.
+        - else, if file with name MLProject not found, look for main.py in
+          current working directory and execute it by running `python main.py`
+    Else, if 1 arg is specified:
+        - if it is a filename, search that file for the first subclass of
+          agentos.Agent, as well as first subclass of gym.Env and call
+          agentos.RunAgent() passing in the agent and env classes found.
+    Else, if 2 args specified:
+         - assume the first specifies the agent and second specifies the Env.
+           the format for both is the same, as follows:
+             - if it is a filename:
+                  Look for the first instance of the appropriate subclass
+                  (either agentos.Agent or gym.env) in the file and use that
+                  as the argument to agentos.run_agent.
+              - else:
+                  Assume the arg is in the form [package.][module.]classname
+                  and that it is available in this python environments path.
+
+    """
+    if len(run_args) == 0:
+        if MLFLOW_PROJECT_FILE.is_file():
+            print(f"Running agent in this dir using MLflow.")
+            mlflow.projects.run(".")
+            return
+        else:
+            assert AGENT_MAIN_FILE.is_file(), "No agent main.py file or MLProject file found."
+            print(f"Running: python {AGENT_MAIN_FILE}")
+            p = Popen(["python", AGENT_MAIN_FILE], stderr=PIPE, stdout=PIPE, text=True)
+            out, err = p.communicate()
+            if out:
+                print(str(out))
+            if err:
+                print(str(err))
+    elif len(run_args) == 1:
+        agent_arg = run_args[0]
+        if Path(agent_arg).is_file():
+            # The file must contain >= 1 agentos.Agent subclass and >= 1 gym.Env subclass.
+            agent_cls = get_subclass_from_file(agent_arg, agentos.Agent)
+            env_cls = get_subclass_from_file(agent_arg, gym.Env)
+            assert agent_cls and env_cls, \
+                f" {agent_arg} must contain >= 1 agentos.Agent subclass " \
+                f"and >= 1 gym.Env subclass."
+            agentos.run_agent(agent_cls, env_cls)
+        else:
+            raise click.UsageError("1 argument was passed to run; it must be "
+                                   "a filename and it is not.")
+    elif len(run_args) == 2:
+        agent_arg, env_arg = run_args[0], run_args[1]
+        if Path(agent_arg).is_file():
+            agent_cls = get_subclass_from_file(agent_arg, agentos.Agent)
+            assert agent_cls, f"{agent_arg} must contain a subclass of agentos.Agent"
+        else:
+            ag_mod_name = ".".join(agent_arg.split(".")[:-1])
+            ag_cls_name = agent_arg.split(".")[-1]
+            ag_mod = importlib.import_module(ag_mod_name)
+            agent_cls = getattr(ag_mod, ag_cls_name)
+        if Path(env_arg).is_file():
+            env_cls = get_subclass_from_file(env_arg, gym.Env)
+            assert env_cls, f"{env_arg} must contain a subclass of gym.Env"
+        else:
+            env_mod_name = ".".join(env_arg.split(".")[:-1])
+            env_cls_name = env_arg.split(".")[-1]
+            env_mod = importlib.import_module(env_mod_name)
+            env_cls = getattr(env_mod, env_cls_name)
+        agentos.run_agent(agent_cls, env_cls)
+    else:
+        raise click.UsageError("run command can take 0, 1, or 2 arguments.")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ setup(
     install_requires=[
         'click>=7.0',
         'mlflow',
+        'gym',
     ],
     entry_points='''
         [console_scripts]
