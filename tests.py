@@ -31,3 +31,10 @@ def test_cli(tmpdir):
         p = subprocess.Popen(c, cwd=tmpdir)
         p.wait()
         assert p.returncode == 0
+
+    # also test when main.py exists and MLProject file does not.
+    ml_project.unlink()  # delete MLProject file.
+    p = subprocess.Popen(["agentos", "run"], cwd=tmpdir)
+    p.wait()
+    assert p.returncode == 0
+
