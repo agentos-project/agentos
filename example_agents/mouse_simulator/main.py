@@ -151,22 +151,23 @@ class Mouse(agentos.Agent):
             return None
 
 
-# Create a mouse agent and see what it learns as its best guess of the
-# size of cookies it is seeing.
-num_steps = 150
-print(f"Running mouse agent  for {num_steps} steps...")
-print("------------------------------------------------")
+if __name__ == "__main__":
+    # Create a mouse agent and see what it learns as its best guess of the
+    # size of cookies it is seeing.
+    num_steps = 150
+    print(f"Running mouse agent  for {num_steps} steps...")
+    print("------------------------------------------------")
 
-agentos.run_agent(Mouse, CookieSensorEnv, num_steps=num_steps)
+    agentos.run_agent(Mouse, CookieSensorEnv, num_steps=num_steps)
 
-plt.figure(figsize=(15, 10))
-for k, v in mouse_stats.items():
-    if k != "belief_light_var" and k != "belief_size_var":
+    plt.figure(figsize=(15, 10))
+    for k, v in mouse_stats.items():
+        if k != "belief_light_var" and k != "belief_size_var":
+            plt.plot(v, label=k)
+
+    for k, v in env_stats.items():
         plt.plot(v, label=k)
 
-for k, v in env_stats.items():
-    plt.plot(v, label=k)
-
-plt.legend()
-plt.title("Mouse beliefs over time")
-plt.show()
+    plt.legend()
+    plt.title("Mouse beliefs over time")
+    plt.show()

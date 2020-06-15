@@ -23,8 +23,9 @@ class ChatBot(agentos.Agent):
             self.reply_flag = True
 
 
-env_generator = MultiChatEnv()
-agentos.run_agent(ChatBot, env_generator, 1, as_thread=True)
+if __name__ == "__main__":
+    env_generator = MultiChatEnv()
+    agentos.run_agent(ChatBot, env_generator, 1, as_thread=True)
 
-cmd_line = CommandLineClient(env_generator())
-cmd_line.start()
+    cmd_line = CommandLineClient(env_generator())
+    cmd_line.start()
