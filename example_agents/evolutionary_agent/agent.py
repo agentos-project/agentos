@@ -39,7 +39,7 @@ class EvolutionaryAgent(agentos.Agent):
         print("initialized population of models")
 
     def step(self):
-        #self.train()
+        self.train()
         obs = self.env.reset()
         ret = 0
         best_policy = self.population[-1]  # Population sorted worst to best.
