@@ -44,7 +44,7 @@ class Agent:
         pass
 
     def step(self):
-        """Returns True when agent is done."""
+        """Returns True when agent is done; False or None otherwise."""
         raise NotImplementedError
 
     def evaluate_policies(self, policy, num_rollouts, max_steps=None):
