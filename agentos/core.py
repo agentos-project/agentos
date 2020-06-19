@@ -32,21 +32,31 @@ class Agent:
         """Set self.env, then reset the env and store _last_obs."""
         self.env = env_class()
         self.init_obs = self.env.reset()
+        self._init()
+
+    def _init(self):
+        """An alternative to overriding __init__ is override this.
+
+        This is a convenience function for when you just want to
+        add some functionality to the constructor but don't want
+        to completely override the constructor.
+        """
+        pass
 
     def step(self):
         """Returns True when agent is done."""
         raise NotImplementedError
 
-    def simulate_episodes(self, policy, num_simulations, max_steps=None):
-        """ Simulate episodes (rollouts) using envs with same type as self.env.
+    def evaluate_policies(self, policy, num_rollouts, max_steps=None):
+        """ Perform rollouts using envs with same type as self.env.
 
         :param policy: policy to use when simulating these episodes.
-        :param num_simulations: how many simulations to perform
+        :param num_rollouts: how many simulations to perform
         :param max_steps: cap on number of iterations per episode.
         :return: array of return values from episodes.
         """
-        return_vals = [0] * num_simulations
-        for i in range(num_simulations):
+        return_vals = [0] * num_rollouts
+        for i in range(num_rollouts):
             env = self.env.__class__()
             obs = env.reset()
             step_num = 0
@@ -59,9 +69,9 @@ class Agent:
                 step_num += 1
         return return_vals
 
-    def simulate_episode(self, policy):
-        """Convenience wrapper of simulate_episodes for single-rollout case."""
-        return self.simulate_episodes(policy, 1)
+    def evaluate_policy(self, policy, max_steps=None):
+        """Convenience wrapper of evaluate_policies for single-rollout case."""
+        return self.evaluate_policies(policy, 1, max_steps=max_steps)
 
 
 class Policy:
