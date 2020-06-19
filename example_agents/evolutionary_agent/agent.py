@@ -48,11 +48,11 @@ class EvolutionaryAgent(agentos.Agent):
             action = best_policy.compute_action(obs)
             obs, reward, done, _ = self.env.step(action)
             ret += reward
+            env_steps += 1
             if done:
                 break
-            env_steps += 1
         self.steps_taken += 1
-        print(f"Agent step {self.steps_taken} returning val: {ret, env_steps}")
+        print(f"Agent step {self.steps_taken} returning val: {ret}")
 
     def train(self):
         """Improve policy via one generation of a simple evolution strategy."""
@@ -71,7 +71,7 @@ class EvolutionaryAgent(agentos.Agent):
                     new_p.tf_model.weights[i] = new_p.tf_model.weights[i] + noise
                 evolved_population.append(new_p)
         self.population = sorted(evolved_population[:-1] + [carry_over_best],
-                                 key=lambda p: np.mean(self.simulate_episodes(p,
+                                 key=lambda p: np.mean(self.evaluate_policies(p,
                                                                               self.num_simulations,
                                                                               max_steps=self.max_env_steps)))
 
@@ -84,6 +84,6 @@ class EvolutionaryAgent(agentos.Agent):
                 keras.layers.Dense(4, activation='relu', input_shape=self.env.observation_space.shape),
                 keras.layers.Dense(1, activation='sigmoid')
             ])
-            for i in range(num_models)
+            for _ in range(num_models)
         ]
 
