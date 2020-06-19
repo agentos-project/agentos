@@ -1,22 +1,28 @@
 AgentOS is a python API and a command line interface for building, running, and sharing learning agents.
 
-Requirements: Python >= 3.5 (because we use pathlib)
+Requires Python >= 3.5 (because we use pathlib)
 
 To install:
 
 ```
 git clone git@github.com:andyk/agentos.git
-pip install -e agentos
+pip install -e agentos # you may want to do this inside a virtualenv or conda env.
 ```
 
+Then run a simple agent that comes with AgentOS:
 
-To create and play with your first Agent:
+```
+cd agentos
+agentos run agentos.agents.RandomAgent gym.envs.classic_control.CartPoleEnv
+```
+
+Then, maybe create your first Agent:
 
 ```
 mkdir my_agent
 cd my_agent
 agentos init
-# Edit agentos dependency in ./conda_env.yaml
+# Edit ./conda_env.yaml so that `agentos` dependency points to your install of agentos
 # Only necessary until we are in PyPI.
 agentos run
 ```
