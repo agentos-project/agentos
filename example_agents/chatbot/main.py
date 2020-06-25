@@ -12,7 +12,7 @@ class ChatBot(agentos.Agent):
         self.memory = deque(maxlen=2048)
         self.reply_flag = False
 
-    def step(self):
+    def advance(self):
         msg = ''
         if self.reply_flag:
             msg = np_random.choice(self.memory)

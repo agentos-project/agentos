@@ -28,7 +28,7 @@ class RLlibAgent(Agent):
         self._last_obs = self.init_obs
         self.done = False
 
-    def step(self):
+    def advance(self):
         if self.done:
             return True
         action = self.ray_trainer.compute_action(self._last_obs)

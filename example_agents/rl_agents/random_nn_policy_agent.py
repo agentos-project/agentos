@@ -1,3 +1,9 @@
+"""An agent that makes random decisions using a TensorFlow policy."
+
+This agent creates and uses a new randomly initialized
+TensorFlow NN policy for each step but doesn't do any
+learning.
+"""
 import agentos
 from tensorflow import keras
 import numpy as np

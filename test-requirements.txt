@@ -1,1 +1,8 @@
+#TODO: figure out a sane framework for running example agent tests
+#      where their dependencies are all self contained within their
+#      project directories, probably by using a virtualenv for each
+#      test the way we do currently for the evolutionary_agent test.
+
 pytest==3.2.1
+pytest-virtualenv==1.7.0
+tensorflow-probability  # for example_agents/rl_agents/reinforce_agent.py

@@ -8,7 +8,7 @@ class RandomAgent(Agent):
         self.step_count = 0
         print("Created RandomAgent!")
 
-    def step(self):
+    def advance(self):
         obs, reward, done, _ = self.env.step(self.env.action_space.sample())
         print(f"Taking random step {self.step_count}.")
         self.step_count += 1

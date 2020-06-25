@@ -1,3 +1,10 @@
+"""This agent's simple Evolutionary Strategy solves CartPole surprisingly fast.
+
+This strategy was discussed in https://arxiv.org/pdf/1712.06567.pdf
+This agent can be run with the agentos CLI using:
+    $ pip install -r requirements.txt
+    $ agentos run agent.py gym.envs.classic_control.CartPoleEnv
+"""
 import agentos
 import copy
 import gym
@@ -28,31 +35,23 @@ class EvolutionaryAgent(agentos.Agent):
                  population_size=10,
                  num_simulations=3,
                  survival_rate=0.1,
-                 max_env_steps = 200):
+                 max_steps = 200):
         super().__init__(env_class)
         assert isinstance(self.env, gym.envs.classic_control.CartPoleEnv)
         self.population = [TFPolicy(m) for m in self.init_models(population_size)]
         self.num_simulations = num_simulations
         self.survival_rate = survival_rate
-        self.max_env_steps = max_env_steps
-        self.steps_taken = 0
+        self.max_steps = max_steps
+        self.iter_count = 0
         print("initialized population of models")
 
-    def step(self):
+    def advance(self):
         self.train()
-        obs = self.env.reset()
-        ret = 0
         best_policy = self.population[-1]  # Population sorted worst to best.
-        env_steps = 0
-        while env_steps <= self.max_env_steps:
-            action = best_policy.compute_action(obs)
-            obs, reward, done, _ = self.env.step(action)
-            ret += reward
-            env_steps += 1
-            if done:
-                break
-        self.steps_taken += 1
-        print(f"Agent step {self.steps_taken} returning val: {ret}")
+        policy_eval = self.evaluate_policy(best_policy,
+                                           max_steps=self.max_steps)
+        self.iter_count += 1
+        print(f"Agent iter {self.iter_count} returns: {sum(policy_eval.rewards)}")
 
     def train(self):
         """Improve policy via one generation of a simple evolution strategy."""
@@ -70,10 +69,15 @@ class EvolutionaryAgent(agentos.Agent):
                                              p.tf_model.weights[i].shape[0])
                     new_p.tf_model.weights[i] = new_p.tf_model.weights[i] + noise
                 evolved_population.append(new_p)
+
+        def avg_return(policy):
+            results = self.evaluate_policies(policy,
+                                             self.num_simulations,
+                                             max_steps=self.max_steps)
+            rollout_returns = [sum(x.rewards) for x in results]
+            return np.mean(rollout_returns)
         self.population = sorted(evolved_population[:-1] + [carry_over_best],
-                                 key=lambda p: np.mean(self.evaluate_policies(p,
-                                                                              self.num_simulations,
-                                                                              max_steps=self.max_env_steps)))
+                                 key=avg_return)
 
     def init_models(self, num_models):
         assert isinstance(self.env.observation_space, gym.spaces.Box) and  \
