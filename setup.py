@@ -12,8 +12,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'click>=7.0',
-        'mlflow',
-        'gym',
+        'mlflow==1.9.1',
+        'gym==0.17.1',
     ],
     entry_points='''
         [console_scripts]

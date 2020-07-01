@@ -29,29 +29,47 @@ class ReinforceAgent(agentos.Agent):
 
     def advance(self):
         self.train()
-        res = self.evaluate_policy(self.policy, max_steps=200)
+        res = agentos.rollout(self.policy, self.env.__class__, max_steps=200)
         self.ret_vals.append(sum(res.rewards))
         print(f"num steps: {self.ret_vals[-1]}")
 
-    def train(self, num_rollouts=1, max_steps_per_episode=200, discount_rate=0.9):
+    def train(self, num_rollouts=1, max_rollout_steps=200, discount_rate=0.9):
         grads = []
         rewards = []
 
-        # Compute grads
+        # Compute and collect grads as we take steps in our rollout.
+        def rollout_step(policy, obs):
+            with tf.GradientTape() as tape:
+                leftprob = policy.nn(np.array(obs)[np.newaxis])
+                action = tfp.distributions.Bernoulli(probs=leftprob).sample()[0][0].numpy()
+                loss = tf.reduce_mean(policy.loss_fn(action, leftprob))
+            grads[-1].append(tape.gradient(loss, policy.nn.trainable_variables))
+            return action
+
         for episode_num in range(num_rollouts):
-            rewards.append([])
             grads.append([])
-            obs = self.env.reset()
-            for step_num in range(max_steps_per_episode):
-                with tf.GradientTape() as tape:
-                    leftprob = self.policy.nn(np.array(obs)[np.newaxis])
-                    action = tfp.distributions.Bernoulli(probs=leftprob).sample()[0][0].numpy()
-                    loss = tf.reduce_mean(self.policy.loss_fn(action, leftprob))
-                obs, reward, done, _ = self.env.step(action)
-                rewards[-1].append(reward)
-                grads[-1].append(tape.gradient(loss, self.policy.nn.trainable_variables))
-                if done:
-                    break
+            result = agentos.rollout(self.policy,
+                                     self.env.__class__,
+                                     step_fn=rollout_step,
+                                     max_steps=max_rollout_steps)
+            rewards.append(result.rewards)
+
+        #####################################################################
+        # We rewrote the logic below using the RolloutStep abstraction above.
+        # for episode_num in range(num_rollouts):
+        #    rewards.append([])
+        #    grads.append([])
+        #    obs = self.env.reset()
+        #    for step_num in range(max_steps_per_episode):
+        #        with tf.GradientTape() as tape:
+        #            leftprob = self.policy.nn(np.array(obs)[np.newaxis])
+        #            action = tfp.distributions.Bernoulli(probs=leftprob).sample()[0][0].numpy()
+        #            loss = tf.reduce_mean(self.policy.loss_fn(action, leftprob))
+        #        obs, reward, done, _ = self.env.step(action)
+        #        rewards[-1].append(reward)
+        #        grads[-1].append(tape.gradient(loss, self.policy.nn.trainable_variables))
+        #        if done:
+        #            break
 
         # Compute discounted normalized rewards
         d_rewards = None

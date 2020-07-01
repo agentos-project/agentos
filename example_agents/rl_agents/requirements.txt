@@ -1,3 +1,4 @@
 -e ../../
-tensorflow
-tensorflow-probability
+tensorflow  # reinforce, dqn
+tensorflow-probability  # reinforce
+pandas  # dqn

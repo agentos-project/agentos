@@ -48,8 +48,9 @@ class EvolutionaryAgent(agentos.Agent):
     def advance(self):
         self.train()
         best_policy = self.population[-1]  # Population sorted worst to best.
-        policy_eval = self.evaluate_policy(best_policy,
-                                           max_steps=self.max_steps)
+        policy_eval = agentos.rollout(best_policy,
+                                      self.env.__class__,
+                                      max_steps=self.max_steps)
         self.iter_count += 1
         print(f"Agent iter {self.iter_count} returns: {sum(policy_eval.rewards)}")
 
@@ -71,9 +72,10 @@ class EvolutionaryAgent(agentos.Agent):
                 evolved_population.append(new_p)
 
         def avg_return(policy):
-            results = self.evaluate_policies(policy,
-                                             self.num_simulations,
-                                             max_steps=self.max_steps)
+            results = agentos.rollouts(policy,
+                                       self.env.__class__,
+                                       self.num_simulations,
+                                       max_steps=self.max_steps)
             rollout_returns = [sum(x.rewards) for x in results]
             return np.mean(rollout_returns)
         self.population = sorted(evolved_population[:-1] + [carry_over_best],

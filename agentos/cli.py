@@ -84,6 +84,7 @@ INIT_FILES = {CONDA_ENV_FILE: CONDA_ENV_CONTENT,
 
 
 @click.group()
+@click.version_option()
 def agentos_cmd():
     pass
 
@@ -102,7 +103,7 @@ def validate_agent_name(ctx, param, value):
                    "this agentOS's MLflow Project and Conda env. "
                    "AGENTOS_NAME may not contain ' ', ':', or '/'.")
 def init(dir_names, name):
-    """Initialize current (or specified) directory as an AgentOS Agent.
+    """Initialize current (or specified) directory as an AgentOS agent.
 
     \b
     Arguments:
@@ -154,7 +155,7 @@ def _get_subclass_from_file(filename, parent_class):
 @click.option("--max-iters", "-m", metavar="MAX_STEPS", type=int, default=None,
               help="Stop running agent after this many calls to advance().")
 def run(run_args, hz, max_iters):
-    """ Run an Agentos Agent (agentos.Agent) with an environment (gym.Env).
+    """ Run an AgentOS agent (agentos.Agent) with an environment (gym.Env).
 
     \b
     Arguments:

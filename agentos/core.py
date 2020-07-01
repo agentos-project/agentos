@@ -48,42 +48,6 @@ class Agent:
         """Returns True when agent is done; False or None otherwise."""
         raise NotImplementedError
 
-    def evaluate_policy(self, policy, max_steps=None):
-        """ Perform rollout using an env with same type as self.env.
-
-        :param policy: policy to use when simulating these episodes.
-        :param num_rollouts: how many simulations to perform
-        :param max_steps: cap on number of steps per episode.
-        :return: tuple of arrays; observations, rewards, dones, ctxs
-        """
-        observations = []
-        rewards = []
-        dones = []
-        contexts =[]
-
-        env = self.env.__class__()
-        obs = env.reset()
-        done = False
-        while True:
-            if done or (max_steps and len(observations) >= max_steps):
-                break
-            obs, reward, done, ctx = env.step(policy.compute_action(obs))
-            observations.append(obs)
-            rewards.append(reward)
-            dones.append(done)
-            contexts.append(ctx)
-        Result = namedtuple('Result', ["observations", "rewards", "dones", "contexts"])
-        return Result(observations, rewards, dones, contexts)
-
-    def evaluate_policies(self, policy, num_rollouts, max_steps=None):
-        """
-        :param policy: policy to use when simulating these episodes.
-        :param num_rollouts: how many rollouts (i.e., episodes) to perform
-        :param max_steps: cap on number of steps per episode.
-        :return: array with one namedtuple per rollout, each tuple containing
-                 the following arrays: observations, rewards, dones, ctxs
-        """
-        return [self.evaluate_policy(policy, max_steps) for _ in range(num_rollouts)]
 
 class Policy:
     """Picks next action based on last observation from environment.
@@ -118,7 +82,8 @@ def run_agent(agent_class, env, hz=40, max_iters=None, as_thread=False, **kwargs
             if max_iters and iter_count >= max_iters:
                 break
             done = agent_instance.advance()
-            time.sleep(1 / hz)
+            if hz:
+                time.sleep(1 / hz)
             iter_count += 1
     if as_thread:
         t = Thread(target=runner)
@@ -126,3 +91,56 @@ def run_agent(agent_class, env, hz=40, max_iters=None, as_thread=False, **kwargs
         return t
     else:
         runner()
+
+
+def default_rollout_step(policy, obs):
+    return policy.compute_action(obs)
+
+
+def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
+    """ Perform rollout using env an with the type provided.
+
+    :param policy: policy to use when simulating these episodes.
+    :param env_class: class to instatiate an env object from.
+    :param step_fn: called at each step of rollout. Must accept a policy
+                    and an observation, and return an action.
+    :param max_steps: cap on number of steps per episode.
+    :return: tuple of arrays; observations, rewards, dones, ctxs
+    """
+    observations = []
+    rewards = []
+    dones = []
+    contexts =[]
+
+    env = env_class()
+    obs = env.reset()
+    done = False
+    while True:
+        if done or (max_steps and len(observations) >= max_steps):
+            break
+        obs, reward, done, ctx = env.step(step_fn(policy, obs))
+        observations.append(obs)
+        rewards.append(reward)
+        dones.append(done)
+        contexts.append(ctx)
+    Result = namedtuple('Result', ["observations", "rewards", "dones", "contexts"])
+    return Result(observations, rewards, dones, contexts)
+
+
+def rollouts(policy,
+             env_class,
+             num_rollouts,
+             step_fn=default_rollout_step,
+             max_steps=None):
+    """
+    :param policy: policy to use when simulating these episodes.
+    :param env_class: class to instatiate an env object from.
+    :param num_rollouts: how many rollouts (i.e., episodes) to perform
+    :param max_steps: cap on number of steps per episode.
+    :return: array with one namedtuple per rollout, each tuple containing
+             the following arrays: observations, rewards, dones, ctxs
+    """
+    return [rollout(policy, env_class, step_fn, max_steps)
+            for _ in range(num_rollouts)]
+
+
