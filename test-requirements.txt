@@ -3,6 +3,7 @@
 #      project directories, probably by using a virtualenv for each
 #      test the way we do currently for the evolutionary_agent test.
 
+flake8==3.8.3
 pytest==3.2.1
 pytest-virtualenv==1.7.0
 tensorflow-probability  # for example_agents/rl_agents/reinforce_agent.py
