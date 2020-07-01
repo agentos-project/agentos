@@ -1,6 +1,6 @@
 AgentOS is a python API and a command line interface for building, running, and sharing learning agents.
 
-[![Tests Status - master](https://github.com/agentos-project/agentos/workflows/Python%20package/badge.svg)](https://github.com/agentos-project/agentos/actions)
+[![Tests Status - master](https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg)](https://github.com/agentos-project/agentos/actions)
 
 Requires Python >= 3.5 (because we use pathlib)
 
