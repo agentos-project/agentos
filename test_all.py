@@ -18,7 +18,6 @@ def test_random_agent():
 
 
 def test_cli(tmpdir):
-    print(f"running test_cli in {tmpdir}")
     import subprocess
     from pathlib import Path
     subprocess.Popen(["agentos", "init"], cwd=tmpdir).wait()
@@ -57,7 +56,6 @@ def test_rllib_agent():
 
 
 def test_chatbot(capsys):
-    print("running test_chatbot")
     import sys
     import time
     sys.path.append("example_agents/chatbot")
