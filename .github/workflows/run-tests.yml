@@ -38,4 +38,5 @@ jobs:
         pip install -e .
     - name: Test with pytest
       run: |
+        export MLFLOW_CONDA_HOME=$CONDA
         pytest
