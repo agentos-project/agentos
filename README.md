@@ -5,7 +5,7 @@ Requires Python >= 3.5 (because we use pathlib)
 To install:
 
 ```
-git clone git@github.com:andyk/agentos.git
+git clone git@github.com:agentos-project/agentos.git
 pip install -e agentos # you may want to do this inside a virtualenv or conda env.
 ```
 
