@@ -143,7 +143,7 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
             break
         if step_fn.__code__.co_argcount == 2:
             action = step_fn(policy, obs)
-        if step_fn.__code__.co_argcount == 3:
+        elif step_fn.__code__.co_argcount == 3:
             action = step_fn(policy, obs, step_num)
         else:
             raise TypeError('step_fn must accept 2 or 3 parameters.')
