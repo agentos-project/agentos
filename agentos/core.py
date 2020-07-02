@@ -66,7 +66,7 @@ class Policy:
         raise NotImplementedError
 
 
-def run_agent(agent_class, env, hz=40, max_iters=None, as_thread=False, **kwargs):
+def run_agent(agent_class, env, *args, hz=40, max_iters=None, as_thread=False, **kwargs):
     """Run an agent, optionally in a new thread.
 
     If as_thread is True, agent is run in a thread, and the
@@ -75,7 +75,7 @@ def run_agent(agent_class, env, hz=40, max_iters=None, as_thread=False, **kwargs
     use case for this agent_run.
     """
     def runner():
-        agent_instance = agent_class(env, **kwargs)
+        agent_instance = agent_class(env, *args, **kwargs)
         done = False
         iter_count = 0
         while not done:
@@ -93,7 +93,16 @@ def run_agent(agent_class, env, hz=40, max_iters=None, as_thread=False, **kwargs
         runner()
 
 
-def default_rollout_step(policy, obs):
+"""
+A rollout step function allows a developer to specify the behavior
+that will occur at every step of the rollout, given a policy
+and the last observation from the env, to decide
+what action to take next. This usually involves the rollout's
+policy and may perform learning and may involve using, updating,
+or saving learning related state including hyper-parameters
+such as epsilon in epsilon greedy.
+"""
+def default_rollout_step(policy, obs, step_num):
     return policy.compute_action(obs)
 
 
@@ -102,11 +111,23 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
 
     :param policy: policy to use when simulating these episodes.
     :param env_class: class to instatiate an env object from.
-    :param step_fn: called at each step of rollout. Must accept a policy
-                    and an observation, and return an action.
+    :param step_fn: a function to be called at each step of rollout.
+                    The function can have 2 or 3 parameters.
+                    2 parameter definition: policy, observation.
+                    3 parameter definition: policy, observation, step_num.
+                    The function must return an action.
     :param max_steps: cap on number of steps per episode.
-    :return: tuple of arrays; observations, rewards, dones, ctxs
+    :return: the trajectory that was followed during this rollout.
+             A trajectory is a named tuple that contains the initial
+             observation (a scalar) as well as the following
+             arrays: actions, observations, rewards, dones, contexts.
+             The ith entry of each array corresponds to the action taken
+             at the ith step of the rollout, and the respective results
+             returned by the environment after taking that action.
+             To learn more about the semantics of these, see the
+             documentation and code of gym.Env.
     """
+    actions = []
     observations = []
     rewards = []
     dones = []
@@ -114,17 +135,27 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
 
     env = env_class()
     obs = env.reset()
+    init_obs = obs
     done = False
+    step_num = 0
     while True:
-        if done or (max_steps and len(observations) >= max_steps):
+        if done or (max_steps and step_num >= max_steps):
             break
-        obs, reward, done, ctx = env.step(step_fn(policy, obs))
+        if step_fn.__code__.co_argcount == 2:
+            action = step_fn(policy, obs)
+        if step_fn.__code__.co_argcount == 3:
+            action = step_fn(policy, obs, step_num)
+        else:
+            raise TypeError('step_fn must accept 2 or 3 parameters.')
+        obs, reward, done, ctx = env.step(action)
+        actions.append(action)
         observations.append(obs)
         rewards.append(reward)
         dones.append(done)
         contexts.append(ctx)
-    Result = namedtuple('Result', ["observations", "rewards", "dones", "contexts"])
-    return Result(observations, rewards, dones, contexts)
+        step_num += 1
+    Trajectory = namedtuple('Trajectory', ["init_obs", "actions", "observations", "rewards", "dones", "contexts"])
+    return Trajectory(init_obs, actions, observations, rewards, dones, contexts)
 
 
 def rollouts(policy,
