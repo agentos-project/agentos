@@ -159,7 +159,7 @@ def run(run_args, hz, max_iters):
 
     \b
     Arguments:
-        RUN_ARGS: 0, 1, or 2 space delimited arguments, parse as follows:
+        RUN_ARGS: 0, 1, or 2 space delimited arguments, parsed as follows:
 
     \b
     If no args are specified, look for default files defining agent:
@@ -168,7 +168,9 @@ def run(run_args, hz, max_iters):
               - Try to use MLProject file first, using whatever it defines
                 as main entry point, and if that doesn't exist
                 then run using MLflow without MLProject passing main.py
-                as the entry point.
+                as the entry point (note that this will ignore a conda
+                environment file if one exists and MLflow will create
+                a new essentially empty conda env).
         - else, look for file named `agent.py` in current working
           directory and, if found, then behave in the same was as if 1
           argument (i.e., `agent.py`) was provided, as described below.

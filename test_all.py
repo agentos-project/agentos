@@ -3,7 +3,7 @@
 To run:
 $ cd agentos
 $ pip install -r test-requirements.txt
-$ pytest tests.py
+$ pytest tests_all.py
 """
 
 def test_random_agent():
@@ -82,6 +82,19 @@ def test_chatbot(capsys):
     #TODO(andyk): also test CommandLineListener
 
 
+def test_rl_agents():
+    from agentos import run_agent
+    from example_agents.rl_agents.reinforce_agent import ReinforceAgent
+    from gym.envs.classic_control import CartPoleEnv
+    run_agent(ReinforceAgent, CartPoleEnv, max_iters=10)
+
+
+def test_predictive_coding():
+    from agentos import run_agent
+    from example_agents.predictive_coding.main import Mouse, CookieSensorEnv
+    run_agent(Mouse, CookieSensorEnv, num_steps=10)
+
+
 def test_evolutionary_agent(virtualenv):
     import os
     virtualenv.run(f"cd {os.getcwd()}/example_agents/evolutionary_agent; "
@@ -91,12 +104,3 @@ def test_evolutionary_agent(virtualenv):
                    "gym.envs.classic_control.CartPoleEnv")
 
 
-def test_rl_agents():
-    from agentos import run_agent
-    from example_agents.rl_agents.reinforce_agent import ReinforceAgent
-    from gym.envs.classic_control import CartPoleEnv
-    run_agent(ReinforceAgent, CartPoleEnv, max_iters=10)
-
-
-# TODO(andyk): Add a test of mouse_simulator example_agent
-#def test_mouse_simulator()

@@ -30,3 +30,10 @@ agentos run
 ```
 
 See design doc, documentation, draft white paper at https://docs.google.com/document/d/13PoOxTs2bNPpEhVN5uHHlA0BKrIIHNc5iK8zhDvIrLc/edit
+
+To run tests:
+
+```
+pip install -r test-requirements.txt
+pytest all_tests.py
+```

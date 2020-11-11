@@ -1,3 +1,4 @@
+# Based on https://www.sciencedirect.com/science/article/pii/S0022249615000759
 import agentos
 from collections import defaultdict
 from decimal import Decimal, Overflow
@@ -106,7 +107,7 @@ class Mouse(agentos.Agent):
         self.step_size = Decimal(0.05)
         self.step_count = 0
 
-    def step(self):
+    def advance(self):
         if self.step_count < self.num_steps:
             obs, reward, done, _ = self.env.step('')
             self.update_world_model(obs)
