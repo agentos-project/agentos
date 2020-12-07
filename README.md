@@ -1,4 +1,4 @@
-AgentOS is a python API and a command line interface for building, running, and sharing learning agents.
+AgentOS is an open source python API and a command line interface for building, running, and sharing learning agents. AgentOS is licensed under the Apache License, Version 2.0.
 
 [![Tests Status - master](https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg)](https://github.com/agentos-project/agentos/actions)
 
@@ -29,7 +29,7 @@ agentos init
 agentos run
 ```
 
-See design doc, documentation, draft white paper at https://docs.google.com/document/d/13PoOxTs2bNPpEhVN5uHHlA0BKrIIHNc5iK8zhDvIrLc/edit
+For the design doc, documentation, and draft white paper, see the docs directory and https://docs.google.com/document/d/13PoOxTs2bNPpEhVN5uHHlA0BKrIIHNc5iK8zhDvIrLc/edit
 
 To run tests:
 
@@ -37,3 +37,6 @@ To run tests:
 pip install -r test-requirements.txt
 pytest all_tests.py
 ```
+
+To build the docs you'll need to install [jekyll](https://jekyllrb.com/).
+
