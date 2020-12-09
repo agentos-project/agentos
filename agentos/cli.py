@@ -20,10 +20,11 @@ name: {name}
 dependencies:
     - pip
     - pip: 
-      - -e path/to/agentos/git/repo
-      # ...or once we are in PyPi:
-      #- agentos
       - gym
+      - agentos
+      # Or, if you want to use your local copy of agentos, then
+      # update the line below and replace the line above with it.
+      #- -e path/to/agentos/git/repo
 """
 MLFLOW_PROJECT_FILE = Path("./MLProject")
 MLFLOW_PROJECT_CONTENT = \

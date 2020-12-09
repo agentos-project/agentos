@@ -30,8 +30,8 @@ Then, maybe create your first Agent::
   mkdir my_agent
   cd my_agent
   agentos init
-  # Edit ./conda_env.yaml so that `agentos` dependency points to your install of agentos
-  # Only necessary until we are in PyPI.
+  # optionally edit ./conda_env.yaml so that `agentos` dependency points to your install of agentos
+  # else the command below will use agentos from PyPI.
   agentos run
 
 Also, check out the example agents in the `example_agents` directory.
