@@ -66,7 +66,7 @@ Took a random step, done = True.
 
 ```
 
-Or we can run the agent via the AgentOS CLI (run the following back in your shell):
+Or we can run the agent via the AgentOS CLI:
 
 ```
 $ agentos run simple_agent.py gym.envs.classic_control.CartPoleEnv
@@ -76,7 +76,7 @@ Took a random step, done = False.
 Took a random step, done = True.
 ```
 
-To make things easier, AgentOS includes implementations of some common agents. As an alternative to using our custom agent above, let’s use AgentOS’s RandomAgent:
+As an alternative to using our custom agent above, let’s use AgentOS’s RandomAgent:
 
 ```
 $ python
@@ -89,16 +89,14 @@ Took a random step, done = False.
 Took a random step, done = True.
 ```
 
-Now we have created and run an agent, but what is an agent? Colloquially speaking, it is an entity that can do things in its environment. In the context of computer science, an agent is a running “thread” of execution (here we mean the concept of a thread; the actual implementation might be a process, threadVM, etc.). Both of those descriptions are true of AgentOS agents as well.
-
-Let’s focus on the first one: agents interact with Environments. In our examples above, the agent is interacting with an instance of a simple physics simulator environment provided by OpenAI Gym called [CartPole](https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py) (if you're not familiar with gym, learn more about it [here](https://gym.openai.com/)). In this environment, or world, the agent is trying to balance a pole on a cart by nudging the cart to the left or right. Because we made her a RandomAgent, she is flipping a fair coin at each timestep to decide which way to nudge the cart. For more on agents and environments, see the section below containing background on Reinforcement Learning. (TODO: We can use our agentOS’s web UI to see her status and watch her behaving in the world we set up for her.)
+Now we have created and run an agent, but what is an agent? Colloquially speaking, it is an entity that can do things in its environment. In our examples above, the agent is interacting with an instance of a simple physics simulator environment provided by OpenAI Gym called [CartPole](https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py) (if you're not familiar with gym, learn more about it [here](https://gym.openai.com/)). In this environment, or world, the agent is trying to balance a pole on a cart by nudging the cart to the left or right. Because we made her a RandomAgent, she is flipping a fair coin at each timestep to decide which way to nudge the cart.
 
 We have essentially created a simplistic being with some virtual sensors and motors, and given her the ability to use them to interact with her world, making observations and taking random actions in it. That’s an accomplishment, but note that she’s not learning anything as she goes, nor behaving very wisely. Still, you can start to get a sense of how to compose an agent with AgentOS.
 
 In this simple example, you have interacted with some of AgentOS’s core abstractions:
-Environment - A stateful model of the world with a simple API. Used by an agent to make observations and take actions.
-Agent - Encapsulates a decision-making process (and memory) that uses observations to decide what actions to take, which obviously can impact what observations will come next. An agent is also responsible for learning, i.e., improving itself over time through experience, e.g., through RL algorithms.
-Agent Runner - an abstraction responsible for running an agent with a given environment.
+* **Environment** - A stateful model of the world with a simple API. Used by an agent to make observations and take actions.
+* **Agent** - Encapsulates a decision-making process (and memory) that uses observations to decide what actions to take, which obviously can impact what observations will come next. An agent is also responsible for learning, i.e., improving itself over time through experience, e.g., through RL algorithms.
+* **Agent Runner** - an abstraction responsible for running an agent with a given environment.
 
 If you’re familiar with reinforcement learning (RL), both the environment and agent concepts are the same in AgentOS as in RL.
 

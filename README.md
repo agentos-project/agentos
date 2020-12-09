@@ -2,8 +2,10 @@ AgentOS is an open source python API and a command line interface for building, 
 
 [![Tests Status - master](https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg)](https://github.com/agentos-project/agentos/actions)
 
-Requires Python >= 3.5 (because we use pathlib)
+Requires Python >= 3.5 (because the CLI uses pathlib)
 
+
+# Install and try it out
 To install:
 
 ```
@@ -29,8 +31,12 @@ agentos init
 agentos run
 ```
 
-For the design doc, documentation, and draft white paper, see the docs directory and https://docs.google.com/document/d/13PoOxTs2bNPpEhVN5uHHlA0BKrIIHNc5iK8zhDvIrLc/edit
+Also, check out the example agents in the `example_agents` directory.
 
+Learn more and see the docs at [agentos.org](https://agentos.org").
+
+
+# Tests
 To run tests:
 
 ```
@@ -38,5 +44,11 @@ pip install -r test-requirements.txt
 pytest all_tests.py
 ```
 
+
+# Documentation
 To build the docs you'll need to install [jekyll](https://jekyllrb.com/).
 
+```
+$ gem install jekyll bundler
+$ cd docs
+$ bundle exec jekyll serve
