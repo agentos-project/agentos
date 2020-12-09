@@ -33,7 +33,7 @@ agentos run
 
 Also, check out the example agents in the `example_agents` directory.
 
-Learn more and see the docs at [agentos.org](https://agentos.org").
+Learn more and see the docs at [agentos.org](https://agentos.org).
 
 
 # Tests
