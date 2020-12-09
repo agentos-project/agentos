@@ -1,5 +1,10 @@
+.cache
 *.swp
 mlruns
 *.pyc
 .idea
 *.egg-info
+
+build
+docs/_site
+dist

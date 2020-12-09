@@ -7,6 +7,8 @@ version = SourceFileLoader(
 
 setup(
     name='agentos',
+    description='AgentOS is a command line interface and python developer API for building, running, and sharing flexible learning agents.',
+    long_description=open("README.rst").read(),
     author='Andy Konwinski',
     version=version,
     packages=find_packages(),
