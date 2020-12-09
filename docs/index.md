@@ -6,7 +6,7 @@ layout: home
 
 AgentOS is a **command line interface and python developer API** for building, running, and sharing flexible learning agents.
 
-AgentOS proposes a standard minimal architecture for a learning agent, and includes an API and example agent implementations for developers. The benefits of common general agent related abstractions include:
+AgentOS proposes a standard minimal architecture for a learning agent, and includes an API and example agent implementations for developers. The benefits of standard agent-related abstractions include:
 * It is easier and faster to build agents since creators can focus on what is important to them without having to rewrite the parts that are less interesting but necessary in all agents (e.g., code to manage long running processes, parallelism, etc.).
 * A simple open standard makes it easier to talk about agents, share agent code, and quickly understand agents created by others. These benefits are similar to those of the OpenAI Gym standard API for agent environments (gym.Env).
 
