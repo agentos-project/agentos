@@ -22,4 +22,10 @@ setup(
         agentos=agentos.cli:agentos_cmd
     ''',
     license='Apache License 2.0',
+    python_requires=">=3.5",
+    keywords="reinforcement learning ai agent",
+    url="https://agentos.org",
+    project_urls={
+        "Source Code": "https://github.com/agentos-project/agentos",
+    },
 )
