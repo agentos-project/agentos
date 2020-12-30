@@ -67,7 +67,7 @@ Building Documentation
 ----------------------
 
 The documentation is in the `docs` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
-To build the docs you'll need to use `sphinx <https://www.sphinx-doc.org>`_
+To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_.
 
 To build the docs locally, use::
 
