@@ -67,9 +67,7 @@ Building Documentation
 ----------------------
 
 The documentation is in the `docs` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
-To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_.
-
-To build the docs locally, use::
+To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
 
   pip install Sphinx==3.4.1 sphinx_rtd_theme==0.5.0 # these are also included in test-requirements.txt
   sphinx-build docs docs/_build
