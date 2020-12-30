@@ -7,5 +7,5 @@ mlruns
 
 build
 dist
-docs/_build
+documentation/_build
 website/_site
