@@ -15,7 +15,7 @@ Requires Python >= 3.5 (because the CLI uses pathlib)
 
 Install and try it out
 ----------------------
-To install Then run a simple agent that comes with AgentOS::
+Install agentos, and then run a simple agent::
 
   # First make sure you're using python 3.5 or newer.
   pip install agentos
