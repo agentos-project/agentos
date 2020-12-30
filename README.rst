@@ -47,13 +47,30 @@ To run tests::
   pytest all_tests.py
 
 
-Building Documentation
-----------------------
-To build the docs you'll need to install and use `jekyll <https://jekyllrb.com/>`_::
+Building Website
+----------------
+The sourece for the agentos.org is in the `website` directory.
+agentos.org is a github.io website, so if you push changes to the `website`
+directory, those changes will become live at agentos.org automatically.
+
+To build the website you'll need to install and use `jekyll <https://jekyllrb.com/>`_:::
 
   gem install jekyll bundler twine
-  cd docs
-  bundle exec jekyll serve
+  cd website
+  bundle exec jekyll build # or replace build with serve to run a local jekyll server
+
+
+Building Documentation
+----------------------
+
+The documentation is in the `docs` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
+To build the docs you'll need to use `sphinx <https://www.sphinx-doc.org>`_
+
+To build the docs locally, use::
+
+  pip install sphinx # these are included in test-requirements.txt
+  sphinx-build docs docs/_build
+
 
 
 Pushing to PyPI

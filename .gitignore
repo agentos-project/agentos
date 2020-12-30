@@ -6,5 +6,6 @@ mlruns
 *.egg-info
 
 build
-docs/_site
 dist
+docs/_build
+website/_site

@@ -91,7 +91,7 @@ def test_rl_agents():
 
 def test_predictive_coding():
     from agentos import run_agent
-    from example_agents.predictive_coding.main import Mouse, CookieSensorEnv
+    from example_agents.predictive_coding.free_energy_tutorial.main import Mouse, CookieSensorEnv
     run_agent(Mouse, CookieSensorEnv, num_steps=10)
 
 
