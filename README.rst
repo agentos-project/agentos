@@ -4,9 +4,7 @@ AgentOS: a learning agent platform
 
 AgentOS is an open source **python API and a command line interface** for building, running, and sharing learning agents. AgentOS is licensed under the Apache License, Version 2.0.
 
-|Tests Status|
-
-.. |Tests Status| image:: https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg
+.. image:: https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg
   :target: https://github.com/agentos-project/agentos/actions)
   :alt: Test Status Indicator
 
@@ -51,9 +49,9 @@ To run tests::
 
 Building Website
 ----------------
-The sourece for the agentos.org is in the `website` directory.
-agentos.org is a github.io website, so if you push changes to the `docs`
-directory in the `website` branch, those changes will become live at 
+The source for the agentos.org website is in the ``website`` directory.
+agentos.org is a github.io website, so if you push changes to the ``docs``
+directory in the ``website`` branch, those changes will become live at 
 agentos.org automatically.
 
 To build the website you'll need to install and use `jekyll <https://jekyllrb.com/>`_:::
@@ -66,7 +64,7 @@ To build the website you'll need to install and use `jekyll <https://jekyllrb.co
 Building Documentation
 ----------------------
 
-The documentation is in the `docs` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
+The documentation is in the ``docs`` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
 To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
 
   pip install Sphinx==3.4.1 sphinx_rtd_theme==0.5.0 # these are also included in test-requirements.txt
