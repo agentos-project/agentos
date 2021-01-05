@@ -20,8 +20,8 @@ version = SourceFileLoader(
 
 # -- Project information -----------------------------------------------------
 
-project = 'AgentOS Documentation'
-copyright = '2020, AgentOS'
+project = 'AgentOS'
+copyright = '2021, AgentOS'
 author = 'Andy Konwinski'
 
 # The full version, including alpha/beta/rc tags
@@ -40,6 +40,8 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+html_extra_path = ['CNAME']
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -55,9 +57,17 @@ numfig = True
 #
 import sphinx_rtd_theme
 
-html_theme = "sphinx_rtd_theme"
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+#html_additional_pages = {
+#  'homepage': 'homepage.html',
+#}
+
+#html_sidebars = {
+#  'homepage': [],
+#}

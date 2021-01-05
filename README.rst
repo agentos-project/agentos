@@ -8,12 +8,11 @@ AgentOS is an open source **python API and a command line interface** for buildi
   :target: https://github.com/agentos-project/agentos/actions)
   :alt: Test Status Indicator
 
-Requires Python >= 3.5 (because the CLI uses pathlib)
 
 
 Install and try it out
 ----------------------
-Install agentos, and then run a simple agent::
+AgentOS requires Python >= 3.5. To get started, install agentos, and then run a simple agent::
 
   # First make sure you're using python 3.5 or newer.
   pip install agentos

@@ -1,6 +1,6 @@
-************
-Introduction
-************
+***********
+Quick Start
+***********
 AgentOS is a **command line interface and python developer API** for building, running, and sharing flexible learning agents.
 
 AgentOS proposes a standard minimal architecture for a learning agent, and includes an API and example agent implementations for developers. The benefits of standard agent-related abstractions include:
@@ -8,7 +8,12 @@ AgentOS proposes a standard minimal architecture for a learning agent, and inclu
   * It is easier and faster to build agents since creators can focus on what is important to them without having to rewrite the parts that are less interesting but necessary in all agents (e.g., code to manage long running processes, parallelism, etc.).
   * A simple open standard makes it easier to talk about agents, share agent code, and quickly understand agents created by others. These benefits are similar to those of the OpenAI Gym standard API for agent environments (`gym.Env <https://github.com/openai/gym/blob/master/gym/core.py>`_).
 
-The best way to understand AgentOS is to use it, so let’s write a simple agent in python that behaves randomly::
+The best way to understand AgentOS is to use it, so let’s install agentos and write a simple agent in python that behaves randomly. Installation is easy::
+
+  $ pip install agentos
+  $ pip install gym  # AgentOS uses OpenAI Gym's Environment abstraction.
+
+Writing a trivial agent is also easy::
 
   # Save this code in ./simple_agent.py
   from agentos import Agent
@@ -21,11 +26,12 @@ The best way to understand AgentOS is to use it, so let’s write a simple agent
 
 That’s it. Only one function is required to create an agent: ``advance()``. It takes no arguments, has access to the agent’s environment, and returns a boolean indicating if the agent is done.
 
-Next let’s make an instance of our agent, pass its constructor an environment (or env) class that the agent will interact with, and have the agent advance (i.e., take one step of action) in that environment::
-
-  $ pip install agentos gym
+Next let’s open a python shell::
 
   $ python
+
+... and then make an instance of our agent, pass its constructor an environment (or env) class that the agent will interact with, and have the agent advance (i.e., take one step of action) in that environment::
+
   >>> from simple_agent import SimpleAgent
   >>> from gym.envs.classic_control import CartPoleEnv
   >>> agent = SimpleAgent(CartPoleEnv)
@@ -63,9 +69,8 @@ Or we can run the agent via the AgentOS CLI::
   Took a random step, done = False.
   Took a random step, done = True.
 
-As an alternative to using our custom agent above, let’s use AgentOS’s RandomAgent::
+As an alternative to using our custom agent above, let’s go back into the python shell we opened above and use AgentOS’s RandomAgent::
 
-  $ python
   >>> from agentos.agents import RandomAgent
   >>> from gym.envs.classic_control import CartPoleEnv
   >>> agentos.run_agent(RandomAgent, CartPoleEnv)
@@ -85,8 +90,3 @@ In this simple example, you have interacted with some of AgentOS’s core abstra
   * **Agent Runner** - an abstraction responsible for running an agent with a given environment.
 
 If you’re familiar with reinforcement learning (RL), both the environment and agent concepts are the same in AgentOS as in RL (more on this in :doc:`/architecture_and_design`).
-
-Here is a diagram showing the main AgentOS architectural components, including those listed above:
-
-.. image:: architecture.png
-  :alt: AgentOS architecture
