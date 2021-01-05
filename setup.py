@@ -16,6 +16,7 @@ setup(
         'click>=7.0',
         'mlflow==1.9.1',
         'gym==0.17.1',
+        'numpy==1.19.3',
     ],
     entry_points='''
         [console_scripts]
