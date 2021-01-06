@@ -42,8 +42,10 @@ Tests
 -----
 To run tests::
 
-  pip install -r test-requirements.txt
-  pytest all_tests.py
+  $ cd agentos # the github repo root, not the nested agentos/agentos dir
+  $ pip install -e .
+  $ pip install -r test-requirements.txt
+  $ pytest test_all.py
 
 
 Building Documentation / Agentos.org Website
@@ -62,6 +64,7 @@ will become live at agentos.org automatically. Assuming you have local
 branches tracking both the ``master`` and ``website`` branches, that could
 look like::
 
+  pip install -r test-requirements # for some necessary pip packages
   git checkout website
   git reset master
   sphinx-build documentation docs

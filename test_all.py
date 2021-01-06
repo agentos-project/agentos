@@ -1,9 +1,6 @@
 """Test suite for AgentOS.
 
-To run:
-$ cd agentos
-$ pip install -r test-requirements.txt
-$ pytest tests_all.py
+See repo README for instructions to run tests.
 """
 
 def test_random_agent():
