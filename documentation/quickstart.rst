@@ -45,7 +45,7 @@ Let’s continue running our agent using a while loop until it is done::
 
   >>> done = False
   >>> while not done:
-  >>>     done = agent.step()
+  >>>     done = agent.advance()
   Took a random step, done = False.
   …
   Took a random step, done = False.
