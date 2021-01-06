@@ -1,14 +1,14 @@
 ***********
 Quick Start
 ***********
-AgentOS is a **command line interface and python developer API** for building, running, and sharing flexible learning agents.
+AgentOS is a **command line interface and Python developer API** for building, running, and sharing flexible learning agents.
 
 AgentOS proposes a standard minimal architecture for a learning agent, and includes an API and example agent implementations for developers. The benefits of standard agent-related abstractions include:
 
   * It is easier and faster to build agents since creators can focus on what is important to them without having to rewrite the parts that are less interesting but necessary in all agents (e.g., code to manage long running processes, parallelism, etc.).
   * A simple open standard makes it easier to talk about agents, share agent code, and quickly understand agents created by others. These benefits are similar to those of the OpenAI Gym standard API for agent environments (`gym.Env <https://github.com/openai/gym/blob/master/gym/core.py>`_).
 
-The best way to understand AgentOS is to use it, so let’s install agentos and write a simple agent in python that behaves randomly. Installation is easy::
+The best way to understand AgentOS is to use it, so let’s install agentos and write a simple agent in Python that behaves randomly. Installation is easy::
 
   $ pip install agentos
   $ pip install gym  # AgentOS uses OpenAI Gym's Environment abstraction.
@@ -26,7 +26,7 @@ Writing a trivial agent is also easy::
 
 That’s it. Only one function is required to create an agent: ``advance()``. It takes no arguments, has access to the agent’s environment, and returns a boolean indicating if the agent is done.
 
-Next let’s open a python shell::
+Next let’s open a Python shell::
 
   $ python
 
@@ -39,7 +39,7 @@ Next let’s open a python shell::
   Took a random step, done = False.
   False
 
-The return value of False indicates that the agent is not yet “done”. Notice that in this code we are using an OpenAI gym environment (more about that below).
+The return value of ``False`` indicates that the agent is not yet “done”. Notice that in this code we are using an OpenAI gym environment (more about that below).
 
 Let’s continue running our agent using a while loop until it is done::
 
@@ -53,7 +53,7 @@ Let’s continue running our agent using a while loop until it is done::
 
 The number of steps that the agent takes before being done is random since its behavior is random (also the environment has randomness in it).
 
-Now, instead of writing our own while loop, let’s run the agent in a python Thread using a convenience function that AgentOS provides which serves as an Agent Runner::
+Now, instead of writing our own while loop, let’s run the agent in a Python Thread using a convenience function that AgentOS provides which serves as an Agent Runner::
 
   >>> agentos.run_agent(SimpleAgent, CartPoleEnv)
   Took a random step, done = False.
@@ -69,7 +69,7 @@ Or we can run the agent via the AgentOS CLI::
   Took a random step, done = False.
   Took a random step, done = True.
 
-As an alternative to using our custom agent above, let’s go back into the python shell we opened above and use AgentOS’s RandomAgent::
+As an alternative to using our custom agent above, let’s go back into the Python shell we opened above and use AgentOS’s RandomAgent::
 
   >>> from agentos.agents import RandomAgent
   >>> from gym.envs.classic_control import CartPoleEnv
