@@ -55,7 +55,7 @@ To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
   pip install Sphinx==3.4.1 sphinx_rtd_theme==0.5.0 # these are also included in test-requirements.txt
   sphinx-build docs docs/_build
 
-`agentos.org <agentos.org>`_ is a github.io website where the AgentOS docs are hosted.
+`agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS docs are hosted.
 To publish updated docs to agentos.org, build the docs and put the 
 output into the `docs` directory in the ``website`` branch. Those changes
 will become live at agentos.org automatically::
