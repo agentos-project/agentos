@@ -2,7 +2,6 @@
 Architecture and Design
 ************************
 
-
 Background from Reinforcement Learning
 ======================================
 
@@ -25,7 +24,7 @@ An agent essentially encapsulates the ability to make a decision and act in that
   The concepts are very similar in AgentOS, though AgentOS also differentiates between an agent and a policy, and formalizes the relationship between agent, policy, and environment: an agent has a policy and an environment connected in a message passing loop. Calling ``agent.advance()`` causes a single iteration of that loop to occur.
 
 
-Conceptual overview
+AgentOS Concepts
 ===================
 
 The RL concepts of an **agent** and its **environment**, as described above are very similar to those in AgentOS. However, AgentOS differs from the classic RL architecture in a few key ways. First, an agent is paired with -- and holds a reference to -- its environment. Second, the agent also can hold a policy. Finally, the agent has an ``advance()`` function, inside of which it takes one step around the core RL loop between the agent’s policy and its environment.
@@ -57,6 +56,19 @@ Code that runs an agent by calling ``agent.advance()`` till it returns done. It 
 **CLI**. The Command Line Interface provides some basic commands for creating and running an AgentOS agent, mostly for learning AgentOS.
 
 **Agent directory**. A directory with standard files needed by AgentOS CLI to create or run an agent using MLflow. Also known as agent project.
+
+
+Architecture
+=============
+
+:numref:`fig_architecture` shows the main AgentOS architectural components.
+
+.. _fig_architecture:
+.. figure:: architecture.png
+  :alt: AgentOS architecture
+  :align: center
+
+  The basic architecture of Agentos.
 
 
 Mode of Interacting with AgentOS

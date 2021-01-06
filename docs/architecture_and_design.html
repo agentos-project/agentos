@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Architecture and Design &mdash; AgentOS Documentation 0.0.5 documentation</title>
+  <title>Architecture and Design &mdash; AgentOS 0.0.5 documentation</title>
   
 
   
@@ -49,7 +49,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> AgentOS Documentation
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> AgentOS
           
 
           
@@ -85,11 +85,12 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture and Design</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#background-from-reinforcement-learning">Background from Reinforcement Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#conceptual-overview">Conceptual overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#agentos-concepts">AgentOS Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture">Architecture</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mode-of-interacting-with-agentos">Mode of Interacting with AgentOS</a></li>
 </ul>
 </li>
@@ -108,7 +109,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">AgentOS Documentation</a>
+          <a href="index.html">AgentOS</a>
         
       </nav>
 
@@ -173,8 +174,8 @@
 <p class="caption"><span class="caption-number">Fig. 3 </span><span class="caption-text">The concepts are very similar in AgentOS, though AgentOS also differentiates between an agent and a policy, and formalizes the relationship between agent, policy, and environment: an agent has a policy and an environment connected in a message passing loop. Calling <code class="docutils literal notranslate"><span class="pre">agent.advance()</span></code> causes a single iteration of that loop to occur.</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </div>
 </div>
-<div class="section" id="conceptual-overview">
-<h2>Conceptual overview<a class="headerlink" href="#conceptual-overview" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="agentos-concepts">
+<h2>AgentOS Concepts<a class="headerlink" href="#agentos-concepts" title="Permalink to this headline">¶</a></h2>
 <p>The RL concepts of an <strong>agent</strong> and its <strong>environment</strong>, as described above are very similar to those in AgentOS. However, AgentOS differs from the classic RL architecture in a few key ways. First, an agent is paired with – and holds a reference to – its environment. Second, the agent also can hold a policy. Finally, the agent has an <code class="docutils literal notranslate"><span class="pre">advance()</span></code> function, inside of which it takes one step around the core RL loop between the agent’s policy and its environment.</p>
 <p>In terms of design philosophy, environments, policies, and agents are:</p>
 <blockquote>
@@ -200,6 +201,14 @@
 Code that runs an agent by calling <code class="docutils literal notranslate"><span class="pre">agent.advance()</span></code> till it returns done. It might also instantiate the agent (or it might take an agent instance).</p>
 <p><strong>CLI</strong>. The Command Line Interface provides some basic commands for creating and running an AgentOS agent, mostly for learning AgentOS.</p>
 <p><strong>Agent directory</strong>. A directory with standard files needed by AgentOS CLI to create or run an agent using MLflow. Also known as agent project.</p>
+</div>
+<div class="section" id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="#fig-architecture"><span class="std std-numref">Fig. 4</span></a> shows the main AgentOS architectural components.</p>
+<div class="figure align-center" id="id3">
+<span id="fig-architecture"></span><img alt="AgentOS architecture" src="_images/architecture.png" />
+<p class="caption"><span class="caption-number">Fig. 4 </span><span class="caption-text">The basic architecture of Agentos.</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
 </div>
 <div class="section" id="mode-of-interacting-with-agentos">
 <h2>Mode of Interacting with AgentOS<a class="headerlink" href="#mode-of-interacting-with-agentos" title="Permalink to this headline">¶</a></h2>
@@ -233,7 +242,7 @@ Code that runs an agent by calling <code class="docutils literal notranslate"><s
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2020, AgentOS
+        &copy; Copyright 2021, AgentOS
 
     </p>
   </div>
