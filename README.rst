@@ -76,9 +76,9 @@ look like::
 
 Pushing to PyPI
 ---------------
-To push a release to PyPI, follow `these python.org instructions <https://packaging.python.org/tutorials/packaging-projects/>`_::
+AgentOS is `available in PyPI <https://pypi.org/project/agentos/>`_. To push a release to PyPI, follow `these python.org instructions <https://packaging.python.org/tutorials/packaging-projects/>`_::
 
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel
-  python twine upload dist/*
+  twine upload dist/*
 
