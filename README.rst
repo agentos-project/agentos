@@ -58,9 +58,16 @@ To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS docs are hosted.
 To publish updated docs to agentos.org, build the docs and put the 
 output into the `docs` directory in the ``website`` branch. Those changes
-will become live at agentos.org automatically::
+will become live at agentos.org automatically. Assuming you have local
+branches tracking both the ``master`` and ``website`` branches, that could
+look like::
 
+  git checkout website
+  git reset master
   sphinx-build documentation docs
+  git add docs
+  git commit -m "push updated docs to website"
+  git push
 
 
 
