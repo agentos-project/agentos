@@ -10,8 +10,3 @@ pytest==3.2.1
 pytest-virtualenv==1.7.0
 tensorflow==2.2.0  # reinforce, dqn
 tensorflow-probability==0.10.0  # for example_agents/rl_agents/reinforce_agent.py
-
-# For building documentation
-Sphinx==3.4.1
-sphinx_rtd_theme==0.5.0
-
