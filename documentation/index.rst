@@ -2,11 +2,11 @@
 
 AgentOS: a learning agent platform
 ==================================
-AgentOS is a **command line interface and python developer API** for building, running, and sharing flexible learning agents.
+AgentOS is a **command line interface and Python developer API** for building, running, and sharing flexible learning agents.
 
 Key features include:
   * Easy to use Agent API for developing and running new agents.
-  * Re-use OpenAI's Gym Environment abstraction.
+  * Reuse OpenAI's Gym Environment abstraction.
   * Example learning agents from different disciplines and research areas are available in the `example_agents <https://github.com/agentos-project/agentos/tree/master/example_agents>`_ directory of the project source code.
 
 Find the `AgentOS sourcecode on Github <https://github.com/agentos-project/agentos>`_.

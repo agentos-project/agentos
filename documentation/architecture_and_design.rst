@@ -5,16 +5,16 @@ Architecture and Design
 Background from Reinforcement Learning
 ======================================
 
-In Reinforcement Learning (RL), the basic control loop is between agent and environment, as shown in :numref:`fig_trad_rl_arch`. An environment (or env) is a stateful object analogous to a simplified version of the world we live in. In a programming language, an Env (e.g., OpenAI’s gym.Env) is often an object with a function called step that takes an action and returns an observation (or “state”) and reward. 
+In Reinforcement Learning (RL), the basic control loop is between agent and environment, as shown in :numref:`fig_trad_rl_arch`. An environment (or env) is a stateful object analogous to a simplified version of the world we live in. In a programming language, an Env (e.g., OpenAI’s gym.Env) is often an object with a ``step()`` function that takes an action and returns an observation (or “state”) and reward.
 
-An agent essentially encapsulates the ability to make a decision and act in that env. An agent usually contains a policy which is a function that takes an (observation, reward) pair and returns an action.
+An agent encapsulates the ability to make a decision and act in that env. An agent usually contains a policy which is a function that takes an (observation, reward) pair and returns an action.
 
 .. _fig_trad_rl_arch:
 .. figure:: traditional_rl_agent_arch.png
   :width: 80%
   :align: center
 
-  The traditional RL view of the loop between Agent (green) and Environment (blue). The information that passes between them at a given time step t includes: action A\ :subscript:`t`, state (a.k.a, observation) St, and reward Rt.  Image modified from `Sutton & Barto <http://incompleteideas.net/book/the-book-2nd.html>`_ figure 3.1 (pg 48).
+  The traditional RL view of the loop between Agent (green) and Environment (blue). The information that passes between them at a given time step t includes: action A\ :subscript:`t`, state (a.k.a, observation) S\ :subscript:`t`, and reward R\ :subscript:`t`.  Image modified from `Sutton & Barto <http://incompleteideas.net/book/the-book-2nd.html>`_ figure 3.1 (pg 48).
 
 .. _fig_agentos_agent_arch:
 .. figure:: agentos_agent_arch.png
@@ -38,17 +38,17 @@ The following are high-level descriptions of key AgentOS concepts.
 
 **AgentOS**. A project that contains tools, APIs, and conventions for building, managing, and sharing learning agents.
 
-**Environment**. Environments have ``step()`` and ``reset()`` functions as they are defined in gym.Env. We recommend making a class that inherits from ``gym.Env``.
+**Environment**. Environments have ``step()`` and ``reset()`` functions as they are defined in ``gym.Env``. We recommend making a class that inherits from ``gym.Env``.
 
 **Policy**. Policies have a ``compute_action()`` function which the agent can use to decide on their next action, given the most recent observation returned from the agent’s environment.
 
-**Agent**. A python class that has a advance() function that returns a boolean, and encapsulates the agent behavior necessary to take steps in its environment:
+**Agent**. A Python class that has an ``advance()`` function that returns a boolean, and encapsulates the agent behavior necessary to take steps in its environment:
 
   * choose actions (e.g. a policy)
   * takes actions by calling ``self.env.step()``
   * learn from -- or otherwise updates internal state based on -- return value of ``self.env.step()``
 
-AgentOS provides agentos.Agent as a reference implementation of an abstract agent base class. A running agent is called an agent instance.
+AgentOS provides ``agentos.Agent`` as a reference implementation of an abstract agent base class. A running agent is called an agent instance.
 
 **Agent Runner**.
 Code that runs an agent by calling ``agent.advance()`` till it returns done. It might also instantiate the agent (or it might take an agent instance).
@@ -73,9 +73,9 @@ Architecture
 
 Mode of Interacting with AgentOS
 =================================
-Agents, policies, environments, etc. are written in python. Agent instances can be run via python in scripts or interactively with ``agentos.run_agent()`` or via the CLI.
+Agents, policies, environments, etc. are written in Python. Agent instances can be run via Python in scripts or interactively with ``agentos.run_agent()`` or via the CLI.
 
-The CLI supports a few basic commands: 
+The CLI supports a few basic commands:
   * ``agentos init`` - create files that define an example agent in the current directory.
   * ``agentos run`` - run an agent. Supports a few convenient ways to specify the agent class and env class that make up the agent instance. If called without any args, tries to run the current dir as an MLflow project, else looks for agent and env class definitions in agent.py. Under the hood, regardless of which argument option is used, ``agentos.run_agent()`` is called. See the pydocs for full details.
 
