@@ -89,4 +89,4 @@ In this simple example, you have interacted with some of AgentOS’s core abstra
   * **Agent** - Encapsulates a decision-making process (and memory) that uses observations to decide what actions to take, which obviously can impact what observations will come next. An agent is also responsible for learning, i.e., improving itself over time through experience, e.g., through RL algorithms.
   * **Agent Runner** - an abstraction responsible for running an agent with a given environment.
 
-If you’re familiar with reinforcement learning (RL), both the environment and agent concepts are the same in AgentOS as in RL (more on this in :doc:`/architecture_and_design`).
+If you’re familiar with reinforcement learning (RL), both the environment and agent concepts in AgentOS are derived from RL (more on this in :doc:`/architecture_and_design`).

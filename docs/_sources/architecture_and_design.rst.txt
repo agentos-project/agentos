@@ -51,7 +51,7 @@ The following are high-level descriptions of key AgentOS concepts.
 AgentOS provides ``agentos.Agent`` as a reference implementation of an abstract agent base class. A running agent is called an agent instance.
 
 **Agent Runner**.
-Code that runs an agent by calling ``agent.advance()`` till it returns done. It might also instantiate the agent (or it might take an agent instance).
+Code that runs an agent by calling ``agent.advance()`` till it returns ``True``. It might also instantiate the agent (or it might take an agent instance).
 
 **CLI**. The Command Line Interface provides some basic commands for creating and running an AgentOS agent, mostly for learning AgentOS.
 
