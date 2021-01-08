@@ -1,15 +1,19 @@
 **********
 Motivation
 **********
+
+.. _ACT-R: http://act-r.psy.cmu.edu
+.. _OpenAI Baselines: https://github.com/openai/baselines
+.. _Berkeley CS285 RL Course: https://github.com/berkeleydeeprlcourse/homework_fall2019/tree/master/hw1/cs285
+.. _MyCroft: https://github.com/MycroftAI/mycroft-core
+.. _Nengo: https://www.nengo.ai
+.. _OpenCog: https://github.com/opencog/opencog
 .. _Ray RLlib: https://docs.ray.io/en/master/rllib.html
 .. _Soar: https://soar.eecs.umich.edu
-.. _Nengo: https://www.nengo.ai
-.. _MyCroft: https://github.com/MycroftAI/mycroft-core
-.. _Berkeley CS285 RL Course: https://github.com/berkeleydeeprlcourse/homework_fall2019/tree/master/hw1/cs285
 .. _Tensorflow Agents: https://www.tensorflow.org/agents
 .. _TensorForce: https://github.com/tensorforce/tensorforce
 
-Many researchers and developers across reinforcement learning, robotics, AI, NLP, neuroscience, machine learning, cognitive science, psychology, business build learning agents (for example, `Ray RLlib`_, Nengo_, Soar_, `ACT-R <http://act-r.psy.cmu.edu>`_, `ROS <https://www.ros.org/>`_, MyCroft_, `Google Assistant <https://assistant.google.com>`_, `Apple's Siri <https://www.apple.com/siri/>`_).
+Many researchers and developers across reinforcement learning, robotics, artificial intelligence, natural language programming (NLP), neuroscience, machine learning, cognitive science, psychology, and business build learning agents (for example, `Ray RLlib`_, Nengo_, Soar_, ACT-R_, `ROS <https://www.ros.org/>`_, MyCroft_, `Google Assistant <https://assistant.google.com>`_, `Apple's Siri <https://www.apple.com/siri/>`_).
 
 .. figure:: agent_landscape.png
   :width: 70%
@@ -31,7 +35,7 @@ To rapidly build new agents, it should be easy to focus on one new sub-system an
 
 It should also be easy to upgrade an agent so that it starts using a learning algorithm released/maintained by somebody else, similar to how we can upgrade an application or an operating system component like a file system.
 
-However, most existing systems that support agent development are monolithic and do not provide standard interoperable components. For example, OpenAI Baselines algorithms cannot easily be plugged into a Ray Trainer or an instance of MyCroft; neither can a memory module from ACT-R be easily plugged into Soar, EPIC, OpenCog, or any other cognitive architecture or agent architecture.
+However, most existing systems that support agent development are monolithic and do not provide standard interoperable components. For example, `OpenAI Baselines`_ algorithms cannot easily be plugged into a Ray Trainer or an instance of MyCroft; neither is it easy to plug a memory module from ACT-R_ into Soar_, OpenCog_, or any other cognitive architecture or agent architecture.
 
 In contrast, the popular RL ``gym.Env`` API built by OpenAI is simple, accessible, and RL classes (e.g., `Berkeley CS285 RL Course`_) and RL frameworks (`Ray RLlib`_, `Tensorflow Agents`_, `TensorForce`_) are using it as a standard.
 
