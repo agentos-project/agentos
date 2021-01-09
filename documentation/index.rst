@@ -3,7 +3,7 @@
 AgentOS: a learning agent platform
 ==================================
 
-AgentOS is an open source **python API and a command line interface** for
+AgentOS is an open source **Python API and a command line interface** for
 building, running, and sharing learning agents. AgentOS is licensed under the
 Apache License, Version 2.0.
 
