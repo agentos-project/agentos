@@ -98,11 +98,11 @@ def validate_agent_name(ctx, param, value):
 
 @agentos_cmd.command()
 @click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
-@click.option("--name", "-n", metavar="AGENTOS_NAME", default="new_agentos",
+@click.option("--name", "-n", metavar="AGENT_NAME", default="new_agent",
               callback=validate_agent_name,
-              help="Name of this agentOS. This is also the name of "
-                   "this agentOS's MLflow Project and Conda env. "
-                   "AGENTOS_NAME may not contain ' ', ':', or '/'.")
+              help="This is used as the name of the MLflow Project and "
+                   "Conda env for all *Directory Agents* being created. "
+                   "AGENT_NAME may not contain ' ', ':', or '/'.")
 def init(dir_names, name):
     """Initialize current (or specified) directory as an AgentOS agent.
 

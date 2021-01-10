@@ -35,3 +35,4 @@ Next, check out the :doc:`quickstart`.
    motivation
    architecture_and_design
    agent_directories
+   api/index

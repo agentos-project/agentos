@@ -14,7 +14,7 @@ class Agent:
     Like a human, an Agent lives in a stream of time. To to bring an
     Agent to life (i.e. have it exist and take actions in its
     environment), simply call agent.advance() repeatedly until
-    that function returns True.
+    that function returns True (which means the agent is done).
 
     The agent can maintain any sort of state (e.g., a policy for
     deciding its next action), but any use or updates of state must
@@ -22,6 +22,7 @@ class Agent:
     be arbitrarily complex, call other functions, etc.).
 
     Often, an agent's advance function has 3 phases:
+
         1) pre-action
         2) take action and save observation
         3) post-action
@@ -36,7 +37,7 @@ class Agent:
         self._init()
 
     def _init(self):
-        """An alternative to overriding __init__ is override this.
+        """An alternative to overriding :py:func:`Agent.__init__()` is to override this.
 
         This is a convenience function for when you just want to
         add some functionality to the constructor but don't want
@@ -167,6 +168,11 @@ def rollouts(policy,
     :param policy: policy to use when simulating these episodes.
     :param env_class: class to instatiate an env object from.
     :param num_rollouts: how many rollouts (i.e., episodes) to perform
+    :param step_fn: a function to be called at each step of each rollout.
+                    The function can have 2 or 3 parameters.
+                    2 parameter definition: policy, observation.
+                    3 parameter definition: policy, observation, step_num.
+                    The function must return an action.
     :param max_steps: cap on number of steps per episode.
     :return: array with one namedtuple per rollout, each tuple containing
              the following arrays: observations, rewards, dones, ctxs
