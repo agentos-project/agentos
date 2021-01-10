@@ -12,8 +12,9 @@
 #
 import os
 from importlib.machinery import SourceFileLoader
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import sys
+print(f"syt.path is {sys.path}")
+sys.path.insert(0, os.path.abspath('.'))
 
 version = SourceFileLoader(
     'agentos.version', os.path.join('..', 'agentos', 'version.py')).load_module().VERSION
@@ -34,7 +35,9 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx_rtd_theme",
+    'sphinx_click',
+    'sphinx_rtd_theme',
+    'sphinx.ext.autodoc',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
