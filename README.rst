@@ -54,24 +54,27 @@ Building Documentation / Agentos.org Website
 The documentation is in the ``docs`` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
 To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
 
-  pip install Sphinx==3.4.1 sphinx_rtd_theme==0.5.0 # these are also included in test-requirements.txt
-  sphinx-build docs docs/_build
+  pip install -r documentation/requirements.txt
+  sphinx-build docs docs/_build  # also checkout the pip package sphinx-autobuild
+  # Open and inspect docs/_build/index.html in your broswer.
 
-`agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS docs are hosted.
-To publish updated docs to agentos.org, build the docs and put the 
-output into the `docs` directory in the ``website`` branch. Those changes
-will become live at agentos.org automatically. Assuming you have local
-branches tracking both the ``master`` and ``website`` branches, that could
-look like::
+`agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
+docs are hosted.  To publish updated docs to agentos.org, build the docs and
+put the output into the ``docs`` directory and the ``docs/<current_version>``
+diretories in the ``website`` branch. Those changes will become live at
+agentos.org automatically.
 
-  pip install -r test-requirements # for some necessary pip packages
+Assuming you have local branches tracking both the ``master`` and ``website``
+branches, and all changes to the documentation source files have all been
+committed in the ``master`` branch, your workflow might look similar to::
+
+  pip install -r documentation/requirements.txt
   git checkout website
-  git reset master
+  git merge master
   sphinx-build documentation docs
   git add docs
   git commit -m "push updated docs to website"
   git push
-
 
 
 Pushing to PyPI
