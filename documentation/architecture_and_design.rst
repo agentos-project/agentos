@@ -113,7 +113,7 @@ Architecture
   The basic architecture of Agentos.
 
 
-Mode of Interacting with AgentOS
+Modes of Interacting with AgentOS
 =================================
 
 Agents, policies, environments, etc. are written in Python. Agent instances can

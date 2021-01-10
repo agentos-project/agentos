@@ -12,12 +12,18 @@ Key features include:
 
   * Example learning agents from different disciplines and research areas are
     available in the
-    `example_agents <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
+    `example_agents
+    <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
     directory of the project source code.
 
   * Reuse of OpenAI's Gym Environment abstraction.
 
-Find the `AgentOS sourcecode on Github <https://github.com/agentos-project/agentos>`_.
+AgentOS is experimental beta software, as indicated by the major and minor
+version numbers being zero (e.g., 0.0.x). This means APIs and overall
+architecture are not stable and likely to change significantly over time.
+
+Find the `AgentOS sourcecode on Github
+<https://github.com/agentos-project/agentos>`_.
 
 Next, check out the :doc:`quickstart`.
 
@@ -28,3 +34,4 @@ Next, check out the :doc:`quickstart`.
    quickstart
    motivation
    architecture_and_design
+   agent_directories
