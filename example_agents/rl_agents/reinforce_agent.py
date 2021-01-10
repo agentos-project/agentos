@@ -1,8 +1,10 @@
-"""An agent that makes random decisions using a TensorFlow policy."
+"""An agent that learns using the classic RL REINFORCE algorithm.
 
-This agent creates and uses a new randomly initialized
-TensorFlow NN policy for each step but doesn't do any
-learning.
+See `Sutton & Barto <http://incompleteideas.net/book/RLbook2020.pdf>`_
+section 13.3, page 326.
+
+REINFORCE, also known as Monte Carlo policy gradient, is one of the
+classic Reinforcement Learing algorithms.
 """
 import agentos
 import numpy as np
@@ -54,22 +56,6 @@ class ReinforceAgent(agentos.Agent):
                                      max_steps=max_rollout_steps)
             rewards.append(result.rewards)
 
-        #####################################################################
-        # We rewrote the logic below using the RolloutStep abstraction above.
-        # for episode_num in range(num_rollouts):
-        #    rewards.append([])
-        #    grads.append([])
-        #    obs = self.env.reset()
-        #    for step_num in range(max_steps_per_episode):
-        #        with tf.GradientTape() as tape:
-        #            leftprob = self.policy.nn(np.array(obs)[np.newaxis])
-        #            action = tfp.distributions.Bernoulli(probs=leftprob).sample()[0][0].numpy()
-        #            loss = tf.reduce_mean(self.policy.loss_fn(action, leftprob))
-        #        obs, reward, done, _ = self.env.step(action)
-        #        rewards[-1].append(reward)
-        #        grads[-1].append(tape.gradient(loss, self.policy.nn.trainable_variables))
-        #        if done:
-        #            break
 
         # Compute discounted normalized rewards
         d_rewards = None
