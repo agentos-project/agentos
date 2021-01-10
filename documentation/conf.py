@@ -64,6 +64,10 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_js_files = [
+    'language_data.js',
+]
+
 #html_additional_pages = {
 #  'homepage': 'homepage.html',
 #}
