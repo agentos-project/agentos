@@ -51,34 +51,37 @@ To run tests::
 Building Documentation / Agentos.org Website
 --------------------------------------------
 
-The documentation is in the ``docs`` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
-To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
+The documentation source is in the ``documentation`` directory and written in
+`ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
+To build the docs, you'll need to use `Sphinx <https://www.sphinx-doc.org>`_::
 
-  pip install -r documentation/requirements.txt
-  sphinx-build docs docs/_build  # also checkout the pip package sphinx-autobuild
-  # Open and inspect docs/_build/index.html in your broswer.
+  cd documentation
+  pip install -r requirements.txt
+  sphinx-build . _build  # also checkout the pip package sphinx-auto
+  # Open and inspect _build/index.html in your browser.
 
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
 docs are hosted.  To publish updated docs to agentos.org, build the docs and
-put the output into the ``docs`` directory and the ``docs/<current_version>``
-diretories in the ``website`` branch. Those changes will become live at
-agentos.org automatically.
+put the output into the ``agentos/docs`` directory and the
+``agentos/docs/<current_version>`` directories in the ``website`` branch. Those
+changes will become live at agentos.org automatically.
 
 Assuming you have local branches tracking both the ``master`` and ``website``
 branches, and all changes to the documentation source files have all been
 committed in the ``master`` branch, your workflow might look similar to::
 
-  pip install -r documentation/requirements.txt
+  cd documentation
+  pip install -r requirements.txt
   git checkout website
   git merge master
-  sphinx-build documentation docs
-  git add docs
+  sphinx-build . ../docs
+  git add ../docs
   git commit -m "push updated docs to website"
   git push
 
 
-Pushing to PyPI
----------------
+Pushing releases to PyPI
+------------------------
 AgentOS is `available in PyPI <https://pypi.org/project/agentos/>`_. To push a release to PyPI, follow `these python.org instructions <https://packaging.python.org/tutorials/packaging-projects/>`_::
 
   pip install setuptools wheel twine

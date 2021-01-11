@@ -13,8 +13,7 @@
 import os
 from importlib.machinery import SourceFileLoader
 import sys
-print(f"syt.path is {sys.path}")
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
 
 version = SourceFileLoader(
     'agentos.version', os.path.join('..', 'agentos', 'version.py')).load_module().VERSION
