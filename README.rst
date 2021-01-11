@@ -51,17 +51,19 @@ To run tests::
 Building Documentation / Agentos.org Website
 --------------------------------------------
 
-The documentation is in the ``docs`` direcory and written in `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
-To build the docs you'll need to use `Sphinx <https://www.sphinx-doc.org>`_:::
+The documentation is in the ``docs`` directory and written in
+`ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
+To build the docs you'll need to use
+`Sphinx <https://www.sphinx-doc.org>`_:::
 
   pip install -r documentation/requirements.txt
-  sphinx-build docs docs/_build  # also checkout the pip package sphinx-autobuild
+  ./documentation/scripts/build-docs
   # Open and inspect docs/_build/index.html in your broswer.
 
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
 docs are hosted.  To publish updated docs to agentos.org, build the docs and
 put the output into the ``docs`` directory and the ``docs/<current_version>``
-diretories in the ``website`` branch. Those changes will become live at
+directories in the ``website`` branch. Those changes will become live at
 agentos.org automatically.
 
 Assuming you have local branches tracking both the ``master`` and ``website``

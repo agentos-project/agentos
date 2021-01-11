@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -eu
+
+# One liner to find script dir https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# Variables shared between other scripts
+DOCUMENTATION_DIR="$SCRIPT_DIR/.."
+ROOT_DIR="$SCRIPT_DIR/../.."
+BUILD_DIR="$DOCUMENTATION_DIR/_build"

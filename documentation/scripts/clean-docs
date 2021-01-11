@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -eu
+
+# One liner to find script dir https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+source "$SCRIPT_DIR/common"
+
+rm -rf "$BUILD_DIR"
+
+echo "Removed docs in $BUILD_DIR"
