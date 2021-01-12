@@ -16,5 +16,5 @@ flake8==3.8.3
 matplotlib==3.2.1
 pytest==3.2.1
 pytest-virtualenv==1.7.0
-tensorflow==2.2.0  # reinforce, dqn
+tensorflow==2.4.0  # reinforce, dqn
 tensorflow-probability==0.10.0  # for example_agents/rl_agents/reinforce_agent.py
