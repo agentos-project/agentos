@@ -1,5 +1,0 @@
--e ../
-Sphinx==3.4.1
-sphinx-click==2.5.0
-sphinx_rtd_theme==0.5.1
-click>=7.0 # when updating, also update in ../setup.py
