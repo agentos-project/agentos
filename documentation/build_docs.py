@@ -5,15 +5,27 @@ To use::
 
   $ cd documentation
   $ pip install -r requirements.txt
-  $ python build_docs
+  $ python build_docs.py
 """   
 
-import os
 from importlib.machinery import SourceFileLoader
+import os
+import pip
 from subprocess import Popen
 
-version = SourceFileLoader(
-    'agentos.version', os.path.join('..', 'agentos', 'version.py')).load_module().VERSION
+docs_dir = os.path.dirname(os.path.abspath(__file__))
 
-Popen(["sphinx-build", ".", f"../docs/{version}"])
-print(f"docs built in <project_root>/docs/{version}")
+# Use pip to install dev-requirements.txt.
+if hasattr(pip, 'main'):
+    pip.main(['install', '-r', docs_dir + '/../dev-requirements.txt'])
+else:
+    pip._internal.main(['install', '-r', docs_dir + '/../dev-requirements.txt'])
+
+version = SourceFileLoader(
+    'agentos.version', os.path.join(docs_dir, '..', 'agentos', 'version.py')).load_module().VERSION
+Popen(["sphinx-build", docs_dir, f"{docs_dir}/../docs/{version}"]).wait()
+
+os.remove(f"{docs_dir}/../docs/latest")
+os.symlink(f"{docs_dir}/../docs/{version}", f"{docs_dir}/../docs/latest",
+           target_is_directory=True)
+print(f"Created symbolic link docs/latest pointing to docs/{version}")
