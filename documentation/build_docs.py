@@ -25,7 +25,7 @@ version = SourceFileLoader(
     'agentos.version', os.path.join(docs_dir, '..', 'agentos', 'version.py')).load_module().VERSION
 Popen(["sphinx-build", docs_dir, f"{docs_dir}/../docs/{version}"]).wait()
 
-os.remove(f"{docs_dir}/../docs/latest")
-os.symlink(f"{docs_dir}/../docs/{version}", f"{docs_dir}/../docs/latest",
-           target_is_directory=True)
+os.chdir(f"{docs_dir}/../docs")
+os.remove(f"latest")
+os.symlink(version, "latest", target_is_directory=True)
 print(f"Created symbolic link docs/latest pointing to docs/{version}")
