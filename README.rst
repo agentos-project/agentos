@@ -52,6 +52,9 @@ To run tests::
   pip install -r dev-requirements.txt
   pytest test_all.py
 
+Also, we use Github Actions to run ``test_all.py`` with every commit and pull
+request (see the `test workflow
+<https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
 Building Documentation / Agentos.org Website
 --------------------------------------------
@@ -95,4 +98,3 @@ release to PyPI, follow `these python.org instructions
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel
   twine upload dist/*
-
