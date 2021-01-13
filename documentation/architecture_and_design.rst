@@ -41,7 +41,7 @@ reward) pair and returns an action.
 
 
 AgentOS Concepts
-===================
+================
 
 The RL concepts of an **agent** and its **environment**, as described above are
 very similar to those in AgentOS. However, AgentOS differs from the classic RL
