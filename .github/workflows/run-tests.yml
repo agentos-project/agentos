@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest] #, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.6, 3.7, 3.8]
 
     steps:
@@ -34,7 +34,7 @@ jobs:
         flake8 agentos --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 agentos --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Install CLI
+    - name: Install agentos
       run: |
         pip install -e .
     - name: Test with pytest
