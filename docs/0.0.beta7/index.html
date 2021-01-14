@@ -87,11 +87,13 @@
               
             
             
-              <ul>
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Home</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture_and_design.html">Architecture and Design</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agentos_development.html">AgentOS Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/index.html">API Documentation</a></li>
 </ul>
 
@@ -162,7 +164,7 @@
             
   <div class="section" id="agentos-a-learning-agent-platform">
 <h1>AgentOS: a learning agent platform<a class="headerlink" href="#agentos-a-learning-agent-platform" title="Permalink to this headline">¶</a></h1>
-<p>AgentOS is an open source <strong>Python API and a command line interface</strong> for
+<p>AgentOS is an open source <strong>python API and a command line interface</strong> for
 building, running, and sharing learning agents. AgentOS is licensed under the
 Apache License, Version 2.0.</p>
 <dl class="simple">
@@ -176,12 +178,32 @@ directory of the project source code.</p></li>
 </ul>
 </dd>
 </dl>
-<p>AgentOS is experimental beta software, as indicated by the major and minor
-version numbers being zero (e.g., 0.0.x). This means APIs and overall
-architecture are not stable and likely to change significantly over time.</p>
+<a class="reference external image-reference" href="https://github.com/agentos-project/agentos/actions)"><img alt="Test Status Indicator" src="https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg" /></a>
+<p>AgentOS is beta software, APIs and overall architecture are likely to change
+significantly over time.</p>
 <p>Find the <a class="reference external" href="https://github.com/agentos-project/agentos">AgentOS sourcecode on Github</a>.</p>
+<div class="section" id="install-and-explore">
+<h2>Install and Explore<a class="headerlink" href="#install-and-explore" title="Permalink to this headline">¶</a></h2>
+<p>AgentOS requires Python &gt;= 3.5. To get started, use pip to install agentos, and
+then run a simple agent:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># First make sure you&#39;re using python 3.5 or newer.</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">agentos</span>
+<span class="n">agentos</span> <span class="n">run</span> <span class="n">agentos</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">RandomAgent</span> <span class="n">gym</span><span class="o">.</span><span class="n">envs</span><span class="o">.</span><span class="n">classic_control</span><span class="o">.</span><span class="n">CartPoleEnv</span>
+</pre></div>
+</div>
+<p>Then, create and run your first Agent:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="n">my_agent</span>
+<span class="n">cd</span> <span class="n">my_agent</span>
+<span class="n">agentos</span> <span class="n">init</span>
+<span class="n">agentos</span> <span class="n">run</span>
+</pre></div>
+</div>
+<p>This type of agent is called an <a class="reference internal" href="agent_directories.html"><span class="doc">Agent Directory</span></a>. To see more complex
+agents, look at example agents in the <a class="reference external" href="https://github.com/agentos-project/agentos/tree/master/example_agents">example_agents</a>
+directory of the project source code.</p>
 <p>Next, check out the <a class="reference internal" href="quickstart.html"><span class="doc">Quick Start</span></a>.</p>
 <div class="toctree-wrapper compound">
+</div>
 </div>
 </div>
 

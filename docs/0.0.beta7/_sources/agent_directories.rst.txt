@@ -23,5 +23,5 @@ Multiple Agent Directories
 
 You can have as many agent directories as you want, one per agent. Each one is independent from others.
 
-The ``agentos`` CLI is modeled after the ``git`` and ``mlflow`` CLIs, so it can’t list or manipulate all of the agents that exist on a machine (the way, e.g., that conda can with conda envs). It will undoubtedly become useful to be able to list/organize all running agents. In the future we could provide a pluggable agentOS server or agent-store service that could, e.g., centralize the agent meta-data. Eventually we could even provide a hosted service for centrally managing agents akin to github.
+The ``agentos`` CLI is modeled after the ``git`` and ``mlflow`` CLIs, so it can’t list or manipulate all of the agents that exist on a machine (the way, e.g., that conda can with conda envs). It will undoubtedly become useful to be able to list/organize all running agents. In the future we could provide a pluggable AgentOS server or agent-store service that could, e.g., centralize the agent meta-data. Eventually we could even provide a hosted service for centrally managing agents akin to github.
 
