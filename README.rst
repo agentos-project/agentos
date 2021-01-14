@@ -77,16 +77,22 @@ Building Docs & agentos.org
 ===========================
 
 The documentation source is in the ``documentation`` directory and written in
-`ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
-The docs are built using `Sphinx <https://www.sphinx-doc.org>`_::
+`ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.  The docs are
+built using `Sphinx <https://www.sphinx-doc.org>`_.  To build the docs, first
+install the dev requirements::
+
+  pip install -r dev-requirements.txt
+
+Then use the build script:
 
   python documentation/build_docs.py
 
-Or to build the docs manually yourself::
+Or you can manually build them directly with Sphinx::
 
-  pip install -r dev-requirements.txt
   sphinx-build documentation docs/_build # also try installing/using sphinx-auto
   # Open and inspect docs/_build/index.html in your browser.
+
+Once built, the documentation will be found under the `docs/` directory.
 
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
 docs are hosted.  To publish updated docs to agentos.org, build the docs and
