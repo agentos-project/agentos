@@ -1,55 +1,3 @@
-==================================
-AgentOS: a learning agent platform
-==================================
-
-AgentOS is an open source **python API and a command line interface** for
-building, running, and sharing learning agents. AgentOS is licensed under the
-Apache License, Version 2.0.
-
-Key features include:
-  * Easy to use Agent API for developing and running new agents.
-
-  * Example learning agents from different disciplines and research areas are
-    available in the
-    `example_agents
-    <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
-    directory of the project source code.
-
-  * Reuse of OpenAI's Gym Environment abstraction.
-
-.. image:: https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg
-  :target: https://github.com/agentos-project/agentos/actions)
-  :alt: Test Status Indicator
-
-AgentOS is beta software, APIs and overall architecture are likely to change
-significantly over time.
-
-
-The AgentOS docs are at `agentos.org <https://agentos.org>`_.
-
-
-Install and Explore
-===================
-AgentOS requires Python >= 3.5. To get started, use pip to install agentos, and
-then run a simple agent::
-
-  # First make sure you're using python 3.5 or newer.
-  pip install agentos
-  agentos run agentos.agents.RandomAgent gym.envs.classic_control.CartPoleEnv
-
-Then, create and run your first Agent::
-
-  mkdir my_agent
-  cd my_agent
-  agentos init
-  agentos run
-
-This type of agent is called an :doc:`Agent Directory`. To see more complex
-agents, look at example agents in the `example_agents
-<https://github.com/agentos-project/agentos/tree/master/example_agents>`_
-directory of the project source code.
-
-
 Installing From Source
 ======================
 To install agentos from source (e.g., to play with the example_agents), run the
@@ -129,8 +77,3 @@ will probably look something like::
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel
   twine upload dist/*
-
-
-----
-This README was compiled from the project documentation by running:
-``python documentation/build_readme.py``.

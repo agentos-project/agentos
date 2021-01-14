@@ -48,7 +48,7 @@ Thus, each researcher or developer designs and implements their own agent
 architecture, including how the agent interacts with an environment, organizes
 trials (or “rollouts”) used for learning, stores memories in some format, uses
 experience for learning, etc. (e.g., `Berkeley CS285 RL Course`_, Soar_, ROS_,
-Mycroft_).
+MyCroft_).
 
 To rapidly build new agents, it should be easy to focus on one new sub-system
 and not have to re-create all of the other necessary functionality from
