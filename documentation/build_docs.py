@@ -3,9 +3,7 @@ Build the AgentOS documentation.
 
 To use::
 
-  $ cd documentation
-  $ pip install -r requirements.txt
-  $ python build_docs.py
+  $ python documentation/build_docs.py
 """   
 
 from importlib.machinery import SourceFileLoader
@@ -26,6 +24,9 @@ version = SourceFileLoader(
 Popen(["sphinx-build", docs_dir, f"{docs_dir}/../docs/{version}"]).wait()
 
 os.chdir(f"{docs_dir}/../docs")
-os.remove(f"latest")
+try:
+    os.remove(f"latest")
+except FileNotFoundError:
+    print('Latest symlink not found')
 os.symlink(version, "latest", target_is_directory=True)
 print(f"Created symbolic link docs/latest pointing to docs/{version}")
