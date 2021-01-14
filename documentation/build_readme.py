@@ -5,7 +5,7 @@ of efforts and fewer chances for bugs.
 
 To use::
 
-  python documentation/build_readme.md
+  python documentation/build_readme.py
 """
 
 import os
