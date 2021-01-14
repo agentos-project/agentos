@@ -22,6 +22,7 @@ request (see the `test workflow
 
 Building Docs & agentos.org
 ===========================
+
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
 The docs are built using `Sphinx <https://www.sphinx-doc.org>`_::
@@ -31,8 +32,8 @@ The docs are built using `Sphinx <https://www.sphinx-doc.org>`_::
 Or to build the docs manually yourself (e.g., to control where output goes)::
 
   pip install -r dev-requirements.txt
-  sphinx-build documentation docs_build  # also try installing/using sphinx-auto
-  # Open and inspect docs_build/index.html in your browser.
+  sphinx-build documentation docs/_build # also try installing/using sphinx-auto
+  # Open and inspect docs/_build/index.html in your browser.
 
 Notice that the build file puts the compiled docs into ``docs/<version_num>`` where ``version_num`` comes from ``agentos/version.py``.
 
