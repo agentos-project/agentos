@@ -6,46 +6,60 @@ AgentOS is an open source **python API and a command line interface** for
 building, running, and sharing learning agents. AgentOS is licensed under the
 Apache License, Version 2.0.
 
+Key features include:
+  * Easy to use Agent API for developing and running new agents.
+
+  * Example learning agents from different disciplines and research areas are
+    available in the
+    `example_agents
+    <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
+    directory of the project source code.
+
+  * Reuse of OpenAI's Gym Environment abstraction.
+
 .. image:: https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg
   :target: https://github.com/agentos-project/agentos/actions)
   :alt: Test Status Indicator
 
+AgentOS is beta software, APIs and overall architecture are likely to change
+significantly over time.
 
 
-Install and try it out
-----------------------
-AgentOS requires Python >= 3.5. To get started, install agentos, and then run a
-simple agent::
+The AgentOS docs are at `agentos.org <https://agentos.org>`_.
+
+
+Install and Explore
+===================
+AgentOS requires Python >= 3.5. To get started, use pip to install agentos, and
+then run a simple agent::
 
   # First make sure you're using python 3.5 or newer.
   pip install agentos
   agentos run agentos.agents.RandomAgent gym.envs.classic_control.CartPoleEnv
 
-Then, create, explore, and extend your first Agent::
+Then, create and run your first Agent::
 
   mkdir my_agent
   cd my_agent
   agentos init
   agentos run
 
-Also, check out the example agents in the `example_agents
+This type of agent is called an :doc:`Agent Directory`. To see more complex
+agents, look at example agents in the `example_agents
 <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
 directory of the project source code.
 
-Learn more and see the docs at `agentos.org <https://agentos.org>`_.
 
-
-Developing (installing from source)
------------------------------------
+Installing From Source
+======================
 To install agentos from source (e.g., to play with the example_agents), run the
 following::
 
   git clone https://github.com/agentos-project/agentos.git
   pip install -e agentos # you may want to do this in a virtualenv or conda env.
 
-
-Tests
------
+Testing
+=======
 To run tests::
 
   cd agentos # the project root, not the nested agentos/agentos dir
@@ -56,9 +70,9 @@ Also, we use Github Actions to run ``test_all.py`` with every commit and pull
 request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
-Building Documentation / Agentos.org Website
---------------------------------------------
 
+Building Docs & agentos.org
+===========================
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
 The docs are built using `Sphinx <https://www.sphinx-doc.org>`_::
@@ -89,12 +103,34 @@ committed in the ``master`` branch, your workflow might look similar to::
   git push
 
 
+Building README.rst
+===================
+The main project ``README.rst`` is built via the script
+``python documentation/build_readme.py``, which re-uses sections of
+documentation. This avoids duplication of efforts and lowers the chances
+that a developer will forget to update one or the either of the README or
+the docs.
+
+To update ``README.rst``, first check out its build script
+``python documentation/build_readme.py``. There you will find
+the sections of documentation that constitute ``README.rst``, plus
+some text that is manually inserted directly in that file (e.g., the
+footer).
+
+
 Pushing releases to PyPI
-------------------------
-AgentOS is `available in PyPI <https://pypi.org/project/agentos/>`_. To push a
-release to PyPI, follow `these python.org instructions
-<https://packaging.python.org/tutorials/packaging-projects/>`_::
+========================
+We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To push a
+release to PyPI, you can approximately follow `these python.org
+instructions
+<https://packaging.python.org/tutorials/packaging-projects/>`_, which
+will probably look something like::
 
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel
   twine upload dist/*
+
+
+----
+This README was compiled from the project documentation by running:
+``python documentation/build_readme.py``.

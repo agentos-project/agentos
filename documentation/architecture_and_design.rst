@@ -110,7 +110,7 @@ Architecture
   :alt: AgentOS architecture
   :align: center
 
-  The basic architecture of Agentos.
+  The basic architecture of AgentOS.
 
 
 Modes of Interacting with AgentOS

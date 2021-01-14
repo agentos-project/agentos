@@ -6,7 +6,6 @@ following::
   git clone https://github.com/agentos-project/agentos.git
   pip install -e agentos # you may want to do this in a virtualenv or conda env.
 
-
 Testing
 =======
 To run tests::
@@ -52,6 +51,21 @@ committed in the ``master`` branch, your workflow might look similar to::
   git push
 
 
+Building README.rst
+===================
+The main project ``README.rst`` is built via the script
+``python documentation/build_readme.py``, which re-uses sections of
+documentation. This avoids duplication of efforts and lowers the chances
+that a developer will forget to update one or the either of the README or
+the docs.
+
+To update ``README.rst``, first check out its build script
+``python documentation/build_readme.py``. There you will find
+the sections of documentation that constitute ``README.rst``, plus
+some text that is manually inserted directly in that file (e.g., the
+footer).
+
+
 Pushing releases to PyPI
 ========================
 We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To push a
@@ -63,4 +77,3 @@ will probably look something like::
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel
   twine upload dist/*
-

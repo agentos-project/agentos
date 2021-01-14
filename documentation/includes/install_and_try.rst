@@ -1,7 +1,7 @@
 Install and Explore
 ===================
-AgentOS requires Python >= 3.5. To get started, install agentos, and then run a
-simple agent::
+AgentOS requires Python >= 3.5. To get started, use pip to install agentos, and
+then run a simple agent::
 
   # First make sure you're using python 3.5 or newer.
   pip install agentos
@@ -14,6 +14,7 @@ Then, create and run your first Agent::
   agentos init
   agentos run
 
-To see more complex agents, look at example agents in the `example_agents
+This type of agent is called an :doc:`Agent Directory`. To see more complex
+agents, look at example agents in the `example_agents
 <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
 directory of the project source code.
