@@ -62,8 +62,8 @@ the docs.
 
 To update ``README.rst``, first familiarize yourself with its build script
 ``documentation/build_readme.py``. There you can see which sections of
-documentation constitute ``README.rst``, plus some text that is manually
-inserted directly into the README (e.g., the footer).
+documentation are included in ``README.rst``, plus some text that is manually
+inserted directly into ``README.rst`` (e.g., the footer).
 
 
 Pushing releases to PyPI
