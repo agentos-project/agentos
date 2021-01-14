@@ -6,6 +6,7 @@ following::
   git clone https://github.com/agentos-project/agentos.git
   pip install -e agentos # you may want to do this in a virtualenv or conda env.
 
+
 Testing
 =======
 To run tests::
@@ -67,11 +68,10 @@ inserted directly into the README (e.g., the footer).
 
 Pushing releases to PyPI
 ========================
-We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To push a
-release to PyPI, you can approximately follow `these python.org
-instructions
-<https://packaging.python.org/tutorials/packaging-projects/>`_, which
-will probably look something like::
+We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To
+push a release to PyPI, you can approximately follow `these python.org
+instructions <https://packaging.python.org/tutorials/packaging-projects/>`_,
+which will probably look something like::
 
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel

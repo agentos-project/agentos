@@ -29,7 +29,7 @@ with open(target_readme, "w") as readme_f:
     include(docs_dir + '/includes/developing.rst')
     readme_f.write("\n\n")
 
-    readme_f.write("----\n" +
-                   "This README was compiled from the project " + 
+    readme_f.write("----\n\n" +
+                   "*This README was compiled from the project " +
                    "documentation by running:\n" +
-                   f"``python documentation/{os.path.basename(__file__)}``.")
+                   f"``python documentation/{os.path.basename(__file__)}``.*")
