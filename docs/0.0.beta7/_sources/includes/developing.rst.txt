@@ -59,11 +59,10 @@ documentation. This avoids duplication of efforts and lowers the chances
 that a developer will forget to update one or the either of the README or
 the docs.
 
-To update ``README.rst``, first check out its build script
-``python documentation/build_readme.py``. There you will find
-the sections of documentation that constitute ``README.rst``, plus
-some text that is manually inserted directly in that file (e.g., the
-footer).
+To update ``README.rst``, first familiarize yourself with its build script
+``documentation/build_readme.py``. There you can see which sections of
+documentation constitute ``README.rst``, plus some text that is manually
+inserted directly into the README (e.g., the footer).
 
 
 Pushing releases to PyPI
