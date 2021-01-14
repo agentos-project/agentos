@@ -132,5 +132,5 @@ which will probably look something like::
 
 ----
 
-*This README was compiled from the project documentation by running:
-``python documentation/build_readme.py``.*
+*This README was compiled from the project documentation via:*
+``python documentation/build_readme.py``.
