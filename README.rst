@@ -44,7 +44,7 @@ Then, create and run your first Agent::
   agentos init
   agentos run
 
-This type of agent is called an :doc:`Agent Directory`. To see more complex
+This type of agent is called an :doc:`Agent Directory <../agent_directories>`. To see more complex
 agents, look at example agents in the `example_agents
 <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
 directory of the project source code.
@@ -57,6 +57,7 @@ following::
 
   git clone https://github.com/agentos-project/agentos.git
   pip install -e agentos # you may want to do this in a virtualenv or conda env.
+
 
 Testing
 =======
@@ -111,20 +112,18 @@ documentation. This avoids duplication of efforts and lowers the chances
 that a developer will forget to update one or the either of the README or
 the docs.
 
-To update ``README.rst``, first check out its build script
-``python documentation/build_readme.py``. There you will find
-the sections of documentation that constitute ``README.rst``, plus
-some text that is manually inserted directly in that file (e.g., the
-footer).
+To update ``README.rst``, first familiarize yourself with its build script
+``documentation/build_readme.py``. There you can see which sections of
+documentation are included in ``README.rst``, plus some text that is manually
+inserted directly into ``README.rst`` (e.g., the footer).
 
 
 Pushing releases to PyPI
 ========================
-We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To push a
-release to PyPI, you can approximately follow `these python.org
-instructions
-<https://packaging.python.org/tutorials/packaging-projects/>`_, which
-will probably look something like::
+We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To
+push a release to PyPI, you can approximately follow `these python.org
+instructions <https://packaging.python.org/tutorials/packaging-projects/>`_,
+which will probably look something like::
 
   pip install setuptools wheel twine
   python setup.py sdist bdist_wheel
@@ -132,5 +131,6 @@ will probably look something like::
 
 
 ----
-This README was compiled from the project documentation by running:
-``python documentation/build_readme.py``.
+
+*This README was compiled from the project documentation by running:
+``python documentation/build_readme.py``.*
