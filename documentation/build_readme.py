@@ -31,5 +31,5 @@ with open(target_readme, "w") as readme_f:
 
     readme_f.write("----\n\n" +
                    "*This README was compiled from the project " +
-                   "documentation by running:\n" +
-                   f"``python documentation/{os.path.basename(__file__)}``.*")
+                   "documentation via:*\n" +
+                   f"``python documentation/{os.path.basename(__file__)}``.")
