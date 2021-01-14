@@ -2,7 +2,7 @@
 AgentOS: a learning agent platform
 ==================================
 
-AgentOS is an open source **python API and a command line interface** for
+AgentOS is an open source **Python API and a command line interface** for
 building, running, and sharing learning agents. AgentOS is licensed under the
 Apache License, Version 2.0.
 
@@ -30,10 +30,11 @@ The AgentOS docs are at `agentos.org <https://agentos.org>`_.
 
 Install and Explore
 ===================
-AgentOS requires Python >= 3.5. To get started, use pip to install agentos, and
-then run a simple agent::
 
-  # First make sure you're using python 3.5 or newer.
+AgentOS requires Python 3.5 - 3.8. To get started, use pip to install agentos,
+and then run a simple agent::
+
+  # First make sure you're using Python 3.5 - 3.8
   pip install agentos
   agentos run agentos.agents.RandomAgent gym.envs.classic_control.CartPoleEnv
 
@@ -74,6 +75,7 @@ request (see the `test workflow
 
 Building Docs & agentos.org
 ===========================
+
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.
 The docs are built using `Sphinx <https://www.sphinx-doc.org>`_::
@@ -83,8 +85,8 @@ The docs are built using `Sphinx <https://www.sphinx-doc.org>`_::
 Or to build the docs manually yourself::
 
   pip install -r dev-requirements.txt
-  sphinx-build documentation docs_build  # also try installing/using sphinx-auto
-  # Open and inspect docs_build/index.html in your browser.
+  sphinx-build documentation docs/_build # also try installing/using sphinx-auto
+  # Open and inspect docs/_build/index.html in your browser.
 
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
 docs are hosted.  To publish updated docs to agentos.org, build the docs and
