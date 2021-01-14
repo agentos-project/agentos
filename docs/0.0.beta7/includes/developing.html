@@ -221,15 +221,15 @@ that a developer will forget to update one or the either of the README or
 the docs.</p>
 <p>To update <code class="docutils literal notranslate"><span class="pre">README.rst</span></code>, first familiarize yourself with its build script
 <code class="docutils literal notranslate"><span class="pre">documentation/build_readme.py</span></code>. There you can see which sections of
-documentation constitute <code class="docutils literal notranslate"><span class="pre">README.rst</span></code>, plus some text that is manually
-inserted directly into the README (e.g., the footer).</p>
+documentation are included in <code class="docutils literal notranslate"><span class="pre">README.rst</span></code>, plus some text that is manually
+inserted directly into <code class="docutils literal notranslate"><span class="pre">README.rst</span></code> (e.g., the footer).</p>
 </div>
 <div class="section" id="pushing-releases-to-pypi">
 <h1>Pushing releases to PyPI<a class="headerlink" href="#pushing-releases-to-pypi" title="Permalink to this headline">¶</a></h1>
-<p>We make AgentOS <a class="reference external" href="https://pypi.org/project/agentos/">available in PyPI</a>. To push a
-release to PyPI, you can approximately follow <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/">these python.org
-instructions</a>, which
-will probably look something like:</p>
+<p>We make AgentOS <a class="reference external" href="https://pypi.org/project/agentos/">available in PyPI</a>. To
+push a release to PyPI, you can approximately follow <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/">these python.org
+instructions</a>,
+which will probably look something like:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">setuptools</span> <span class="n">wheel</span> <span class="n">twine</span>
 <span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">sdist</span> <span class="n">bdist_wheel</span>
 <span class="n">twine</span> <span class="n">upload</span> <span class="n">dist</span><span class="o">/*</span>
