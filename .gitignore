@@ -9,4 +9,3 @@ build
 dist
 documentation/_build
 website/_site
-docs
