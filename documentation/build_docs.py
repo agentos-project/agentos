@@ -8,7 +8,6 @@ To use::
 
 from importlib.machinery import SourceFileLoader
 import os
-import pip
 from subprocess import Popen
 
 docs_dir = os.path.dirname(os.path.abspath(__file__))
