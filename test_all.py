@@ -94,10 +94,7 @@ def test_predictive_coding():
 
 def test_evolutionary_agent(virtualenv):
     import os
-    virtualenv.run(f"cd {os.getcwd()}/example_agents/evolutionary_agent; "
-                   "ls -al; "
+    virtualenv.run("cd " + os.getcwd() + os.sep + "example_agents" + os.sep + "evolutionary_agent; "
                    "pip install -r requirements.txt; "
                    "agentos run --max-iters 5 agent.py "
                    "gym.envs.classic_control.CartPoleEnv")
-
-
