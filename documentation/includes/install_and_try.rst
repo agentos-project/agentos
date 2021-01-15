@@ -1,9 +1,10 @@
 Install and Explore
 ===================
-AgentOS requires Python >= 3.5. To get started, use pip to install agentos, and
-then run a simple agent::
 
-  # First make sure you're using python 3.5 or newer.
+AgentOS requires Python 3.5 - 3.8. To get started, use pip to install agentos,
+and then run a simple agent::
+
+  # First make sure you're using Python 3.5 - 3.8
   pip install agentos
   agentos run agentos.agents.RandomAgent gym.envs.classic_control.CartPoleEnv
 
