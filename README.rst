@@ -131,29 +131,28 @@ Releasing
 =========
 Here are the steps for releasing AgentOS:
 
-  #. Create a release pull request (PR) that:
+#. Create a release pull request (PR) that:
 
-     * Updates the version number to remove "beta" from it.
-     * Contains draft release notes (summary of major changes)
-     * Updates the version
+   * Updates the version number to remove "-alpha" suffix.
+   * Contains draft release notes (summary of major changes)
 
-  #. Wait till the PR gets LGTMs from all other committers, then merge it.
+#. Wait till the PR gets LGTMs from all other committers, then merge it.
 
-  #. Create a follow-on PR against ``website`` branch to upate the docs (see
-     `Building Docs & agentos.org`_), which at very least need to reflect
-     the version number of the release.
+#. Create a follow-on PR against ``website`` branch to update the docs (see
+   `Building Docs & agentos.org`_), which at very least need to reflect
+   the version number of the release.
 
-  #. Create another follow-on PR that bumps version number to be ``X.Y.Z-alpha``
-     which reflects that work going forward will be part of the next release
-     (we use `semantic versioning <https://semver.org>`_).
+#. Create another follow-on PR that bumps version number to be ``X.Y.Z-alpha``
+   which reflects that work going forward will be part of the next release
+   (we use `semantic versioning <https://semver.org>`_).
 
-  #. Push the release to PyPI (see `Pushing Releases to PyPI`_)
+#. Push the release to PyPI (see `Pushing Releases to PyPI`_).
 
-  #. Create a `github release
-     <https://github.com/agentos-project/agentos/releases>`_ that includes zip
-     and tarzips of `wheel files <https://wheel.readthedocs.io/en/stable/>`_ 
-     and source code (which you can generate using ``python setup.py sdist
-     --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
+#. Create a `github release
+   <https://github.com/agentos-project/agentos/releases>`_ that includes zips
+   and tarzips of `wheel files <https://wheel.readthedocs.io/en/stable/>`_
+   and source code (which you can generate using ``python setup.py sdist
+   --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
 
 
 
