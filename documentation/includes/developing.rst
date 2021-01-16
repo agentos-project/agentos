@@ -80,8 +80,8 @@ Here are the steps for releasing AgentOS:
 
 #. Create a release pull request (PR) that:
 
-   * Updates the version number to remove "-alpha" suffix.
-   * Contains draft release notes (summary of major changes)
+   * Removes "-alpha" suffix from the version number in ``agentos/version.py``.
+   * Contains draft release notes (summary of major changes).
 
 #. Wait till the PR gets LGTMs from all other committers, then merge it.
 
