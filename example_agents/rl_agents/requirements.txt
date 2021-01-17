@@ -1,4 +1,7 @@
+# These dependencies are also listed in the <proj_root>/dev-requirements.txt
+# If you change these, make the same changes there.
+
 -e ../../
 tensorflow==2.4.0  # reinforce, dqn
 tensorflow-probability==0.10.0  # reinforce
-pandas  # dqn
+pandas==1.2.0 # dqn

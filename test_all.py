@@ -92,10 +92,14 @@ def test_predictive_coding():
     run_agent(Mouse, CookieSensorEnv, num_steps=10)
 
 
-def test_evolutionary_agent(virtualenv):
+def test_evolutionary_agent():
+    from subprocess import Popen, PIPE, STDOUT
     import os
-    virtualenv.run(f"ls {os.path.dirname(os.path.abspath(__file__))}; cd {os.path.abspath(__file__) + os.sep}"
-                   f"example_agents{os.sep}evolutionary_agent; "
-                   "pip install -r requirements.txt; "
-                   "agentos run --max-iters 5 agent.py "
-                   "gym.envs.classic_control.CartPoleEnv")
+    p = Popen(["agentos", "run", "--max-iters", "5", "agent.py",
+               "gym.envs.classic_control.CartPoleEnv"],
+              cwd=f"{os.path.dirname(os.path.abspath(__file__)) + os.sep}"
+                  f"example_agents{os.sep}evolutionary_agent",
+              stdout=PIPE,
+              stderr=STDOUT)
+    p.wait()
+    print(p.stdout.read())
