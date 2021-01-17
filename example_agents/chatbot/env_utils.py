@@ -6,6 +6,7 @@ import time
 
 class RandomSpeaker(threading.Thread):
     """Says random things in an env."""
+
     def __init__(self, env):
         super().__init__()
         self.env = env
@@ -15,7 +16,7 @@ class RandomSpeaker(threading.Thread):
         """Run env loop in main thread to simulate a command line interface"""
         i = 0
         while True:
-            rand_str = env.action_space.sample()
+            rand_str = self.env.action_space.sample()
             print(f"RandomSpeaker saying a random string: {rand_str}")
             obs, reward, done, _ = self.env.step(rand_str)
             if any(map(lambda x: len(x) > 0, obs)):
@@ -55,5 +56,3 @@ class CommandLineClient(threading.Thread):
             msgs_out, _, _, _ = self.env.step(msg_in)
             if msgs_out:
                 print(f"Agent: {msgs_out}")
-
-
