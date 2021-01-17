@@ -18,5 +18,5 @@ pytest==3.2.1
 pytest-virtualenv==1.7.0
 tensorflow==2.4.0  # reinforce, dqn, evolutionary_agent
 tensorflow-probability==0.10.0  # reinforce
-pandas==1.2.0  # dqn
+pandas>=1.1.5,<=1.2.0 # dqn. 1.2.0 not available on python 3.6
 numpy==1.19.3  # chatbot
