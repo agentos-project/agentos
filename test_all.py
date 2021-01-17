@@ -102,4 +102,4 @@ def test_evolutionary_agent():
               stdout=PIPE,
               stderr=STDOUT)
     p.wait()
-    print(p.stdout.read())
+    assert p.returncode == 0, p.stdout.read()
