@@ -70,21 +70,24 @@ def test_chatbot(capsys):
                               as_thread=True)
     while not running_agent.is_alive():
         pass
-    time.sleep(1)
+    time.sleep(0.01)
     response_txt, _, _, _ = client_env.step("one")
-    time.sleep(1)
+    time.sleep(0.01)
     response_txt, _, _, _ = client_env.step("two")
     assert response_txt == "one", "chatbot should repeat strings from memory"
 
     #TODO(andyk): also test CommandLineListener
 
 
-def test_rl_agents():
+def test_rl_agents(virtualenv):
     from agentos import run_agent
+    from example_agents.rl_agents.dqn_agent import DQNAgent
+    from example_agents.rl_agents.random_nn_policy_agent import RandomTFAgent
     from example_agents.rl_agents.reinforce_agent import ReinforceAgent
     from gym.envs.classic_control import CartPoleEnv
+    run_agent(DQNAgent, CartPoleEnv, max_iters=10)
+    run_agent(RandomTFAgent, CartPoleEnv, max_iters=10)
     run_agent(ReinforceAgent, CartPoleEnv, max_iters=10)
-
 
 def test_predictive_coding():
     from agentos import run_agent
