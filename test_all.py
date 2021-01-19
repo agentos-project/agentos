@@ -93,26 +93,19 @@ def test_chatbot(capsys):
 
 def setup_agent_test(
         agent_dir,
-        req_file="requirements.txt",
-        venv=None):
-    if venv:
-        run_cmd = venv.run
-    else:
-        run_cmd = subprocess.Popen
-    p = run_cmd(
+        virtualenv,
+        req_file="requirements.txt"):
+    virtualenv.run(
         ["pip", "install", "-r", req_file],
         cwd=Path(agent_dir),
-        shell=True
+        shell=True,
+        capture=True
     )
-    p.wait()
-    assert p.returncode == 0
 
 
 def test_rl_agents(virtualenv):
-    setup_agent_test(
-        Path(__file__).parent / "example_agents" / "rl_agents",
-        venv=virtualenv
-    )
+    agent_dir = Path(__file__).parent / "example_agents" / "rl_agents"
+    setup_agent_test(agent_dir, virtualenv)
     from agentos import run_agent
     from example_agents.rl_agents.reinforce_agent import ReinforceAgent
     from gym.envs.classic_control import CartPoleEnv
@@ -125,10 +118,8 @@ def test_rl_agents(virtualenv):
 
 
 def test_predictive_coding(virtualenv):
-    setup_agent_test(
-        Path(__file__).parent / "example_agents" / "predictive_coding" / "free_energy_tutorial",
-        venv=virtualenv
-    )
+    agent_dir = Path(__file__).parent / "example_agents" / "predictive_coding" / "free_energy_tutorial"
+    setup_agent_test(agent_dir, virtualenv)
     from agentos import run_agent
     from example_agents.predictive_coding.free_energy_tutorial.main import Mouse, CookieSensorEnv
     run_agent(Mouse, CookieSensorEnv, num_steps=10)
@@ -136,13 +127,9 @@ def test_predictive_coding(virtualenv):
 
 def test_evolutionary_agent(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "evolutionary_agent"
-    setup_agent_test(
-        agent_dir,
-        venv=virtualenv
-    )
-    subprocess.run(
-        ["agentos", "run", "--max-iters", "5", "agent.py"
+    setup_agent_test(agent_dir, virtualenv)
+    virtualenv.run(
+        ["agentos", "run", "--max-iters", "5", "agent.py",
          "gym.envs.classic_control.CartPoleEnv"],
-        cwd=agent_dir,
-        check=True
+        cwd=agent_dir
     )
