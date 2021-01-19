@@ -1,5 +1,2 @@
-# These dependencies are also listed in the <proj_root>/dev-requirements.txt
-# If you change these, make the same changes there.
-
 -e ../../
 tensorflow==2.2.2
