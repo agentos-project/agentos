@@ -94,9 +94,9 @@ def setup_agent_test(
     outp = virtualenv.run(
         ["pip", "install", "-r", req_file],
         cwd=Path(agent_dir),
-        shell=True,
         capture=True
     )
+    print(outp)
 
 
 def test_rl_agents(virtualenv):
