@@ -2,26 +2,25 @@
 
 See repo README for instructions to run tests.
 """
-
 from pathlib import Path
 import pytest
 import subprocess
+from agentos import run_agent
+from gym.envs.classic_control import CartPoleEnv
+
 
 def test_random_agent():
     from agentos.agents import RandomAgent
-    from gym.envs.classic_control import CartPoleEnv
     agent = RandomAgent(CartPoleEnv)
     done = agent.advance()
     assert not done, "CartPole never finishes after one random step."
-
-    from agentos import run_agent
     run_agent(RandomAgent, CartPoleEnv)
 
 
 def test_cli(tmpdir):
     import subprocess
     from pathlib import Path
-    subprocess.Popen(["agentos", "init"], cwd=tmpdir).wait()
+    subprocess.run(["agentos", "init"], cwd=tmpdir, check=True)
     main = Path(tmpdir) / "main.py"
     ml_project = Path(tmpdir) / "MLProject"
     conda_env = Path(tmpdir) / "conda_env.yaml"
@@ -33,9 +32,7 @@ def test_cli(tmpdir):
         ["agentos", "run", "--max-iters", "5", "main.py", "main.py"],
     ]
     for c in commands:
-        p = subprocess.Popen(c, cwd=tmpdir)
-        p.wait()
-        assert p.returncode == 0, p.communicate()
+        subprocess.run(c, cwd=tmpdir, check=True)
 
     # TODO(andyk): add functionality for creating a conda env
     #              automatically if an MLProject file does not
@@ -71,7 +68,6 @@ def test_chatbot(capsys):
     sys.path.append("example_agents/chatbot")
     from example_agents.chatbot.main import ChatBot
     from example_agents.chatbot.env import MultiChatEnv
-    from agentos import run_agent
     env_generator = MultiChatEnv()
     # say something in the room for the agent to hear
     client_env = env_generator()
@@ -95,7 +91,7 @@ def setup_agent_test(
         agent_dir,
         virtualenv,
         req_file="requirements.txt"):
-    virtualenv.run(
+    outp = virtualenv.run(
         ["pip", "install", "-r", req_file],
         cwd=Path(agent_dir),
         shell=True,
@@ -106,9 +102,7 @@ def setup_agent_test(
 def test_rl_agents(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "rl_agents"
     setup_agent_test(agent_dir, virtualenv)
-    from agentos import run_agent
     from example_agents.rl_agents.reinforce_agent import ReinforceAgent
-    from gym.envs.classic_control import CartPoleEnv
     run_agent(ReinforceAgent, CartPoleEnv, max_iters=10)
     # TODO: uncomment and fix tests below.
     #from example_agents.rl_agents.dqn_agent import DQNAgent
@@ -120,16 +114,27 @@ def test_rl_agents(virtualenv):
 def test_predictive_coding(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "predictive_coding" / "free_energy_tutorial"
     setup_agent_test(agent_dir, virtualenv)
-    from agentos import run_agent
+    # Run the agent via the CLI
+    virtualenv.run(
+        ["agentos", "run", "--max-iters", "5", "main.py"],
+        cwd=agent_dir,
+        stderr=subprocess.STDOUT
+    )
+    # Run the agent via the API
     from example_agents.predictive_coding.free_energy_tutorial.main import Mouse, CookieSensorEnv
-    run_agent(Mouse, CookieSensorEnv, num_steps=10)
+    run_agent(Mouse, CookieSensorEnv, max_iters=10)
 
 
 def test_evolutionary_agent(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "evolutionary_agent"
     setup_agent_test(agent_dir, virtualenv)
+    # Run the agent via the CLI
     virtualenv.run(
         ["agentos", "run", "--max-iters", "5", "agent.py",
          "gym.envs.classic_control.CartPoleEnv"],
-        cwd=agent_dir
+        cwd=agent_dir,
+        stderr=subprocess.STDOUT
     )
+    # Run the agent via the API
+    from example_agents.evolutionary_agent.agent import EvolutionaryAgent
+    run_agent(EvolutionaryAgent, CartPoleEnv, max_iters=5)
