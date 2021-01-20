@@ -2,11 +2,12 @@
 
 See repo README for instructions to run tests.
 """
+from agentos import run_agent
+from gym.envs.classic_control import CartPoleEnv
 from pathlib import Path
 import pytest
 import subprocess
-from agentos import run_agent
-from gym.envs.classic_control import CartPoleEnv
+import sys
 
 
 def test_random_agent():
@@ -87,47 +88,71 @@ def test_chatbot(capsys):
     #TODO(andyk): also test CommandLineListener
 
 
-def setup_agent_test(
-        agent_dir,
-        virtualenv,
-        req_file="requirements.txt"):
-    outp = virtualenv.run(
-        ["pip", "install", "-r", req_file],
-        cwd=Path(agent_dir),
-        capture=True
-    )
-    print(outp)
+class VirtualEnvContext:
+    def __init__(self, agent_dir, virtualenv, req_file="requirements.txt"):
+        self.agent_dir = agent_dir
+        self.virtualenv = virtualenv
+        self.req_file = req_file
+
+    def get_lib_dir(self):
+        return (self.virtualenv.virtualenv / "lib").glob("python*")[0] / "site-packages"
+
+    def __enter__(self):
+        print(f"installing {self.req_file} w/ cwd {self.agent_dir}")
+        self.virtualenv.run(
+            ["pip", "install", "-r", self.req_file],
+            cwd=Path(self.agent_dir),
+            capture=True
+        )
+        print("sys.path is: ")
+        print(sys.path)
+        sys.path.insert(0, str(self.get_lib_dir()))
+        print("sys.path post expansion is: ")
+        print(sys.path)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if exc_type:
+            return False
+        #sys.path.remove(str(self.get_lib_dir()))
+        #print("sys.path post reset is: ")
+        #print(sys.path)
 
 
 def test_rl_agents(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "rl_agents"
-    setup_agent_test(agent_dir, virtualenv)
-    from example_agents.rl_agents.reinforce_agent import ReinforceAgent
-    run_agent(ReinforceAgent, CartPoleEnv, max_iters=10)
-    # TODO: uncomment and fix tests below.
-    #from example_agents.rl_agents.dqn_agent import DQNAgent
-    #from example_agents.rl_agents.random_nn_policy_agent import RandomTFAgent
-    #run_agent(DQNAgent, CartPoleEnv, max_iters=10)
-    #run_agent(RandomTFAgent, CartPoleEnv, max_iters=10)
+    with VirtualEnvContext(agent_dir, virtualenv):
+        from example_agents.rl_agents.reinforce_agent import ReinforceAgent
+        run_agent(ReinforceAgent, CartPoleEnv, max_iters=10)
+        # TODO: uncomment and fix tests below.
+        #from example_agents.rl_agents.dqn_agent import DQNAgent
+        #from example_agents.rl_agents.random_nn_policy_agent import RandomTFAgent
+        #run_agent(DQNAgent, CartPoleEnv, max_iters=10)
+        #run_agent(RandomTFAgent, CartPoleEnv, max_iters=10)
 
 
 def test_predictive_coding(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "predictive_coding" / "free_energy_tutorial"
-    setup_agent_test(agent_dir, virtualenv)
+    # Run the agent via the API
+    with VirtualEnvContext(agent_dir, virtualenv) as vec:
+        print(str(vec.get_lib_dir()))
+        import time
+        #time.sleep(500)
+        from example_agents.predictive_coding.free_energy_tutorial.main import Mouse, CookieSensorEnv
+        run_agent(Mouse, CookieSensorEnv, max_iters=10)
     # Run the agent via the CLI
     virtualenv.run(
         ["agentos", "run", "--max-iters", "5", "main.py"],
         cwd=agent_dir,
         stderr=subprocess.STDOUT
     )
-    # Run the agent via the API
-    from example_agents.predictive_coding.free_energy_tutorial.main import Mouse, CookieSensorEnv
-    run_agent(Mouse, CookieSensorEnv, max_iters=10)
-
 
 def test_evolutionary_agent(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "evolutionary_agent"
-    setup_agent_test(agent_dir, virtualenv)
+    # Run the agent via the API
+    with VirtualEnvContext(agent_dir, virtualenv):
+        from example_agents.evolutionary_agent.agent import EvolutionaryAgent
+        run_agent(EvolutionaryAgent, CartPoleEnv, max_iters=5)
     # Run the agent via the CLI
     virtualenv.run(
         ["agentos", "run", "--max-iters", "5", "agent.py",
@@ -135,6 +160,3 @@ def test_evolutionary_agent(virtualenv):
         cwd=agent_dir,
         stderr=subprocess.STDOUT
     )
-    # Run the agent via the API
-    from example_agents.evolutionary_agent.agent import EvolutionaryAgent
-    run_agent(EvolutionaryAgent, CartPoleEnv, max_iters=5)
