@@ -5,6 +5,8 @@ section 13.3, page 326.
 
 REINFORCE, also known as Monte Carlo policy gradient, is one of the
 classic Reinforcement Learing algorithms.
+
+TODO: Add max_steps_per_iter to agent init.
 """
 import agentos
 import numpy as np
@@ -25,17 +27,31 @@ class Policy:
 
 
 class ReinforceAgent(agentos.Agent):
-    def _init(self):
+    def __init__(
+            self,
+            env_class,
+            rollouts_per_iter=1,
+            max_steps_per_rollout=200,
+            discount_rate=0.9
+    ):
+        super().__init__(env_class)
+        self.rollouts_per_iter = rollouts_per_iter
+        self.max_steps_per_rollout = max_steps_per_rollout
+        self.discount_rate = discount_rate
         self.ret_vals = []
         self.policy = Policy()
 
     def advance(self):
         self.train()
-        res = agentos.rollout(self.policy, self.env.__class__, max_steps=200)
+        res = agentos.rollout(
+            self.policy,
+            self.env.__class__,
+            max_steps=self.max_steps_per_rollout
+        )
         self.ret_vals.append(sum(res.rewards))
-        print(f"num steps: {self.ret_vals[-1]}")
+        print(f"{self.ret_vals[-1]} steps in rollout.")
 
-    def train(self, num_rollouts=1, max_rollout_steps=200, discount_rate=0.9):
+    def train(self):
         grads = []
         rewards = []
 
@@ -48,12 +64,12 @@ class ReinforceAgent(agentos.Agent):
             grads[-1].append(tape.gradient(loss, policy.nn.trainable_variables))
             return action
 
-        for episode_num in range(num_rollouts):
+        for episode_num in range(self.max_steps_per_rollout):
             grads.append([])
             result = agentos.rollout(self.policy,
                                      self.env.__class__,
                                      step_fn=rollout_step,
-                                     max_steps=max_rollout_steps)
+                                     max_steps=self.max_steps_per_rollout)
             rewards.append(result.rewards)
 
 
@@ -61,7 +77,7 @@ class ReinforceAgent(agentos.Agent):
         d_rewards = None
         for reward_list in rewards:
             for i in range(len(reward_list) - 2, -1, -1):
-                reward_list[i] += reward_list[i + 1] * discount_rate
+                reward_list[i] += reward_list[i + 1] * self.discount_rate
             if d_rewards is not None:
                 d_rewards = tf.concat([d_rewards, [reward_list]], axis=0)
             else:
@@ -84,22 +100,33 @@ class ReinforceAgent(agentos.Agent):
                                                   self.policy.nn.trainable_variables))
 
     def __del__(self):
-        print(f"Agent done!\n"
+        print(f"Agent done!")
+        if self.ret_vals:
+            print(
               f"Num rollouts: {len(self.ret_vals)}\n"
               f"Avg return: {np.mean(self.ret_vals)}\n"
               f"Max return: {max(self.ret_vals)}\n"
-              f"Median return: {np.median(self.ret_vals)}\n")
+              f"Median return: {np.median(self.ret_vals)}\n"
+            )
 
 
 if __name__ == "__main__":
     import argparse
     from gym.envs.classic_control import CartPoleEnv
-    parser = argparse.ArgumentParser("Run reinforce with a simple TF policy on gym CartPole.")
-    parser.add_argument("max_agent_steps", metavar="MAX_AGENT_STEPS",
-                        help="how many steps to train on")
-    # TODO make the following params pass through
-    #parser.add_argument("--rollouts", type=int, default=1)
-    #parser.add_argument("--max_steps_per_episode", type=int, default=200)
-    #parser.add_argument("--discount_rate", type=float, default=0.9)
+    parser = argparse.ArgumentParser(
+        description="Run reinforce with a simple TF policy on gym CartPole. "
+                    "One rollout per call to agent.advance(), "
+                    "200 steps per rollout.",
+    )
+    parser.add_argument("max_iters", type=int, metavar="MAX_ITERS",
+                        help="How many times to call advance() on agent.")
+    parser.add_argument("--rollouts_per_iter", type=int, default=1)
+    parser.add_argument("--max_steps_per_rollout", type=int, default=200)
+    parser.add_argument("--discount_rate", type=float, default=0.9)
     args = parser.parse_args()
-    agentos.run_agent(ReinforceAgent, CartPoleEnv, max_steps=args.max_agent_steps, )
+    agentos.run_agent(ReinforceAgent,
+                      CartPoleEnv,
+                      max_iters=args.max_iters,
+                      rollouts_per_iter=args.rollouts_per_iter,
+                      max_steps_per_rollout=args.max_steps_per_rollout,
+                      discount_rate=args.discount_rate)
