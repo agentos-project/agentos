@@ -18,7 +18,7 @@ def format_file(path):
     extension = os.path.splitext(path)[1]
     if extension != ".py":
         return
-    cmd = ["black", path]
+    cmd = ["black", "--line-length=79", path]
     out = run(cmd, stdout=PIPE).stdout.decode("utf-8")
     if out:
         print(path)

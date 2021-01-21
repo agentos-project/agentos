@@ -32,7 +32,7 @@ jobs:
         # stop the build if there are Python syntax errors or undefined names
         flake8 agentos --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 agentos --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        python scripts/lint_code.py
     - name: Install agentos
       run: |
         pip install -e .
@@ -40,9 +40,9 @@ jobs:
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       run: |
         export MLFLOW_CONDA_HOME=$CONDA
-        pytest
+        pytest --durations=0
     - name: Test with pytest on Windows
       if: matrix.os == 'windows-latest'
       run: |
         $ENV:MLFLOW_CONDA_HOME=$ENV:CONDA
-        pytest
+        pytest --durations=0

@@ -7,9 +7,11 @@ from pathlib import Path
 import pytest
 
 
+
 def test_random_agent():
     from agentos.agents import RandomAgent
     from gym.envs.classic_control import CartPoleEnv
+
     agent = RandomAgent(CartPoleEnv)
     done = agent.advance()
     assert not done, "CartPole never finishes after one random step."
@@ -37,25 +39,24 @@ def test_cli(tmpdir):
     #              automatically if an MLProject file does not
     #              exist but a main.py and requirements.txt do exist.
     # also test when main.py exists and MLProject file does not.
-    #ml_project.unlink()  # delete MLProject file.
-    #p = subprocess.Popen(["agentos", "run"], cwd=tmpdir)
-    #p.wait()
-    #assert p.returncode == 0
+    # ml_project.unlink()  # delete MLProject file.
+    # p = subprocess.Popen(["agentos", "run"], cwd=tmpdir)
+    # p.wait()
+    # assert p.returncode == 0
 
-
-    #TODO(andyk): add tests for all example_agents so that we keep
+    # TODO(andyk): add tests for all example_agents so that we keep
     #             them all working as we update the core APIs.
 
-@pytest.mark.skip(
-    reason="Version of Ray we currently use (ray[rllib]==0.8.5) requires "
-           "manual build for windows."
-)
 
 
 ######################
 # Example Agent Tests
 ######################
 
+@pytest.mark.skip(
+    reason="Version of Ray we currently use (ray[rllib]==0.8.5) requires "
+           "manual build for windows."
+)
 def test_rllib_agent():
     import mlflow
     mlflow.run("example_agents/rllib_agent")
@@ -64,6 +65,7 @@ def test_rllib_agent():
 def test_chatbot(capsys):
     import sys
     import time
+
     sys.path.append("example_agents/chatbot")
     from example_agents.chatbot.main import ChatBot
     from example_agents.chatbot.env import MultiChatEnv
