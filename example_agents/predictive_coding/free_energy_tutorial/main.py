@@ -1,4 +1,7 @@
-# Based on https://www.sciencedirect.com/science/article/pii/S0022249615000759
+"""
+Based on https://sciencedirect.com/science/article/pii/S0022249615000759
+by Rafal Bogacz.
+"""
 import agentos
 from collections import defaultdict
 from decimal import Decimal, Overflow
@@ -142,22 +145,32 @@ class Mouse(agentos.Agent):
 
 
 if __name__ == "__main__":
-    # Create a mouse agent and see what it learns as its best guess of the
-    # size of cookies it is seeing.
-    num_steps = 150
-    print(f"Running mouse agent  for {num_steps} steps...")
+    """Create a mouse agent and see what it learns as its best guess of the
+    size of cookies it is seeing."""
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run a MouseAgent that learns by looking at cookies "
+            "using Friston's Free Energy principle. This agent "
+            "is an implementation of the tutorial by Rafal Bogacz at "
+            "https://sciencedirect.com/science/article/pii/S0022249615000759"
+        )
+    )
+    parser.add_argument("--max-iters", type=int, default=150)
+    parser.add_argument("-p", "--plot-results", action='store_true')
+    args = parser.parse_args()
+    print(f"Running mouse agent  for {args.max_iters} steps...")
     print("------------------------------------------------")
+    agentos.run_agent(Mouse, CookieSensorEnv, max_iters=args.max_iters)
+    if args.plot_results:
+        plt.figure(figsize=(15, 10))
+        for k, v in mouse_stats.items():
+            if k != "belief_light_var" and k != "belief_size_var":
+                plt.plot(v, label=k)
 
-    agentos.run_agent(Mouse, CookieSensorEnv, max_iters=num_steps)
-
-    plt.figure(figsize=(15, 10))
-    for k, v in mouse_stats.items():
-        if k != "belief_light_var" and k != "belief_size_var":
+        for k, v in env_stats.items():
             plt.plot(v, label=k)
 
-    for k, v in env_stats.items():
-        plt.plot(v, label=k)
-
-    plt.legend()
-    plt.title("Mouse beliefs over time")
-    plt.show()
+        plt.legend()
+        plt.title("Mouse beliefs over time")
+        plt.show()
