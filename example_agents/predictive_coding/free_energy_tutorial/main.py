@@ -1,7 +1,11 @@
-# Based on https://www.sciencedirect.com/science/article/pii/S0022249615000759
+"""
+Based on https://sciencedirect.com/science/article/pii/S0022249615000759
+by Rafal Bogacz.
+"""
 import agentos
 from collections import defaultdict
 from decimal import Decimal
+import gym
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -11,7 +15,7 @@ env_stats = defaultdict(list)
 mouse_stats = defaultdict(list)
 
 
-class CookieSensorEnv:
+class CookieSensorEnv(gym.Env):
     """Simple environment representing a cookie viewed via a light sensor.
 
     CookieSensorEnv represents a world that has a cookie and a sensor in it.
@@ -116,7 +120,7 @@ class Mouse(agentos.Agent):
        params are updated via backprop in TensorFlow.
     """
 
-    def __init__(self, env, num_steps=100):
+    def __init__(self, env):
         super().__init__(env)
         self.light_intensity_error_belief = Decimal(0)  # epsilon_u
         self.cookie_size_error_belief = Decimal(0)  # epsilon_p
@@ -128,18 +132,15 @@ class Mouse(agentos.Agent):
         self.area_to_light_belief_fn = lambda x: x ** Decimal(2)  # g()
         self.area_to_light_deriv_belief_fn = lambda x: Decimal(2) * x  # g'()
 
-        self.num_steps = num_steps
         self.step_size = Decimal(0.05)
         self.step_count = 0
 
     def advance(self):
-        if self.step_count < self.num_steps:
-            obs, reward, done, _ = self.env.step("")
-            self.update_world_model(obs)
-            self.step_count += 1
-            return self.step_count >= self.num_steps
-        else:
-            return True
+        """ This agent will never stop on it's own"""
+        obs, reward, done, _ = self.env.step("")
+        self.update_world_model(obs)
+        self.step_count += 1
+        return False
 
     def update_world_model(self, obs):
         try:
@@ -171,20 +172,6 @@ class Mouse(agentos.Agent):
             self.light_intensity_var_belief += self.step_size * dF_dSigma_u
             self.cookie_size_mean_belief += self.step_size * dF_dvp
 
-            # print updated neural network values
-            # if self.num_steps % 100 == 0:
-            # print(
-            #      f"{self.num_steps:7}: "
-            #      f"e_p={epsilon_p:4.3}, "
-            #      f"e_u={epsilon_u:4.3}, "
-            #      f"size={self.cookie_size_belief:4.3}, "
-            #      f"size_var={self.cookie_size_var_belief:4.3}, "
-            #      f"light_var={self.light_intensity_var_belief:4.3}, "
-            #      f"size_mean={self.cookie_size_mean_belief:4.3}"
-            # )
-
-            # mouse_stats["e_p"].append(epsilon_p)
-            # mouse_stats["e_u"].append(epsilon_u)
             mouse_stats["belief_size"].append(self.cookie_size_belief)
             mouse_stats["belief_size_var"].append(self.cookie_size_var_belief)
             mouse_stats["belief_light_var"].append(
@@ -198,22 +185,33 @@ class Mouse(agentos.Agent):
 
 
 if __name__ == "__main__":
-    # Create a mouse agent and see what it learns as its best guess of the
-    # size of cookies it is seeing.
-    num_steps = 150
-    print(f"Running mouse agent  for {num_steps} steps...")
+    """Create a mouse agent and see what it learns as its best guess of the
+    size of cookies it is seeing."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run a MouseAgent that learns by looking at cookies "
+            "using Friston's Free Energy principle. This agent "
+            "is an implementation of the tutorial by Rafal Bogacz at "
+            "https://sciencedirect.com/science/article/pii/S0022249615000759"
+        )
+    )
+    parser.add_argument("--max-iters", type=int, default=150)
+    parser.add_argument("-p", "--plot-results", action="store_true")
+    args = parser.parse_args()
+    print(f"Running mouse agent  for {args.max_iters} steps...")
     print("------------------------------------------------")
+    agentos.run_agent(Mouse, CookieSensorEnv, max_iters=args.max_iters)
+    if args.plot_results:
+        plt.figure(figsize=(15, 10))
+        for k, v in mouse_stats.items():
+            if k != "belief_light_var" and k != "belief_size_var":
+                plt.plot(v, label=k)
 
-    agentos.run_agent(Mouse, CookieSensorEnv, num_steps=num_steps)
-
-    plt.figure(figsize=(15, 10))
-    for k, v in mouse_stats.items():
-        if k != "belief_light_var" and k != "belief_size_var":
+        for k, v in env_stats.items():
             plt.plot(v, label=k)
 
-    for k, v in env_stats.items():
-        plt.plot(v, label=k)
-
-    plt.legend()
-    plt.title("Mouse beliefs over time")
-    plt.show()
+        plt.legend()
+        plt.title("Mouse beliefs over time")
+        plt.show()
