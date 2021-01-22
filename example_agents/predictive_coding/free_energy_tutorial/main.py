@@ -119,6 +119,7 @@ class Mouse(agentos.Agent):
        are implemented using synaptic plasticity, analogous to the way
        params are updated via backprop in TensorFlow.
     """
+
     def __init__(self, env):
         super().__init__(env)
         self.light_intensity_error_belief = Decimal(0)  # epsilon_u
@@ -171,7 +172,6 @@ class Mouse(agentos.Agent):
             self.light_intensity_var_belief += self.step_size * dF_dSigma_u
             self.cookie_size_mean_belief += self.step_size * dF_dvp
 
-
             mouse_stats["belief_size"].append(self.cookie_size_belief)
             mouse_stats["belief_size_var"].append(self.cookie_size_var_belief)
             mouse_stats["belief_light_var"].append(
@@ -188,6 +188,7 @@ if __name__ == "__main__":
     """Create a mouse agent and see what it learns as its best guess of the
     size of cookies it is seeing."""
     import argparse
+
     parser = argparse.ArgumentParser(
         description=(
             "Run a MouseAgent that learns by looking at cookies "
@@ -197,7 +198,7 @@ if __name__ == "__main__":
         )
     )
     parser.add_argument("--max-iters", type=int, default=150)
-    parser.add_argument("-p", "--plot-results", action='store_true')
+    parser.add_argument("-p", "--plot-results", action="store_true")
     args = parser.parse_args()
     print(f"Running mouse agent  for {args.max_iters} steps...")
     print("------------------------------------------------")
