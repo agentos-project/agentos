@@ -7,7 +7,7 @@ To use::
 """
 
 import os
-from subprocess import Popen
+from subprocess import run
 from subprocess import DEVNULL
 
 scripts_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,9 +16,8 @@ root_dir = os.path.normpath(os.path.join(scripts_dir, os.pardir))
 
 def is_git_tracked(file_path):
     cmd = ["git", "ls-files", "--error-unmatch", file_path]
-    child = Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
-    child.wait()
-    return child.returncode == 0
+    result = run(cmd, stdout=DEVNULL, stderr=DEVNULL)
+    return result.returncode == 0
 
 
 def traverse_tracked_files(path, action_fn):
