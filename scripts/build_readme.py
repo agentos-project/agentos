@@ -10,8 +10,8 @@ To use::
 
 import os
 
-scripts_dir = os.path.dirname(os.path.abspath(__file__))
-docs_dir = os.path.join(scripts_dir, os.pardir, "documentation")
+from shared import docs_dir
+
 target_readme = os.path.join(docs_dir, os.pardir, "README.rst")
 
 with open(target_readme, "w") as readme_f:
