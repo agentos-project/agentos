@@ -5,12 +5,13 @@ of efforts and fewer chances for bugs.
 
 To use::
 
-  python documentation/build_readme.py
+  python scripts/build_readme.py
 """
 
 import os
 
-docs_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_dir = os.path.dirname(os.path.abspath(__file__))
+docs_dir = os.path.join(scripts_dir, os.pardir, "documentation")
 target_readme = os.path.join(docs_dir, os.pardir, "README.rst")
 
 with open(target_readme, "w") as readme_f:
