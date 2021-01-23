@@ -12,6 +12,8 @@ from subprocess import DEVNULL
 
 scripts_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.normpath(os.path.join(scripts_dir, os.pardir))
+docs_dir = os.path.join(root_dir, "documentation")
+docs_build_dir = os.path.join(root_dir, "docs")
 
 
 def is_git_tracked(file_path):
