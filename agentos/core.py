@@ -84,7 +84,7 @@ def run_agent(
     :param hz: Rate at which to call agent's `advance` function.
     :param max_iters: Maximum times to call agent's `advance` function.
     :param as_thread: Set to True to run this agent in a new thread.
-    :param **kwargs: Other arguments to pass through to agent's `__init__()`.
+    :param \*\*kwargs: Other arguments to pass through to agent's `__init__()`.
     :returns: Either a running thread (if as_thread=True) or None.
     """
 
