@@ -18,7 +18,7 @@ Key features include:
   * Reuse of OpenAI's Gym Environment abstraction.
 
 .. image:: https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg
-  :target: https://github.com/agentos-project/agentos/actions)
+  :target: https://github.com/agentos-project/agentos/actions
   :alt: Test Status Indicator
 
 AgentOS is beta software, APIs and overall architecture are likely to change
