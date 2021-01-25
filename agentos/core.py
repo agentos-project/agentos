@@ -1,5 +1,6 @@
 """Core AgentOS APIs."""
 from collections import namedtuple
+from gym.envs.classic_control import CartPoleEnv
 import time
 from threading import Thread
 
@@ -7,8 +8,8 @@ from threading import Thread
 class Agent:
     """An Agent observes and takes actions in its environment till done.
 
-    An agent holds an environment `self.env`, which it can use
-    to observe and act by calling `self.env.step()` that takes
+    An agent holds an environment ``self.env``, which it can use
+    to observe and act by calling ``self.env.step()`` that takes
     an observation and returns an action.
 
     Like a human, an Agent lives in a stream of time. To to bring an
@@ -32,7 +33,12 @@ class Agent:
     """
 
     def __init__(self, env_class):
-        """Set self.env, then reset the env and store _last_obs."""
+        """
+        Set ``self.env``, then call its ``reset()`` function
+        and store the observation it returns as ``self.init_obs``.
+
+        :param env_class: The class object of the Environment for this agent.
+        """
         self.env = env_class()
         self.init_obs = self.env.reset()
         self._init()
@@ -52,7 +58,7 @@ class Agent:
 
 
 class Policy:
-    """Picks next action based on last observation from environment.
+    """Pick next action based on last observation from environment.
 
     Policies are used by agents to encapsulate any state or logic necessary
     to decide on a next action given the last observation from an env.
@@ -62,9 +68,9 @@ class Policy:
         """Takes an observation from an env and returns next action to take.
 
         :param observation: should be in the `observation_space` of the
-                            environments that this policy is compatible with.
+            environments that this policy is compatible with.
         :returns: action to take, should be in `action_space` of the
-                            environments that this policy is compatible with.
+            environments that this policy is compatible with.
         """
         raise NotImplementedError
 
@@ -82,8 +88,10 @@ def run_agent(
     :param agent_class: The class object of the agent you want to run
     :param env: The class object of the env you want to run the agent in.
     :param hz: Rate at which to call agent's `advance` function.
-    :param max_iters: Maximum times to call agent's `advance` function.
-    :param as_thread: Set to True to run this agent in a new thread.
+    :param max_iters: Maximum times to call agent's `advance` function,
+        defaults to None.
+    :param as_thread: Set to True to run this agent in a new thread, defaults
+        to False.
     :param **kwargs: Other arguments to pass through to agent's `__init__()`.
     :returns: Either a running thread (if as_thread=True) or None.
     """
@@ -108,41 +116,39 @@ def run_agent(
         runner()
 
 
-"""
-A rollout step function allows a developer to specify the behavior
-that will occur at every step of the rollout, given a policy
-and the last observation from the env, to decide
-what action to take next. This usually involves the rollout's
-policy and may perform learning and may involve using, updating,
-or saving learning related state including hyper-parameters
-such as epsilon in epsilon greedy.
-"""
-
-
 def default_rollout_step(policy, obs, step_num):
+    """
+    The default rollout step function is to call the
+    A rollout step function allows a developer to specify the behavior
+    that will occur at every step of the rollout--given a policy
+    and the last observation from the env--to decide
+    what action to take next. This usually involves the rollout's
+    policy and may perform learning. Also, may involve using, updating,
+    or saving learning related state including hyper-parameters
+    such as epsilon in epsilon greedy.
+    """
     return policy.compute_action(obs)
 
 
 def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
-    """Perform rollout using env an with the type provided.
+    """Perform rollout using provided policy and env.
 
     :param policy: policy to use when simulating these episodes.
-    :param env_class: class to instatiate an env object from.
+    :param env_class: class to instantiate an env object from.
     :param step_fn: a function to be called at each step of rollout.
-                    The function can have 2 or 3 parameters.
-                    2 parameter definition: policy, observation.
-                    3 parameter definition: policy, observation, step_num.
-                    The function must return an action.
+        The function can have 2 or 3 parameters, and must return an action:
+
+        * 2 parameter definition: policy, observation.
+        * 3 parameter definition: policy, observation, step_num.
     :param max_steps: cap on number of steps per episode.
     :return: the trajectory that was followed during this rollout.
-             A trajectory is a named tuple that contains the initial
-             observation (a scalar) as well as the following
-             arrays: actions, observations, rewards, dones, contexts.
-             The ith entry of each array corresponds to the action taken
-             at the ith step of the rollout, and the respective results
-             returned by the environment after taking that action.
-             To learn more about the semantics of these, see the
-             documentation and code of gym.Env.
+        A trajectory is a named tuple that contains the initial observation (a
+        scalar) as well as the following arrays: actions, observations,
+        rewards, dones, contexts. The ith entry of each array corresponds to
+        the action taken at the ith step of the rollout, and the respective
+        results returned by the environment after taking that action. To learn
+        more about the semantics of these, see the documentation and code of
+        gym.Env.
     """
     actions = []
     observations = []
@@ -211,3 +217,5 @@ def rollouts(
         rollout(policy, env_class, step_fn, max_steps)
         for _ in range(num_rollouts)
     ]
+
+

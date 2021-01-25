@@ -28,7 +28,7 @@ class RandomTFAgent(agentos.Agent):
     def _init(self):
         self.ret_vals = []
 
-    def step(self):
+    def advance(self):
         ret = sum(self.evaluate_policy(Policy(), max_steps=2000))
         self.ret_vals.append(ret)
 
@@ -40,3 +40,8 @@ class RandomTFAgent(agentos.Agent):
             f"Max return: {max(self.ret_vals)}\n"
             f"Median return: {np.median(self.ret_vals)}\n"
         )
+
+
+if __name__ == "__main__":
+    from gym.envs.classic_control import CartPoleEnv
+    agentos.run_agent(RandomTFAgent, CartPoleEnv, max_iters=5)

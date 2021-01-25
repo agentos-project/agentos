@@ -3,20 +3,22 @@ Motivation
 **********
 
 .. _ACT-R: http://act-r.psy.cmu.edu
-.. _OpenAI Baselines: https://github.com/openai/baselines
 .. _Berkeley CS285 RL Course: https://github.com/berkeleydeeprlcourse/homework_fall2019/tree/master/hw1/cs285
+.. _gym.Env: https://github.com/openai/gym/blob/master/gym/core.py>
 .. _MyCroft: https://github.com/MycroftAI/mycroft-core
 .. _Nengo: https://www.nengo.ai
+.. _OpenAI Baselines: https://github.com/openai/baselines
 .. _OpenCog: https://github.com/opencog/opencog
 .. _Ray RLlib: https://docs.ray.io/en/master/rllib.html
 .. _Soar: https://soar.eecs.umich.edu
 .. _Tensorflow Agents: https://www.tensorflow.org/agents
 .. _TensorForce: https://github.com/tensorforce/tensorforce
 
-Many researchers and developers across reinforcement learning, robotics,
-artificial intelligence, natural language programming (NLP), neuroscience,
-machine learning, cognitive science, psychology, and business build learning
-agents (for example, `Ray RLlib`_, Nengo_, Soar_, ACT-R_,
+
+Researchers and developers across many fields build learning agents, including
+reinforcement learning, robotics, artificial intelligence, natural language
+programming (NLP), neuroscience, machine learning, cognitive science, psychology,
+and business (for example, `Ray RLlib`_, Nengo_, Soar_, ACT-R_,
 `ROS <https://www.ros.org/>`_, MyCroft_,
 `Google Assistant <https://assistant.google.com>`_,
 `Apple's Siri <https://www.apple.com/siri/>`_).
@@ -39,7 +41,7 @@ Typically, agents...
     with the environment
 
 While there exist open source APIs and implementations for Environments (e.g.,
-OpenAI `gym.Env <https://github.com/openai/gym/blob/master/gym/core.py>`_) and
+OpenAI `gym.Env`_ ) and
 learning algorithms (e.g. `Ray RLlib`_, `TensorFlow Agents`_), there has not
 emerged a de facto standard set of APIs and tools for composing, running, and
 managing long running learning agents.
