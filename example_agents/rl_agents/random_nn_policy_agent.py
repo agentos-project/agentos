@@ -44,4 +44,5 @@ class RandomTFAgent(agentos.Agent):
 
 if __name__ == "__main__":
     from gym.envs.classic_control import CartPoleEnv
+
     agentos.run_agent(RandomTFAgent, CartPoleEnv, max_iters=5)

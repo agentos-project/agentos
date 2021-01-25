@@ -32,7 +32,7 @@ install the dev requirements::
 
 Then use the build script::
 
-  python documentation/build_docs.py
+  python scripts/build_docs.py
 
 Or to build the docs manually yourself (e.g., to control where output goes)::
 
@@ -54,7 +54,7 @@ committed in the ``master`` branch, your workflow might look similar to::
 
   git checkout website
   git merge master
-  python documentation/build_docs.py
+  python scripts/build_docs.py
   git add docs
   git commit -m "push updated docs to website"
   git push
@@ -63,13 +63,13 @@ committed in the ``master`` branch, your workflow might look similar to::
 Building README.rst
 ===================
 The main project ``README.rst`` is built via the script
-``python documentation/build_readme.py``, which re-uses sections of
+``python scripts/build_readme.py``, which re-uses sections of
 documentation. This avoids duplication of efforts and lowers the chances
 that a developer will forget to update one or the either of the README or
 the docs.
 
 To update ``README.rst``, first familiarize yourself with its build script
-``documentation/build_readme.py``. There you can see which sections of
+``scripts/build_readme.py``. There you can see which sections of
 documentation are included in ``README.rst``, plus some text that is manually
 inserted directly into ``README.rst`` (e.g., the footer).
 

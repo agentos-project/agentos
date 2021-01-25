@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# This workflow will install dependencies and run tests against various OSes and Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
 name: Tests on master
@@ -10,7 +10,6 @@ on:
 
 jobs:
   run_pytest:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -18,31 +17,25 @@ jobs:
         python-version: [3.6, 3.7, 3.8]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r dev-requirements.txt
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 agentos --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        python scripts/lint_code.py
-    - name: Install agentos
-      run: |
-        pip install -e .
-    - name: Test with pytest on linux or macos
-      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      run: |
-        export MLFLOW_CONDA_HOME=$CONDA
-        pytest --durations=0
-    - name: Test with pytest on Windows
-      if: matrix.os == 'windows-latest'
-      run: |
-        $ENV:MLFLOW_CONDA_HOME=$ENV:CONDA
-        pytest --durations=0
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev-requirements.txt
+      - name: Install agentos
+        run: |
+          pip install -e .
+      - name: Test with pytest on linux or macos
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: |
+          export MLFLOW_CONDA_HOME=$CONDA
+          pytest --durations=0
+      - name: Test with pytest on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          $ENV:MLFLOW_CONDA_HOME=$ENV:CONDA
+          pytest --durations=0

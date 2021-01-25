@@ -16,5 +16,6 @@ Next, check out the :doc:`quickstart`.
    architecture_and_design
    agent_directories
    programming_agents
+   example_agents
    agentos_development
    api/index

@@ -23,7 +23,7 @@ and business (for example, `Ray RLlib`_, Nengo_, Soar_, ACT-R_,
 `Google Assistant <https://assistant.google.com>`_,
 `Apple's Siri <https://www.apple.com/siri/>`_).
 
-.. figure:: agent_landscape.png
+.. figure:: _static/img/agent_landscape.png
   :width: 70%
   :align: center
 

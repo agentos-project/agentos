@@ -199,7 +199,7 @@ def run(run_args, hz, max_iters):
           argument (i.e., `agent.py`) was provided, as described below.
     Else, if 1 arg is specified, interpret it as `agent_filename`:
         - if it is a directory name, assume it is an AgentOS agent dir,
-          and behavior is equivalent of `cd`ing into that directory
+          and behavior is equivalent of navigating into that directory
           and running `agentos run` (without arguments) in it (see above).
         - if it is a file name, the file must contain an agent class and env
           class definition. AgentOS searches that file for the first subclass

@@ -92,7 +92,8 @@ def run_agent(
         defaults to None.
     :param as_thread: Set to True to run this agent in a new thread, defaults
         to False.
-    :param **kwargs: Other arguments to pass through to agent's `__init__()`.
+    :param \\*\\*kwargs: Other arguments to pass through to
+           agent's `__init__()`.
     :returns: Either a running thread (if as_thread=True) or None.
     """
 
@@ -217,5 +218,3 @@ def rollouts(
         rollout(policy, env_class, step_fn, max_steps)
         for _ in range(num_rollouts)
     ]
-
-

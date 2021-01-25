@@ -5,11 +5,11 @@ Programming Agents
 
 To develop an agent using AgentOS, the most important concepts are Agents, Policies, and Environments (or Envs).
 
-An Agent is an entity that can take action over time. It must have an environment. It can also have one or more Policy that it uses to make decisions
+An Agent is an entity that can take action over time. It must have an environment. It can also have one or more Policy that it uses to make decisions.
 
 .. todo:: 
 
-   Why is is an agent required to have a class but not required to have a policy? Why not make the Agent API even more minimal and only require it have an advance function and leave it up to the agent developer to decide how the agent ends up with an env?
+   Why is is an agent required to have an Env but not required to have a policy? Why not make the Agent API even more minimal and only require it have an advance function and leave it up to the agent developer to decide how the agent ends up with an env?
 
 .. contents:: Contents of this agent programming guide
    :depth: 1
@@ -40,7 +40,7 @@ In AgentOS, a policy is a function that takes an observation as input and return
    inspired by ``Env.step()``, such as ``decide()``?
 
 
-Agents - putting it all together
+Agents: putting it all together
 ================================
 There are very minimal requirements for AgentOS to recognize a Python class as an Agent.
 
@@ -62,12 +62,12 @@ It is up to each agent developer how they want to structure the internals of the
 
 Guidelines for structuring ``advance()``
 ----------------------------------------
-* We recommend Agents keep the advance function as minimal as possible
+We recommend Agents keep the advance function as minimal as possible
 
 
-Background on design
---------------------
-This design is inpired by operating systems where the core kernel code is kept minimal and most functionality is implemented in libraries (cite microkernels, exakernel).
+Background on agent design
+--------------------------
+This design is inspired by operating systems where the core kernel code is kept minimal and most functionality is implemented in libraries (cite microkernels, exakernel).
 
 
 Rollouts
