@@ -1,6 +1,5 @@
 """Core AgentOS APIs."""
 from collections import namedtuple
-from gym.envs.classic_control import CartPoleEnv
 import time
 from threading import Thread
 
