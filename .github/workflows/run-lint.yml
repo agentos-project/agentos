@@ -6,7 +6,7 @@ name: Lint Python code
 on:
   push:
   pull_request:
-    branches: [ master ]
+    branches:
 
 jobs:
   run_lint:
