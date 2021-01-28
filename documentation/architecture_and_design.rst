@@ -28,17 +28,6 @@ reward) pair and returns an action.
   Barto <http://incompleteideas.net/book/the-book-2nd.html>`_ figure 3.1 (pg
   48).
 
-.. _fig_agentos_agent_arch:
-.. figure:: _static/img/agentos_agent_arch.png
-  :width: 80%
-  :align: center
-
-  The concepts are very similar in AgentOS, though AgentOS also differentiates
-  between an agent and a policy, and formalizes the relationship between agent,
-  policy, and environment: an agent has a policy and an environment connected
-  in a message passing loop. Calling ``agent.advance()`` causes a single
-  iteration of that loop to occur.
-
 
 AgentOS Concepts
 ================
@@ -49,6 +38,17 @@ architecture in a few key ways. First, an agent is paired with -- and holds a
 reference to -- its environment. Second, the agent also can hold a policy.
 Finally, the agent has an ``advance()`` function, inside of which it takes one
 step around the core RL loop between the agent’s policy and its environment.
+
+.. _fig_agentos_agent_arch:
+.. figure:: _static/img/agentos_agent_arch.png
+  :width: 80%
+  :align: center
+
+  The concepts are very similar in AgentOS, though AgentOS also differentiates
+  between an agent and a policy, and formalizes the relationship between agent,
+  policy, and environment: an agent has a policy and an environment connected
+  in a message passing loop. Calling ``agent.advance()`` causes a single
+  iteration of that loop to occur.
 
 In terms of design philosophy, environments, policies, and agents are:
 
