@@ -35,7 +35,7 @@ The following example agents exist:
 
 Future Agents
 ==============
-Future Example Agents that are planned or have been discussed include:
+Some future example agents that are planned or have been discussed include:
 
 * [`Work In Progress <https://github.com/agentos-project/agentos/issues/57>`_]
   An agent that implements predictive coding in the visual cortex, by Rao
