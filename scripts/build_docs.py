@@ -24,16 +24,16 @@ parser.add_argument(
     "--release",
     action="store_true",
     help="Build docs for release. This causes TODO directives to be ignored "
-         "so that they are not shown in the documentation generated. It also "
-         "causes the `latest` symlink to get updated (or generated) to point "
-         "to the docs that are built."
+    "so that they are not shown in the documentation generated. It also "
+    "causes the `latest` symlink to get updated (or generated) to point "
+    "to the docs that are built.",
 )
 parser.add_argument(
     "--watch",
     action="store_true",
     help="Use sphinx-autobuild instead of sphinx-build under the hood to "
-         "start a web server and watch for changes to the documentation, "
-         "and automatically rebuild the docs."
+    "start a web server and watch for changes to the documentation, "
+    "and automatically rebuild the docs.",
 )
 known_args, unknown_args = parser.parse_known_args()
 versioned_build_dir = os.path.join(docs_build_dir, f"{agentos.__version__}")
@@ -71,4 +71,3 @@ if known_args.release:
 for other_arg in unknown_args:
     build_cmd.append(other_arg)
 Popen(build_cmd).wait()
-
