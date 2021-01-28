@@ -76,7 +76,7 @@ def test_chatbot(capsys):
     client_env = env_generator()
     client_env.reset()
     running_agent = run_agent(
-        ChatBot, env_generator, hz=100, max_iters=40, as_thread=True
+        ChatBot, env_generator, hz=100, max_iters=100, as_thread=True
     )
     while not running_agent.is_alive():
         pass
