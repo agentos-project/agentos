@@ -6,7 +6,7 @@ name: Ensure README is updated
 on:
   push:
   pull_request:
-    branches:
+    branches: [ master ]
 
 jobs:
   run_lint:

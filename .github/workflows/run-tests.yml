@@ -6,7 +6,7 @@ name: Tests on master
 on:
   push:
   pull_request:
-    branches:
+    branches: [ master ]
 
 jobs:
   run_pytest:

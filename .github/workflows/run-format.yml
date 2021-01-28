@@ -6,7 +6,7 @@ name: Format Python code
 on:
   push:
   pull_request:
-    branches:
+    branches: [ master ]
 
 jobs:
   run_format:
