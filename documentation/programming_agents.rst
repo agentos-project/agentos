@@ -124,4 +124,5 @@ Different types of agents and algorithms might use rollouts for
 different purposes, but rollouts always consist of the same basic structure.
 
 Since rollouts are used frequently and have a standard structure, AgentOS
-includes the ``agentos.core.rollout()`` utility function.
+includes the ``agentos.core.rollout()`` utility function, but **note that the
+psuedocode above is a simplified version of ``agentos.core.rollout()``.**
