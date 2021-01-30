@@ -34,17 +34,18 @@ Then use the build script::
 
   python scripts/build_docs.py
 
-Use the ``--help`` flag to see more about optional flags, including
-``--release`` (used when publishing the docs) and ``--watch`` (used to
-recompile the docs whenever doc source files are changed).
-
-Or you can build the docs manually (e.g., to control where output goes)::
-
-  sphinx-build documentation outdir  # sphinx-autobuild rebuilds on file change
-  # Open and inspect docs/_build/index.html in your browser.
+Use the ``--help`` flag to learn more about other optional flags that
+``build_docs.py`` takes, including ``--release`` (for publishing the docs) and
+``--watch`` (for auto-recompiling the docs whenever doc source files are
+changed).
 
 Notice that the build file puts the compiled docs into ``docs/<version_num>``
 where ``version_num`` comes from ``agentos/version.py``.
+
+Or you can build the docs manually (e.g., to control where output goes)::
+
+  sphinx-build documentation outdir  # Or use sphinx-autobuild.
+  # Open and inspect outdir/index.html in your browser.
 
 
 Publishing Docs to agentos.org
@@ -58,13 +59,14 @@ will become live at agentos.org automatically.
 
 Assuming you have local branches tracking both the ``master`` and ``website``
 branches, and all changes to the documentation source files have all been
-committed in the ``master`` branch, your workflow might look similar to::
+committed in the ``master`` branch, the workflow to publish updated docs to
+agentos.org might look similar to::
 
   git checkout website
   git merge master
-  python scripts/build_docs.py --release -a
+  python scripts/build_docs.py --release -a  # The -a is a `sphinx-build` flag.
   git add docs
-  git commit -m "push updated docs to website"
+  git commit -m "push updated docs to website for version X.Y.Z"
   git push
 
 
