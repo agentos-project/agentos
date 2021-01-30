@@ -39,5 +39,5 @@ with open(target_readme, "w") as readme_f:
         "----\n\n"
         "*This README was compiled from the project "
         "documentation via:*\n``python "
-        f"documentation{os.sep}{os.path.basename(__file__)}``."
+        f"documentation/{os.path.basename(__file__)}``."
     )

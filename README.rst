@@ -183,4 +183,4 @@ which will probably look something like::
 ----
 
 *This README was compiled from the project documentation via:*
-``python documentation\build_readme.py``.
+``python documentation/build_readme.py``.
