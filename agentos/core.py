@@ -64,7 +64,7 @@ class Policy:
     """
 
     def compute_action(self, observation):
-        """Takes an observation from an env and returns next action to take.
+        """Takes an observation and returns next action to take.
 
         :param observation: should be in the `observation_space` of the
             environments that this policy is compatible with.
@@ -119,14 +119,18 @@ def run_agent(
 
 def default_rollout_step(policy, obs, step_num):
     """
-    The default rollout step function is to call the
+    The default rollout step function is the policy's compute_action function.
+
     A rollout step function allows a developer to specify the behavior
     that will occur at every step of the rollout--given a policy
     and the last observation from the env--to decide
     what action to take next. This usually involves the rollout's
-    policy and may perform learning. Also, may involve using, updating,
+    policy and may perform learning. It also, may involve using, updating,
     or saving learning related state including hyper-parameters
     such as epsilon in epsilon greedy.
+
+    You can provide your own function with the same signature as this default
+    if you want to have a more complex behavior at each step of the rollout.
     """
     return policy.compute_action(obs)
 
@@ -141,6 +145,9 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
 
         * 2 parameter definition: policy, observation.
         * 3 parameter definition: policy, observation, step_num.
+
+        Default value is ``agentos.core.default_rollout_step``.
+
     :param max_steps: cap on number of steps per episode.
     :return: the trajectory that was followed during this rollout.
         A trajectory is a named tuple that contains the initial observation (a
