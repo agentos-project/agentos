@@ -73,8 +73,8 @@ request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
 
-Building Docs & agentos.org
-===========================
+Building Docs
+=============
 
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.  The docs are
@@ -87,13 +87,22 @@ Then use the build script::
 
   python scripts/build_docs.py
 
-Or to build the docs manually yourself (e.g., to control where output goes)::
-
-  sphinx-build documentation docs/_build # also try installing/using sphinx-auto
-  # Open and inspect docs/_build/index.html in your browser.
+Use the ``--help`` flag to learn more about other optional flags that
+``build_docs.py`` takes, including ``--release`` (for publishing the docs) and
+``--watch`` (for auto-recompiling the docs whenever doc source files are
+changed).
 
 Notice that the build file puts the compiled docs into ``docs/<version_num>``
 where ``version_num`` comes from ``agentos/version.py``.
+
+Or you can build the docs manually (e.g., to control where output goes)::
+
+  sphinx-build documentation outdir  # Or use sphinx-autobuild.
+  # Open and inspect outdir/index.html in your browser.
+
+
+Publishing Docs to agentos.org
+==============================
 
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
 docs are hosted.  To publish updated docs to agentos.org, checkout the
@@ -103,13 +112,14 @@ will become live at agentos.org automatically.
 
 Assuming you have local branches tracking both the ``master`` and ``website``
 branches, and all changes to the documentation source files have all been
-committed in the ``master`` branch, your workflow might look similar to::
+committed in the ``master`` branch, the workflow to publish updated docs to
+agentos.org might look similar to::
 
   git checkout website
   git merge master
-  python scripts/build_docs.py
+  python scripts/build_docs.py --release -a  # The -a is a `sphinx-build` flag.
   git add docs
-  git commit -m "push updated docs to website"
+  git commit -m "push updated docs to website for version X.Y.Z"
   git push
 
 
@@ -138,9 +148,11 @@ Here are the steps for releasing AgentOS:
 
 #. Wait till the PR gets LGTMs from all other committers, then merge it.
 
-#. Create a follow-on PR against ``website`` branch to update the docs (see
-   `Building Docs & agentos.org`_), which at very least need to reflect
-   the version number of the release.
+#. Build and publish the docs for the new version, which involves creating a
+   pull request against ``website`` branch. This is required for all releases,
+   even if the docs have not changed, since the docs are versioned. When you
+   run the ``build_docs.py`` script, you will use the ``--release`` flag
+   (see `Building Docs`_ & `Publishing Docs to agentos.org`_ for more details).
 
 #. Create another follow-on PR that bumps version number to be ``X.Y.Z-alpha``
    which reflects that work going forward will be part of the next release
@@ -171,4 +183,4 @@ which will probably look something like::
 ----
 
 *This README was compiled from the project documentation via:*
-``python documentation/build_readme.py``.
+``python documentation\build_readme.py``.
