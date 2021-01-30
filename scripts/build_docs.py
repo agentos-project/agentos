@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(
     "that do not match those listed below will be passed through "
     "as arguments to the `sphinx-build` command, which is used "
     "under the hood to build the docs (or the `sphinx-autobuild` command, "
-    "which is used under the hood if the `--watch` flag is passed."
+    "which is used under the hood if the `--watch` flag is passed)."
 )
 parser.add_argument(
     "--release",

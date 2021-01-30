@@ -20,8 +20,8 @@ request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
 
-Building Docs & agentos.org
-===========================
+Building Docs
+=============
 
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.  The docs are
@@ -34,13 +34,21 @@ Then use the build script::
 
   python scripts/build_docs.py
 
-Or to build the docs manually yourself (e.g., to control where output goes)::
+Use the ``--help`` flag to see more about optional flags, including
+``--release`` (used when publishing the docs) and ``--watch`` (used to
+recompile the docs whenever doc source files are changed).
 
-  sphinx-build documentation docs/_build # also try installing/using sphinx-auto
+Or you can build the docs manually (e.g., to control where output goes)::
+
+  sphinx-build documentation outdir  # sphinx-autobuild rebuilds on file change
   # Open and inspect docs/_build/index.html in your browser.
 
 Notice that the build file puts the compiled docs into ``docs/<version_num>``
 where ``version_num`` comes from ``agentos/version.py``.
+
+
+Publishing Docs to agentos.org
+==============================
 
 `agentos.org <https://agentos.org>`_ is a github.io website where the AgentOS
 docs are hosted.  To publish updated docs to agentos.org, checkout the
@@ -54,7 +62,7 @@ committed in the ``master`` branch, your workflow might look similar to::
 
   git checkout website
   git merge master
-  python scripts/build_docs.py
+  python scripts/build_docs.py --release -a
   git add docs
   git commit -m "push updated docs to website"
   git push
@@ -85,9 +93,11 @@ Here are the steps for releasing AgentOS:
 
 #. Wait till the PR gets LGTMs from all other committers, then merge it.
 
-#. Create a follow-on PR against ``website`` branch to update the docs (see
-   `Building Docs & agentos.org`_), which at very least need to reflect
-   the version number of the release.
+#. Build and publish the docs for the new version, which involves creating a
+   pull request against ``website`` branch. This is required for all releases,
+   even if the docs have not changed, since the docs are versioned. When you
+   run the ``build_docs.py`` script, you will use the ``--release`` flag
+   (see `Building Docs`_ & `Publishing Docs to agentos.org`_ for more details).
 
 #. Create another follow-on PR that bumps version number to be ``X.Y.Z-alpha``
    which reflects that work going forward will be part of the next release

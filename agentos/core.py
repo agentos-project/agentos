@@ -86,7 +86,8 @@ def run_agent(
 
     :param agent_class: The class object of the agent you want to run
     :param env: The class object of the env you want to run the agent in.
-    :param hz: Rate at which to call agent's `advance` function.
+    :param hz: Rate at which to call agent's `advance` function. If None,
+        call `advance` repeatedly in a tight loop (i.e., as fast as possible).
     :param max_iters: Maximum times to call agent's `advance` function,
         defaults to None.
     :param as_thread: Set to True to run this agent in a new thread, defaults
