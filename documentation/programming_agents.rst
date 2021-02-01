@@ -33,7 +33,7 @@ Environments must:
 
 * Descend from ``gym.Env``.
 * Define a function ``step(action) -> observation, reward, done, context``
-  that takes an action and returns an observation and other items.
+  that takes an action and returns an observation, reward, etc.
 * Define action and observation spaces.
 
 
