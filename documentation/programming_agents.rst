@@ -32,8 +32,8 @@ AgentOS does not define its own Environment API, instead we reuse `gym.Env`_.
 Environments must:
 
 * Descend from ``gym.Env``.
-* Define a function ``step(action) -> observation`` that takes an action and
-  returns an observation.
+* Define a function ``step(action) -> observation, reward, done, context``
+  that takes an action and returns an observation and other items.
 * Define action and observation spaces.
 
 
@@ -97,12 +97,12 @@ Learning. Conceptually, you can think of a rollout as a simulation of an agent
 
 Technically, a rollout is a process involving an instance of a
 Policy and an instance of an Env that proceeds as demonstrated by the
-following psuedocode:
+following pseudocode:
 
 .. code-block:: none
 
   def rollout(Env_class, Policy_class):
-      """Psuedocode implementation of simplified rollout function.
+      """Pseudocode implementation of simplified rollout function.
       See agentos/core.py for the actual implementation."""
       env = get new instance of Env
       obs = initial observation from env
