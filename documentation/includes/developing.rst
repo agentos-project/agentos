@@ -32,7 +32,7 @@ install the dev requirements::
 
 Then use the build script::
 
-  python documentation/build_docs.py
+  python scripts/build_docs.py
 
 Or to build the docs manually yourself (e.g., to control where output goes)::
 
@@ -54,7 +54,7 @@ committed in the ``master`` branch, your workflow might look similar to::
 
   git checkout website
   git merge master
-  python documentation/build_docs.py
+  python scripts/build_docs.py
   git add docs
   git commit -m "push updated docs to website"
   git push
@@ -63,13 +63,13 @@ committed in the ``master`` branch, your workflow might look similar to::
 Building README.rst
 ===================
 The main project ``README.rst`` is built via the script
-``python documentation/build_readme.py``, which re-uses sections of
+``python scripts/build_readme.py``, which re-uses sections of
 documentation. This avoids duplication of efforts and lowers the chances
 that a developer will forget to update one or the either of the README or
 the docs.
 
 To update ``README.rst``, first familiarize yourself with its build script
-``documentation/build_readme.py``. There you can see which sections of
+``scripts/build_readme.py``. There you can see which sections of
 documentation are included in ``README.rst``, plus some text that is manually
 inserted directly into ``README.rst`` (e.g., the footer).
 
@@ -78,29 +78,28 @@ Releasing
 =========
 Here are the steps for releasing AgentOS:
 
-  #. Create a release pull request (PR) that:
+#. Create a release pull request (PR) that:
 
-     * Updates the version number to remove "beta" from it.
-     * Contains draft release notes (summary of major changes)
-     * Updates the version
+   * Removes "-alpha" suffix from the version number in ``agentos/version.py``.
+   * Contains draft release notes (summary of major changes).
 
-  #. Wait till the PR gets LGTMs from all other committers, then merge it.
+#. Wait till the PR gets LGTMs from all other committers, then merge it.
 
-  #. Create a follow-on PR against ``website`` branch to upate the docs (see
-     `Building Docs & agentos.org`_), which at very least need to reflect
-     the version number of the release.
+#. Create a follow-on PR against ``website`` branch to update the docs (see
+   `Building Docs & agentos.org`_), which at very least need to reflect
+   the version number of the release.
 
-  #. Create another follow-on PR that bumps version number to be ``X.Y.Z-alpha``
-     which reflects that work going forward will be part of the next release
-     (we use `semantic versioning <https://semver.org>`_).
+#. Create another follow-on PR that bumps version number to be ``X.Y.Z-alpha``
+   which reflects that work going forward will be part of the next release
+   (we use `semantic versioning <https://semver.org>`_).
 
-  #. Push the release to PyPI (see `Pushing Releases to PyPI`_)
+#. Push the release to PyPI (see `Pushing Releases to PyPI`_).
 
-  #. Create a `github release
-     <https://github.com/agentos-project/agentos/releases>`_ that includes zip
-     and tarzips of `wheel files <https://wheel.readthedocs.io/en/stable/>`_ 
-     and source code (which you can generate using ``python setup.py sdist
-     --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
+#. Create a `github release
+   <https://github.com/agentos-project/agentos/releases>`_ that includes zips
+   and tarzips of `wheel files <https://wheel.readthedocs.io/en/stable/>`_
+   and source code (which you can generate using ``python setup.py sdist
+   --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
 
 
 

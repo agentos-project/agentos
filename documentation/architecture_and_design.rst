@@ -17,7 +17,7 @@ agent usually contains a policy which is a function that takes an (observation,
 reward) pair and returns an action.
 
 .. _fig_trad_rl_arch:
-.. figure:: traditional_rl_agent_arch.png
+.. figure:: _static/img/traditional_rl_agent_arch.png
   :width: 80%
   :align: center
 
@@ -29,7 +29,7 @@ reward) pair and returns an action.
   48).
 
 .. _fig_agentos_agent_arch:
-.. figure:: agentos_agent_arch.png
+.. figure:: _static/img/agentos_agent_arch.png
   :width: 80%
   :align: center
 
@@ -106,7 +106,7 @@ Architecture
 :numref:`fig_architecture` shows the main AgentOS architectural components.
 
 .. _fig_architecture:
-.. figure:: architecture.png
+.. figure:: _static/img/architecture.png
   :alt: AgentOS architecture
   :align: center
 
