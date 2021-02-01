@@ -7,13 +7,14 @@ from numpy import random as np_random
 
 class ChatBot(agentos.Agent):
     """A simple chatbot that speaks by parroting back things it has heard."""
+
     def __init__(self, env):
         super().__init__(env)
         self.memory = deque(maxlen=2048)
         self.reply_flag = False
 
     def advance(self):
-        msg = ''
+        msg = ""
         if self.reply_flag:
             msg = np_random.choice(self.memory)
             self.reply_flag = False

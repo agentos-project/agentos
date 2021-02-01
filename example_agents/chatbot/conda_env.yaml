@@ -5,4 +5,4 @@ dependencies:
   - pip
   - pip:
     - -e ../../
-    - numpy
+    - numpy==1.18.5

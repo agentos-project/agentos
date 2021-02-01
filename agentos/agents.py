@@ -4,6 +4,7 @@ from agentos import Agent
 
 class RandomAgent(Agent):
     """Extremely simple agent that takes random steps in self.env till done."""
+
     def _init(self):
         self.step_count = 0
         print("Created RandomAgent!")
@@ -13,4 +14,3 @@ class RandomAgent(Agent):
         print(f"Taking random step {self.step_count}.")
         self.step_count += 1
         return done
-

@@ -30,6 +30,7 @@ class Agent:
     ...with phases 1 and 3 often including internal decision making,
     learning, use of models, state updates, etc.
     """
+
     def __init__(self, env_class):
         """Set self.env, then reset the env and store _last_obs."""
         self.env = env_class()
@@ -37,7 +38,7 @@ class Agent:
         self._init()
 
     def _init(self):
-        """An alternative to overriding :py:func:`Agent.__init__()` is to override this.
+        """Override as an alternative to :py:func:`Agent.__init__()`
 
         This is a convenience function for when you just want to
         add some functionality to the constructor but don't want
@@ -56,6 +57,7 @@ class Policy:
     Policies are used by agents to encapsulate any state or logic necessary
     to decide on a next action given the last observation from an env.
     """
+
     def compute_action(self, observation):
         """Takes an observation from an env and returns next action to take.
 
@@ -67,14 +69,26 @@ class Policy:
         raise NotImplementedError
 
 
-def run_agent(agent_class, env, *args, hz=40, max_iters=None, as_thread=False, **kwargs):
+def run_agent(
+    agent_class, env, *args, hz=40, max_iters=None, as_thread=False, **kwargs
+):
     """Run an agent, optionally in a new thread.
 
     If as_thread is True, agent is run in a thread, and the
     thread object is returned to the caller. The caller may
     need to call join on that that thread depending on their
     use case for this agent_run.
+
+    :param agent_class: The class object of the agent you want to run
+    :param env: The class object of the env you want to run the agent in.
+    :param hz: Rate at which to call agent's `advance` function.
+    :param max_iters: Maximum times to call agent's `advance` function.
+    :param as_thread: Set to True to run this agent in a new thread.
+    :param \\*\\*kwargs: Other arguments to pass through to
+           agent's `__init__()`.
+    :returns: Either a running thread (if as_thread=True) or None.
     """
+
     def runner():
         agent_instance = agent_class(env, *args, **kwargs)
         done = False
@@ -86,6 +100,7 @@ def run_agent(agent_class, env, *args, hz=40, max_iters=None, as_thread=False, *
             if hz:
                 time.sleep(1 / hz)
             iter_count += 1
+
     if as_thread:
         t = Thread(target=runner)
         t.start()
@@ -103,12 +118,14 @@ policy and may perform learning and may involve using, updating,
 or saving learning related state including hyper-parameters
 such as epsilon in epsilon greedy.
 """
+
+
 def default_rollout_step(policy, obs, step_num):
     return policy.compute_action(obs)
 
 
 def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
-    """ Perform rollout using env an with the type provided.
+    """Perform rollout using env an with the type provided.
 
     :param policy: policy to use when simulating these episodes.
     :param env_class: class to instatiate an env object from.
@@ -132,7 +149,7 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
     observations = []
     rewards = []
     dones = []
-    contexts =[]
+    contexts = []
 
     env = env_class()
     obs = env.reset()
@@ -147,7 +164,7 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
         elif step_fn.__code__.co_argcount == 3:
             action = step_fn(policy, obs, step_num)
         else:
-            raise TypeError('step_fn must accept 2 or 3 parameters.')
+            raise TypeError("step_fn must accept 2 or 3 parameters.")
         obs, reward, done, ctx = env.step(action)
         actions.append(action)
         observations.append(obs)
@@ -155,15 +172,29 @@ def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
         dones.append(done)
         contexts.append(ctx)
         step_num += 1
-    Trajectory = namedtuple('Trajectory', ["init_obs", "actions", "observations", "rewards", "dones", "contexts"])
-    return Trajectory(init_obs, actions, observations, rewards, dones, contexts)
+    Trajectory = namedtuple(
+        "Trajectory",
+        [
+            "init_obs",
+            "actions",
+            "observations",
+            "rewards",
+            "dones",
+            "contexts",
+        ],
+    )
+    return Trajectory(
+        init_obs, actions, observations, rewards, dones, contexts
+    )
 
 
-def rollouts(policy,
-             env_class,
-             num_rollouts,
-             step_fn=default_rollout_step,
-             max_steps=None):
+def rollouts(
+    policy,
+    env_class,
+    num_rollouts,
+    step_fn=default_rollout_step,
+    max_steps=None,
+):
     """
     :param policy: policy to use when simulating these episodes.
     :param env_class: class to instatiate an env object from.
@@ -177,7 +208,7 @@ def rollouts(policy,
     :return: array with one namedtuple per rollout, each tuple containing
              the following arrays: observations, rewards, dones, ctxs
     """
-    return [rollout(policy, env_class, step_fn, max_steps)
-            for _ in range(num_rollouts)]
-
-
+    return [
+        rollout(policy, env_class, step_fn, max_steps)
+        for _ in range(num_rollouts)
+    ]
