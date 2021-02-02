@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>agentos.core &mdash; AgentOS 0.0.7-alpha documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="agentos.cli" href="agentos.cli.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.7-alpha
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="agentos.agents.html">agentos.agents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agentos.cli.html">agentos.cli</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">agentos.core</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">API Documentation</a> &raquo;</li>
+        
+      <li>agentos.core</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/api/agentos.core.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-agentos.core">
+<span id="agentos-core"></span><h1>agentos.core<a class="headerlink" href="#module-agentos.core" title="Permalink to this headline">¶</a></h1>
+<p>Core AgentOS APIs.</p>
+<dl class="py class">
+<dt id="agentos.core.Agent">
+<em class="property">class </em><code class="sig-prename descclassname">agentos.core.</code><code class="sig-name descname">Agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">env_class</span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>An Agent observes and takes actions in its environment till done.</p>
+<p>An agent holds an environment <code class="docutils literal notranslate"><span class="pre">self.env</span></code>, which it can use
+to observe and act by calling <code class="docutils literal notranslate"><span class="pre">self.env.step()</span></code> that takes
+an observation and returns an action.</p>
+<p>Like a human, an Agent lives in a stream of time. To to bring an
+Agent to life (i.e. have it exist and take actions in its
+environment), simply call agent.advance() repeatedly until
+that function returns True (which means the agent is done).</p>
+<p>The agent can maintain any sort of state (e.g., a policy for
+deciding its next action), but any use or updates of state must
+happen from within the agent’s advance() function (which itself can
+be arbitrarily complex, call other functions, etc.).</p>
+<p>Often, an agent’s advance function has 3 phases:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>pre-action</p></li>
+<li><p>take action and save observation</p></li>
+<li><p>post-action</p></li>
+</ol>
+</div></blockquote>
+<p>…with phases 1 and 3 often including internal decision making,
+learning, use of models, state updates, etc.</p>
+<dl class="py method">
+<dt id="agentos.core.Agent.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">env_class</span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Agent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set <code class="docutils literal notranslate"><span class="pre">self.env</span></code>, then call its <code class="docutils literal notranslate"><span class="pre">reset()</span></code> function
+and store the observation it returns as <code class="docutils literal notranslate"><span class="pre">self.init_obs</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>env_class</strong> – The class object of the Environment for this agent.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="agentos.core.Agent._init">
+<code class="sig-name descname">_init</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Agent._init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override as an alternative to <a class="reference internal" href="#agentos.core.Agent.__init__" title="agentos.core.Agent.__init__"><code class="xref py py-func docutils literal notranslate"><span class="pre">Agent.__init__()</span></code></a></p>
+<p>This is a convenience function for when you just want to
+add some functionality to the constructor but don’t want
+to completely override the constructor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="agentos.core.Agent.advance">
+<code class="sig-name descname">advance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Agent.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True when agent is done; False or None otherwise.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="agentos.core.Policy">
+<em class="property">class </em><code class="sig-prename descclassname">agentos.core.</code><code class="sig-name descname">Policy</code><a class="headerlink" href="#agentos.core.Policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick next action based on last observation from environment.</p>
+<p>Policies are used by agents to encapsulate any state or logic necessary
+to decide on a next action given the last observation from an env.</p>
+<dl class="py method">
+<dt id="agentos.core.Policy.compute_action">
+<code class="sig-name descname">compute_action</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">observation</span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Policy.compute_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an observation and returns next action to take.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observation</strong> – should be in the <cite>observation_space</cite> of the
+environments that this policy is compatible with.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>action to take, should be in <cite>action_space</cite> of the
+environments that this policy is compatible with.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="agentos.core.default_rollout_step">
+<code class="sig-prename descclassname">agentos.core.</code><code class="sig-name descname">default_rollout_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span></em>, <em class="sig-param"><span class="n">obs</span></em>, <em class="sig-param"><span class="n">step_num</span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.default_rollout_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>The default rollout step function is the policy’s compute_action function.</p>
+<p>A rollout step function allows a developer to specify the behavior
+that will occur at every step of the rollout–given a policy
+and the last observation from the env–to decide
+what action to take next. This usually involves the rollout’s
+policy and may perform learning. It also, may involve using, updating,
+or saving learning related state including hyper-parameters
+such as epsilon in epsilon greedy.</p>
+<p>You can provide your own function with the same signature as this default
+if you want to have a more complex behavior at each step of the rollout.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="agentos.core.rollout">
+<code class="sig-prename descclassname">agentos.core.</code><code class="sig-name descname">rollout</code><span class="sig-paren">(</span><em class="sig-param">policy</em>, <em class="sig-param">env_class</em>, <em class="sig-param">step_fn=&lt;function default_rollout_step&gt;</em>, <em class="sig-param">max_steps=None</em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.rollout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform rollout using provided policy and env.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – policy to use when simulating these episodes.</p></li>
+<li><p><strong>env_class</strong> – class to instantiate an env object from.</p></li>
+<li><p><strong>step_fn</strong> – <p>a function to be called at each step of rollout.
+The function can have 2 or 3 parameters, and must return an action:</p>
+<ul>
+<li><p>2 parameter definition: policy, observation.</p></li>
+<li><p>3 parameter definition: policy, observation, step_num.</p></li>
+</ul>
+<p>Default value is <code class="docutils literal notranslate"><span class="pre">agentos.core.default_rollout_step</span></code>.</p>
+</p></li>
+<li><p><strong>max_steps</strong> – cap on number of steps per episode.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the trajectory that was followed during this rollout.
+A trajectory is a named tuple that contains the initial observation (a
+scalar) as well as the following arrays: actions, observations,
+rewards, dones, contexts. The ith entry of each array corresponds to
+the action taken at the ith step of the rollout, and the respective
+results returned by the environment after taking that action. To learn
+more about the semantics of these, see the documentation and code of
+gym.Env.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="agentos.core.rollouts">
+<code class="sig-prename descclassname">agentos.core.</code><code class="sig-name descname">rollouts</code><span class="sig-paren">(</span><em class="sig-param">policy</em>, <em class="sig-param">env_class</em>, <em class="sig-param">num_rollouts</em>, <em class="sig-param">step_fn=&lt;function default_rollout_step&gt;</em>, <em class="sig-param">max_steps=None</em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.rollouts" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – policy to use when simulating these episodes.</p></li>
+<li><p><strong>env_class</strong> – class to instatiate an env object from.</p></li>
+<li><p><strong>num_rollouts</strong> – how many rollouts (i.e., episodes) to perform</p></li>
+<li><p><strong>step_fn</strong> – a function to be called at each step of each rollout.
+The function can have 2 or 3 parameters.
+2 parameter definition: policy, observation.
+3 parameter definition: policy, observation, step_num.
+The function must return an action.</p></li>
+<li><p><strong>max_steps</strong> – cap on number of steps per episode.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array with one namedtuple per rollout, each tuple containing
+the following arrays: observations, rewards, dones, ctxs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="agentos.core.run_agent">
+<code class="sig-prename descclassname">agentos.core.</code><code class="sig-name descname">run_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">agent_class</span></em>, <em class="sig-param"><span class="n">env</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">hz</span><span class="o">=</span><span class="default_value">40</span></em>, <em class="sig-param"><span class="n">max_iters</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_thread</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.run_agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run an agent, optionally in a new thread.</p>
+<p>If as_thread is True, agent is run in a thread, and the
+thread object is returned to the caller. The caller may
+need to call join on that that thread depending on their
+use case for this agent_run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>agent_class</strong> – The class object of the agent you want to run</p></li>
+<li><p><strong>env</strong> – The class object of the env you want to run the agent in.</p></li>
+<li><p><strong>hz</strong> – Rate at which to call agent’s <cite>advance</cite> function. If None,
+call <cite>advance</cite> repeatedly in a tight loop (i.e., as fast as possible).</p></li>
+<li><p><strong>max_iters</strong> – Maximum times to call agent’s <cite>advance</cite> function,
+defaults to None.</p></li>
+<li><p><strong>as_thread</strong> – Set to True to run this agent in a new thread, defaults
+to False.</p></li>
+<li><p><strong>**kwargs</strong> – Other arguments to pass through to
+agent’s <cite>__init__()</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Either a running thread (if as_thread=True) or None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="agentos.cli.html" class="btn btn-neutral float-left" title="agentos.cli" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, AgentOS.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

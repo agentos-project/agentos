@@ -1,0 +1,7 @@
+.contents.local.topic {
+    float: right;
+    width: 40%;
+    border: thin lightgrey solid;
+    padding: 15px 10px 0 15px;
+    margin: 5px 0 5px 5px;
+}

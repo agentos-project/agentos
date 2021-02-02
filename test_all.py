@@ -65,25 +65,24 @@ def test_rllib_agent():
 
 def test_chatbot(capsys):
     import sys
-    import time
 
     sys.path.append("example_agents/chatbot")
     from example_agents.chatbot.main import ChatBot
     from example_agents.chatbot.env import MultiChatEnv
 
     env_generator = MultiChatEnv()
-    # say something in the room for the agent to hear
     client_env = env_generator()
     client_env.reset()
-    running_agent = run_agent(
-        ChatBot, env_generator, hz=100, max_iters=40, as_thread=True
-    )
-    while not running_agent.is_alive():
-        pass
-    time.sleep(0.1)
+    chat_bot = ChatBot(env_generator)
+    # Say something in the room for the agent to hear
     response_txt, _, _, _ = client_env.step("one")
-    time.sleep(0.1)
-    response_txt, _, _, _ = client_env.step("two")
+    # Agent hears "one" on this advance, but can't respond yet
+    chat_bot.advance()
+    response_txt, _, _, _ = client_env.step("")
+    assert response_txt == "", "chatbot should have no strings in memory"
+    # Agent responds with a random selection from memory (which is only "one")
+    chat_bot.advance()
+    response_txt, _, _, _ = client_env.step("")
     assert response_txt == "one", "chatbot should repeat strings from memory"
     # TODO(andyk): also test CommandLineListener
 
