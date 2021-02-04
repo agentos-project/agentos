@@ -125,3 +125,22 @@ which will probably look something like::
   pip install setuptools wheel twine
   python setup.py sdist --formats=gztar,zip bdist_wheel
   twine upload dist/*
+
+
+Proposing Features
+==================
+
+For new features and other big chunks of work, AgentOS maintains a `repo of
+design documents <https://github.com/agentos-project/design_docs>`_.  The goal
+of these design documents is to:
+
+* Allow developers to think through a design, and
+* Allow stakeholders to give feedback
+
+before development begins.
+
+If you'd like to propose a feature, please follow the procedure found in the
+`design_docs README
+<https://github.com/agentos-project/design_docs/blob/main/README.rst>`_.  You
+can also browse other design docs in the repo to get a feel for the general
+content and style.
