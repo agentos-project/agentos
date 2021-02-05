@@ -48,7 +48,8 @@ content and style.
 
 
 Installing AgentOS From Source
-======================
+==============================
+
 To install agentos from source (e.g., to play with the example_agents), run the
 following::
 
