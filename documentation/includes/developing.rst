@@ -1,4 +1,55 @@
-Installing From Source
+Development Process
+===================
+
+AgentOS uses `GitHub Issues
+<https://github.com/agentos-project/agentos/issues>`_ to track development
+work.  Submit any bug reports or feature requests to this issues tracker.
+
+For significant feature work (more than a couple dev days or something that
+fundamentally changes internal or external interfaces), we run a design process
+to solicit feedback from other collaborators.  Read more about this process
+here: :ref:`Proposing Features`.
+
+To contribute to AgentOS, the general workflow is as follows:
+
+* Sync with the core development team via the
+  `issue tracker <https://github.com/agentos-project/agentos/issues>`_
+  so we can avoid unnecessary or duplicated work.
+
+* Fork the AgentOS repo.
+
+* Complete your feature work on a branch in your forked repo.  Ensure all
+  checks and tests pass.
+
+* Issue a pull request from your forked repo into the central AgentOS repo.
+  Assign a core developer to review.
+
+* Address any comments and the core developer will merge once the PR looks
+  good.
+
+
+.. _Proposing Features:
+
+Proposing Features
+==================
+
+For new features and other big chunks of work, AgentOS maintains a `repo of
+design documents <https://github.com/agentos-project/design_docs>`_.  The goal
+of these design documents is to:
+
+* Allow developers to think through a design, and
+* Allow stakeholders to give feedback
+
+before development begins.
+
+If you'd like to propose a feature, please follow the procedure found in the
+`design_docs README
+<https://github.com/agentos-project/design_docs/blob/main/README.rst>`_.  You
+can also browse other design docs in the repo to get a feel for the general
+content and style.
+
+
+Installing AgentOS From Source
 ======================
 To install agentos from source (e.g., to play with the example_agents), run the
 following::
@@ -72,6 +123,7 @@ agentos.org might look similar to::
 
 Building README.rst
 ===================
+
 The main project ``README.rst`` is built via the script
 ``python scripts/build_readme.py``, which re-uses sections of
 documentation. This avoids duplication of efforts and lowers the chances
@@ -86,6 +138,7 @@ inserted directly into ``README.rst`` (e.g., the footer).
 
 Releasing
 =========
+
 Here are the steps for releasing AgentOS:
 
 #. Create a release pull request (PR) that:
@@ -114,9 +167,9 @@ Here are the steps for releasing AgentOS:
    --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
 
 
-
 Pushing Releases to PyPI
 ========================
+
 We make AgentOS `available in PyPI <https://pypi.org/project/agentos/>`_. To
 push a release to PyPI, you can approximately follow `these python.org
 instructions <https://packaging.python.org/tutorials/packaging-projects/>`_,
@@ -125,22 +178,3 @@ which will probably look something like::
   pip install setuptools wheel twine
   python setup.py sdist --formats=gztar,zip bdist_wheel
   twine upload dist/*
-
-
-Proposing Features
-==================
-
-For new features and other big chunks of work, AgentOS maintains a `repo of
-design documents <https://github.com/agentos-project/design_docs>`_.  The goal
-of these design documents is to:
-
-* Allow developers to think through a design, and
-* Allow stakeholders to give feedback
-
-before development begins.
-
-If you'd like to propose a feature, please follow the procedure found in the
-`design_docs README
-<https://github.com/agentos-project/design_docs/blob/main/README.rst>`_.  You
-can also browse other design docs in the repo to get a feel for the general
-content and style.
