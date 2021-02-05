@@ -8,7 +8,7 @@ work.  Submit any bug reports or feature requests to this issues tracker.
 For significant feature work (more than a couple dev days or something that
 fundamentally changes internal or external interfaces), we run a design process
 to solicit feedback from other collaborators.  Read more about this process
-here: :ref:`Proposing Features`.
+in the `Proposing Features`_ section.
 
 To contribute to AgentOS, the general workflow is as follows:
 
@@ -27,8 +27,6 @@ To contribute to AgentOS, the general workflow is as follows:
 * Address any comments and the core developer will merge once the PR looks
   good.
 
-
-.. _Proposing Features:
 
 Proposing Features
 ==================
