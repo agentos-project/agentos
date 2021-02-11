@@ -9,12 +9,14 @@ import gym
 import mlflow.projects
 import importlib.util
 from pathlib import Path
-
+import configparser
+import importlib
+import sys
 
 CONDA_ENV_FILE = Path("./conda_env.yaml")
 CONDA_ENV_CONTENT = """{file_header}
 
-name: {name}
+name: {agent_name}
 
 dependencies:
     - pip
@@ -25,10 +27,11 @@ dependencies:
       # update the line below and replace the line above with it.
       #- -e path/to/agentos/git/repo
 """
+
 MLFLOW_PROJECT_FILE = Path("./MLProject")
 MLFLOW_PROJECT_CONTENT = """{file_header}
 
-name: {name}
+name: {agent_name}
 
 conda_env: {conda_env}
 
@@ -36,50 +39,111 @@ entry_points:
   main:
     command: "python main.py"
 """
+
 AGENT_DEF_FILE = Path("./agent.py")  # Default location of agent code.
 AGENT_MAIN_FILE = Path("./main.py")
-AGENT_MAIN = """{file_header}
+AGENT_CODE = """{file_header}
 import agentos
-import random
-import gym
-
-# TODO: REPLACE THE EXAMPLE CODE BELOW WITH YOUR OWN!
-
-# A minimal 1D hallway env class.
-class MyEnv(gym.Env):
-    def __init__(self):
-        super().__init__()
-        self.l_r_pos = 0  # left is neg, right is pos.
-
-    def reset(self):
-        self.l_r_pos = 0
-        return 0
-
-    def step(self, action):
-        self.l_r_pos += action
-        return self.l_r_pos, abs(self.l_r_pos), False, dict()
 
 
-# A minimal example agent class.
-class MyAgent(agentos.Agent):
-    def __init__(self, env_class):
-        super().__init__(env_class)
-        self.step_count = 0
+# A basic agent.
+class {agent_name}(agentos.Agent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.obs = self.environment.reset()
+
+    def train(self):
+        self.trainer.train(self.policy)
 
     def advance(self):
-        print("Taking step " + str(self.step_count))
-        pos_in_env, _, _, _ = self.env.step(random.choice([-1,1]))
-        print("Position in env is now: " + str(pos_in_env))
-        self.step_count += 1
-
-
-if __name__ == "__main__":
-    agentos.run_agent(MyAgent, MyEnv, max_iters=5)
+        next_action = self.policy.decide(
+            self.obs,
+            self.environment.valid_actions
+        )
+        self.obs, reward, done, info = self.environment.step(next_action)
+        return done
 """
+
+ENV_DEF_FILE = Path("./environment.py")
+ENV_CODE = """{file_header}
+import agentos
+
+
+# Simulates a 1D corridor
+class Corridor(agentos.Environment):
+    def __init__(self):
+        self.length = 5
+        self.action_space = [0, 1]
+        self.observation_space = [0, 1, 2, 3, 4, 5]
+        self.reset()
+
+    def step(self, action):
+        assert action in self.action_space
+        if action == 0:
+            self.position = max(self.position - 1, 0)
+        else:
+            self.position = min(self.position + 1, self.length)
+        return (self.position, -1, self.done, {{}})
+
+    def reset(self):
+        self.position = 0
+        return self.position
+
+    @property
+    def valid_actions(self):
+        return self.action_space
+
+    @property
+    def done(self):
+        return self.position >= self.length
+"""
+
+POLICY_DEF_FILE = Path("./policy.py")
+POLICY_CODE = """{file_header}
+import agentos
+import random
+
+
+# A random policy
+class RandomPolicy(agentos.Policy):
+    def decide(self, observation, actions):
+        return random.choice(actions)
+"""
+
+TRAINER_DEF_FILE = Path("./trainer.py")
+TRAINER_CODE = """{file_header}
+import agentos
+
+
+# A no-op trainer
+class NoOpTrainer(agentos.Trainer):
+    def train(self, policy):
+        return policy
+"""
+
+AGENT_INI_FILE = Path("./agent.ini")
+AGENT_INI_CONTENT = """
+[Agent]
+class = agent.{agent_name}
+
+[Environment]
+class = environment.Corridor
+
+[Policy]
+class = policy.RandomPolicy
+
+[Trainer]
+class = trainer.NoOpTrainer
+"""
+
 INIT_FILES = {
     CONDA_ENV_FILE: CONDA_ENV_CONTENT,
     MLFLOW_PROJECT_FILE: MLFLOW_PROJECT_CONTENT,
-    AGENT_MAIN_FILE: AGENT_MAIN,
+    AGENT_DEF_FILE: AGENT_CODE,
+    ENV_DEF_FILE: ENV_CODE,
+    POLICY_DEF_FILE: POLICY_CODE,
+    TRAINER_DEF_FILE: TRAINER_CODE,
+    AGENT_INI_FILE: AGENT_INI_CONTENT,
 }
 
 
@@ -98,16 +162,16 @@ def validate_agent_name(ctx, param, value):
 @agentos_cmd.command()
 @click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
 @click.option(
-    "--name",
+    "--agent-name",
     "-n",
     metavar="AGENT_NAME",
-    default="new_agent",
+    default="BasicAgent",
     callback=validate_agent_name,
     help="This is used as the name of the MLflow Project and "
     "Conda env for all *Directory Agents* being created. "
     "AGENT_NAME may not contain ' ', ':', or '/'.",
 )
-def init(dir_names, name):
+def init(dir_names, agent_name):
     """Initialize current (or specified) directory as an AgentOS agent.
 
     \b
@@ -133,7 +197,7 @@ def init(dir_names, name):
             )
             f.write(
                 content.format(
-                    name=name,
+                    agent_name=agent_name,
                     conda_env=CONDA_ENV_FILE.name,
                     file_header=header,
                 )
@@ -141,7 +205,9 @@ def init(dir_names, name):
             f.flush()
 
         d = "current working directory" if d == Path(".") else d
-        click.echo(f"Finished initializing AgentOS agent '{name}' in {d}.")
+        click.echo(
+            f"Finished initializing AgentOS agent '{agent_name}' in {d}."
+        )
 
 
 def _get_subclass_from_file(filename, parent_class):
@@ -157,6 +223,61 @@ def _get_subclass_from_file(filename, parent_class):
         if type(elt) is type and issubclass(elt, parent_class):
             print(f"Found first subclass class {elt}; returning it.")
             return elt
+
+
+def get_class_from_config(class_path):
+    """Takes class_path of form "module.Class" and returns the class object."""
+    split_path = class_path.split(".")
+    class_name = split_path[-1]
+    module_name = ".".join(split_path[:-1])
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)
+
+
+def load_agent_from_current_directory():
+    """Returns agent specified by agent.ini in the current directory."""
+    sys.path.append(".")
+    agent_file = Path("./agent.ini")
+    config = configparser.ConfigParser()
+    config.read(agent_file)
+
+    agent_dict = dict(config["Agent"])
+    agent_cls = get_class_from_config(agent_dict.pop("class"))
+    environment_dict = dict(config["Environment"])
+    environment_cls = get_class_from_config(environment_dict.pop("class"))
+    policy_dict = dict(config["Policy"])
+    policy_cls = get_class_from_config(policy_dict.pop("class"))
+    trainer_dict = dict(config["Trainer"])
+    trainer_cls = get_class_from_config(trainer_dict.pop("class"))
+
+    agent_kwargs = {
+        "environment": environment_cls(**environment_dict),
+        "policy": policy_cls(**policy_dict),
+        "trainer": trainer_cls(**trainer_dict),
+        **agent_dict,
+    }
+    return agent_cls(**agent_kwargs)
+
+
+@agentos_cmd.command()
+@click.argument("iters", type=click.INT, required=True)
+def train(iters):
+    """Trains an agent by calling its train() method in a loop."""
+    agent = load_agent_from_current_directory()
+    for i in range(iters):
+        agent.train()
+
+
+@agentos_cmd.command()
+def test():
+    """Test an agent by calling advance() on it until it returns True"""
+    agent = load_agent_from_current_directory()
+    done = False
+    step_count = 0
+    while not done:
+        done = agent.advance()
+        step_count += 1
+    print(f"Agent finished in {step_count} steps")
 
 
 @agentos_cmd.command()

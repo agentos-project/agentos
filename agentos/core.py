@@ -4,7 +4,21 @@ import time
 from threading import Thread
 
 
-class Agent:
+class MemberInitializer:
+    """Takes all constructor kwargs and sets them as class members.
+
+    For example, if MyClass is a MemberInitializer:
+
+    a = MyClass(foo='bar')
+    assert a.foo == 'bar'
+    """
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
+class Agent(MemberInitializer):
     """An Agent observes and takes actions in its environment till done.
 
     An agent holds an environment ``self.env``, which it can use
@@ -31,39 +45,23 @@ class Agent:
     learning, use of models, state updates, etc.
     """
 
-    def __init__(self, env_class):
-        """
-        Set ``self.env``, then call its ``reset()`` function
-        and store the observation it returns as ``self.init_obs``.
-
-        :param env_class: The class object of the Environment for this agent.
-        """
-        self.env = env_class()
-        self.init_obs = self.env.reset()
-        self._init()
-
-    def _init(self):
-        """Override as an alternative to :py:func:`Agent.__init__()`
-
-        This is a convenience function for when you just want to
-        add some functionality to the constructor but don't want
-        to completely override the constructor.
-        """
-        pass
+    def train(self):
+        """Does one iteration of training"""
+        raise NotImplementedError
 
     def advance(self):
         """Returns True when agent is done; False or None otherwise."""
         raise NotImplementedError
 
 
-class Policy:
+class Policy(MemberInitializer):
     """Pick next action based on last observation from environment.
 
     Policies are used by agents to encapsulate any state or logic necessary
     to decide on a next action given the last observation from an env.
     """
 
-    def compute_action(self, observation):
+    def decide(self, observation):
         """Takes an observation and returns next action to take.
 
         :param observation: should be in the `observation_space` of the
@@ -71,6 +69,53 @@ class Policy:
         :returns: action to take, should be in `action_space` of the
             environments that this policy is compatible with.
         """
+        raise NotImplementedError
+
+
+class Trainer(MemberInitializer):
+    """Mutates the agent's policy based on the agent's experience."""
+
+    def train(self, policy, **kwargs):
+        """Trains the policy.
+
+        As the agent gains experience in the environment, Trainer.train updates
+        the policy to reflect this experience so that the agent can maximize
+        reward.
+
+        :param policy: this is the current policy.  Train will mutate this
+            in-place.
+
+        :returns: updated policy
+        """
+        raise NotImplementedError
+
+
+# Inspired by OpenAI's gym.Env
+# https://github.com/openai/gym/blob/master/gym/core.py
+class Environment(MemberInitializer):
+    """Minimalist port of OpenAI's gym.Env."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.action_space = None
+        self.observation_space = None
+        self.reward_range = None
+
+    def step(self, action):
+        """Perform the action in the environment."""
+        raise NotImplementedError
+
+    def reset(self):
+        """Resets the environment to an initial state."""
+        raise NotImplementedError
+
+    def render(self, mode):
+        raise NotImplementedError
+
+    def close(self, mode):
+        pass
+
+    def seed(self, seed):
         raise NotImplementedError
 
 
