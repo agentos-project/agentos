@@ -26,16 +26,14 @@ def test_cli(tmpdir):
     agent = Path(tmpdir) / "agent.py"
     environment = Path(tmpdir) / "environment.py"
     policy = Path(tmpdir) / "policy.py"
-    trainer = Path(tmpdir) / "trainer.py"
     ml_project = Path(tmpdir) / "MLProject"
     conda_env = Path(tmpdir) / "conda_env.yaml"
     assert agent.is_file()
     assert environment.is_file()
     assert policy.is_file()
-    assert trainer.is_file()
     assert ml_project.is_file()
     assert conda_env.is_file()
-    commands = [["agentos", "train", "5"], ["agentos", "test"]]
+    commands = [["agentos", "learn", "5"], ["agentos", "test"]]
     for c in commands:
         subprocess.run(c, cwd=tmpdir, check=True)
 
