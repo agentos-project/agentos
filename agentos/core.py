@@ -45,9 +45,9 @@ class Agent(MemberInitializer):
     learning, use of models, state updates, etc.
     """
 
-    def train(self):
+    def learn(self):
         """Does one iteration of training"""
-        raise NotImplementedError
+        pass
 
     def advance(self):
         """Returns True when agent is done; False or None otherwise."""
@@ -71,23 +71,9 @@ class Policy(MemberInitializer):
         """
         raise NotImplementedError
 
-
-class Trainer(MemberInitializer):
-    """Mutates the agent's policy based on the agent's experience."""
-
-    def train(self, policy, **kwargs):
-        """Trains the policy.
-
-        As the agent gains experience in the environment, Trainer.train updates
-        the policy to reflect this experience so that the agent can maximize
-        reward.
-
-        :param policy: this is the current policy.  Train will mutate this
-            in-place.
-
-        :returns: updated policy
-        """
-        raise NotImplementedError
+    def improve(self, **kwargs):
+        """Improves the policy based on the agent's experience."""
+        pass
 
 
 # Inspired by OpenAI's gym.Env

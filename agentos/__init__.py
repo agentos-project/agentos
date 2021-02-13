@@ -5,7 +5,6 @@ from agentos.core import (
     Agent,
     Policy,
     Environment,
-    Trainer,
     run_agent,
     rollout,
     rollouts,
@@ -14,7 +13,6 @@ from agentos.core import (
 __all__ = [
     "Agent",
     "Policy",
-    "Trainer",
     "Environment",
     "run_agent",
     "rollout",

@@ -52,8 +52,8 @@ class {agent_name}(agentos.Agent):
         super().__init__(*args, **kwargs)
         self.obs = self.environment.reset()
 
-    def train(self):
-        self.trainer.train(self.policy)
+    def learn(self):
+        self.policy.improve()
 
     def advance(self):
         next_action = self.policy.decide(
@@ -108,17 +108,9 @@ import random
 class RandomPolicy(agentos.Policy):
     def decide(self, observation, actions):
         return random.choice(actions)
-"""
 
-TRAINER_DEF_FILE = Path("./trainer.py")
-TRAINER_CODE = """{file_header}
-import agentos
-
-
-# A no-op trainer
-class NoOpTrainer(agentos.Trainer):
-    def train(self, policy):
-        return policy
+    def improve(self, **kwargs):
+        pass
 """
 
 AGENT_INI_FILE = Path("./agent.ini")
@@ -131,9 +123,6 @@ class = environment.Corridor
 
 [Policy]
 class = policy.RandomPolicy
-
-[Trainer]
-class = trainer.NoOpTrainer
 """
 
 INIT_FILES = {
@@ -142,7 +131,6 @@ INIT_FILES = {
     AGENT_DEF_FILE: AGENT_CODE,
     ENV_DEF_FILE: ENV_CODE,
     POLICY_DEF_FILE: POLICY_CODE,
-    TRAINER_DEF_FILE: TRAINER_CODE,
     AGENT_INI_FILE: AGENT_INI_CONTENT,
 }
 
@@ -247,13 +235,10 @@ def load_agent_from_current_directory():
     environment_cls = get_class_from_config(environment_dict.pop("class"))
     policy_dict = dict(config["Policy"])
     policy_cls = get_class_from_config(policy_dict.pop("class"))
-    trainer_dict = dict(config["Trainer"])
-    trainer_cls = get_class_from_config(trainer_dict.pop("class"))
 
     agent_kwargs = {
         "environment": environment_cls(**environment_dict),
         "policy": policy_cls(**policy_dict),
-        "trainer": trainer_cls(**trainer_dict),
         **agent_dict,
     }
     return agent_cls(**agent_kwargs)
@@ -261,11 +246,11 @@ def load_agent_from_current_directory():
 
 @agentos_cmd.command()
 @click.argument("iters", type=click.INT, required=True)
-def train(iters):
-    """Trains an agent by calling its train() method in a loop."""
+def learn(iters):
+    """Trains an agent by calling its learn() method in a loop."""
     agent = load_agent_from_current_directory()
     for i in range(iters):
-        agent.train()
+        agent.learn()
 
 
 @agentos_cmd.command()
