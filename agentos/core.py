@@ -105,9 +105,7 @@ class Environment(MemberInitializer):
         raise NotImplementedError
 
 
-def run_agent(
-    agent_class, env, *args, hz=40, max_iters=None, as_thread=False, **kwargs
-):
+def run_agent(agent, hz=40, max_iters=None, as_thread=False):
     """Run an agent, optionally in a new thread.
 
     If as_thread is True, agent is run in a thread, and the
@@ -115,27 +113,23 @@ def run_agent(
     need to call join on that that thread depending on their
     use case for this agent_run.
 
-    :param agent_class: The class object of the agent you want to run
-    :param env: The class object of the env you want to run the agent in.
+    :param agent: The agent object you want to run
     :param hz: Rate at which to call agent's `advance` function. If None,
         call `advance` repeatedly in a tight loop (i.e., as fast as possible).
     :param max_iters: Maximum times to call agent's `advance` function,
         defaults to None.
     :param as_thread: Set to True to run this agent in a new thread, defaults
         to False.
-    :param \\*\\*kwargs: Other arguments to pass through to
-           agent's `__init__()`.
     :returns: Either a running thread (if as_thread=True) or None.
     """
 
     def runner():
-        agent_instance = agent_class(env, *args, **kwargs)
         done = False
         iter_count = 0
         while not done:
             if max_iters and iter_count >= max_iters:
                 break
-            done = agent_instance.advance()
+            done = agent.advance()
             if hz:
                 time.sleep(1 / hz)
             iter_count += 1
