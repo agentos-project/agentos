@@ -7,15 +7,16 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: port example agents to new abstractions")
 def test_random_agent():
     from agentos.agents import RandomAgent
     from gym.envs.classic_control import CartPoleEnv
 
-    agent = RandomAgent(environment=CartPoleEnv())
+    environment = CartPoleEnv()
+    environment.reset()
+    agent = RandomAgent(environment=environment)
     done = agent.advance()
     assert not done, "CartPole never finishes after one random step."
-    run_agent(RandomAgent, CartPoleEnv)
+    run_agent(agent)
 
 
 def test_cli(tmpdir):
@@ -33,7 +34,7 @@ def test_cli(tmpdir):
     assert policy.is_file()
     assert ml_project.is_file()
     assert conda_env.is_file()
-    commands = [["agentos", "learn", "5"], ["agentos", "test"]]
+    commands = [["agentos", "learn", "5"], ["agentos", "run"]]
     for c in commands:
         subprocess.run(c, cwd=tmpdir, check=True)
 
