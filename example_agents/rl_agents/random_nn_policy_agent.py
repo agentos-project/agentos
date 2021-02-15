@@ -9,7 +9,7 @@ from tensorflow import keras
 import numpy as np
 
 
-class Policy:
+class SimpleTFPolicy(agentos.Policy):
     def __init__(self):
         self.nn = keras.Sequential(
             [
@@ -20,29 +20,36 @@ class Policy:
             ]
         )
 
-    def compute_action(self, obs):
+    def decide(self, obs):
         return int(round(self.nn(np.array(obs)[np.newaxis]).numpy()[0][0]))
 
 
 class RandomTFAgent(agentos.Agent):
-    def _init(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.ret_vals = []
 
     def advance(self):
-        ret = sum(self.evaluate_policy(Policy(), max_steps=2000))
-        self.ret_vals.append(ret)
-
-    def __del__(self):
-        print(
-            f"Agent done!\n"
-            f"Num rollouts: {len(self.ret_vals)}\n"
-            f"Avg return: {np.mean(self.ret_vals)}\n"
-            f"Max return: {max(self.ret_vals)}\n"
-            f"Median return: {np.median(self.ret_vals)}\n"
+        trajs = agentos.rollout(
+            SimpleTFPolicy(),
+            self.environment,
+            max_steps=2000
         )
+        self.ret_vals.append(sum(trajs.rewards))
 
 
 if __name__ == "__main__":
     from gym.envs.classic_control import CartPoleEnv
 
-    agentos.run_agent(RandomTFAgent, CartPoleEnv, max_iters=5)
+    random_nn_agent = RandomTFAgent(
+        environment=CartPoleEnv,
+        policy=SimpleTFPolicy,
+    )
+    agentos.run_agent(random_nn_agent, max_iters=10)
+    print(
+        f"Agent done!\n"
+        f"Num rollouts: {len(random_nn_agent.ret_vals)}\n"
+        f"Avg return: {np.mean(random_nn_agent.ret_vals)}\n"
+        f"Max return: {max(random_nn_agent.ret_vals)}\n"
+        f"Median return: {np.median(random_nn_agent.ret_vals)}\n"
+    )
