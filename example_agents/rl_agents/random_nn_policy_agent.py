@@ -9,29 +9,43 @@ from tensorflow import keras
 import numpy as np
 
 
-class SimpleTFPolicy(agentos.Policy):
-    def __init__(self):
+class SingleLayerTFPolicy(agentos.Policy):
+    def __init__(self, action_space, observation_space, num_nodes=4):
+        self.action_space = action_space
+        print(f"set self.action_space.n {self.action_space.n}")
+        self.observation_space = observation_space
+        assert self.action_space.n == 2
         self.nn = keras.Sequential(
             [
                 keras.layers.Dense(
-                    4, activation="relu", input_shape=(4,), dtype="float64"
+                    num_nodes,
+                    activation="relu",
+                    input_shape=self.observation_space.shape,
                 ),
-                keras.layers.Dense(1, activation="sigmoid", dtype="float64"),
+                keras.layers.Dense(1),
             ]
         )
 
     def decide(self, obs):
-        return int(round(self.nn(np.array(obs)[np.newaxis]).numpy()[0][0]))
+        return int(
+            max(0,
+                round(
+                    self.nn(
+                        np.array(obs)[np.newaxis]
+                    ).numpy()[0][0]
+                )
+            )
+        )
 
 
 class RandomTFAgent(agentos.Agent):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, environment, policy):
+        super().__init__(environment=environment, policy=policy)
         self.ret_vals = []
 
     def advance(self):
         trajs = agentos.rollout(
-            SimpleTFPolicy(),
+            self.policy,
             self.environment,
             max_steps=2000
         )
@@ -43,7 +57,10 @@ if __name__ == "__main__":
 
     random_nn_agent = RandomTFAgent(
         environment=CartPoleEnv,
-        policy=SimpleTFPolicy,
+        policy=SingleLayerTFPolicy(
+            CartPoleEnv().action_space,
+            CartPoleEnv().observation_space,
+        ),
     )
     agentos.run_agent(random_nn_agent, max_iters=10)
     print(
