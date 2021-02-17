@@ -3,6 +3,9 @@
 The CLI allows creation of a simple template agent.
 """
 import agentos
+import subprocess
+import os
+import yaml
 import click
 from datetime import datetime
 import importlib.util
@@ -142,6 +145,121 @@ INIT_FILES = {
 @click.version_option()
 def agentos_cmd():
     pass
+
+
+@agentos_cmd.command()
+@click.argument("package_name", metavar="PACKAGE_NAME")
+@click.option(
+    "--package-location",
+    "-l",
+    metavar="PACKAGE_LOCATION",
+    type=click.Path(),
+    default="./.acr",
+    help="Path to AgentOS Component Registry installation directory",
+)
+@click.option(
+    "--agent-file",
+    "-f",
+    type=click.Path(exists=True),
+    default="./agent.ini",
+    help="Path to agent definition file (agent.ini).",
+)
+def install(package_name, package_location, agent_file):
+    """Installs PACKAGE_NAME"""
+    package_location = Path(package_location).absolute()
+    registry_entry = get_registry_entry(package_name)
+    if confirm_package_installation(registry_entry, package_location):
+        create_directory_structure(package_location)
+        release_entry = get_release_entry(registry_entry)
+        repo = clone_package_repo(release_entry, package_location)
+        checkout_release_hash(release_entry, repo)
+        update_agent_ini(registry_entry, release_entry, repo, agent_file)
+        install_requirements(repo, release_entry)
+    else:
+        raise Exception("Aborting installation...")
+
+
+def get_registry_entry(package_name):
+    agentos_root_path = Path(__file__).parent.parent
+    registry_path = agentos_root_path / "registry.yaml"
+    if not registry_path.is_file():
+        raise Exception(f"Could not find AgentOS registry at {registry_path}")
+    with open(registry_path) as file_in:
+        registry = yaml.full_load(file_in)
+    if package_name not in registry:
+        raise click.BadParameter(f'Cannot find package "{package_name}"')
+    registry[package_name]["_name"] = package_name
+    return registry[package_name]
+
+
+def confirm_package_installation(registry_entry, location):
+    answer = input(
+        f'ACR will install component {registry_entry["_name"]} '
+        f"to {location}.  Continue? (Y/N) "
+    )
+    return answer.strip().lower() == "y"
+
+
+def create_directory_structure(location):
+    os.makedirs(location, exist_ok=True)
+
+
+def get_release_entry(registry_entry):
+    # TODO - allow specification of release
+    return registry_entry["releases"][0]
+
+
+def clone_package_repo(release, location):
+    repo_name = release["github_url"].split("/")[-1]
+    clone_destination = (Path(location) / repo_name).absolute()
+    if clone_destination.exists():
+        raise click.BadParameter(f"{clone_destination} already exists!")
+    cmd = ["git", "clone", release["github_url"], clone_destination]
+    result = subprocess.run(cmd)
+    assert result.returncode == 0, "Git returned non-zero on repo checkout"
+    assert clone_destination.exists(), f"Unable to clone repo {repo_name}"
+    return clone_destination
+
+
+def checkout_release_hash(release, repo):
+    curr_dir = os.getcwd()
+    os.chdir(repo)
+    git_hash = release["hash"]
+    cmd = ["git", "checkout", "-q", git_hash]
+    result = subprocess.run(cmd)
+    assert result.returncode == 0, f"FAILED: checkout {git_hash} in {repo}"
+    os.chdir(curr_dir)
+
+
+def update_agent_ini(registry_entry, release_entry, repo, agent_file):
+    config = configparser.ConfigParser()
+    config.read(agent_file)
+    if registry_entry["type"] == "environment":
+        section = "Environment"
+    elif registry_entry["type"] == "policy":
+        section = "Policy"
+    else:
+        raise Exception(f"Component component type: {registry_entry['type']}")
+
+    # TODO - allow multiple components of same type installed
+    if section in config:
+        print(
+            f"Replacing current environment {dict(config[section])} "
+            f'with {registry_entry["_name"]}'
+        )
+
+    file_path = (Path(repo) / release_entry["file_path"]).absolute()
+    config[section]["file_path"] = str(file_path)
+    config[section]["class_name"] = release_entry["class_name"]
+    with open(agent_file, "w") as out_file:
+        config.write(out_file)
+
+
+# TODO - automatically install?
+def install_requirements(repo, release_entry):
+    req_path = (repo / release_entry["requirements_path"]).absolute()
+    print("\nInstall component requirements with the following command:")
+    print(f"\n\tpip install -r {req_path}\n")
 
 
 def validate_agent_name(ctx, param, value):

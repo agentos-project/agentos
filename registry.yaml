@@ -1,0 +1,12 @@
+corridor:
+  type: environment
+  agent_os_versions:
+    - 0.0.7
+  description: "A 1D hallway"
+  releases:
+    - name: 1.0.0
+      hash: e225089c8c91ace7f0ff0cdb0ddfd2ac11be6d37
+      github_url: https://github.com/nickjalbert/corridor
+      file_path: corridor.py
+      class_name: Corridor
+      requirements_path: requirements.txt
