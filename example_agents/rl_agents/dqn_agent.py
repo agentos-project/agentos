@@ -85,10 +85,10 @@ class EpsilonGreedyTFPolicy(agentos.Policy):
                 )
                 next_q_vals = np.max(next_per_action_q_vals, axis=1)
                 target_q_vals = (
-                        observations.rewards
-                        + (1 - observations.dones)
-                        * self.discount_rate
-                        * next_q_vals
+                    observations.rewards
+                    + (1 - observations.dones)
+                    * self.discount_rate
+                    * next_q_vals
                 )
 
                 def loss():
@@ -106,9 +106,7 @@ class EpsilonGreedyTFPolicy(agentos.Policy):
                     )
                     return tf.reduce_mean(tf.square(q_vals - target_q_vals))
 
-                self.optimizer.minimize(
-                    loss, self.model.trainable_variables
-                )
+                self.optimizer.minimize(loss, self.model.trainable_variables)
 
 
 class OnlineBatchAgent(agentos.Agent):
@@ -123,9 +121,7 @@ class OnlineBatchAgent(agentos.Agent):
         self.learn()
         print("Evaluating")
         t = agentos.rollout(
-            self.policy,
-            self.environment.__class__,
-            max_steps=200
+            self.policy, self.environment.__class__, max_steps=200
         )
         print(f"Finished evaluating policy, return: {sum(t.rewards)}")
 
@@ -135,13 +131,13 @@ class OnlineBatchAgent(agentos.Agent):
 
 if __name__ == "__main__":
     from gym.envs.classic_control import CartPoleEnv
+
     env_class = CartPoleEnv
 
     my_agent = OnlineBatchAgent(
         environment=env_class(),
         policy=EpsilonGreedyTFPolicy(
-            env_class().action_space,
-            env_class().observation_space
-        )
+            env_class().action_space, env_class().observation_space
+        ),
     )
     agentos.run_agent(my_agent, max_iters=100)
