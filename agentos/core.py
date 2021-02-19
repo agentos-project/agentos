@@ -144,7 +144,7 @@ def run_agent(agent, hz=40, max_iters=None, as_thread=False):
 
 def default_rollout_step(policy, obs, step_num):
     """
-    The default rollout step function is the policy's compute_action function.
+    The default rollout step function is the policy's decide function.
 
     A rollout step function allows a developer to specify the behavior
     that will occur at every step of the rollout--given a policy
@@ -157,7 +157,7 @@ def default_rollout_step(policy, obs, step_num):
     You can provide your own function with the same signature as this default
     if you want to have a more complex behavior at each step of the rollout.
     """
-    return policy.compute_action(obs)
+    return policy.decide(obs)
 
 
 def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
