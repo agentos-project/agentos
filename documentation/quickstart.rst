@@ -23,7 +23,6 @@ The best way to understand AgentOS is to use it, so let’s install agentos and
 write a simple agent in Python that behaves randomly. Installation is easy::
 
   $ pip install agentos
-  $ pip install gym  # AgentOS uses OpenAI Gym's Environment abstraction.
 
 Writing a trivial agent is also easy::
 
@@ -76,7 +75,8 @@ Now, instead of writing our own while loop, let’s run the agent in a Python
 Thread using a convenience function that AgentOS provides which serves as an
 Agent Runner::
 
-  >>> agentos.run_agent(SimpleAgent, CartPoleEnv)
+  >>> from agentos import run_agent
+  >>> run_agent(SimpleAgent, CartPoleEnv)
   Took a random step, done = False.
   …
   Took a random step, done = False.
@@ -94,8 +94,9 @@ As an alternative to using our custom agent above, let’s go back into the
 Python shell we opened above and use AgentOS’s RandomAgent::
 
   >>> from agentos.agents import RandomAgent
+  >>> from agentos import run_agent
   >>> from gym.envs.classic_control import CartPoleEnv
-  >>> agentos.run_agent(RandomAgent, CartPoleEnv)
+  >>> run_agent(RandomAgent, CartPoleEnv)
   Took a random step, done = False.
   …
   Took a random step, done = False.
