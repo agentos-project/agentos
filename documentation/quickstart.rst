@@ -28,9 +28,9 @@ write a simple agent in Python that behaves randomly. Installation is easy::
 Writing a trivial agent is also easy::
 
   # Save this code in ./simple_agent.py
-  from agentos import Agent
+  import agentos
 
-  class SimpleAgent(Agent):
+  class SimpleAgent(agentos.Agent):
       def advance(self):
           obs, reward, done, _ = self.env.step(self.env.action_space.sample())
           print(f"Took a random step, done = {done}.")
