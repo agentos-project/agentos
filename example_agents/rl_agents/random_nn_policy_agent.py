@@ -28,13 +28,7 @@ class SingleLayerTFPolicy(agentos.Policy):
 
     def decide(self, obs):
         return int(
-            max(0,
-                round(
-                    self.nn(
-                        np.array(obs)[np.newaxis]
-                    ).numpy()[0][0]
-                )
-            )
+            max(0, round(self.nn(np.array(obs)[np.newaxis]).numpy()[0][0]))
         )
 
 
@@ -44,11 +38,7 @@ class RandomTFAgent(agentos.Agent):
         self.ret_vals = []
 
     def advance(self):
-        trajs = agentos.rollout(
-            self.policy,
-            self.environment,
-            max_steps=2000
-        )
+        trajs = agentos.rollout(self.policy, self.environment, max_steps=2000)
         self.ret_vals.append(sum(trajs.rewards))
 
 
