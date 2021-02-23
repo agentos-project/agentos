@@ -5,6 +5,7 @@ The CLI allows creation of a simple template agent.
 import agentos
 import subprocess
 import os
+import sys
 import yaml
 import click
 from datetime import datetime
@@ -59,10 +60,14 @@ class {agent_name}(agentos.Agent):
     def advance(self):
         print("{agent_name} is taking an action")
         next_action = self.policy.decide(
-            self.obs,
-            self.environment.valid_actions
+            self.obs, self.environment.valid_actions
         )
         self.obs, reward, done, info = self.environment.step(next_action)
+        print("\tObservation: " + str(self.obs))
+        print("\tReward:      " + str(reward))
+        print("\tDone:        " + str(done))
+        print("\tInfo:        " + str(info))
+        print()
         return done
 """
 
@@ -119,16 +124,19 @@ class RandomPolicy(agentos.Policy):
 AGENT_INI_FILE = Path("./agent.ini")
 AGENT_INI_CONTENT = """
 [Agent]
-file_path = agent.py
+file_path = {abs_path}{os_sep}agent.py
 class_name = {agent_name}
+python_path = {abs_path}
 
 [Environment]
-file_path = environment.py
+file_path = {abs_path}{os_sep}environment.py
 class_name = Corridor
+python_path = {abs_path}
 
 [Policy]
-file_path = policy.py
+file_path = {abs_path}{os_sep}policy.py
 class_name = RandomPolicy
+python_path = {abs_path}
 """
 
 INIT_FILES = {
@@ -232,6 +240,7 @@ def checkout_release_hash(release, repo):
 
 
 def update_agent_ini(registry_entry, release_entry, repo, agent_file):
+    print(repo)
     config = configparser.ConfigParser()
     config.read(agent_file)
     if registry_entry["type"] == "environment":
@@ -247,10 +256,11 @@ def update_agent_ini(registry_entry, release_entry, repo, agent_file):
             f"Replacing current environment {dict(config[section])} "
             f'with {registry_entry["_name"]}'
         )
-
-    file_path = (Path(repo) / release_entry["file_path"]).absolute()
+    module_path = Path(repo).absolute()
+    file_path = (module_path / release_entry["file_path"]).absolute()
     config[section]["file_path"] = str(file_path)
     config[section]["class_name"] = release_entry["class_name"]
+    config[section]["python_path"] = str(module_path)
     with open(agent_file, "w") as out_file:
         config.write(out_file)
 
@@ -309,6 +319,8 @@ def init(dir_names, agent_name):
                     agent_name=agent_name,
                     conda_env=CONDA_ENV_FILE.name,
                     file_header=header,
+                    abs_path=d.absolute(),
+                    os_sep=os.sep,
                 )
             )
             f.flush()
@@ -321,11 +333,14 @@ def init(dir_names, agent_name):
 
 def get_class_from_config(agent_dir_path, config):
     """Takes class_path of form "module.Class" and returns the class object."""
+    sys.path.append(config["python_path"])
     file_path = agent_dir_path / Path(config["file_path"])
     spec = importlib.util.spec_from_file_location("TEMP_MODULE", file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return getattr(module, config["class_name"])
+    cls = getattr(module, config["class_name"])
+    sys.path.pop()
+    return cls
 
 
 def load_agent_from_path(agent_file):
