@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>agentos.cli &mdash; AgentOS 0.0.7 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="agentos.core" href="agentos.core.html" />
+    <link rel="prev" title="agentos.agents" href="agentos.agents.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="agentos.agents.html">agentos.agents</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">agentos.cli</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#agentos">agentos</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#agentos-init">init</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#agentos-run">run</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="agentos.core.html">agentos.core</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">API Documentation</a> &raquo;</li>
+        
+      <li>agentos.cli</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/api/agentos.cli.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="agentos-cli">
+<h1>agentos.cli<a class="headerlink" href="#agentos-cli" title="Permalink to this headline">¶</a></h1>
+<p>The following documentation is for the <code class="docutils literal notranslate"><span class="pre">agentos</span></code> command line utility, which
+is built using <a class="reference external" href="https://click.palletsprojects.com">Click</a>. The documentation
+below is generated automatically by <a class="reference external" href="https://sphinx-click.readthedocs.io">sphinx-click</a>.</p>
+<div class="section" id="agentos">
+<h2>agentos<a class="headerlink" href="#agentos" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>agentos <span class="o">[</span>OPTIONS<span class="o">]</span> COMMAND <span class="o">[</span>ARGS<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt id="cmdoption-agentos-version">
+<code class="sig-name descname">--version</code><code class="sig-prename descclassname"></code><a class="headerlink" href="#cmdoption-agentos-version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the version and exit.</p>
+</dd></dl>
+
+<div class="section" id="agentos-init">
+<h3>init<a class="headerlink" href="#agentos-init" title="Permalink to this headline">¶</a></h3>
+<p>Initialize current (or specified) directory as an AgentOS agent.</p>
+<div class="line-block">
+<div class="line">Arguments:</div>
+<div class="line-block">
+<div class="line">[OPTIONAL] DIR_NAMES zero or more space separated directories to</div>
+<div class="line-block">
+<div class="line">initialize. They will be created if they do</div>
+<div class="line">not exist.</div>
+</div>
+</div>
+</div>
+<p>Creates an agent main.py file, a conda env, and an MLflow project file
+in all directories specified, or if none are specified, then create
+the files in current directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>agentos init <span class="o">[</span>OPTIONS<span class="o">]</span> DIR_NAMES
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt id="cmdoption-agentos-init-n">
+<span id="cmdoption-agentos-init-name"></span><code class="sig-name descname">-n</code><code class="sig-prename descclassname"></code><code class="sig-prename descclassname">, </code><code class="sig-name descname">--name</code><code class="sig-prename descclassname"> &lt;AGENT_NAME&gt;</code><a class="headerlink" href="#cmdoption-agentos-init-n" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is used as the name of the MLflow Project and Conda env for all <em>Directory Agents</em> being created. AGENT_NAME may not contain ‘ ‘, ‘:’, or ‘/’.</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt id="cmdoption-agentos-init-arg-DIR_NAMES">
+<span id="cmdoption-agentos-init-arg-dir-names"></span><code class="sig-name descname">DIR_NAMES</code><code class="sig-prename descclassname"></code><a class="headerlink" href="#cmdoption-agentos-init-arg-DIR_NAMES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument(s)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="agentos-run">
+<h3>run<a class="headerlink" href="#agentos-run" title="Permalink to this headline">¶</a></h3>
+<p>Run an AgentOS agent (agentos.Agent) with an environment (gym.Env).</p>
+<div class="line-block">
+<div class="line">Arguments:</div>
+<div class="line-block">
+<div class="line">RUN_ARGS: 0, 1, or 2 space delimited arguments, parsed as follows:</div>
+</div>
+</div>
+<div class="line-block">
+<div class="line">If no args are specified, look for default files defining agent:</div>
+<div class="line-block">
+<div class="line">- look for file named <cite>MLProject</cite> or <cite>main.py</cite> in the current working</div>
+<div class="line-block">
+<div class="line">directory and if found, run this directory as an MLflow project.</div>
+<div class="line-block">
+<div class="line">- Try to use MLProject file first, using whatever it defines</div>
+<div class="line-block">
+<div class="line">as main entry point, and if that doesn’t exist</div>
+<div class="line">then run using MLflow without MLProject passing main.py</div>
+<div class="line">as the entry point (note that this will ignore a conda</div>
+<div class="line">environment file if one exists and MLflow will create</div>
+<div class="line">a new essentially empty conda env).</div>
+</div>
+</div>
+</div>
+<div class="line">- else, look for file named <cite>agent.py</cite> in current working</div>
+<div class="line-block">
+<div class="line">directory and, if found, then behave in the same was as if 1</div>
+<div class="line">argument (i.e., <cite>agent.py</cite>) was provided, as described below.</div>
+</div>
+</div>
+<div class="line">Else, if 1 arg is specified, interpret it as <cite>agent_filename</cite>:</div>
+<div class="line-block">
+<div class="line">- if it is a directory name, assume it is an AgentOS agent dir,</div>
+<div class="line-block">
+<div class="line">and behavior is equivalent of navigating into that directory</div>
+<div class="line">and running <cite>agentos run</cite> (without arguments) in it (see above).</div>
+</div>
+<div class="line">- if it is a file name, the file must contain an agent class and env</div>
+<div class="line-block">
+<div class="line">class definition. AgentOS searches that file for the first subclass</div>
+<div class="line">of agentos.Agent, as well as first subclass of gym.Env and calls</div>
+<div class="line">agentos.run_agent() passing in the agent and env classes found.</div>
+</div>
+</div>
+<div class="line">Else, if 2 args specified, interpret as either filenames or py classes.</div>
+<div class="line-block">
+<div class="line">- assume the first arg specifies the agent and second specifies</div>
+<div class="line-block">
+<div class="line">the Env. The following parsing rules are applied independently</div>
+<div class="line">to each of the two args (e.g., filenames and classes can be mixed):</div>
+<div class="line-block">
+<div class="line">- if the arg is a filename:</div>
+<div class="line-block">
+<div class="line-block">
+<div class="line">Look for the first instance of the appropriate subclass</div>
+<div class="line">(either agentos.Agent or gym.env) in the file and use that</div>
+<div class="line">as the argument to agentos.run_agent.</div>
+</div>
+<div class="line">- else:</div>
+<div class="line-block">
+<div class="line">Assume the arg is in the form [package.][module.]classname</div>
+<div class="line">and that it is available in this python environments path.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>agentos run <span class="o">[</span>OPTIONS<span class="o">]</span> RUN_ARGS
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt id="cmdoption-agentos-run-h">
+<span id="cmdoption-agentos-run-hz"></span><code class="sig-name descname">-h</code><code class="sig-prename descclassname"></code><code class="sig-prename descclassname">, </code><code class="sig-name descname">--hz</code><code class="sig-prename descclassname"> &lt;HZ&gt;</code><a class="headerlink" href="#cmdoption-agentos-run-h" title="Permalink to this definition">¶</a></dt>
+<dd><p>Frequency to call agent.advance().</p>
+</dd></dl>
+
+<dl class="std option">
+<dt id="cmdoption-agentos-run-m">
+<span id="cmdoption-agentos-run-max-iters"></span><code class="sig-name descname">-m</code><code class="sig-prename descclassname"></code><code class="sig-prename descclassname">, </code><code class="sig-name descname">--max-iters</code><code class="sig-prename descclassname"> &lt;MAX_STEPS&gt;</code><a class="headerlink" href="#cmdoption-agentos-run-m" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop running agent after this many calls to advance().</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt id="cmdoption-agentos-run-arg-RUN_ARGS">
+<span id="cmdoption-agentos-run-arg-run-args"></span><code class="sig-name descname">RUN_ARGS</code><code class="sig-prename descclassname"></code><a class="headerlink" href="#cmdoption-agentos-run-arg-RUN_ARGS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument(s)</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="agentos.core.html" class="btn btn-neutral float-right" title="agentos.core" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="agentos.agents.html" class="btn btn-neutral float-left" title="agentos.agents" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, AgentOS.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
