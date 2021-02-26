@@ -93,7 +93,7 @@ process is to:
 * Allow developers to think through a design, and
 * Allow stakeholders to give feedback
 
-...**before** development begins.
+...before development begins.
 
 If you'd like to propose a feature, please follow the procedure found in the
 `design_docs README <documentation/design_docs/README.rst>`_.  You can also
