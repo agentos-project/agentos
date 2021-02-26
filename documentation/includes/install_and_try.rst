@@ -17,7 +17,7 @@ Then, create and run your first Agent::
   agentos init
   agentos run
 
-This type of agent is called an :doc:`Agent Directory <../agent_directories>`. To see more complex
-agents, look at example agents in the `example_agents
+This type of agent is called an `Agent Directory <../agent_directories>`. To
+see more complex agents, look at example agents in the `example_agents
 <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
 directory of the project source code.

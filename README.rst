@@ -47,8 +47,8 @@ Then, create and run your first Agent::
   agentos init
   agentos run
 
-This type of agent is called an :doc:`Agent Directory <../agent_directories>`. To see more complex
-agents, look at example agents in the `example_agents
+This type of agent is called an `Agent Directory <../agent_directories>`. To
+see more complex agents, look at example agents in the `example_agents
 <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
 directory of the project source code.
 
@@ -195,6 +195,16 @@ Releasing
 
 Here are the steps for releasing AgentOS:
 
+#. Build and check the distribution artifacts for the release by running::
+
+   pip install -r dev-requirements.txt
+   python setup.py sdist --formats=gztar,zip bdist_wheel
+   twine check dist/*
+
+   This will create a `wheel file <https://wheel.readthedocs.io/en/stable/>`_
+   as well as tar.gz and zip source distribution files, and catch any blockers
+   that PyPI would raise at upload time. Fix any errors before proceeding.
+
 #. Create a release pull request (PR) that:
 
    * Removes "-alpha" suffix from the version number in ``agentos/version.py``.
@@ -215,10 +225,9 @@ Here are the steps for releasing AgentOS:
 #. Push the release to PyPI (see `Pushing Releases to PyPI`_).
 
 #. Create a `github release
-   <https://github.com/agentos-project/agentos/releases>`_ that includes zips
-   and tarzips of `wheel files <https://wheel.readthedocs.io/en/stable/>`_
-   and source code (which you can generate using ``python setup.py sdist
-   --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
+   <https://github.com/agentos-project/agentos/releases>`_ and upload the
+   tar.gz and zip source code distribution files. This will create a git tag.
+   For the tag name, use "vX.Y.Z" (e.g. v0.1.0).
 
 
 Pushing Releases to PyPI
@@ -229,8 +238,10 @@ push a release to PyPI, you can approximately follow `these python.org
 instructions <https://packaging.python.org/tutorials/packaging-projects/>`_,
 which will probably look something like::
 
-  pip install setuptools wheel twine
-  python setup.py sdist --formats=gztar,zip bdist_wheel
+  pip install -r dev-requirements.txt
+  rm -rf dist
+  python setup.py sdist --formats=gztar bdist_wheel
+  twine check dist/*
   twine upload dist/*
 
 
