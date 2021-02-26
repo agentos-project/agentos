@@ -86,19 +86,18 @@ To contribute to AgentOS, the general workflow is as follows:
 Proposing Features
 ==================
 
-For new features and other big chunks of work, AgentOS maintains a `repo of
-design documents <https://github.com/agentos-project/design_docs>`_.  The goal
-of these design documents is to:
+For new features and other big chunks of work, AgentOS uses a design process
+centered around design proposals, discussions, and design docs. The goal of the
+process is to:
 
 * Allow developers to think through a design, and
 * Allow stakeholders to give feedback
 
-before development begins.
+...before development begins.
 
 If you'd like to propose a feature, please follow the procedure found in the
-`design_docs README
-<https://github.com/agentos-project/design_docs/blob/main/README.rst>`_.  You
-can also browse other design docs in the repo to get a feel for the general
+`design_docs README <documentation/design_docs/README.rst>`_.  You can also
+browse existing design docs in the folder to get a feel for the general
 content and style.
 
 
