@@ -4,7 +4,21 @@ import time
 from threading import Thread
 
 
-class Agent:
+class MemberInitializer:
+    """Takes all constructor kwargs and sets them as class members.
+
+    For example, if MyClass is a MemberInitializer:
+
+    a = MyClass(foo='bar')
+    assert a.foo == 'bar'
+    """
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
+class Agent(MemberInitializer):
     """An Agent observes and takes actions in its environment till done.
 
     An agent holds an environment ``self.env``, which it can use
@@ -31,24 +45,8 @@ class Agent:
     learning, use of models, state updates, etc.
     """
 
-    def __init__(self, env_class):
-        """
-        Set ``self.env``, then call its ``reset()`` function
-        and store the observation it returns as ``self.init_obs``.
-
-        :param env_class: The class object of the Environment for this agent.
-        """
-        self.env = env_class()
-        self.init_obs = self.env.reset()
-        self._init()
-
-    def _init(self):
-        """Override as an alternative to :py:func:`Agent.__init__()`
-
-        This is a convenience function for when you just want to
-        add some functionality to the constructor but don't want
-        to completely override the constructor.
-        """
+    def learn(self):
+        """Does one iteration of training"""
         pass
 
     def advance(self):
@@ -56,14 +54,14 @@ class Agent:
         raise NotImplementedError
 
 
-class Policy:
+class Policy(MemberInitializer):
     """Pick next action based on last observation from environment.
 
     Policies are used by agents to encapsulate any state or logic necessary
     to decide on a next action given the last observation from an env.
     """
 
-    def compute_action(self, observation):
+    def decide(self, observation):
         """Takes an observation and returns next action to take.
 
         :param observation: should be in the `observation_space` of the
@@ -73,10 +71,41 @@ class Policy:
         """
         raise NotImplementedError
 
+    def improve(self, **kwargs):
+        """Improves the policy based on the agent's experience."""
+        pass
 
-def run_agent(
-    agent_class, env, *args, hz=40, max_iters=None, as_thread=False, **kwargs
-):
+
+# Inspired by OpenAI's gym.Env
+# https://github.com/openai/gym/blob/master/gym/core.py
+class Environment(MemberInitializer):
+    """Minimalist port of OpenAI's gym.Env."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.action_space = None
+        self.observation_space = None
+        self.reward_range = None
+
+    def step(self, action):
+        """Perform the action in the environment."""
+        raise NotImplementedError
+
+    def reset(self):
+        """Resets the environment to an initial state."""
+        raise NotImplementedError
+
+    def render(self, mode):
+        raise NotImplementedError
+
+    def close(self, mode):
+        pass
+
+    def seed(self, seed):
+        raise NotImplementedError
+
+
+def run_agent(agent, hz=40, max_iters=None, as_thread=False):
     """Run an agent, optionally in a new thread.
 
     If as_thread is True, agent is run in a thread, and the
@@ -84,27 +113,23 @@ def run_agent(
     need to call join on that that thread depending on their
     use case for this agent_run.
 
-    :param agent_class: The class object of the agent you want to run
-    :param env: The class object of the env you want to run the agent in.
+    :param agent: The agent object you want to run
     :param hz: Rate at which to call agent's `advance` function. If None,
         call `advance` repeatedly in a tight loop (i.e., as fast as possible).
     :param max_iters: Maximum times to call agent's `advance` function,
         defaults to None.
     :param as_thread: Set to True to run this agent in a new thread, defaults
         to False.
-    :param \\*\\*kwargs: Other arguments to pass through to
-           agent's `__init__()`.
     :returns: Either a running thread (if as_thread=True) or None.
     """
 
     def runner():
-        agent_instance = agent_class(env, *args, **kwargs)
         done = False
         iter_count = 0
         while not done:
             if max_iters and iter_count >= max_iters:
                 break
-            done = agent_instance.advance()
+            done = agent.advance()
             if hz:
                 time.sleep(1 / hz)
             iter_count += 1
@@ -119,7 +144,7 @@ def run_agent(
 
 def default_rollout_step(policy, obs, step_num):
     """
-    The default rollout step function is the policy's compute_action function.
+    The default rollout step function is the policy's decide function.
 
     A rollout step function allows a developer to specify the behavior
     that will occur at every step of the rollout--given a policy
@@ -132,7 +157,7 @@ def default_rollout_step(policy, obs, step_num):
     You can provide your own function with the same signature as this default
     if you want to have a more complex behavior at each step of the rollout.
     """
-    return policy.compute_action(obs)
+    return policy.decide(obs)
 
 
 def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
