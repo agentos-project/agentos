@@ -12,7 +12,7 @@ Contributing
 If you'd like to contribute a design document or proposal, please:
 
 * Start a new
-  [Discussion](https://github.com/agentos-project/agentos/discussions)
+  `Discussion <https://github.com/agentos-project/agentos/discussions>`_
   under the "Ideas" category.
 
 * Iterate on the idea with community members via comments in that Discussion.
@@ -22,18 +22,18 @@ If you'd like to contribute a design document or proposal, please:
   original discussion (or, if it makes more sense a new discussion can be
   created that references the original), and...
 
-    * For smaller features, the body text of the discussion thread acts as the
-      design doc, reviews happen via comments in the discussion thread and
-      feedback is merged into the "doc" by editing the original discussion text
-      (in this scenario, version history will not be captured).
+  * For smaller features, the body text of the discussion thread acts as the
+    design doc, reviews happen via comments in the discussion thread and
+    feedback is merged into the "doc" by editing the original discussion text
+    (in this scenario, version history will not be captured).
 
-    * For large designs, a document written in `reStructuredText
-      <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_
-      may be created in this (the `design_docs`) folder. If it is owned by a
-      committer, then they may edit it at will without using a fork or PRs. This
-      keeps the design process lightweight while capturing revision history of the
-      document. You might also find the `reStructuredText Quick Reference
-      <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_ useful.
+  * For large designs, a document written in `reStructuredText
+    <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_
+    may be created in this (the `design_docs`) folder. If it is owned by a
+    committer, then they may edit it at will without using a fork or PRs. This
+    keeps the design process lightweight while capturing revision history of the
+    document. You might also find the `reStructuredText Quick Reference
+    <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_ useful.
 
 
 ==================
