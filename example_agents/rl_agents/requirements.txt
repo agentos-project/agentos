@@ -1,4 +1,4 @@
 -e ../../
-tensorflow==2.2.2  # reinforce, dqn
+tensorflow==2.5.0  # reinforce, dqn
 tensorflow-probability==0.10.0  # reinforce
 pandas>=1.1.5,<=1.2.0 # dqn. 1.2.0 not available on python 3.6
