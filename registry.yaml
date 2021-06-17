@@ -22,3 +22,51 @@ corridor:
       file_path: corridor.py
       class_name: Corridor
       requirements_path: requirements.txt
+cartpole:
+  type: environment
+  agent_os_versions:
+    - 0.0.7
+  description: "Balancing a pole on a cart"
+  releases:
+    - name: 1.0.0
+      hash: a97f8bb384e01d7ecc173bedacaa5df39f336c96
+      github_url: https://github.com/nickjalbert/cartpole
+      file_path: cartpole.py
+      class_name: CartPole
+      requirements_path: requirements.txt
+acme_r2d2_policy:
+  type: policy
+  agent_os_versions:
+    - 0.0.7
+  description: "R2D2 policy ported from Acme framework"
+  releases:
+    - name: 1.0.0
+      hash: 6cb269f848ec0df2603073dd9283ba30bd822105
+      github_url: https://github.com/nickjalbert/r2d2
+      file_path: policy.py
+      class_name: R2D2Policy
+      requirements_path: requirements.txt
+acme_r2d2_dataset:
+  type: dataset
+  agent_os_versions:
+    - 0.0.7
+  description: "Reverb server tuned to work with Acme R2D2"
+  releases:
+    - name: 1.0.0
+      hash: 798b494e13781d382d520000099b15a234572c4c
+      github_url: https://github.com/nickjalbert/reverb_dataset
+      file_path: dataset.py
+      class_name: ReverbDataset
+      requirements_path: requirements.txt
+acme_r2d2_trainer:
+  type: trainer
+  agent_os_versions:
+    - 0.0.7
+  description: "Trainer to improve the Acme R2D2 policy"
+  releases:
+    - name: 1.0.0
+      hash: 71517b3c4e7bd719d774451a29a170262380d815
+      github_url: https://github.com/nickjalbert/r2d2_trainer
+      file_path: trainer.py
+      class_name: R2D2Trainer
+      requirements_path: requirements.txt

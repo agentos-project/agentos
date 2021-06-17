@@ -1,0 +1,10 @@
+{file_header}
+
+name: {agent_name}
+
+conda_env: {conda_env}
+
+entry_points:
+  main:
+    command: "python main.py"
+

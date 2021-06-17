@@ -136,7 +136,7 @@ class Mouse(agentos.Agent):
         self.step_count = 0
 
     def advance(self):
-        """ This agent will never stop on it's own"""
+        """This agent will never stop on it's own"""
         obs, reward, done, _ = self.environment.step("")
         self.update_world_model(obs)
         self.step_count += 1

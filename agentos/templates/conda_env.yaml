@@ -1,0 +1,12 @@
+{file_header}
+
+name: {agent_name}
+
+dependencies:
+    - pip
+    - pip:
+      - gym
+      - agentos
+      # Or, if you want to use your local copy of agentos, then
+      # update the line below and replace the line above with it.
+      #- -e path/to/agentos/git/repo

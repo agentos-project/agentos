@@ -2,39 +2,28 @@
 
 See repo README for instructions to run tests.
 """
-from agentos import run_agent
-from pathlib import Path
 import pytest
-
-
-def test_random_agent():
-    from agentos.agents import RandomAgent
-    from gym.envs.classic_control import CartPoleEnv
-
-    environment = CartPoleEnv()
-    environment.reset()
-    agent = RandomAgent(environment=environment)
-    done = agent.advance()
-    assert not done, "CartPole never finishes after one random step."
-    run_agent(agent)
+import subprocess
+from pathlib import Path
+from agentos import run_agent
 
 
 def test_cli(tmpdir):
-    import subprocess
-    from pathlib import Path
-
     subprocess.run(["agentos", "init"], cwd=tmpdir, check=True)
-    agent = Path(tmpdir) / "agent.py"
-    environment = Path(tmpdir) / "environment.py"
-    policy = Path(tmpdir) / "policy.py"
-    ml_project = Path(tmpdir) / "MLProject"
-    conda_env = Path(tmpdir) / "conda_env.yaml"
-    assert agent.is_file()
-    assert environment.is_file()
-    assert policy.is_file()
-    assert ml_project.is_file()
-    assert conda_env.is_file()
-    commands = [["agentos", "learn", "5"], ["agentos", "run"]]
+    expected_file_names = [
+        "conda_env.yaml",
+        "MLProject",
+        "agent.py",
+        "environment.py",
+        "policy.py",
+        "dataset.py",
+        "trainer.py",
+        "agentos.ini",
+    ]
+    for expected_file_name in expected_file_names:
+        expected_path = Path(tmpdir) / expected_file_name
+        assert expected_path.is_file(), f"{expected_file_name} not found"
+    commands = [["agentos", "learn"], ["agentos", "run"]]
     for c in commands:
         subprocess.run(c, cwd=tmpdir, check=True)
 
@@ -51,9 +40,49 @@ def test_cli(tmpdir):
     #             them all working as we update the core APIs.
 
 
+# TODO - slow test; is there a way to speed this up?
+# TODO - is there a way to make this not depend on network?
+def test_acme_r2d2_agent(tmpdir):
+    subprocess.run(["agentos", "init", "."], cwd=tmpdir, check=True)
+    subprocess.run(
+        ["agentos", "install", "acme_r2d2_policy", "-y"],
+        cwd=tmpdir,
+        check=True,
+    )
+    subprocess.run(
+        ["agentos", "install", "acme_r2d2_dataset", "-y"],
+        cwd=tmpdir,
+        check=True,
+    )
+    subprocess.run(
+        ["agentos", "install", "acme_r2d2_trainer", "-y"],
+        cwd=tmpdir,
+        check=True,
+    )
+    subprocess.run(
+        ["agentos", "install", "cartpole", "-y"], cwd=tmpdir, check=True
+    )
+    subprocess.run(["agentos", "run"], cwd=tmpdir, check=True)
+    subprocess.run(["agentos", "learn"], cwd=tmpdir, check=True)
+    subprocess.run(["agentos", "run"], cwd=tmpdir, check=True)
+
+
 ######################
 # Example Agent Tests
 ######################
+
+
+@pytest.mark.skip(reason="TODO: port example agents to new abstractions")
+def test_random_agent():
+    from agentos.agents import RandomAgent
+    from gym.envs.classic_control import CartPoleEnv
+
+    environment = CartPoleEnv()
+    environment.reset()
+    agent = RandomAgent(environment=environment)
+    done = agent.advance()
+    assert not done, "CartPole never finishes after one random step."
+    run_agent(agent)
 
 
 @pytest.mark.skip(

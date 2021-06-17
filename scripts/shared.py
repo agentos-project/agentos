@@ -22,9 +22,17 @@ def is_git_tracked(file_path):
     return result.returncode == 0
 
 
-def traverse_tracked_files(path, action_fn):
+def traverse_tracked_files(path, action_fn, ignored_files=None):
     if not is_git_tracked(path):
         return
+
+    if ignored_files:
+        for relative_path in ignored_files:
+            ignored_path = os.path.join(root_dir, relative_path)
+            error = f"Ignored file {ignored_path} does not exist"
+            assert os.path.isfile(ignored_path), error
+            if path == ignored_path:
+                return
 
     if os.path.isfile(path):
         action_fn(path)
@@ -32,4 +40,4 @@ def traverse_tracked_files(path, action_fn):
     if os.path.isdir(path):
         for item in os.listdir(path):
             to_traverse = os.path.join(path, item)
-            traverse_tracked_files(to_traverse, action_fn)
+            traverse_tracked_files(to_traverse, action_fn, ignored_files)
