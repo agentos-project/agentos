@@ -22,3 +22,15 @@ corridor:
       file_path: corridor.py
       class_name: Corridor
       requirements_path: requirements.txt
+cartpole:
+  type: environment
+  agent_os_versions:
+    - 0.0.7
+  description: "Balancing a pole on a cart"
+  releases:
+    - name: 1.0.0
+      hash: 64726d93f6c387b48461d59afc580e340e80f5b5
+      github_url: https://github.com/nickjalbert/cartpole
+      file_path: cartpole.py
+      class_name: CartPole
+      requirements_path: requirements.txt
