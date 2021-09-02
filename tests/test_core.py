@@ -40,33 +40,6 @@ def test_cli(tmpdir):
     #             them all working as we update the core APIs.
 
 
-# TODO - slow test; is there a way to speed this up?
-# TODO - is there a way to make this not depend on network?
-def test_acme_r2d2_agent(tmpdir):
-    subprocess.run(["agentos", "init", "."], cwd=tmpdir, check=True)
-    subprocess.run(
-        ["agentos", "install", "acme_r2d2_policy", "-y"],
-        cwd=tmpdir,
-        check=True,
-    )
-    subprocess.run(
-        ["agentos", "install", "acme_r2d2_dataset", "-y"],
-        cwd=tmpdir,
-        check=True,
-    )
-    subprocess.run(
-        ["agentos", "install", "acme_r2d2_trainer", "-y"],
-        cwd=tmpdir,
-        check=True,
-    )
-    subprocess.run(
-        ["agentos", "install", "cartpole", "-y"], cwd=tmpdir, check=True
-    )
-    subprocess.run(["agentos", "run"], cwd=tmpdir, check=True)
-    subprocess.run(["agentos", "learn"], cwd=tmpdir, check=True)
-    subprocess.run(["agentos", "run"], cwd=tmpdir, check=True)
-
-
 ######################
 # Example Agent Tests
 ######################
