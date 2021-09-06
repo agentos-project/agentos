@@ -11,8 +11,6 @@ from agentos import run_agent
 def test_cli(tmpdir):
     subprocess.run(["agentos", "init"], cwd=tmpdir, check=True)
     expected_file_names = [
-        "conda_env.yaml",
-        "MLProject",
         "agent.py",
         "environment.py",
         "policy.py",

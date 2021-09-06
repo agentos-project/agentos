@@ -396,7 +396,6 @@ def _instantiate_template_files(d, agent_name):
                 fout.write(
                     content.format(
                         agent_name=agent_name,
-                        conda_env=_CONDA_ENV_FILE.name,
                         file_header=header,
                         abs_path=d.absolute(),
                         os_sep=os.sep,
@@ -404,8 +403,6 @@ def _instantiate_template_files(d, agent_name):
                 )
 
 
-_CONDA_ENV_FILE = Path("./templates/conda_env.yaml")
-_MLFLOW_PROJECT_FILE = Path("./templates/MLProject")
 _AGENT_DEF_FILE = Path("./templates/agent.py")
 _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
@@ -423,8 +420,6 @@ def _get_backups_location(agentos_dir):
 
 
 _INIT_FILES = [
-    _CONDA_ENV_FILE,
-    _MLFLOW_PROJECT_FILE,
     _AGENT_DEF_FILE,
     _ENV_DEF_FILE,
     _POLICY_DEF_FILE,

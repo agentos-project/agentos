@@ -20,7 +20,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         "click>=7.0",
-        "mlflow==1.9.1",
         "gym==0.17.1",
         "numpy>=1.18.5",
         "dm-env>=1.5",
