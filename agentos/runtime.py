@@ -18,18 +18,18 @@ import statistics
 
 # TODO - reimplement hz, max_iters, and threading
 def run_agent(
-    episodes,
+    num_episodes,
     agent_file,
-    package_location,
+    agentos_dir,
     should_learn,
     verbose,
     backup_dst=None,
 ):
     """Runs an agent specified by a given [agent_file]
 
-    :param episodes: number of episodes to run the agent through
+    :param num_episodes: number of episodes to run the agent through
     :param agent_file: path to the agent config file
-    :param package_location: location of the ACR agent installation
+    :param agentos_dir: Directory path containing AgentOS components and data
     :param should_learn: boolean, if True we will call policy.improve
     :param verbose: boolean, if True will print debugging data to stdout
     :param backup_dst: if specified, will print backup path to stdout
@@ -37,8 +37,8 @@ def run_agent(
     :returns: None
     """
     all_steps = []
-    agent = load_agent_from_path(agent_file, package_location, verbose)
-    for i in range(episodes):
+    agent = load_agent_from_path(agent_file, agentos_dir, verbose)
+    for i in range(num_episodes):
         steps = agent.rollout(should_learn)
         all_steps.append(steps)
 
@@ -51,27 +51,27 @@ def run_agent(
             f"\tBenchmarked agent was trained on {agent.get_step_count()} "
             f"transitions over {agent.get_episode_count()} episodes"
         )
-        print(f"\tMax steps over {episodes} trials: {max(all_steps)}")
-        print(f"\tMean steps over {episodes} trials: {mean}")
-        print(f"\tMedian steps over {episodes} trials: {median}")
-        print(f"\tMin steps over {episodes} trials: {min(all_steps)}")
+        print(f"\tMax steps over {num_episodes} trials: {max(all_steps)}")
+        print(f"\tMean steps over {num_episodes} trials: {mean}")
+        print(f"\tMedian steps over {num_episodes} trials: {median}")
+        print(f"\tMin steps over {num_episodes} trials: {min(all_steps)}")
         if backup_dst:
             print(f"Agent backed up in {backup_dst}")
         print()
 
 
-def install_package(package_name, package_location, agent_file, assume_yes):
-    package_location = Path(package_location).absolute()
-    registry_entry = _get_registry_entry(package_name)
-    confirmed = assume_yes or _confirm_package_installation(
-        registry_entry, package_location
+def install_component(component_name, agentos_dir, agent_file, assume_yes):
+    agentos_dir = Path(agentos_dir).absolute()
+    registry_entry = _get_registry_entry(component_name)
+    confirmed = assume_yes or _confirm_component_installation(
+        registry_entry, agentos_dir
     )
     if confirmed:
         # Blow away agent training step count
-        _create_core_data(package_location)
-        _create_package_directory_structure(package_location)
+        _create_core_data(agentos_dir)
+        _create_agentos_directory_structure(agentos_dir)
         release_entry = _get_release_entry(registry_entry)
-        repo = _clone_package_repo(release_entry, package_location)
+        repo = _clone_component_repo(release_entry, agentos_dir)
         _checkout_release_hash(release_entry, repo)
         _update_agentos_ini(registry_entry, release_entry, repo, agent_file)
         _install_requirements(repo, release_entry)
@@ -79,16 +79,16 @@ def install_package(package_name, package_location, agent_file, assume_yes):
         raise Exception("Aborting installation...")
 
 
-def initialize_agent_directories(dir_names, agent_name, package_location):
+def initialize_agent_directories(dir_names, agent_name, agentos_dir):
     dirs = [Path(".")]
     if dir_names:
         dirs = [Path(d) for d in dir_names]
 
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-        curr_package_location = d / package_location
-        _create_agent_directory_structure(curr_package_location)
-        _create_core_data(curr_package_location)
+        curr_agentos_dir = d / agentos_dir
+        _create_agent_directory_structure(curr_agentos_dir)
+        _create_core_data(curr_agentos_dir)
         _instantiate_template_files(d, agent_name)
         d = "current working directory" if d == Path(".") else d
         click.echo(
@@ -96,24 +96,25 @@ def initialize_agent_directories(dir_names, agent_name, package_location):
         )
 
 
-def learn(**kwargs):
+def learn(
+    num_episodes,
+    test_every,
+    test_num_episodes,
+    agent_file,
+    agentos_dir,
+    verbose,
+):
     """Trains an agent by calling its learn() method in a loop."""
-    episodes = kwargs["episodes"]
-    test_every = kwargs["test_every"]
-    test_episodes = kwargs["test_episodes"]
-    agent_file = kwargs["agent_file"]
-    package_location = kwargs["package_location"]
-    verbose = kwargs["verbose"]
     should_learn = False
-    agent = load_agent_from_path(agent_file, package_location, verbose)
+    agent = load_agent_from_path(agent_file, agentos_dir, verbose)
 
-    for i in range(episodes):
+    for i in range(num_episodes):
         if test_every and i % test_every == 0:
-            backup_dst = _back_up_agent(package_location)
+            backup_dst = _back_up_agent(agentos_dir)
             agentos.run_agent(
-                test_episodes,
+                test_num_episodes,
                 agent_file,
-                package_location,
+                agentos_dir,
                 should_learn,
                 verbose,
                 backup_dst=backup_dst,
@@ -121,11 +122,11 @@ def learn(**kwargs):
         agent.learn()
 
 
-def load_agent_from_path(agent_file, package_location, verbose):
+def load_agent_from_path(agent_file, agentos_dir, verbose):
     """Loads agent from an agent directory
 
     :param agent_file: path the agentos.ini config file
-    :param package_location: path to agent installation directory
+    :param agentos_dir: Directory path containing AgentOS components and data
 
     :returns: Instantiated Agent class from directory
     """
@@ -134,7 +135,7 @@ def load_agent_from_path(agent_file, package_location, verbose):
     config = configparser.ConfigParser()
     config.read(agent_path)
 
-    _decorate_save_data_fns(package_location)
+    _decorate_save_data_fns(agentos_dir)
 
     env_cls = _get_class_from_config(agent_dir_path, config["Environment"])
     policy_cls = _get_class_from_config(agent_dir_path, config["Policy"])
@@ -188,7 +189,6 @@ def load_agent_from_path(agent_file, package_location, verbose):
 #        loading in ACR core breaks pickle. Need to figure out a more general
 #        way to handle this
 def save_tensorflow(name, network):
-    print("Saving module")
     import tensorflow as tf
 
     checkpoint = tf.train.Checkpoint(module=network)
@@ -230,16 +230,16 @@ parameters = ParameterObject()
 ################################
 
 
-def _back_up_agent(package_location):
+def _back_up_agent(agentos_dir):
     """Creates a snapshot of an agent at a given moment in time.
 
-    :param package_location: path to agent package location
+    :param agentos_dir: Directory path containing AgentOS components and data
 
     :returns: Path to the back up directory
     """
-    package_location = Path(package_location).absolute()
-    data_location = _get_data_location(package_location)
-    backup_dst = _get_backups_location(package_location) / str(uuid.uuid4())
+    agentos_dir = Path(agentos_dir).absolute()
+    data_location = _get_data_location(agentos_dir)
+    backup_dst = _get_backups_location(agentos_dir) / str(uuid.uuid4())
     shutil.copytree(data_location, backup_dst)
     return backup_dst
 
@@ -272,28 +272,28 @@ def _get_class_from_config(agent_dir_path, config):
 
 # TODO - V hacky!  is this the a reasonable way to go?
 # TODO - uglily communicates to save_data() the dynamic data location
-def _decorate_save_data_fns(package_location):
-    dl = _get_data_location(package_location)
+def _decorate_save_data_fns(agentos_dir):
+    dl = _get_data_location(agentos_dir)
     save_data.__dict__["data_location"] = dl
     restore_data.__dict__["data_location"] = dl
     save_tensorflow.__dict__["data_location"] = dl
     restore_tensorflow.__dict__["data_location"] = dl
 
 
-def _get_registry_entry(package_name):
+def _get_registry_entry(component_name):
     agentos_root_path = Path(__file__).parent.parent
     registry_path = agentos_root_path / "registry.yaml"
     if not registry_path.is_file():
         raise Exception(f"Could not find AgentOS registry at {registry_path}")
     with open(registry_path) as file_in:
         registry = yaml.full_load(file_in)
-    if package_name not in registry:
-        raise click.BadParameter(f'Cannot find package "{package_name}"')
-    registry[package_name]["_name"] = package_name
-    return registry[package_name]
+    if component_name not in registry:
+        raise click.BadParameter(f'Cannot find component "{component_name}"')
+    registry[component_name]["_name"] = component_name
+    return registry[component_name]
 
 
-def _confirm_package_installation(registry_entry, location):
+def _confirm_component_installation(registry_entry, location):
     answer = input(
         f'ACR will install component {registry_entry["_name"]} '
         f"to {location}.  Continue? (Y/N) "
@@ -301,8 +301,8 @@ def _confirm_package_installation(registry_entry, location):
     return answer.strip().lower() == "y"
 
 
-def _create_package_directory_structure(package_location):
-    os.makedirs(package_location, exist_ok=True)
+def _create_agentos_directory_structure(agentos_dir):
+    os.makedirs(agentos_dir, exist_ok=True)
 
 
 def _get_release_entry(registry_entry):
@@ -310,7 +310,7 @@ def _get_release_entry(registry_entry):
     return registry_entry["releases"][0]
 
 
-def _clone_package_repo(release, location):
+def _clone_component_repo(release, location):
     repo_name = release["github_url"].split("/")[-1]
     clone_destination = (Path(location) / repo_name).absolute()
     if clone_destination.exists():
@@ -369,14 +369,14 @@ def _install_requirements(repo, release_entry):
     print(f"\n\tpip install -r {req_path}\n")
 
 
-def _create_agent_directory_structure(package_location):
-    os.makedirs(package_location, exist_ok=True)
-    os.makedirs(_get_data_location(package_location), exist_ok=True)
-    os.makedirs(_get_backups_location(package_location), exist_ok=True)
+def _create_agent_directory_structure(agentos_dir):
+    os.makedirs(agentos_dir, exist_ok=True)
+    os.makedirs(_get_data_location(agentos_dir), exist_ok=True)
+    os.makedirs(_get_backups_location(agentos_dir), exist_ok=True)
 
 
-def _create_core_data(package_location):
-    _decorate_save_data_fns(package_location)
+def _create_core_data(agentos_dir):
+    _decorate_save_data_fns(agentos_dir)
     agentos.save_data("step_count", 0)
     agentos.save_data("episode_count", 0)
 
@@ -414,12 +414,12 @@ _POLICY_DEF_FILE = Path("./templates/policy.py")
 _AGENT_INI_FILE = Path("./templates/agentos.ini")
 
 
-def _get_data_location(package_location):
-    return Path(package_location).absolute() / "data"
+def _get_data_location(agentos_dir):
+    return Path(agentos_dir).absolute() / "data"
 
 
-def _get_backups_location(package_location):
-    return Path(package_location).absolute() / "backups"
+def _get_backups_location(agentos_dir):
+    return Path(agentos_dir).absolute() / "backups"
 
 
 _INIT_FILES = [

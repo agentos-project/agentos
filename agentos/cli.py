@@ -12,63 +12,102 @@ def agentos_cmd():
     pass
 
 
-@agentos_cmd.command()
-@click.argument("package_name", metavar="PACKAGE_NAME")
-@click.option(
-    "--package-location",
-    "-l",
-    metavar="PACKAGE_LOCATION",
+def _validate_agent_name(ctx, param, value):
+    if " " in value or ":" in value or "/" in value:
+        raise click.BadParameter("name may not contain ' ', ':', or '/'.")
+    return value
+
+
+_arg_component_name = click.argument(
+    "component_name", metavar="COMPONENT_NAME"
+)
+
+_arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
+
+_option_agent_name = click.option(
+    "--agent-name",
+    "-n",
+    metavar="AGENT_NAME",
+    default="BasicAgent",
+    callback=_validate_agent_name,
+    help="This is used as the name of the MLflow Project and "
+    "Conda env for all *Directory Agents* being created. "
+    "AGENT_NAME may not contain ' ', ':', or '/'.",
+)
+
+_option_agentos_dir = click.option(
+    "--agentos-dir",
+    "-d",
+    metavar="AGENTOS_DIR",
     type=click.Path(),
     default="./.aos",
-    help="Path to AgentOS Component Registry installation directory",
+    help="Directory path AgentOS components and data",
 )
-@click.option(
+
+_option_agent_file = click.option(
     "--agent-file",
     "-f",
     type=click.Path(exists=True),
     default="./agentos.ini",
     help="Path to agent definition file (agentos.ini).",
 )
-@click.option(
+
+_option_num_episodes = click.option(
+    "--num-episodes",
+    "-n",
+    type=click.INT,
+    default=1,
+    help="Number of episodes to run.",
+)
+
+_option_assume_yes = click.option(
     "--assume-yes",
     "-y",
     is_flag=True,
     help="Automatically answers 'yes' to all user prompts.",
 )
-def install(package_name, package_location, agent_file, assume_yes):
-    """Installs PACKAGE_NAME"""
-    agentos.install_package(
-        package_name, package_location, agent_file, assume_yes
-    )
 
+_option_test_every = click.option(
+    "--test-every",
+    "-t",
+    type=click.INT,
+    default=0,
+    help="Number of learning episodes between performance eval.",
+)
 
-def validate_agent_name(ctx, param, value):
-    if " " in value or ":" in value or "/" in value:
-        raise click.BadParameter("name may not contain ' ', ':', or '/'.")
-    return value
+_option_test_num_episodes = click.option(
+    "--test-num-episodes",
+    "-p",
+    type=click.INT,
+    default=0,
+    help="Number of episodes to run for performance eval.",
+)
+
+_option_verbose = click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Agent prints verbose logs.",
+)
 
 
 @agentos_cmd.command()
-@click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
-@click.option(
-    "--agent-name",
-    "-n",
-    metavar="AGENT_NAME",
-    default="BasicAgent",
-    callback=validate_agent_name,
-    help="This is used as the name of the MLflow Project and "
-    "Conda env for all *Directory Agents* being created. "
-    "AGENT_NAME may not contain ' ', ':', or '/'.",
-)
-@click.option(
-    "--package-location",
-    "-l",
-    metavar="PACKAGE_LOCATION",
-    type=click.Path(),
-    default="./.aos",
-    help="Path to AgentOS Component Registry installation directory",
-)
-def init(dir_names, agent_name, package_location):
+@_arg_component_name
+@_option_agentos_dir
+@_option_agent_file
+@_option_assume_yes
+def install(component_name, agentos_dir, agent_file, assume_yes):
+    """Installs PACKAGE_NAME"""
+    agentos.install_component(
+        component_name, agentos_dir, agent_file, assume_yes
+    )
+
+
+@agentos_cmd.command()
+@_arg_dir_names
+@_option_agent_name
+@_option_agentos_dir
+def init(dir_names, agent_name, agentos_dir):
     """Initialize current (or specified) directory as an AgentOS agent.
 
     \b
@@ -81,94 +120,46 @@ def init(dir_names, agent_name, package_location):
     in all directories specified, or if none are specified, then create
     the files in current directory.
     """
-    agentos.initialize_agent_directories(
-        dir_names, agent_name, package_location
+    agentos.initialize_agent_directories(dir_names, agent_name, agentos_dir)
+
+
+# TODO - reimplement hz and max_iters
+@agentos_cmd.command()
+@_option_num_episodes
+@_option_test_every
+@_option_test_num_episodes
+@_option_agent_file
+@_option_agentos_dir
+@_option_verbose
+def learn(
+    num_episodes,
+    test_every,
+    test_num_episodes,
+    agent_file,
+    agentos_dir,
+    verbose,
+):
+    agentos.learn(
+        num_episodes,
+        test_every,
+        test_num_episodes,
+        agent_file,
+        agentos_dir,
+        verbose,
     )
 
 
-# TODO - reimplment hz and max_iters
+# TODO - reimplement hz and max_iters
 @agentos_cmd.command()
-@click.option(
-    "--episodes",
-    "-e",
-    type=click.INT,
-    default=1,
-    help="Number of episodes to run.",
-)
-@click.option(
-    "--test-every",
-    "-t",
-    type=click.INT,
-    default=0,
-    help="Number of learning episodes between performance eval.",
-)
-@click.option(
-    "--test-episodes",
-    "-p",
-    type=click.INT,
-    default=0,
-    help="Number of episodes to run for performance eval.",
-)
-@click.option(
-    "--agent-file",
-    "-f",
-    type=click.Path(exists=True),
-    default="./agentos.ini",
-    help="Path to agent definition file (agentos.ini).",
-)
-@click.option(
-    "--package-location",
-    "-l",
-    metavar="PACKAGE_LOCATION",
-    type=click.Path(),
-    default="./.aos",
-    help="Path to AgentOS Component Registry installation directory",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Agent prints verbose logs.",
-)
-def learn(**kwargs):
-    agentos.learn(**kwargs)
-
-
-# TODO - reimplement HZ and MaxIterations
-@agentos_cmd.command()
-@click.option(
-    "--episodes",
-    "-e",
-    type=click.INT,
-    default=1,
-    help="Number of episodes to run.",
-)
-@click.option(
-    "--agent-file",
-    "-f",
-    type=click.Path(exists=True),
-    default="./agentos.ini",
-    help="Path to agent definition file (agentos.ini).",
-)
-@click.option(
-    "--package-location",
-    "-l",
-    metavar="PACKAGE_LOCATION",
-    type=click.Path(),
-    default="./.aos",
-    help="Path to AgentOS Component Registry installation directory",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Agent prints verbose logs.",
-)
-def run(episodes, agent_file, package_location, verbose):
+@_option_num_episodes
+@_option_agent_file
+@_option_agentos_dir
+@_option_verbose
+def run(num_episodes, agent_file, agentos_dir, verbose):
     """Run an agent by calling advance() on it until it returns True"""
     should_learn = False
     agentos.run_agent(
-        episodes, agent_file, package_location, should_learn, verbose
+        num_episodes, agent_file, agentos_dir, should_learn, verbose
     )
 
 
