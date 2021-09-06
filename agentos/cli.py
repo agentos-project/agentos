@@ -3,6 +3,7 @@
 The CLI allows creation of a simple template agent.
 """
 import agentos
+from agentos import runtime
 import click
 
 
@@ -98,7 +99,7 @@ _option_verbose = click.option(
 @_option_assume_yes
 def install(component_name, agentos_dir, agent_file, assume_yes):
     """Installs PACKAGE_NAME"""
-    agentos.install_component(
+    runtime.install_component(
         component_name, agentos_dir, agent_file, assume_yes
     )
 
@@ -120,7 +121,7 @@ def init(dir_names, agent_name, agentos_dir):
     in all directories specified, or if none are specified, then create
     the files in current directory.
     """
-    agentos.initialize_agent_directories(dir_names, agent_name, agentos_dir)
+    runtime.initialize_agent_directories(dir_names, agent_name, agentos_dir)
 
 
 # TODO - reimplement hz and max_iters

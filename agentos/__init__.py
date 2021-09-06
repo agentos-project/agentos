@@ -11,10 +11,7 @@ from agentos.core import (
 )
 from agentos.runtime import (
     run_agent,
-    install_component,
-    initialize_agent_directories,
     learn,
-    load_agent_from_path,
     save_data,
     save_tensorflow,
     restore_data,
@@ -30,10 +27,7 @@ __all__ = [
     "Dataset",
     "Trainer",
     "run_agent",
-    "install_component",
-    "initialize_agent_directories",
     "learn",
-    "load_agent_from_path",
     "save_data",
     "save_tensorflow",
     "restore_data",
