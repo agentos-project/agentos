@@ -57,8 +57,8 @@ class Agent(MemberInitializer):
         self.curr_obs = None
         self._should_reset = True
 
-    def step(self):
-        """Takes one action within the environment"""
+    def advance(self):
+        """Takes one action within the Environment as dictated by the Policy"""
         if self._should_reset:
             self.curr_obs = self.environment.reset()
             self._should_reset = False
@@ -78,7 +78,7 @@ class Agent(MemberInitializer):
         done = False
         step_count = 0
         while not done:
-            _, _, _, _, done, _ = self.step()
+            _, _, _, _, done, _ = self.advance()
             step_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
@@ -88,10 +88,6 @@ class Agent(MemberInitializer):
             self.save_step_count(prev_step_count + step_count)
             self.save_episode_count(prev_episode_count + 1)
         return step_count
-
-    def advance(self):
-        """Returns True when agent is done; False or None otherwise."""
-        raise NotImplementedError
 
     def get_step_count(self):
         return restore_data("step_count")
