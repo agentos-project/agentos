@@ -94,10 +94,10 @@ _option_verbose = click.option(
 
 @agentos_cmd.command()
 @_arg_component_name
-@_option_agentos_dir
 @_option_agent_file
+@_option_agentos_dir
 @_option_assume_yes
-def install(component_name, agentos_dir, agent_file, assume_yes):
+def install(component_name, agent_file, agentos_dir, assume_yes):
     """Installs PACKAGE_NAME"""
     runtime.install_component(
         component_name=component_name,
