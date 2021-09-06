@@ -23,6 +23,7 @@ setup(
         "gym==0.17.1",
         "numpy>=1.18.5",
         "dm-env>=1.5",
+        "pyyaml>=5.4.1",
     ],
     entry_points="""
         [console_scripts]
