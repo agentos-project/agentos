@@ -80,8 +80,9 @@ class Agent(MemberInitializer):
         while not done:
             _, _, _, _, done, _ = self.step()
             step_count += 1
+            if should_learn:
+                self.trainer.improve(self.dataset, self.policy)
         if should_learn:
-            self.trainer.improve(self.dataset, self.policy)
             prev_step_count = self.get_step_count()
             prev_episode_count = self.get_episode_count()
             self.save_step_count(prev_step_count + step_count)
