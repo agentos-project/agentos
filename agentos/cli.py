@@ -3,8 +3,9 @@
 The CLI allows creation of a simple template agent.
 """
 import agentos
-from agentos import runtime
 import click
+from agentos import runtime
+from pathlib import Path
 
 
 @click.group()
@@ -99,6 +100,7 @@ _option_verbose = click.option(
 @_option_assume_yes
 def install(component_name, agent_file, agentos_dir, assume_yes):
     """Installs PACKAGE_NAME"""
+    _check_path_exists(agentos_dir)
     runtime.install_component(
         component_name=component_name,
         agentos_dir=agentos_dir,
@@ -145,6 +147,7 @@ def learn(
     agentos_dir,
     verbose,
 ):
+    _check_path_exists(agentos_dir)
     agentos.learn(
         num_episodes=num_episodes,
         test_every=test_every,
@@ -163,6 +166,7 @@ def learn(
 @_option_verbose
 def run(num_episodes, agent_file, agentos_dir, verbose):
     """Run an agent by calling advance() on it until it returns True"""
+    _check_path_exists(agentos_dir)
     agentos.run_agent(
         num_episodes=num_episodes,
         agent_file=agent_file,
@@ -172,6 +176,11 @@ def run(num_episodes, agent_file, agentos_dir, verbose):
         backup_dst=None,
         print_stats=True,
     )
+
+
+def _check_path_exists(path):
+    if not Path(path).absolute().exists():
+        raise click.BadParameter(f"{path} does not exist!")
 
 
 if __name__ == "__main__":
