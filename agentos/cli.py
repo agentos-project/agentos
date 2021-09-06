@@ -80,7 +80,7 @@ _option_test_num_episodes = click.option(
     "--test-num-episodes",
     "-p",
     type=click.INT,
-    default=0,
+    default=1,
     help="Number of episodes to run for performance eval.",
 )
 
@@ -100,7 +100,10 @@ _option_verbose = click.option(
 def install(component_name, agentos_dir, agent_file, assume_yes):
     """Installs PACKAGE_NAME"""
     runtime.install_component(
-        component_name, agentos_dir, agent_file, assume_yes
+        component_name=component_name,
+        agentos_dir=agentos_dir,
+        agent_file=agent_file,
+        assume_yes=assume_yes,
     )
 
 
@@ -121,7 +124,9 @@ def init(dir_names, agent_name, agentos_dir):
     in all directories specified, or if none are specified, then create
     the files in current directory.
     """
-    runtime.initialize_agent_directories(dir_names, agent_name, agentos_dir)
+    runtime.initialize_agent_directories(
+        dir_names=dir_names, agent_name=agent_name, agentos_dir=agentos_dir
+    )
 
 
 # TODO - reimplement hz and max_iters
@@ -141,12 +146,12 @@ def learn(
     verbose,
 ):
     agentos.learn(
-        num_episodes,
-        test_every,
-        test_num_episodes,
-        agent_file,
-        agentos_dir,
-        verbose,
+        num_episodes=num_episodes,
+        test_every=test_every,
+        test_num_episodes=test_num_episodes,
+        agent_file=agent_file,
+        agentos_dir=agentos_dir,
+        verbose=verbose,
     )
 
 
@@ -158,9 +163,14 @@ def learn(
 @_option_verbose
 def run(num_episodes, agent_file, agentos_dir, verbose):
     """Run an agent by calling advance() on it until it returns True"""
-    should_learn = False
     agentos.run_agent(
-        num_episodes, agent_file, agentos_dir, should_learn, verbose
+        num_episodes=num_episodes,
+        agent_file=agent_file,
+        agentos_dir=agentos_dir,
+        should_learn=False,
+        verbose=verbose,
+        backup_dst=None,
+        print_stats=True,
     )
 
 

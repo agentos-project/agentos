@@ -24,6 +24,7 @@ def run_agent(
     should_learn,
     verbose,
     backup_dst=None,
+    print_stats=False,
 ):
     """Runs an agent specified by a given [agent_file]
 
@@ -33,6 +34,7 @@ def run_agent(
     :param should_learn: boolean, if True we will call policy.improve
     :param verbose: boolean, if True will print debugging data to stdout
     :param backup_dst: if specified, will print backup path to stdout
+    :param print_stats: if True, will print run stats to stdout
 
     :returns: None
     """
@@ -42,7 +44,7 @@ def run_agent(
         steps = agent.rollout(should_learn)
         all_steps.append(steps)
 
-    if all_steps:
+    if print_stats and all_steps:
         mean = statistics.mean(all_steps)
         median = statistics.median(all_steps)
         print()
@@ -105,21 +107,31 @@ def learn(
     verbose,
 ):
     """Trains an agent by calling its learn() method in a loop."""
-    should_learn = False
-    agent = load_agent_from_path(agent_file, agentos_dir, verbose)
+    run_size = test_every if test_every else num_episodes
+    total_episodes = 0
 
-    for i in range(num_episodes):
-        if test_every and i % test_every == 0:
+    while total_episodes < num_episodes:
+        if test_every:
             backup_dst = _back_up_agent(agentos_dir)
-            agentos.run_agent(
-                test_num_episodes,
-                agent_file,
-                agentos_dir,
-                should_learn,
-                verbose,
+            run_agent(
+                num_episodes=test_num_episodes,
+                agent_file=agent_file,
+                agentos_dir=agentos_dir,
+                should_learn=False,
+                verbose=verbose,
                 backup_dst=backup_dst,
+                print_stats=True,
             )
-        agent.learn()
+        run_agent(
+            num_episodes=run_size,
+            agent_file=agent_file,
+            agentos_dir=agentos_dir,
+            should_learn=True,
+            verbose=verbose,
+            backup_dst=None,
+            print_stats=True,
+        )
+        total_episodes += run_size
 
 
 def load_agent_from_path(agent_file, agentos_dir, verbose):
