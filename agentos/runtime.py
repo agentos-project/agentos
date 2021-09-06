@@ -50,7 +50,8 @@ def run_agent(
         print()
         print(f"Benchmark results after {len(all_steps)} rollouts:")
         print(
-            f"\tBenchmarked agent was trained on {agent.get_step_count()} "
+            "\tBenchmarked agent was trained on "
+            f"{agent.get_transition_count()} "
             f"transitions over {agent.get_episode_count()} episodes"
         )
         print(f"\tMax steps over {num_episodes} trials: {max(all_steps)}")
@@ -389,7 +390,7 @@ def _create_agent_directory_structure(agentos_dir):
 
 def _create_core_data(agentos_dir):
     _decorate_save_data_fns(agentos_dir)
-    agentos.save_data("step_count", 0)
+    agentos.save_data("transition_count", 0)
     agentos.save_data("episode_count", 0)
 
 
