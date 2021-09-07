@@ -171,6 +171,9 @@ class Environment(MemberInitializer):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if "shared_data" in kwargs:
+            shared_data = kwargs["shared_data"]
+            shared_data["environment_spec"] = self.get_spec()
         self.action_space = None
         self.observation_space = None
         self.reward_range = None
