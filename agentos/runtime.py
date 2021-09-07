@@ -22,6 +22,7 @@ def run_agent(
     num_episodes,
     agent_file,
     agentos_dir,
+    max_transitions,
     should_learn,
     verbose,
     backup_dst=None,
@@ -32,6 +33,8 @@ def run_agent(
     :param num_episodes: number of episodes to run the agent through
     :param agent_file: path to the agent config file
     :param agentos_dir: Directory path containing AgentOS components and data
+    :param max_transitions: If not None, max transitions performed before
+                            truncating an episode.
     :param should_learn: boolean, if True we will call policy.improve
     :param verbose: boolean, if True will print debugging data to stdout
     :param backup_dst: if specified, will print backup path to stdout
@@ -45,39 +48,13 @@ def run_agent(
         _print_agent_parameters(agent)
 
     for i in range(num_episodes):
-        steps = agent.rollout(should_learn)
+        steps = agent.rollout(
+            should_learn=should_learn, max_transitions=max_transitions
+        )
         all_steps.append(steps)
 
     if print_stats:
         _print_run_results(agent, all_steps, backup_dst)
-
-
-def _print_agent_parameters(agent):
-    print()
-    print("Agent parameters:")
-    pprint.pprint(agentos.parameters.__dict__)
-    print()
-
-
-def _print_run_results(agent, all_steps, backup_dst):
-    if not all_steps:
-        return
-    mean = statistics.mean(all_steps)
-    median = statistics.median(all_steps)
-    print()
-    print(f"Benchmark results after {len(all_steps)} rollouts:")
-    print(
-        "\tBenchmarked agent was trained on "
-        f"{agent.get_transition_count()} "
-        f"transitions over {agent.get_episode_count()} episodes"
-    )
-    print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
-    print(f"\tMean steps over {len(all_steps)} trials: {mean}")
-    print(f"\tMedian steps over {len(all_steps)} trials: {median}")
-    print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
-    if backup_dst:
-        print(f"Agent backed up in {backup_dst}")
-    print()
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
@@ -122,6 +99,7 @@ def learn(
     test_num_episodes,
     agent_file,
     agentos_dir,
+    max_transitions,
     verbose,
 ):
     """Trains an agent by calling its learn() method in a loop."""
@@ -135,6 +113,7 @@ def learn(
                 num_episodes=test_num_episodes,
                 agent_file=agent_file,
                 agentos_dir=agentos_dir,
+                max_transitions=max_transitions,
                 should_learn=False,
                 verbose=verbose,
                 backup_dst=backup_dst,
@@ -144,6 +123,7 @@ def learn(
             num_episodes=run_size,
             agent_file=agent_file,
             agentos_dir=agentos_dir,
+            max_transitions=max_transitions,
             should_learn=True,
             verbose=verbose,
             backup_dst=None,
@@ -258,6 +238,34 @@ parameters = ParameterObject()
 ################################
 # Private helper functions below
 ################################
+
+
+def _print_agent_parameters(agent):
+    print()
+    print("Agent parameters:")
+    pprint.pprint(agentos.parameters.__dict__)
+    print()
+
+
+def _print_run_results(agent, all_steps, backup_dst):
+    if not all_steps:
+        return
+    mean = statistics.mean(all_steps)
+    median = statistics.median(all_steps)
+    print()
+    print(f"Benchmark results after {len(all_steps)} rollouts:")
+    print(
+        "\tBenchmarked agent was trained on "
+        f"{agent.get_transition_count()} "
+        f"transitions over {agent.get_episode_count()} episodes"
+    )
+    print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
+    print(f"\tMean steps over {len(all_steps)} trials: {mean}")
+    print(f"\tMedian steps over {len(all_steps)} trials: {median}")
+    print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
+    if backup_dst:
+        print(f"Agent backed up in {backup_dst}")
+    print()
 
 
 def _back_up_agent(agentos_dir):

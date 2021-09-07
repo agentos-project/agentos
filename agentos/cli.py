@@ -85,6 +85,13 @@ _option_test_num_episodes = click.option(
     help="Number of episodes to run for performance eval.",
 )
 
+_option_max_transitions = click.option(
+    "--max-transitions",
+    "-m",
+    type=click.INT,
+    default=None,
+    help="The maximium number of transitions before truncating an episode",
+)
 _option_verbose = click.option(
     "--verbose",
     "-v",
@@ -138,6 +145,7 @@ def init(dir_names, agent_name, agentos_dir):
 @_option_test_num_episodes
 @_option_agent_file
 @_option_agentos_dir
+@_option_max_transitions
 @_option_verbose
 def learn(
     num_episodes,
@@ -145,6 +153,7 @@ def learn(
     test_num_episodes,
     agent_file,
     agentos_dir,
+    max_transitions,
     verbose,
 ):
     _check_path_exists(agentos_dir)
@@ -154,6 +163,7 @@ def learn(
         test_num_episodes=test_num_episodes,
         agent_file=agent_file,
         agentos_dir=agentos_dir,
+        max_transitions=max_transitions,
         verbose=verbose,
     )
 
@@ -163,14 +173,16 @@ def learn(
 @_option_num_episodes
 @_option_agent_file
 @_option_agentos_dir
+@_option_max_transitions
 @_option_verbose
-def run(num_episodes, agent_file, agentos_dir, verbose):
+def run(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
     """Run an agent by calling advance() on it until it returns True"""
     _check_path_exists(agentos_dir)
     agentos.run_agent(
         num_episodes=num_episodes,
         agent_file=agent_file,
         agentos_dir=agentos_dir,
+        max_transitions=max_transitions,
         should_learn=False,
         verbose=verbose,
         backup_dst=None,
