@@ -8,6 +8,7 @@ import uuid
 import sys
 import yaml
 import click
+import pprint
 from datetime import datetime
 import importlib.util
 from pathlib import Path
@@ -40,27 +41,43 @@ def run_agent(
     """
     all_steps = []
     agent = load_agent_from_path(agent_file, agentos_dir, verbose)
+    if print_stats:
+        _print_agent_parameters(agent)
+
     for i in range(num_episodes):
         steps = agent.rollout(should_learn)
         all_steps.append(steps)
 
-    if print_stats and all_steps:
-        mean = statistics.mean(all_steps)
-        median = statistics.median(all_steps)
-        print()
-        print(f"Benchmark results after {len(all_steps)} rollouts:")
-        print(
-            "\tBenchmarked agent was trained on "
-            f"{agent.get_transition_count()} "
-            f"transitions over {agent.get_episode_count()} episodes"
-        )
-        print(f"\tMax steps over {num_episodes} trials: {max(all_steps)}")
-        print(f"\tMean steps over {num_episodes} trials: {mean}")
-        print(f"\tMedian steps over {num_episodes} trials: {median}")
-        print(f"\tMin steps over {num_episodes} trials: {min(all_steps)}")
-        if backup_dst:
-            print(f"Agent backed up in {backup_dst}")
-        print()
+    if print_stats:
+        _print_run_results(agent, all_steps, backup_dst)
+
+
+def _print_agent_parameters(agent):
+    print()
+    print("Agent parameters:")
+    pprint.pprint(agentos.parameters.__dict__)
+    print()
+
+
+def _print_run_results(agent, all_steps, backup_dst):
+    if not all_steps:
+        return
+    mean = statistics.mean(all_steps)
+    median = statistics.median(all_steps)
+    print()
+    print(f"Benchmark results after {len(all_steps)} rollouts:")
+    print(
+        "\tBenchmarked agent was trained on "
+        f"{agent.get_transition_count()} "
+        f"transitions over {agent.get_episode_count()} episodes"
+    )
+    print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
+    print(f"\tMean steps over {len(all_steps)} trials: {mean}")
+    print(f"\tMedian steps over {len(all_steps)} trials: {median}")
+    print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
+    if backup_dst:
+        print(f"Agent backed up in {backup_dst}")
+    print()
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
