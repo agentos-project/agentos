@@ -53,7 +53,7 @@ acme_r2d2_dataset:
   description: "Reverb server tuned to work with Acme R2D2"
   releases:
     - name: 1.0.0
-      hash: 798b494e13781d382d520000099b15a234572c4c
+      hash: 476850b8f41d17b767980ea581450202d807c902
       github_url: https://github.com/nickjalbert/acme_r2d2_dataset
       file_path: dataset.py
       class_name: ReverbDataset
@@ -65,7 +65,7 @@ acme_r2d2_trainer:
   description: "Trainer to improve the Acme R2D2 policy"
   releases:
     - name: 1.0.0
-      hash: 71517b3c4e7bd719d774451a29a170262380d815
+      hash: ee6d74a1f65fd14932a37621c571736329dbdc39
       github_url: https://github.com/nickjalbert/acme_r2d2_trainer
       file_path: trainer.py
       class_name: R2D2Trainer
