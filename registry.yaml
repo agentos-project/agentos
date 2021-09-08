@@ -42,7 +42,7 @@ acme_r2d2_policy:
   releases:
     - name: 1.0.0
       hash: 6cb269f848ec0df2603073dd9283ba30bd822105
-      github_url: https://github.com/nickjalbert/r2d2
+      github_url: https://github.com/nickjalbert/acme_r2d2_policy
       file_path: policy.py
       class_name: R2D2Policy
       requirements_path: requirements.txt
@@ -54,7 +54,7 @@ acme_r2d2_dataset:
   releases:
     - name: 1.0.0
       hash: 798b494e13781d382d520000099b15a234572c4c
-      github_url: https://github.com/nickjalbert/reverb_dataset
+      github_url: https://github.com/nickjalbert/acme_r2d2_dataset
       file_path: dataset.py
       class_name: ReverbDataset
       requirements_path: requirements.txt
@@ -66,7 +66,7 @@ acme_r2d2_trainer:
   releases:
     - name: 1.0.0
       hash: 71517b3c4e7bd719d774451a29a170262380d815
-      github_url: https://github.com/nickjalbert/r2d2_trainer
+      github_url: https://github.com/nickjalbert/acme_r2d2_trainer
       file_path: trainer.py
       class_name: R2D2Trainer
       requirements_path: requirements.txt
