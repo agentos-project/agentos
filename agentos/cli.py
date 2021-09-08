@@ -5,7 +5,6 @@ The CLI allows creation of a simple template agent.
 import agentos
 import click
 from agentos import runtime
-from pathlib import Path
 
 
 @click.group()
@@ -99,6 +98,14 @@ _option_verbose = click.option(
     help="Agent prints verbose logs.",
 )
 
+_option_backup_id = click.option(
+    "--from-backup-id",
+    "-b",
+    metavar="BACKUP_ID",
+    type=str,
+    help="Resets agent to given backup ID. Expects a UUID.",
+)
+
 
 @agentos_cmd.command()
 @_arg_component_name
@@ -107,7 +114,6 @@ _option_verbose = click.option(
 @_option_assume_yes
 def install(component_name, agent_file, agentos_dir, assume_yes):
     """Installs PACKAGE_NAME"""
-    _check_path_exists(agentos_dir)
     runtime.install_component(
         component_name=component_name,
         agentos_dir=agentos_dir,
@@ -138,7 +144,7 @@ def init(dir_names, agent_name, agentos_dir):
     )
 
 
-# TODO - reimplement hz and max_iters
+# TODO - reimplement hz
 @agentos_cmd.command()
 @_option_num_episodes
 @_option_test_every
@@ -156,7 +162,6 @@ def learn(
     max_transitions,
     verbose,
 ):
-    _check_path_exists(agentos_dir)
     agentos.learn(
         num_episodes=num_episodes,
         test_every=test_every,
@@ -168,7 +173,7 @@ def learn(
     )
 
 
-# TODO - reimplement hz and max_iters
+# TODO - reimplement hz
 @agentos_cmd.command()
 @_option_num_episodes
 @_option_agent_file
@@ -177,7 +182,6 @@ def learn(
 @_option_verbose
 def run(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
     """Run an agent by calling advance() on it until it returns True"""
-    _check_path_exists(agentos_dir)
     agentos.run_agent(
         num_episodes=num_episodes,
         agent_file=agent_file,
@@ -190,9 +194,13 @@ def run(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
     )
 
 
-def _check_path_exists(path):
-    if not Path(path).absolute().exists():
-        raise click.BadParameter(f"{path} does not exist!")
+@agentos_cmd.command()
+@_option_agentos_dir
+@_option_backup_id
+def reset(agentos_dir, from_backup_id):
+    runtime.reset_agent_directory(
+        agentos_dir=agentos_dir, from_backup_id=from_backup_id
+    )
 
 
 if __name__ == "__main__":

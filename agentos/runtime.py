@@ -42,6 +42,7 @@ def run_agent(
 
     :returns: None
     """
+    _check_path_exists(agentos_dir)
     all_steps = []
     agent = load_agent_from_path(agent_file, agentos_dir, verbose)
     if print_stats:
@@ -58,6 +59,7 @@ def run_agent(
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
+    _check_path_exists(agentos_dir)
     agentos_dir = Path(agentos_dir).absolute()
     registry_entry = _get_registry_entry(component_name)
     confirmed = assume_yes or _confirm_component_installation(
@@ -103,12 +105,13 @@ def learn(
     verbose,
 ):
     """Trains an agent by calling its learn() method in a loop."""
+    _check_path_exists(agentos_dir)
     run_size = test_every if test_every else num_episodes
     total_episodes = 0
 
     while total_episodes < num_episodes:
         if test_every:
-            backup_dst = _back_up_agent(agentos_dir)
+            backup_dst = _backup_agent(agentos_dir)
             run_agent(
                 num_episodes=test_num_episodes,
                 agent_file=agent_file,
@@ -191,6 +194,31 @@ def load_agent_from_path(agent_file, agentos_dir, verbose):
     return agent_cls(**agent_kwargs)
 
 
+def reset_agent_directory(agentos_dir, from_backup_id):
+    _check_path_exists(agentos_dir)
+    if from_backup_id:
+        restore_src = _get_backups_location(agentos_dir) / from_backup_id
+        if not restore_src.exists():
+            raise click.BadParameter(
+                f"{restore_src.absolute()} does not exist!"
+            )
+    backup_dst = _backup_agent(agentos_dir)
+    print(f"Current agent backed up to {backup_dst}.")
+    data_location = _get_data_location(agentos_dir)
+    shutil.rmtree(data_location)
+    _create_agent_directory_structure(agentos_dir)
+    if from_backup_id:
+        print(restore_src)
+        print(_get_data_location(agentos_dir))
+        shutil.copytree(
+            restore_src, _get_data_location(agentos_dir), dirs_exist_ok=True
+        )
+        print(f"Agent state at {restore_src.absolute()} restored.")
+    else:
+        _create_core_data(agentos_dir)
+        print("Agent state reset.")
+
+
 # https://github.com/deepmind/sonnet#tensorflow-checkpointing
 # TODO - custom saver/restorer functions
 # TODO - V hacky way to pass in the global data location; we decorate
@@ -240,6 +268,12 @@ parameters = ParameterObject()
 ################################
 
 
+# Necessary because the agentos_dir will **not** exist on `agentos init`
+def _check_path_exists(path):
+    if not Path(path).absolute().exists():
+        raise click.BadParameter(f"{path} does not exist!")
+
+
 def _print_agent_parameters(agent):
     print()
     print("Agent parameters:")
@@ -268,7 +302,7 @@ def _print_run_results(agent, all_steps, backup_dst):
     print()
 
 
-def _back_up_agent(agentos_dir):
+def _backup_agent(agentos_dir):
     """Creates a snapshot of an agent at a given moment in time.
 
     :param agentos_dir: Directory path containing AgentOS components and data
