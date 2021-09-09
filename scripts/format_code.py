@@ -21,6 +21,10 @@ from shared import traverse_tracked_files
 
 returncode = 0
 
+IGNORED_FILES = [
+    "agentos/templates/agent.py",
+]
+
 
 def format_file(path):
     global returncode
@@ -39,5 +43,5 @@ def format_file(path):
         print()
 
 
-traverse_tracked_files(root_dir, format_file)
+traverse_tracked_files(root_dir, format_file, IGNORED_FILES)
 sys.exit(returncode)

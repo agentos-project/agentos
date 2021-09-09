@@ -5,16 +5,32 @@ from agentos.core import (
     Agent,
     Policy,
     Environment,
+    EnvironmentSpec,
+    Dataset,
+    Trainer,
+)
+from agentos.runtime import (
     run_agent,
-    rollout,
-    rollouts,
+    learn,
+    save_data,
+    save_tensorflow,
+    restore_data,
+    restore_tensorflow,
+    parameters,
 )
 
 __all__ = [
     "Agent",
     "Policy",
     "Environment",
+    "EnvironmentSpec",
+    "Dataset",
+    "Trainer",
     "run_agent",
-    "rollout",
-    "rollouts",
+    "learn",
+    "save_data",
+    "save_tensorflow",
+    "restore_data",
+    "restore_tensorflow",
+    "parameters",
 ]
