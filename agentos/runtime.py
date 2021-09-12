@@ -8,6 +8,7 @@ import uuid
 import sys
 import yaml
 import click
+import pprint
 from datetime import datetime
 import importlib.util
 from pathlib import Path
@@ -23,6 +24,7 @@ def run_agent(
     agentos_dir,
     should_learn,
     verbose,
+    max_transitions=None,
     backup_dst=None,
     print_stats=False,
 ):
@@ -33,37 +35,31 @@ def run_agent(
     :param agentos_dir: Directory path containing AgentOS components and data
     :param should_learn: boolean, if True we will call policy.improve
     :param verbose: boolean, if True will print debugging data to stdout
+    :param max_transitions: If not None, max transitions performed before
+                            truncating an episode.
     :param backup_dst: if specified, will print backup path to stdout
     :param print_stats: if True, will print run stats to stdout
 
     :returns: None
     """
+    _check_path_exists(agentos_dir)
     all_steps = []
     agent = load_agent_from_path(agent_file, agentos_dir, verbose)
+    if print_stats:
+        _print_agent_parameters(agent)
+
     for i in range(num_episodes):
-        steps = agent.rollout(should_learn)
+        steps = agent.rollout(
+            should_learn=should_learn, max_transitions=max_transitions
+        )
         all_steps.append(steps)
 
-    if print_stats and all_steps:
-        mean = statistics.mean(all_steps)
-        median = statistics.median(all_steps)
-        print()
-        print(f"Benchmark results after {len(all_steps)} rollouts:")
-        print(
-            "\tBenchmarked agent was trained on "
-            f"{agent.get_transition_count()} "
-            f"transitions over {agent.get_episode_count()} episodes"
-        )
-        print(f"\tMax steps over {num_episodes} trials: {max(all_steps)}")
-        print(f"\tMean steps over {num_episodes} trials: {mean}")
-        print(f"\tMedian steps over {num_episodes} trials: {median}")
-        print(f"\tMin steps over {num_episodes} trials: {min(all_steps)}")
-        if backup_dst:
-            print(f"Agent backed up in {backup_dst}")
-        print()
+    if print_stats:
+        _print_run_results(agent, all_steps, backup_dst)
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
+    _check_path_exists(agentos_dir)
     agentos_dir = Path(agentos_dir).absolute()
     registry_entry = _get_registry_entry(component_name)
     confirmed = assume_yes or _confirm_component_installation(
@@ -106,20 +102,23 @@ def learn(
     agent_file,
     agentos_dir,
     verbose,
+    max_transitions=None,
 ):
     """Trains an agent by calling its learn() method in a loop."""
+    _check_path_exists(agentos_dir)
     run_size = test_every if test_every else num_episodes
     total_episodes = 0
 
     while total_episodes < num_episodes:
         if test_every:
-            backup_dst = _back_up_agent(agentos_dir)
+            backup_dst = _backup_agent(agentos_dir)
             run_agent(
                 num_episodes=test_num_episodes,
                 agent_file=agent_file,
                 agentos_dir=agentos_dir,
                 should_learn=False,
                 verbose=verbose,
+                max_transitions=max_transitions,
                 backup_dst=backup_dst,
                 print_stats=True,
             )
@@ -129,6 +128,7 @@ def learn(
             agentos_dir=agentos_dir,
             should_learn=True,
             verbose=verbose,
+            max_transitions=max_transitions,
             backup_dst=None,
             print_stats=True,
         )
@@ -194,6 +194,31 @@ def load_agent_from_path(agent_file, agentos_dir, verbose):
     return agent_cls(**agent_kwargs)
 
 
+def reset_agent_directory(agentos_dir, from_backup_id):
+    _check_path_exists(agentos_dir)
+    if from_backup_id:
+        restore_src = _get_backups_location(agentos_dir) / from_backup_id
+        if not restore_src.exists():
+            raise click.BadParameter(
+                f"{restore_src.absolute()} does not exist!"
+            )
+    backup_dst = _backup_agent(agentos_dir)
+    print(f"Current agent backed up to {backup_dst}.")
+    data_location = _get_data_location(agentos_dir)
+    shutil.rmtree(data_location)
+    _create_agent_directory_structure(agentos_dir)
+    if from_backup_id:
+        print(restore_src)
+        print(_get_data_location(agentos_dir))
+        shutil.copytree(
+            restore_src, _get_data_location(agentos_dir), dirs_exist_ok=True
+        )
+        print(f"Agent state at {restore_src.absolute()} restored.")
+    else:
+        _create_core_data(agentos_dir)
+        print("Agent state reset.")
+
+
 # https://github.com/deepmind/sonnet#tensorflow-checkpointing
 # TODO - custom saver/restorer functions
 # TODO - V hacky way to pass in the global data location; we decorate
@@ -243,7 +268,41 @@ parameters = ParameterObject()
 ################################
 
 
-def _back_up_agent(agentos_dir):
+# Necessary because the agentos_dir will **not** exist on `agentos init`
+def _check_path_exists(path):
+    if not Path(path).absolute().exists():
+        raise click.BadParameter(f"{path} does not exist!")
+
+
+def _print_agent_parameters(agent):
+    print()
+    print("Agent parameters:")
+    pprint.pprint(agentos.parameters.__dict__)
+    print()
+
+
+def _print_run_results(agent, all_steps, backup_dst):
+    if not all_steps:
+        return
+    mean = statistics.mean(all_steps)
+    median = statistics.median(all_steps)
+    print()
+    print(f"Benchmark results after {len(all_steps)} rollouts:")
+    print(
+        "\tBenchmarked agent was trained on "
+        f"{agent.get_transition_count()} "
+        f"transitions over {agent.get_episode_count()} episodes"
+    )
+    print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
+    print(f"\tMean steps over {len(all_steps)} trials: {mean}")
+    print(f"\tMedian steps over {len(all_steps)} trials: {median}")
+    print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
+    if backup_dst:
+        print(f"Agent backed up in {backup_dst}")
+    print()
+
+
+def _backup_agent(agentos_dir):
     """Creates a snapshot of an agent at a given moment in time.
 
     :param agentos_dir: Directory path containing AgentOS components and data

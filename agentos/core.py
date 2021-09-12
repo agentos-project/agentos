@@ -66,29 +66,45 @@ class Agent(MemberInitializer):
             self._should_reset = True
         return prev_obs, action, self.curr_obs, reward, done, info
 
-    def rollout(self, should_learn):
+    def rollout(self, should_learn, max_transitions=None):
         """Generates one episode of transitions and allows the Agent to
         learn from its experience.
 
-        If the parameter <should_learn> is True, then Trainer.improve() will
-        be called every time the Agent advances one step through the
-        environment and the core training metrics (transition_count and
-        episode_count)  will be updated after the rollout.
+        :param should_learn: if True, then Trainer.improve() will be called
+                             every time the Agent advances one step through the
+                             environment and the core training metrics
+                             (transition_count and episode_count) will be
+                             updated after the rollout.
+        :param max_transitions: If not None, the episode and rollout will be
+                                truncated after the specified number of
+                                transitions.
+
+        :returns: Number of transitions experienced in this episode.
         """
         done = False
         transition_count = 0
         while not done:
+            if max_transitions and transition_count > max_transitions:
+                self._episode_truncated()
+                break
             _, _, _, _, done, _ = self.advance()
             transition_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
         if should_learn:
+            self.trainer.improve(self.dataset, self.policy)
             prev_transition_count = self.get_transition_count()
             new_transition_count = prev_transition_count + transition_count
             self.save_transition_count(new_transition_count)
             prev_episode_count = self.get_episode_count()
             self.save_episode_count(prev_episode_count + 1)
         return transition_count
+
+    def _episode_truncated(self):
+        # TODO - record truncations to improve training?
+        # See truncation() in
+        # https://github.com/deepmind/dm_env/blob/master/dm_env/_environment.py
+        pass
 
     def get_transition_count(self):
         """Gets the number of transitions the Agent has been trained on."""
@@ -171,6 +187,9 @@ class Environment(MemberInitializer):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if "shared_data" in kwargs:
+            shared_data = kwargs["shared_data"]
+            shared_data["environment_spec"] = self.get_spec()
         self.action_space = None
         self.observation_space = None
         self.reward_range = None

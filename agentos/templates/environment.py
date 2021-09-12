@@ -23,7 +23,7 @@ class Corridor(agentos.Environment):
             self.position = np.array(
                 [np.float32(min(self.position[0] + 1, self.length))]
             )
-        return (self.position, -1, self.done, {{}})
+        return (self.position, np.float32(-1), self.done, dict())
 
     def reset(self):
         self.position = np.array([np.float32(0)])
@@ -34,7 +34,9 @@ class Corridor(agentos.Environment):
             shape=(1,), dtype=np.dtype("float32"), name="observations"
         )
         actions = specs.DiscreteArray(num_values=2, name="actions")
-        rewards = specs.Array(shape=(), dtype=np.dtype("int64"), name="reward")
+        rewards = specs.Array(
+            shape=(), dtype=np.dtype("float32"), name="reward"
+        )
         discounts = specs.BoundedArray(
             shape=(),
             dtype=np.dtype("float32"),

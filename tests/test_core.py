@@ -21,9 +21,9 @@ def test_cli(tmpdir):
     for expected_file_name in expected_file_names:
         expected_path = Path(tmpdir) / expected_file_name
         assert expected_path.is_file(), f"{expected_file_name} not found"
-    commands = [["agentos", "learn"], ["agentos", "run"]]
-    for c in commands:
-        subprocess.run(c, cwd=tmpdir, check=True)
+    subprocess.run(["agentos", "run"], cwd=tmpdir, check=True)
+    subprocess.run(["agentos", "learn"], cwd=tmpdir, check=True)
+    subprocess.run(["agentos", "reset"], cwd=tmpdir, check=True)
 
     # TODO(andyk): add functionality for creating a conda env
     #              automatically if an MLProject file does not
