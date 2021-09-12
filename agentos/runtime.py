@@ -22,9 +22,9 @@ def run_agent(
     num_episodes,
     agent_file,
     agentos_dir,
-    max_transitions,
     should_learn,
     verbose,
+    max_transitions=None,
     backup_dst=None,
     print_stats=False,
 ):
@@ -33,10 +33,10 @@ def run_agent(
     :param num_episodes: number of episodes to run the agent through
     :param agent_file: path to the agent config file
     :param agentos_dir: Directory path containing AgentOS components and data
-    :param max_transitions: If not None, max transitions performed before
-                            truncating an episode.
     :param should_learn: boolean, if True we will call policy.improve
     :param verbose: boolean, if True will print debugging data to stdout
+    :param max_transitions: If not None, max transitions performed before
+                            truncating an episode.
     :param backup_dst: if specified, will print backup path to stdout
     :param print_stats: if True, will print run stats to stdout
 
@@ -101,8 +101,8 @@ def learn(
     test_num_episodes,
     agent_file,
     agentos_dir,
-    max_transitions,
     verbose,
+    max_transitions=None,
 ):
     """Trains an agent by calling its learn() method in a loop."""
     _check_path_exists(agentos_dir)
@@ -116,9 +116,9 @@ def learn(
                 num_episodes=test_num_episodes,
                 agent_file=agent_file,
                 agentos_dir=agentos_dir,
-                max_transitions=max_transitions,
                 should_learn=False,
                 verbose=verbose,
+                max_transitions=max_transitions,
                 backup_dst=backup_dst,
                 print_stats=True,
             )
@@ -126,9 +126,9 @@ def learn(
             num_episodes=run_size,
             agent_file=agent_file,
             agentos_dir=agentos_dir,
-            max_transitions=max_transitions,
             should_learn=True,
             verbose=verbose,
+            max_transitions=max_transitions,
             backup_dst=None,
             print_stats=True,
         )

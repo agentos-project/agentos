@@ -168,8 +168,8 @@ def learn(
         test_num_episodes=test_num_episodes,
         agent_file=agent_file,
         agentos_dir=agentos_dir,
-        max_transitions=max_transitions,
         verbose=verbose,
+        max_transitions=max_transitions,
     )
 
 
@@ -186,9 +186,9 @@ def run(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
         num_episodes=num_episodes,
         agent_file=agent_file,
         agentos_dir=agentos_dir,
-        max_transitions=max_transitions,
         should_learn=False,
         verbose=verbose,
+        max_transitions=max_transitions,
         backup_dst=None,
         print_stats=True,
     )

@@ -66,7 +66,7 @@ class Agent(MemberInitializer):
             self._should_reset = True
         return prev_obs, action, self.curr_obs, reward, done, info
 
-    def rollout(self, should_learn, max_transitions):
+    def rollout(self, should_learn, max_transitions=None):
         """Generates one episode of transitions and allows the Agent to
         learn from its experience.
 
