@@ -2,6 +2,7 @@
 from collections import namedtuple
 from agentos.runtime import restore_data
 from agentos.runtime import save_data
+import ABC
 
 
 class MemberInitializer:
@@ -28,14 +29,6 @@ class MemberInitializer:
 class Agent(MemberInitializer):
     """An Agent observes and takes actions in its Environment.
 
-    An Agent holds the following pointers:
-
-        * self.environment - The Environment with which the Agent interacts
-        * self.policy - The Policy used to choose the Agent's next action
-        * self.dataset - A Dataset to record the Agent's experience
-        * self.trainer - A Trainer that updates the Policy based on the
-                         Agent's experience
-
     The primary methods on an Agent are:
 
         * Agent.advance() - Takes on action within the Environment as
@@ -51,20 +44,7 @@ class Agent(MemberInitializer):
         self._should_reset = True
 
     def advance(self):
-        """Takes one action within the Environment as dictated by the Policy"""
-        if self._should_reset:
-            self.curr_obs = self.environment.reset()
-            self._should_reset = False
-            self.dataset.add(None, None, self.curr_obs, None, None, {})
-        action = self.policy.decide(
-            self.curr_obs, self.environment.valid_actions
-        )
-        prev_obs = self.curr_obs
-        self.curr_obs, reward, done, info = self.environment.step(action)
-        self.dataset.add(prev_obs, action, self.curr_obs, reward, done, info)
-        if done:
-            self._should_reset = True
-        return prev_obs, action, self.curr_obs, reward, done, info
+        pass
 
     def rollout(self, should_learn, max_transitions=None):
         """Generates one episode of transitions and allows the Agent to
@@ -131,13 +111,12 @@ class Policy(MemberInitializer):
     """
 
     # FIXME - actions param unnecessary with environment specs
-    def decide(self, observation, actions, should_learn=False):
+    def decide(self, observation, should_learn=False):
         """Takes an observation and valid actions and returns next action to
         take.
 
         :param observation: should be in the `observation_space` of the
             environments that this policy is compatible with.
-        :param actions: the action set from which the agent should choose.
         :param should_learn: should the agent learn from the transition?
         :returns: action to take, should be in `action_space` of the
             environments that this policy is compatible with.

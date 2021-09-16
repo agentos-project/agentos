@@ -1,4 +1,5 @@
 """Functions and classes used by the AOS runtime."""
+import json
 import pickle
 import agentos
 import shutil
@@ -44,7 +45,8 @@ def run_agent(
     """
     _check_path_exists(agentos_dir)
     all_steps = []
-    agent = load_agent_from_path(agent_file, agentos_dir, verbose)
+    _decorate_save_data_fns(agentos_dir)
+    agent = load_component_from_file(agent_file, "agent")
     if print_stats:
         _print_agent_parameters(agent)
 
@@ -135,63 +137,56 @@ def learn(
         total_episodes += run_size
 
 
-def load_agent_from_path(agent_file, agentos_dir, verbose):
-    """Loads agent from an agent directory
+def _load_component(config, component_name, visited_components):
+    """ Recursively load a component from a config instance.
 
-    :param agent_file: path the agentos.ini config file
-    :param agentos_dir: Directory path containing AgentOS components and data
-
-    :returns: Instantiated Agent class from directory
+    :param config: an instance of a parsed agentos.ini file.
+    :param component_name: name of the component class instance to return.
+        The spec_file provided must contain a component spec with this name.
+    :returns: Instantiated component class.
+    :param visited_components: Dict of all classes instantiated in this
+        recursive algorithm so far.
     """
-    agent_path = Path(agent_file)
-    agent_dir_path = agent_path.parent.absolute()
+    assert component_name not in visited_components.keys()
+    component_cls = _get_class_from_config_section(config[component_name])
+    component_instance = component_cls()
+    visited_components[component_name] = component_instance
+
+    # if this component has dependencies, load them first (recursively)
+    # Handle circular dependencies by giving components pointers to each other.
+    # then load an instance of this components class, and set up attributes
+    # that point to the instances of its dependencies.
+    if 'dependencies' in config[component_name].keys():
+        dep_names = json.loads(config[component_name]['dependencies'])
+        for dep_name in dep_names:
+            if dep_name not in visited_components.keys():
+                _load_component(config, dep_name, visited_components)
+        for dep_name in dep_names:
+            print(f"Adding {dep_name} as dependency of {component_name}")
+            setattr(component_instance, dep_name, visited_components[dep_name])
+
+    return component_instance
+
+
+def load_component_from_file(spec_file, component_name):
+    """Loads component from a component spec file.
+
+    :param spec_file: the AgentOS component spec file
+    :param component_name: name of the component class instance to return.
+        The spec_file provided must contain a component spec with this name.
+    :returns: Instantiated component class.
+    """
+    print(f"loading component {component_name}")
+    spec_path = Path(spec_file)
     config = configparser.ConfigParser()
-    config.read(agent_path)
+    config.read(spec_path)
 
-    _decorate_save_data_fns(agentos_dir)
-
-    env_cls = _get_class_from_config(agent_dir_path, config["Environment"])
-    policy_cls = _get_class_from_config(agent_dir_path, config["Policy"])
-    dataset_cls = _get_class_from_config(agent_dir_path, config["Dataset"])
-    trainer_cls = _get_class_from_config(agent_dir_path, config["Trainer"])
-    agent_cls = _get_class_from_config(agent_dir_path, config["Agent"])
-
-    agent_kwargs = {}
-    shared_data = {}
-    component_cls = {
-        "environment": env_cls,
-        "policy": policy_cls,
-        "dataset": dataset_cls,
-        "trainer": trainer_cls,
-    }
-    while len(component_cls) > 0:
-        to_initialize_name = None
-        to_initialize_cls = None
-        for name, cls in component_cls.items():
-            if cls.ready_to_initialize(shared_data):
-                to_initialize_name = name
-                to_initialize_cls = cls
-                break
-        if to_initialize_name is None or to_initialize_cls is None:
-            exc_msg = (
-                "Could not find component ready to initialize.  "
-                "Perhaps there is a circular dependency?  "
-                f"Remaining components: {component_cls}"
-            )
-            raise Exception(exc_msg)
-
-        del component_cls[to_initialize_name]
-        agent_kwargs[to_initialize_name] = to_initialize_cls(
-            shared_data=shared_data, **config[to_initialize_name.capitalize()]
-        )
-
-    agent_kwargs = {
-        "shared_data": shared_data,
-        **agent_kwargs,
-        "verbose": verbose,
-        **config["Agent"],
-    }
-    return agent_cls(**agent_kwargs)
+    visited_components = {}
+    component = _load_component(config, component_name, visited_components)
+    for i in visited_components.values():
+        if hasattr(i, "init"):
+            i.init()
+    return component
 
 
 def reset_agent_directory(agentos_dir, from_backup_id):
@@ -329,15 +324,16 @@ def _load_parameters(parameters_file):
         agentos.parameters.__dict__[k] = v
 
 
-def _get_class_from_config(agent_dir_path, config):
+def _get_class_from_config_section(section):
     """Takes class_path of form "module.Class" and returns the class object."""
-    sys.path.append(config["python_path"])
-    file_path = agent_dir_path / Path(config["file_path"])
-    spec = importlib.util.spec_from_file_location("TEMP_MODULE", file_path)
+    module_file = Path(section["file_path"])
+    assert module_file.is_file()
+    sys.path.append(module_file.parent)
+    spec = importlib.util.spec_from_file_location("TEMP_MODULE", module_file)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    cls = getattr(module, config["class_name"])
-    _load_parameters(Path(config["python_path"]) / "parameters.yaml")
+    cls = getattr(module, section["class_name"])
+    _load_parameters(module_file.parent / "parameters.yaml")
     sys.path.pop()
     return cls
 
