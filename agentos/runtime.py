@@ -19,45 +19,29 @@ import statistics
 
 
 # TODO - reimplement hz, max_iters, and threading
-def run_agent(
-    num_episodes,
-    agent_file,
-    agentos_dir,
-    should_learn,
-    verbose,
-    max_transitions=None,
-    backup_dst=None,
-    print_stats=False,
+def run_component(
+        component_spec_file,
+        component_name,
+        entry_point,
+        params,
+        agentos_dir,
 ):
-    """Runs an agent specified by a given [agent_file]
-
-    :param num_episodes: number of episodes to run the agent through
-    :param agent_file: path to the agent config file
+    """
+    :param component_spec_file:
+    :param component_name:
+    :param entry_point:
+    :param params:
     :param agentos_dir: Directory path containing AgentOS components and data
-    :param should_learn: boolean, if True we will call policy.improve
-    :param verbose: boolean, if True will print debugging data to stdout
-    :param max_transitions: If not None, max transitions performed before
-                            truncating an episode.
-    :param backup_dst: if specified, will print backup path to stdout
-    :param print_stats: if True, will print run stats to stdout
-
-    :returns: None
+    :return:
     """
     _check_path_exists(agentos_dir)
-    all_steps = []
     _decorate_save_data_fns(agentos_dir)
-    agent = load_component_from_file(agent_file, "agent")
-    if print_stats:
-        _print_agent_parameters(agent)
+    component = load_component_from_file(component_spec_file, component_name)
 
-    for i in range(num_episodes):
-        steps = agent.rollout(
-            should_learn=should_learn, max_transitions=max_transitions
-        )
-        all_steps.append(steps)
-
-    if print_stats:
-        _print_run_results(agent, all_steps, backup_dst)
+    print(f"run_component() calling {component_name}.{entry_point} with "
+          "provided params.")
+    entry_point_fn = getattr(component, entry_point)
+    entry_point_fn(**params)
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
@@ -114,7 +98,7 @@ def learn(
     while total_episodes < num_episodes:
         if test_every:
             backup_dst = _backup_agent(agentos_dir)
-            run_agent(
+            run_component(
                 num_episodes=test_num_episodes,
                 agent_file=agent_file,
                 agentos_dir=agentos_dir,
@@ -124,7 +108,7 @@ def learn(
                 backup_dst=backup_dst,
                 print_stats=True,
             )
-        run_agent(
+        run_component(
             num_episodes=run_size,
             agent_file=agent_file,
             agentos_dir=agentos_dir,

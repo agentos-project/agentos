@@ -2,7 +2,6 @@
 from collections import namedtuple
 from agentos.runtime import restore_data
 from agentos.runtime import save_data
-import ABC
 
 
 class MemberInitializer:
@@ -44,7 +43,18 @@ class Agent(MemberInitializer):
         self._should_reset = True
 
     def advance(self):
-        pass
+        """Takes one action within the Environment as dictated by the Policy"""
+        if self._should_reset:
+            self.curr_obs = self.environment.reset()
+            self._should_reset = False
+            self.dataset.add(None, None, self.curr_obs, None, None, {})
+        action = self.policy.decide(self.curr_obs)
+        prev_obs = self.curr_obs
+        self.curr_obs, reward, done, info = self.environment.step(action)
+        self.dataset.add(prev_obs, action, self.curr_obs, reward, done, info)
+        if done:
+            self._should_reset = True
+        return prev_obs, action, self.curr_obs, reward, done, info
 
     def rollout(self, should_learn, max_transitions=None):
         """Generates one episode of transitions and allows the Agent to

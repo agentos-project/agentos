@@ -2,22 +2,30 @@ import agentos
 
 
 class R2D2Agent(agentos.Agent):
+    entry_points = ["run"]
+    pass
 
-    def advance(self):
-        """Takes one action within the Environment as dictated by the Policy"""
-        if self._should_reset:
-            self.curr_obs = self.environment.reset()
-            self._should_reset = False
-            self.dataset.add(None, None, self.curr_obs, None, None, {})
-        action = self.policy.decide(
-            self.curr_obs, self.environment.valid_actions
-        )
-        prev_obs = self.curr_obs
-        self.curr_obs, reward, done, info = self.environment.step(action)
-        self.dataset.add(prev_obs, action, self.curr_obs, reward, done, info)
-        if done:
-            self._should_reset = True
-        return prev_obs, action, self.curr_obs, reward, done, info
+    def run(self,
+            agentos_dir,
+            num_episodes,
+            verbose,
+            max_transitions=None,
+            backup_dst=None,
+            print_stats=False,
+            ):
+        """Runs an agent specified by a given [agent_file]
+
+        :param num_episodes: number of episodes to run the agent through
+        :param should_learn: boolean, if True we will call policy.improve
+        :param verbose: boolean, if True will print debugging data to stdout
+        :param max_transitions: If not None, max transitions performed before
+                                truncating an episode.
+        :param backup_dst: if specified, will print backup path to stdout
+        :param print_stats: if True, will print run stats to stdout
+
+        :returns: None
+        """
+        pass
 
 
 def run_tests():

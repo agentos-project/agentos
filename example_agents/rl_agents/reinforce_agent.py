@@ -145,7 +145,7 @@ if __name__ == "__main__":
         max_steps_per_rollout=args.max_steps_per_rollout,
         discount_rate=args.discount_rate,
     )
-    agentos.run_agent(
+    agentos.run_component(
         reinforce_agent,
         max_iters=args.max_iters,
     )

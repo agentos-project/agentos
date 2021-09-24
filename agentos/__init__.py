@@ -10,7 +10,7 @@ from agentos.core import (
     Trainer,
 )
 from agentos.runtime import (
-    run_agent,
+    run_component,
     learn,
     save_data,
     save_tensorflow,
@@ -26,7 +26,7 @@ __all__ = [
     "EnvironmentSpec",
     "Dataset",
     "Trainer",
-    "run_agent",
+    "run_component",
     "learn",
     "save_data",
     "save_tensorflow",

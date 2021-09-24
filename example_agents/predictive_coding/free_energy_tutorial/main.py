@@ -203,7 +203,7 @@ if __name__ == "__main__":
     print(f"Running mouse agent  for {args.max_iters} steps...")
     print("------------------------------------------------")
     mouse = Mouse(CookieSensorEnv())
-    agentos.run_agent(mouse, max_iters=args.max_iters)
+    agentos.run_component(mouse, max_iters=args.max_iters)
     if args.plot_results:
         plt.figure(figsize=(15, 10))
         for k, v in mouse_stats.items():

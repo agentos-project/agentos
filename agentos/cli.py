@@ -4,6 +4,7 @@ The CLI allows creation of a simple template agent.
 """
 import agentos
 import click
+import sys
 from agentos import runtime
 
 
@@ -173,16 +174,94 @@ def learn(
     )
 
 
-# TODO - reimplement hz
+@agentos_cmd.command()
+@_arg_component_name
+@click.option(
+    "--component-spec-file",
+    "-f",
+    type=click.Path(exists=True),
+    default="./agentos.ini",
+    help="Path to component spec file (agentos.ini).",
+)
+@click.option(
+    "--entry-point",
+    metavar="ENTRY_POINT",
+    type=str,
+    default="run",
+    help="A function of the component that AgentOS Runtime will call with "
+         "the specified params."
+)
+# Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L54
+@click.option(
+    "--param-list",
+    "-P",
+    metavar="NAME=VALUE",
+    multiple=True,
+    help="A parameter for the run, of the form -P name=value. All parameters "
+         "will be passed to the entry_point function using a **kwargs style "
+         "keyword argument https://docs.python.org/3/glossary.html#term-argument"
+)
+@click.option(
+    "--agentos-dir",
+    "-d",
+    metavar="AGENTOS_DIR",
+    type=click.Path(),
+    default="./.aos",
+    help="Directory path AgentOS components and data",
+)
+def run(
+        component_name,
+        component_spec_file,
+        entry_point,
+        param_list,
+        agentos_dir,
+):
+    print("in agentos run!!")
+    param_dict = _user_args_to_dict(param_list)
+    print(f"param dict is {param_dict}")
+    agentos.run_component(
+        component_spec_file,
+        component_name,
+        entry_point,
+        param_dict,
+        agentos_dir,
+    )
+
+
+# Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188
+def _user_args_to_dict(arguments, argument_type="P"):
+    user_dict = {}
+    for arg in arguments:
+        split = arg.split("=", maxsplit=1)
+        # Docker arguments such as `t` don't require a value -> set to True if specified
+        if len(split) == 1 and argument_type == "A":
+            name = split[0]
+            value = True
+        elif len(split) == 2:
+            name = split[0]
+            value = split[1]
+        else:
+            print(
+                "Invalid format for -%s parameter: '%s'. "
+                "Use -%s name=value." % (argument_type, arg, argument_type)
+            )
+            sys.exit(1)
+        if name in user_dict:
+            print("Repeated parameter: '%s'" % name)
+            sys.exit(1)
+        user_dict[name] = value
+    return user_dict
+
+## TODO - reimplement hz
 @agentos_cmd.command()
 @_option_num_episodes
 @_option_agent_file
 @_option_agentos_dir
 @_option_max_transitions
 @_option_verbose
-def run(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
+def run_old(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
     """Run an agent by calling advance() on it until it returns True"""
-    agentos.run_agent(
+    agentos.run_component(
         num_episodes=num_episodes,
         agent_file=agent_file,
         agentos_dir=agentos_dir,
