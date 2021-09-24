@@ -40,4 +40,4 @@ class SB3PPOAgent(agentos.Agent):
         print(f"Mean reward: {mean_reward}\nStd reward: {std_reward}")
 
     def learn(self, num_iterations=1):
-        self.sb3_ppo.learn(num_iterations)
+        self.sb3_ppo.learn(int(num_iterations))
