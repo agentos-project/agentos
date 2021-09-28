@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -eu
+
+# https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+ROOT_DIR="$SCRIPT_DIR/../../.."
+
+CONTAINER_ID=`docker ps --filter="name=acme_r2d2" --format="{{.ID}}"`
+echo "Killing container $CONTAINER_ID"
+
+docker kill "$CONTAINER_ID"
