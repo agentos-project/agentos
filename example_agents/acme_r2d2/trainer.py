@@ -17,8 +17,7 @@ class R2D2Trainer(agentos.Trainer):
         self.parameters = AttrDict(params)
         self.target_network = copy.deepcopy(self.network)
         self.optimizer = snt.optimizers.Adam(
-            params["learning_rate"],
-            params["adam_epsilon"]
+            params["learning_rate"], params["adam_epsilon"]
         )
         tf2_utils.create_variables(
             self.target_network, [self.environment.get_spec().observations]
@@ -92,7 +91,9 @@ class R2D2Trainer(agentos.Trainer):
                 observations, core_state, self.parameters.sequence_length
             )
             target_q_values, _ = self.target_network.unroll(
-                observations, target_core_state, self.parameters.sequence_length
+                observations,
+                target_core_state,
+                self.parameters.sequence_length,
             )
 
             # Compute the target policy distribution (greedy).
@@ -138,7 +139,10 @@ class R2D2Trainer(agentos.Trainer):
         self.optimizer.apply(gradients, self.network.trainable_variables)
 
         # Periodically update the target network.
-        if tf.math.mod(self.num_steps, self.parameters.target_update_period) == 0:
+        if (
+            tf.math.mod(self.num_steps, self.parameters.target_update_period)
+            == 0
+        ):
             for src, dest in zip(
                 self.network.variables, self.target_network.variables
             ):

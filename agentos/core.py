@@ -105,7 +105,9 @@ class Agent(MemberInitializer):
     def reset_agent_directory(self, backing_dir, from_backup_id):
         _check_path_exists(backing_dir)
         if from_backup_id:
-            restore_src = self._get_backups_location(backing_dir) / from_backup_id
+            restore_src = (
+                self._get_backups_location(backing_dir) / from_backup_id
+            )
             if not restore_src.exists():
                 raise FileNotFoundError(
                     f"{restore_src.absolute()} does not exist!"
@@ -119,7 +121,9 @@ class Agent(MemberInitializer):
             print(restore_src)
             print(self._get_data_location(backing_dir))
             shutil.copytree(
-                restore_src, self._get_data_location(backing_dir), dirs_exist_ok=True
+                restore_src,
+                self._get_data_location(backing_dir),
+                dirs_exist_ok=True,
             )
             print(f"Agent state at {restore_src.absolute()} restored.")
         else:
@@ -192,7 +196,6 @@ class Agent(MemberInitializer):
 
     def _get_backups_location(self, backing_dir):
         return Path(backing_dir).absolute() / "backups"
-
 
     def save_data(self, name, data):
         with open(self.data_location / name, "wb") as f:

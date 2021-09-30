@@ -146,8 +146,7 @@ if __name__ == "__main__":
         discount_rate=args.discount_rate,
     )
     agentos.run_component(
-        reinforce_agent,
-        max_iters=args.max_iters,
+        reinforce_agent, max_iters=args.max_iters,
     )
     print("Agent done!")
     if reinforce_agent.ret_vals:

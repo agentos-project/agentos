@@ -23,7 +23,9 @@ class ReverbDataset(agentos.Dataset):
         self.num_observations = 0
         replay_table = reverb.Table(
             name=adders.DEFAULT_PRIORITY_TABLE,
-            sampler=reverb.selectors.Prioritized(self.parameters["priority_exponent"]),
+            sampler=reverb.selectors.Prioritized(
+                self.parameters["priority_exponent"]
+            ),
             remover=reverb.selectors.Fifo(),
             max_size=self.parameters["max_replay_size"],
             rate_limiter=reverb.rate_limiters.MinSize(min_size_to_sample=1),
@@ -104,9 +106,7 @@ class ReverbDataset(agentos.Dataset):
 
             # FIXME - hacky way to push recurrent state
             if self.prev_state is not None:
-                numpy_state = tf2_utils.to_numpy_squeeze(
-                    self.prev_state
-                )
+                numpy_state = tf2_utils.to_numpy_squeeze(self.prev_state)
                 self.adder.add(action, timestep, extras=(numpy_state,))
 
             else:

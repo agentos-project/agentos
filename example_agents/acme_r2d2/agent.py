@@ -2,13 +2,14 @@ import agentos
 
 
 class R2D2Agent(agentos.Agent):
-    def evaluate(self,
-                 num_episodes,
-                 should_learn=False,
-                 max_transitions=None,
-                 backup_dst=None,
-                 print_stats=True,
-                 ):
+    def evaluate(
+        self,
+        num_episodes,
+        should_learn=False,
+        max_transitions=None,
+        backup_dst=None,
+        print_stats=True,
+    ):
         """Runs an agent specified by a given [agent_file]
 
         :param num_episodes: number of episodes to run the agent through
@@ -28,15 +29,19 @@ class R2D2Agent(agentos.Agent):
             )
             all_steps.append(steps)
         print(f"print_stats is {print_stats}")
-        if print_stats != "False" and print_stats != "false" and print_stats != "f":
+        if (
+            print_stats != "False"
+            and print_stats != "false"
+            and print_stats != "f"
+        ):
             self._print_run_results(all_steps, backup_dst)
 
     def learn(
-            self,
-            num_episodes,
-            test_every,
-            test_num_episodes,
-            max_transitions=None,
+        self,
+        num_episodes,
+        test_every,
+        test_num_episodes,
+        max_transitions=None,
     ):
         """Trains an agent by calling its learn() method in a loop."""
         num_episodes = int(num_episodes)
@@ -69,6 +74,7 @@ class R2D2Agent(agentos.Agent):
                 print_stats=True,
             )
             total_episodes += run_size
+
 
 def run_tests():
     pass

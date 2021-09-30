@@ -14,7 +14,7 @@ class CartPole(CartPoleEnv, agentos.Environment):
     def __init__(self, **kwargs):
         agentos.Environment.__init__(self, **kwargs)
         CartPoleEnv.__init__(self)
-        if hasattr(self, 'shared_data'):
+        if hasattr(self, "shared_data"):
             self.shared_data["environment_spec"] = self.get_spec()
 
     def step(self, action):

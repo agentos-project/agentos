@@ -9,9 +9,7 @@ from agentos.core import (
     Dataset,
     Trainer,
 )
-from agentos.runtime import (
-    run_component,
-)
+from agentos.runtime import run_component
 
 __all__ = [
     "Agent",

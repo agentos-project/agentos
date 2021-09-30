@@ -99,7 +99,6 @@ def init(dir_names, agent_name, agentos_dir):
     )
 
 
-
 @agentos_cmd.command()
 @_arg_component_name
 @click.option(
@@ -115,32 +114,29 @@ def init(dir_names, agent_name, agentos_dir):
     type=str,
     default="evaluate",
     help="A function of the component that AgentOS Runtime will call with "
-         "the specified params."
+    "the specified params.",
 )
-# Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L54
+# Copied from https://github.com/mlflow/mlflow/blob/
+# ... 3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L54
 @click.option(
     "--param-list",
     "-P",
     metavar="NAME=VALUE",
     multiple=True,
     help="A parameter for the run, of the form -P name=value. All parameters "
-         "will be passed to the entry_point function using a **kwargs style "
-         "keyword argument https://docs.python.org/3/glossary.html#term-argument"
+    "will be passed to the entry_point function using a **kwargs style "
+    "keyword argument https://docs.python.org/3/glossary.html#term-argument",
 )
 @click.option(
     "--param-file",
     metavar="PARAM_FILE",
     help="A YAML file containing parameters for the entry point being run. "
-         "Will be passed to the entry_point function, along with individually "
-         "specified params, via a **kwargs style keyword argument "
-         "https://docs.python.org/3/glossary.html#term-argument"
+    "Will be passed to the entry_point function, along with individually "
+    "specified params, via a **kwargs style keyword argument "
+    "https://docs.python.org/3/glossary.html#term-argument",
 )
 def run(
-        component_name,
-        component_spec_file,
-        entry_point,
-        param_list,
-        param_file,
+    component_name, component_spec_file, entry_point, param_list, param_file,
 ):
     param_dict = _user_args_to_dict(param_list)
     agentos.run_component(
@@ -148,16 +144,16 @@ def run(
         component_name,
         entry_point,
         param_dict,
-        param_file
+        param_file,
     )
 
 
-# Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188
+# Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501
 def _user_args_to_dict(arguments, argument_type="P"):
     user_dict = {}
     for arg in arguments:
         split = arg.split("=", maxsplit=1)
-        # Docker arguments such as `t` don't require a value -> set to True if specified
+        # Docker arguments such as `t` don't require a value -> set to True if specified # noqa: E501
         if len(split) == 1 and argument_type == "A":
             name = split[0]
             value = True

@@ -21,7 +21,9 @@ class BasicRNN(networks.RNNCore):
                 snt.VanillaRNN(16),
                 snt.VanillaRNN(16),
                 snt.VanillaRNN(16),
-                snt.nets.MLP([16, 16, self.environment.get_spec().actions.num_values]),
+                snt.nets.MLP(
+                    [16, 16, self.environment.get_spec().actions.num_values]
+                ),
             ]
         )
 
@@ -37,8 +39,8 @@ class BasicRNN(networks.RNNCore):
     # https://github.com/deepmind/sonnet#tensorflow-checkpointing
     # TODO - custom saver/restorer functions
     # TODO - ONLY works for the demo (Acme on TF) because the dynamic module
-    #        loading in ACR core breaks pickle. Need to figure out a more general
-    #        way to handle this
+    #        loading in ACR core breaks pickle. Need to figure out a more
+    #        general way to handle this
     def save_tensorflow(self):
         import tensorflow as tf
 
@@ -64,24 +66,17 @@ class R2D2Policy:
         self.epsilon = epsilon
         self.store_lstm_state = store_lstm_state
         self.network.restore_tensorflow()
-        tf2_utils.create_variables(self.network, [self.environment.get_spec().observations])
+        tf2_utils.create_variables(
+            self.network, [self.environment.get_spec().observations]
+        )
 
         def epsilon_greedy_fn(qs):
-            return trfl.epsilon_greedy(
-                qs, epsilon=self.epsilon
-            ).sample()
+            return trfl.epsilon_greedy(qs, epsilon=self.epsilon).sample()
 
-        policy_network = snt.DeepRNN(
-            [
-                self.network,
-                epsilon_greedy_fn,
-            ]
-        )
+        policy_network = snt.DeepRNN([self.network, epsilon_greedy_fn])
         ADDER = None
         self.actor = actors.RecurrentActor(
-            policy_network,
-            ADDER,
-            store_recurrent_state=self.store_lstm_state,
+            policy_network, ADDER, store_recurrent_state=self.store_lstm_state,
         )
 
     def decide(self, observation):

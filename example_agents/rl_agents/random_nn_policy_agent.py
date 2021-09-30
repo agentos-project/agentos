@@ -48,8 +48,7 @@ if __name__ == "__main__":
     random_nn_agent = RandomTFAgent(
         environment=CartPoleEnv,
         policy=SingleLayerTFPolicy(
-            CartPoleEnv().action_space,
-            CartPoleEnv().observation_space,
+            CartPoleEnv().action_space, CartPoleEnv().observation_space,
         ),
     )
     agentos.run_component(random_nn_agent, max_iters=10)
