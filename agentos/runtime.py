@@ -102,7 +102,7 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
 
 
 def _load_component(config, component_name, visited_components):
-    """ Recursively load a component from a config instance.
+    """Recursively load a component from a config instance.
 
     :param config: an instance of a parsed agentos.ini file.
     :param component_name: name of the component class instance to return.

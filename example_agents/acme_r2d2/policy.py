@@ -76,7 +76,9 @@ class R2D2Policy:
         policy_network = snt.DeepRNN([self.network, epsilon_greedy_fn])
         ADDER = None
         self.actor = actors.RecurrentActor(
-            policy_network, ADDER, store_recurrent_state=self.store_lstm_state,
+            policy_network,
+            ADDER,
+            store_recurrent_state=self.store_lstm_state,
         )
 
     def decide(self, observation):

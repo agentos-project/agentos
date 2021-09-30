@@ -136,7 +136,11 @@ def init(dir_names, agent_name, agentos_dir):
     "https://docs.python.org/3/glossary.html#term-argument",
 )
 def run(
-    component_name, component_spec_file, entry_point, param_list, param_file,
+    component_name,
+    component_spec_file,
+    entry_point,
+    param_list,
+    param_file,
 ):
     param_dict = _user_args_to_dict(param_list)
     agentos.run_component(
