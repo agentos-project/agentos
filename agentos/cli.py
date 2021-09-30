@@ -54,57 +54,11 @@ _option_agent_file = click.option(
     help="Path to agent definition file (agentos.ini).",
 )
 
-_option_num_episodes = click.option(
-    "--num-episodes",
-    "-n",
-    type=click.INT,
-    default=1,
-    help="Number of episodes to run.",
-)
-
 _option_assume_yes = click.option(
     "--assume-yes",
     "-y",
     is_flag=True,
     help="Automatically answers 'yes' to all user prompts.",
-)
-
-_option_test_every = click.option(
-    "--test-every",
-    "-t",
-    type=click.INT,
-    default=0,
-    help="Number of learning episodes between performance eval.",
-)
-
-_option_test_num_episodes = click.option(
-    "--test-num-episodes",
-    "-p",
-    type=click.INT,
-    default=1,
-    help="Number of episodes to run for performance eval.",
-)
-
-_option_max_transitions = click.option(
-    "--max-transitions",
-    "-m",
-    type=click.INT,
-    default=None,
-    help="The maximium number of transitions before truncating an episode",
-)
-_option_verbose = click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Agent prints verbose logs.",
-)
-
-_option_backup_id = click.option(
-    "--from-backup-id",
-    "-b",
-    metavar="BACKUP_ID",
-    type=str,
-    help="Resets agent to given backup ID. Expects a UUID.",
 )
 
 
@@ -145,40 +99,12 @@ def init(dir_names, agent_name, agentos_dir):
     )
 
 
-# TODO - reimplement hz
-@agentos_cmd.command()
-@_option_num_episodes
-@_option_test_every
-@_option_test_num_episodes
-@_option_agent_file
-@_option_agentos_dir
-@_option_max_transitions
-@_option_verbose
-def learn(
-    num_episodes,
-    test_every,
-    test_num_episodes,
-    agent_file,
-    agentos_dir,
-    max_transitions,
-    verbose,
-):
-    agentos.learn(
-        num_episodes=num_episodes,
-        test_every=test_every,
-        test_num_episodes=test_num_episodes,
-        agent_file=agent_file,
-        agentos_dir=agentos_dir,
-        verbose=verbose,
-        max_transitions=max_transitions,
-    )
-
 
 @agentos_cmd.command()
 @_arg_component_name
 @click.option(
     "--component-spec-file",
-    "-f",
+    "-s",
     type=click.Path(exists=True),
     default="./agentos.ini",
     help="Path to component spec file (agentos.ini).",
@@ -187,7 +113,7 @@ def learn(
     "--entry-point",
     metavar="ENTRY_POINT",
     type=str,
-    default="run",
+    default="evaluate",
     help="A function of the component that AgentOS Runtime will call with "
          "the specified params."
 )
@@ -202,29 +128,27 @@ def learn(
          "keyword argument https://docs.python.org/3/glossary.html#term-argument"
 )
 @click.option(
-    "--agentos-dir",
-    "-d",
-    metavar="AGENTOS_DIR",
-    type=click.Path(),
-    default="./.aos",
-    help="Directory path AgentOS components and data",
+    "--param-file",
+    metavar="PARAM_FILE",
+    help="A YAML file containing parameters for the entry point being run. "
+         "Will be passed to the entry_point function, along with individually "
+         "specified params, via a **kwargs style keyword argument "
+         "https://docs.python.org/3/glossary.html#term-argument"
 )
 def run(
         component_name,
         component_spec_file,
         entry_point,
         param_list,
-        agentos_dir,
+        param_file,
 ):
-    print("in agentos run!!")
     param_dict = _user_args_to_dict(param_list)
-    print(f"param dict is {param_dict}")
     agentos.run_component(
         component_spec_file,
         component_name,
         entry_point,
         param_dict,
-        agentos_dir,
+        param_file
     )
 
 
@@ -251,35 +175,6 @@ def _user_args_to_dict(arguments, argument_type="P"):
             sys.exit(1)
         user_dict[name] = value
     return user_dict
-
-## TODO - reimplement hz
-@agentos_cmd.command()
-@_option_num_episodes
-@_option_agent_file
-@_option_agentos_dir
-@_option_max_transitions
-@_option_verbose
-def run_old(num_episodes, agent_file, agentos_dir, max_transitions, verbose):
-    """Run an agent by calling advance() on it until it returns True"""
-    agentos.run_component(
-        num_episodes=num_episodes,
-        agent_file=agent_file,
-        agentos_dir=agentos_dir,
-        should_learn=False,
-        verbose=verbose,
-        max_transitions=max_transitions,
-        backup_dst=None,
-        print_stats=True,
-    )
-
-
-@agentos_cmd.command()
-@_option_agentos_dir
-@_option_backup_id
-def reset(agentos_dir, from_backup_id):
-    runtime.reset_agent_directory(
-        agentos_dir=agentos_dir, from_backup_id=from_backup_id
-    )
 
 
 if __name__ == "__main__":

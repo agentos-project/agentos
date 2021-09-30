@@ -1,6 +1,5 @@
 # TODO - update reqs
 import agentos
-from agentos import parameters
 from acme import datasets
 import tensorflow as tf
 from acme.tf import utils as tf2_utils
@@ -12,26 +11,26 @@ from dm_env import StepType
 
 
 class ReverbDataset(agentos.Dataset):
-    @classmethod
-    def ready_to_initialize(cls, shared_data):
-        return "environment_spec" in shared_data and "network" in shared_data
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        initial_state = self.shared_data["network"].initial_state(1)
+
+    def init(self, **params):
+        self.parameters = params
+        initial_state = self.network.initial_state(1)
         extra_spec = {
             "core_state": tf2_utils.squeeze_batch_dim(initial_state),
         }
+        self.num_observations = 0
         replay_table = reverb.Table(
             name=adders.DEFAULT_PRIORITY_TABLE,
-            sampler=reverb.selectors.Prioritized(parameters.priority_exponent),
+            sampler=reverb.selectors.Prioritized(self.parameters["priority_exponent"]),
             remover=reverb.selectors.Fifo(),
-            max_size=parameters.max_replay_size,
+            max_size=self.parameters["max_replay_size"],
             rate_limiter=reverb.rate_limiters.MinSize(min_size_to_sample=1),
             signature=adders.SequenceAdder.signature(
-                self.shared_data["environment_spec"],
+                self.environment.get_spec(),
                 extra_spec,
-                sequence_length=parameters.sequence_length,
+                sequence_length=self.parameters["sequence_length"],
             ),
         )
 
@@ -42,8 +41,8 @@ class ReverbDataset(agentos.Dataset):
         # Component to add things into replay.
         self.adder = adders.SequenceAdder(
             client=reverb.Client(address),
-            period=parameters.replay_period,
-            sequence_length=parameters.sequence_length,
+            period=self.parameters["replay_period"],
+            sequence_length=self.parameters["sequence_length"],
         )
 
         self.tf_client = reverb.TFClient(address)
@@ -51,7 +50,7 @@ class ReverbDataset(agentos.Dataset):
         # The dataset object to learn from.
         dataset = datasets.make_reverb_dataset(
             server_address=address,
-            batch_size=parameters.batch_size,
+            batch_size=self.parameters["batch_size"],
             prefetch_size=tf.data.experimental.AUTOTUNE,
         )
         self.iterator = iter(dataset)
@@ -65,8 +64,8 @@ class ReverbDataset(agentos.Dataset):
         mean_priority = tf.reduce_mean(abs_errors, axis=0)
         max_priority = tf.reduce_max(abs_errors, axis=0)
         priorities = (
-            parameters.max_priority_weight * max_priority
-            + (1 - parameters.max_priority_weight) * mean_priority
+            self.parameters.max_priority_weight * max_priority
+            + (1 - self.parameters.max_priority_weight) * mean_priority
         )
 
         # Compute priorities and add an op to update them on the reverb
@@ -87,26 +86,26 @@ class ReverbDataset(agentos.Dataset):
                 timestep = TimeStep(
                     StepType.LAST,
                     reward,
-                    np.float32(parameters.discount),
+                    np.float32(self.parameters["discount"]),
                     curr_obs,
                 )
             else:
                 timestep = TimeStep(
                     StepType.MID,
                     reward,
-                    np.float32(parameters.discount),
+                    np.float32(self.parameters["discount"]),
                     curr_obs,
                 )
 
             # FIXME - hacky way to push observation counts
-            if "num_observations" not in self.shared_data:
-                self.shared_data["num_observations"] = 0
-            self.shared_data["num_observations"] += 1
+            if not hasattr(self, "num_observations"):
+                self.num_observations = 0
+            self.num_observations += 1
 
             # FIXME - hacky way to push recurrent state
-            if self.shared_data["_prev_state"] is not None:
+            if self.prev_state is not None:
                 numpy_state = tf2_utils.to_numpy_squeeze(
-                    self.shared_data["_prev_state"]
+                    self.prev_state
                 )
                 self.adder.add(action, timestep, extras=(numpy_state,))
 

@@ -4,7 +4,7 @@ import copy
 import functools
 import agentos
 import tree
-from agentos import parameters
+from attrdict import AttrDict
 from acme.tf import utils as tf2_utils
 from acme.tf import losses
 from acme.tf import networks
@@ -13,26 +13,15 @@ import tensorflow as tf
 
 
 class R2D2Trainer(agentos.Trainer):
-    @classmethod
-    def ready_to_initialize(cls, shared_data):
-        return (
-            "environment_spec" in shared_data
-            and "network" in shared_data
-            # and "dataset_address" in shared_data
-            # and "dataset" in shared_data
-        )
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.network = self.shared_data["network"]
+    def init(self, **params):
+        self.parameters = AttrDict(params)
         self.target_network = copy.deepcopy(self.network)
         self.optimizer = snt.optimizers.Adam(
-            parameters.learning_rate, parameters.adam_epsilon
+            params["learning_rate"],
+            params["adam_epsilon"]
         )
-        self.environment_spec = self.shared_data["environment_spec"]
         tf2_utils.create_variables(
-            self.target_network, [self.environment_spec.observations]
+            self.target_network, [self.environment.get_spec().observations]
         )
         self.num_steps = tf.Variable(
             0.0, dtype=tf.float32, trainable=False, name="step"
@@ -57,7 +46,7 @@ class R2D2Trainer(agentos.Trainer):
             # because the network is shared between the actor and the learner.
             # self.actor.update()
             pass
-        agentos.save_tensorflow("network", self.shared_data["network"])
+        self.network.save_tensorflow()
 
     @tf.function
     def _improve(self, dataset, policy):
@@ -75,7 +64,7 @@ class R2D2Trainer(agentos.Trainer):
         unused_sequence_length, batch_size = actions.shape
 
         # Get initial state for the LSTM, either from replay or use zeros.
-        if parameters.store_lstm_state:
+        if self.parameters.store_lstm_state:
             core_state = tree.map_structure(
                 lambda x: x[0], extra["core_state"]
             )
@@ -84,7 +73,7 @@ class R2D2Trainer(agentos.Trainer):
         target_core_state = tree.map_structure(tf.identity, core_state)
 
         # Before training, optionally unroll LSTM for a fixed warmup period.
-        burn_in_length = parameters.burn_in_length
+        burn_in_length = self.parameters.burn_in_length
         burn_in_obs = tree.map_structure(
             lambda x: x[:burn_in_length], observations
         )
@@ -100,17 +89,17 @@ class R2D2Trainer(agentos.Trainer):
         with tf.GradientTape() as tape:
             # Unroll the online and target Q-networks on the sequences.
             q_values, _ = self.network.unroll(
-                observations, core_state, parameters.sequence_length
+                observations, core_state, self.parameters.sequence_length
             )
             target_q_values, _ = self.target_network.unroll(
-                observations, target_core_state, parameters.sequence_length
+                observations, target_core_state, self.parameters.sequence_length
             )
 
             # Compute the target policy distribution (greedy).
             greedy_actions = tf.argmax(q_values, output_type=tf.int32, axis=-1)
             target_policy_probs = tf.one_hot(
                 greedy_actions,
-                depth=self.environment_spec.actions.num_values,
+                depth=self.environment.get_spec().actions.num_values,
                 dtype=q_values.dtype,
             )
 
@@ -122,18 +111,18 @@ class R2D2Trainer(agentos.Trainer):
                 targnet_qs=target_q_values,
                 actions=actions,
                 rewards=rewards,
-                pcontinues=discounts * parameters.discount,
+                pcontinues=discounts * self.parameters.discount,
                 target_policy_probs=target_policy_probs,
-                bootstrap_n=parameters.n_step,
+                bootstrap_n=self.parameters.n_step,
             )
 
             # Calculate importance weights and use them to scale the loss.
             sample_info = sample.info
             keys, probs = sample_info.key, sample_info.probability
             importance_weights = 1.0 / (
-                parameters.max_replay_size * probs
+                self.parameters.max_replay_size * probs
             )  # [T, B]
-            importance_weights **= parameters.importance_sampling_exponent
+            importance_weights **= self.parameters.importance_sampling_exponent
             importance_weights /= tf.reduce_max(importance_weights)
             loss *= tf.cast(importance_weights, tf.float32)  # [T, B]
             loss = tf.reduce_mean(loss)  # []
@@ -141,15 +130,15 @@ class R2D2Trainer(agentos.Trainer):
         # Apply gradients via optimizer.
         gradients = tape.gradient(loss, self.network.trainable_variables)
         # Clip and apply gradients.
-        if parameters.clip_grad_norm is not None:
+        if self.parameters.clip_grad_norm is not None:
             gradients, _ = tf.clip_by_global_norm(
-                gradients, parameters.clip_grad_norm
+                gradients, self.parameters.clip_grad_norm
             )
 
         self.optimizer.apply(gradients, self.network.trainable_variables)
 
         # Periodically update the target network.
-        if tf.math.mod(self.num_steps, parameters.target_update_period) == 0:
+        if tf.math.mod(self.num_steps, self.parameters.target_update_period) == 0:
             for src, dest in zip(
                 self.network.variables, self.target_network.variables
             ):
@@ -163,9 +152,9 @@ class R2D2Trainer(agentos.Trainer):
         return {"loss": loss}
 
     def _burn_in(self, burn_in_obs, core_state):
-        if parameters.burn_in_length:
+        if self.parameters.burn_in_length:
             return self.network.unroll(
-                burn_in_obs, core_state, parameters.burn_in_length
+                burn_in_obs, core_state, self.parameters.burn_in_length
             )
         return (burn_in_obs, core_state)
 
@@ -177,13 +166,13 @@ class R2D2Trainer(agentos.Trainer):
         #   * acme/agents/tf/r2d2/agent.py
         # ======================
         observations_per_step = (
-            float(parameters.replay_period * parameters.batch_size)
-            / parameters.samples_per_insert
+            float(self.parameters.replay_period * self.parameters.batch_size)
+            / self.parameters.samples_per_insert
         )
-        min_observations = parameters.replay_period * max(
-            parameters.batch_size, parameters.min_replay_size
+        min_observations = self.parameters.replay_period * max(
+            self.parameters.batch_size, self.parameters.min_replay_size
         )
-        num_observations = self.shared_data["num_observations"]
+        num_observations = self.dataset.num_observations
 
         num_steps = 0
         n = num_observations - min_observations

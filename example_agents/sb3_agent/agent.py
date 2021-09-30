@@ -17,7 +17,7 @@ class SB3PPOAgent(agentos.Agent):
     def init(self):
         self.sb3_ppo = PPO('MlpPolicy', self.environment)
 
-    def run(self,
+    def evaluate(self,
             n_eval_episodes=10,
             deterministic=True,
             render=False,
