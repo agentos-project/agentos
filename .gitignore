@@ -7,7 +7,7 @@ mlruns
 .idea
 *.egg-info
 
-build
+build/
 dist
 documentation/_build
 website/_site
