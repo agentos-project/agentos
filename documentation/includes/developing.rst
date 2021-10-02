@@ -62,8 +62,8 @@ To run tests::
 
   cd agentos # the project root, not the nested agentos/agentos dir
   pip install -r dev-requirements.txt
-  pytest tests/test_core.py
-  pytest tests/test_acme_demo.py
+  python -m pytest tests/test_core.py
+  python -m pytest tests/test_acme_demo.py
 
 Also, we use Github Actions to run ``tests/test_core.py`` with every commit
 and pull request (see the `test workflow
