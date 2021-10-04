@@ -35,8 +35,84 @@ class Agent(MemberInitializer):
         self.curr_obs = None
         self._should_reset = True
 
-    def init(self, backing_dir):
+    def init(self, backing_dir=".aos"):
         self.tracker = agentos.tracking.Tracker(backing_dir)
+
+    def evaluate(
+            self,
+            num_episodes,
+            should_learn=False,
+            max_transitions=None,
+            backup_dst=None,
+            print_stats=True,
+    ):
+        """Runs an agent specified by a given [agent_file]
+
+        :param num_episodes: number of episodes to run the agent through
+        :param should_learn: boolean, if True we will call policy.improve
+        :param max_transitions: If not None, max transitions performed before
+                                truncating an episode.
+        :param backup_dst: if specified, will print backup path to stdout
+        :param print_stats: if True, will print run stats to stdout
+
+        :returns: None
+        """
+        print("running Acme R2D2 agent")
+        all_steps = []
+        for i in range(int(num_episodes)):
+            steps = self.rollout(
+                should_learn=should_learn, max_transitions=max_transitions
+            )
+            all_steps.append(steps)
+        print(f"print_stats is {print_stats}")
+        if (
+                print_stats != "False"
+                and print_stats != "false"
+                and print_stats != "f"
+        ):
+            self._print_run_results(all_steps, backup_dst)
+
+    def learn(
+            self,
+            num_episodes,
+            test_every,
+            test_num_episodes,
+            max_transitions=None,
+    ):
+        """Trains an agent by calling its learn() method in a loop."""
+        num_episodes = int(num_episodes)
+        test_num_episodes = int(test_num_episodes)
+        # Handle strings from -P
+        # TODO: fix that ugliness!
+        if isinstance(test_every, str):
+            test_every = False
+            if test_every == "True":
+                test_every = True
+        test_every = int(test_every)
+        run_size = test_every if test_every else num_episodes
+        total_episodes = 0
+
+        while total_episodes < num_episodes:
+            if test_every:
+                backup_dst = self.tracker._backup_agent()
+                self.evaluate(
+                    num_episodes=test_num_episodes,
+                    should_learn=False,
+                    max_transitions=max_transitions,
+                    backup_dst=backup_dst,
+                    print_stats=True,
+                )
+            self.evaluate(
+                num_episodes=run_size,
+                should_learn=True,
+                max_transitions=max_transitions,
+                backup_dst=None,
+                print_stats=True,
+            )
+            total_episodes += run_size
+
+    def reset(self, from_backup_id=None):
+        self.tracker.reset(from_backup_id)
 
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""
@@ -82,7 +158,7 @@ class Agent(MemberInitializer):
             prev_transition_count = self.tracker.get_transition_count()
             new_transition_count = prev_transition_count + transition_count
             self.tracker.save_transition_count(new_transition_count)
-            prev_episode_count = self.get_episode_count()
+            prev_episode_count = self.tracker.get_episode_count()
             self.tracker.save_episode_count(prev_episode_count + 1)
         return transition_count
 
@@ -161,16 +237,15 @@ class Dataset(MemberInitializer):
         raise NotImplementedError
 
 
-# Inspired by OpenAI's gym.Env
-# https://github.com/openai/gym/blob/master/gym/core.py
 class Environment(MemberInitializer):
-    """Minimalist port of OpenAI's gym.Env."""
+    """
+    An Env inspired by OpenAI's gym.Env and DM_Env
+    https://github.com/openai/gym/blob/master/gym/core.py
+    https://github.com/deepmind/dm_env/blob/master/docs/index.md
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if "shared_data" in kwargs:
-            shared_data = kwargs["shared_data"]
-            shared_data["environment_spec"] = self.get_spec()
         self.action_space = None
         self.observation_space = None
         self.reward_range = None

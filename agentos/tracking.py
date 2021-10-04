@@ -11,31 +11,31 @@ class Tracker:
         self._create_backing_directory_structure()
         self._create_core_data()
 
-    def reset_backing_directory(self, backing_dir, from_backup_id):
+    def reset(self, from_backup_id):
         if from_backup_id:
             restore_src = (
-                    self._get_backups_location(backing_dir) / from_backup_id
+                    self._get_backups_location(self.backing_dir) / from_backup_id
             )
             if not restore_src.exists():
                 raise FileNotFoundError(
                     f"{restore_src.absolute()} does not exist!"
                 )
-        backup_dst = self._backup_agent(backing_dir)
+        backup_dst = self._backup_agent(self.backing_dir)
         print(f"Current agent backed up to {backup_dst}.")
-        data_location = self._get_data_location(backing_dir)
+        data_location = self._get_data_location(self.backing_dir)
         shutil.rmtree(data_location)
-        self._create_backing_directory_structure(backing_dir)
+        self._create_backing_directory_structure()
         if from_backup_id:
             print(restore_src)
-            print(self._get_data_location(backing_dir))
+            print(self._get_data_location(self.backing_dir))
             shutil.copytree(
                 restore_src,
-                self._get_data_location(backing_dir),
+                self._get_data_location(self.backing_dir),
                 dirs_exist_ok=True,
             )
             print(f"Agent state at {restore_src.absolute()} restored.")
         else:
-            self._create_core_data(backing_dir)
+            self._create_core_data()
             print("Agent state reset.")
 
     def _create_backing_directory_structure(self):
@@ -69,19 +69,18 @@ class Tracker:
         """Saves the number of episodes the Agent has been trained on."""
         return self.save_data("episode_count", episode_count)
 
-    def reset(self, from_backup_id):
-        self.reset_backing_directory(
-            backing_dir=self.backing_dir, from_backup_id=from_backup_id
-        )
-
-    def _backup_agent(self, data_dir):
+    def _backup_agent(self, data_dir=None):
         """Creates a snapshot of an agent at a given moment in time.
 
-        :param data_dir: Directory path containing AgentOS components and data
+        :param data_dir: Directory path containing AgentOS components and data.
+            If not provided, use this tracker's `backing_dir` attribute.
 
         :returns: Path to the back up directory
         """
-        data_dir = Path(data_dir).absolute()
+        if data_dir:
+            data_dir = Path(data_dir).absolute()
+        else:
+            data_dir = self.backing_dir
         data_location = self._get_data_location(data_dir)
         backup_dst = self._get_backups_location(data_dir) / str(uuid.uuid4())
         shutil.copytree(data_location, backup_dst)
