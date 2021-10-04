@@ -1,13 +1,7 @@
 """Core AgentOS classes."""
 from collections import namedtuple
-from agentos.runtime import _check_path_exists
 import statistics
-import uuid
-import shutil
-from pathlib import Path
-import pickle
-import os
-
+import agentos.tracking
 
 class MemberInitializer:
     """Takes all constructor kwargs and sets them as class members.
@@ -17,12 +11,6 @@ class MemberInitializer:
     a = MyClass(foo='bar')
     assert a.foo == 'bar'
     """
-
-    @classmethod
-    def ready_to_initialize(cls, shared_data):
-        """Allows you to check shared_data for all your requirements before you
-        get initialized"""
-        return True
 
     def __init__(self, **kwargs):
         """Sets all the kwargs as members on the class"""
@@ -48,11 +36,7 @@ class Agent(MemberInitializer):
         self._should_reset = True
 
     def init(self, backing_dir):
-        _check_path_exists(backing_dir)
-        self.data_location = self._get_data_location(backing_dir)
-        self.backing_dir = backing_dir
-        os.makedirs(self._get_data_location(backing_dir), exist_ok=True)
-        os.makedirs(self._get_backups_location(backing_dir), exist_ok=True)
+        self.tracker = agentos.tracking.Tracker(backing_dir)
 
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""
@@ -95,40 +79,12 @@ class Agent(MemberInitializer):
                 self.trainer.improve(self.dataset, self.policy)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
-            prev_transition_count = self.get_transition_count()
+            prev_transition_count = self.tracker.get_transition_count()
             new_transition_count = prev_transition_count + transition_count
-            self.save_transition_count(new_transition_count)
+            self.tracker.save_transition_count(new_transition_count)
             prev_episode_count = self.get_episode_count()
-            self.save_episode_count(prev_episode_count + 1)
+            self.tracker.save_episode_count(prev_episode_count + 1)
         return transition_count
-
-    def reset_agent_directory(self, backing_dir, from_backup_id):
-        _check_path_exists(backing_dir)
-        if from_backup_id:
-            restore_src = (
-                self._get_backups_location(backing_dir) / from_backup_id
-            )
-            if not restore_src.exists():
-                raise FileNotFoundError(
-                    f"{restore_src.absolute()} does not exist!"
-                )
-        backup_dst = self._backup_agent(backing_dir)
-        print(f"Current agent backed up to {backup_dst}.")
-        data_location = self._get_data_location(backing_dir)
-        shutil.rmtree(data_location)
-        self._create_agent_directory_structure(backing_dir)
-        if from_backup_id:
-            print(restore_src)
-            print(self._get_data_location(backing_dir))
-            shutil.copytree(
-                restore_src,
-                self._get_data_location(backing_dir),
-                dirs_exist_ok=True,
-            )
-            print(f"Agent state at {restore_src.absolute()} restored.")
-        else:
-            self._create_core_data(backing_dir)
-            print("Agent state reset.")
 
     def _print_run_results(self, all_steps, backup_dst):
         if not all_steps:
@@ -139,8 +95,8 @@ class Agent(MemberInitializer):
         print(f"Benchmark results after {len(all_steps)} rollouts:")
         print(
             "\tBenchmarked agent was trained on "
-            f"{self.get_transition_count()} "
-            f"transitions over {self.get_episode_count()} episodes"
+            f"{self.tracker.get_transition_count()} "
+            f"transitions over {self.tracker.get_episode_count()} episodes"
         )
         print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
         print(f"\tMean steps over {len(all_steps)} trials: {mean}")
@@ -149,61 +105,6 @@ class Agent(MemberInitializer):
         if backup_dst:
             print(f"Agent backed up in {backup_dst}")
         print()
-
-    def _episode_truncated(self):
-        # TODO - record truncations to improve training?
-        # See truncation() in
-        # https://github.com/deepmind/dm_env/blob/master/dm_env/_environment.py
-        pass
-
-    def get_transition_count(self):
-        """Gets the number of transitions the Agent has been trained on."""
-        return self.restore_data("transition_count")
-
-    def get_episode_count(self):
-        """Gets the number of episodes the Agent has been trained on."""
-        return self.restore_data("episode_count")
-
-    def save_transition_count(self, transition_count):
-        """Saves the number of transitions the Agent has been trained on."""
-        return self.save_data("transition_count", transition_count)
-
-    def save_episode_count(self, episode_count):
-        """Saves the number of episodes the Agent has been trained on."""
-        return self.save_data("episode_count", episode_count)
-
-    def reset(self, from_backup_id):
-        self.reset_agent_directory(
-            backing_dir=self.backing_dir, from_backup_id=from_backup_id
-        )
-
-    def _backup_agent(self, data_dir):
-        """Creates a snapshot of an agent at a given moment in time.
-
-        :param data_dir: Directory path containing AgentOS components and data
-
-        :returns: Path to the back up directory
-        """
-        data_dir = Path(data_dir).absolute()
-        data_location = self._get_data_location(data_dir)
-        backup_dst = self._get_backups_location(data_dir) / str(uuid.uuid4())
-        shutil.copytree(data_location, backup_dst)
-        print("done backing up agent network")
-        return backup_dst
-
-    def _get_data_location(self, backing_dir):
-        return Path(backing_dir).absolute() / "data"
-
-    def _get_backups_location(self, backing_dir):
-        return Path(backing_dir).absolute() / "backups"
-
-    def save_data(self, name, data):
-        with open(self.data_location / name, "wb") as f:
-            pickle.dump(data, f)
-
-    def restore_data(self, name):
-        with open(self.data_location / name, "rb") as f:
-            return pickle.load(f)
 
 
 class Policy(MemberInitializer):

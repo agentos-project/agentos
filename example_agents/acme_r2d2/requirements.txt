@@ -3,6 +3,7 @@ absl-py==0.13.0
 alembic==1.6.5
 appdirs==1.4.3
 astunparse==1.6.3
+attrdict==2.0.1
 azure-core==1.16.0
 azure-storage-blob==12.8.1
 black==21.6b0

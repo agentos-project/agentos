@@ -9,8 +9,6 @@ ROOT_DIR="$SCRIPT_DIR/../../.."
 docker run \
     --rm \
     --name acme_r2d2 \
-    -m 4g \
-    --memory-swap=4g \
     --mount type=bind,source="$ROOT_DIR",target=/home/"$USER"/agentos-on-host \
     --mount type=bind,source="$HOME/.ssh",target=/home/"$USER"/.ssh \
     -id acme_r2d2

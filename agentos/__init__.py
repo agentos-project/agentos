@@ -9,6 +9,7 @@ from agentos.core import (
     Dataset,
     Trainer,
 )
+from agentos.tracking import Tracker
 from agentos.runtime import run_component
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "EnvironmentSpec",
     "Dataset",
     "Trainer",
+    "Tracker",
     "run_component",
 ]

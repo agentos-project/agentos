@@ -73,8 +73,7 @@ def install_component(component_name, agentos_dir, agent_file, assume_yes):
     )
     if confirmed:
         # Blow away agent training step count
-        _create_core_data(agentos_dir)
-        _create_agentos_directory_structure(agentos_dir)
+        agentos_dir.mkdir(exist_ok=True)
         release_entry = _get_release_entry(registry_entry)
         repo = _clone_component_repo(release_entry, agentos_dir)
         _checkout_release_hash(release_entry, repo)
@@ -92,8 +91,7 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
         curr_agentos_dir = d / agentos_dir
-        _create_agent_directory_structure(curr_agentos_dir)
-        _create_core_data(curr_agentos_dir)
+        os.makedirs(agentos_dir, exist_ok=True)
         _instantiate_template_files(d, agent_name)
         d = "current working directory" if d == Path(".") else d
         click.echo(
@@ -276,10 +274,6 @@ def _confirm_component_installation(registry_entry, location):
     return answer.strip().lower() == "y"
 
 
-def _create_agentos_directory_structure(agentos_dir):
-    os.makedirs(agentos_dir, exist_ok=True)
-
-
 def _get_release_entry(registry_entry):
     # TODO - allow specification of release
     return registry_entry["releases"][0]
@@ -342,15 +336,6 @@ def _install_requirements(repo, release_entry):
     req_path = (repo / release_entry["requirements_path"]).absolute()
     print("\nInstall component requirements with the following command:")
     print(f"\n\tpip install -r {req_path}\n")
-
-
-def _create_agent_directory_structure(agentos_dir):
-    os.makedirs(agentos_dir, exist_ok=True)
-
-
-def _create_core_data(agentos_dir):
-    agentos.save_data("transition_count", 0)
-    agentos.save_data("episode_count", 0)
 
 
 def _instantiate_template_files(d, agent_name):

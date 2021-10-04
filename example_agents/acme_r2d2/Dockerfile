@@ -10,9 +10,6 @@ RUN apt-get -y install git curl vim less
 WORKDIR $CONTAINER_HOME
 
 # House keeping
-COPY ./agentos/example_agents/acme_r2d2/docker/usr-config/.bashrc $CONTAINER_HOME/.bashrc
-COPY ./agentos/example_agents/acme_r2d2/docker/usr-config/.bash_profile $CONTAINER_HOME/.bash_profile
-RUN bash # $CONTAINER_HOME/.bashrc
 RUN mkdir -p /usr/local/bin
 RUN git clone https://github.com/so-fancy/diff-so-fancy.git
 RUN ln -s $CONTAINER_HOME/diff-so-fancy/diff-so-fancy /usr/local/bin/diff-so-fancy
