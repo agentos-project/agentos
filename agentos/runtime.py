@@ -1,7 +1,6 @@
 """Functions and classes used by the AOS runtime."""
 from inspect import signature, Parameter
 import json
-import agentos
 from functools import partial
 import subprocess
 import os
@@ -90,7 +89,6 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
 
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-        curr_agentos_dir = d / agentos_dir
         os.makedirs(agentos_dir, exist_ok=True)
         _instantiate_template_files(d, agent_name)
         d = "current working directory" if d == Path(".") else d

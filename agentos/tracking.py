@@ -14,7 +14,7 @@ class Tracker:
     def reset(self, from_backup_id):
         if from_backup_id:
             restore_src = (
-                    self._get_backups_location(self.backing_dir) / from_backup_id
+                self._get_backups_location(self.backing_dir) / from_backup_id
             )
             if not restore_src.exists():
                 raise FileNotFoundError(
@@ -41,7 +41,9 @@ class Tracker:
     def _create_backing_directory_structure(self):
         os.makedirs(self.backing_dir, exist_ok=True)
         os.makedirs(self._get_data_location(self.backing_dir), exist_ok=True)
-        os.makedirs(self._get_backups_location(self.backing_dir), exist_ok=True)
+        os.makedirs(
+            self._get_backups_location(self.backing_dir), exist_ok=True
+        )
 
     def _create_core_data(self):
         self.save_data("transition_count", 0)
