@@ -6,15 +6,6 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 # A basic agent.
 class SB3PPOAgent(agentos.Agent):
-    """
-    the `entry_points` class attribute is how a component tells the AgentOS
-    runtime the different ways that the component can be run (if any).
-    `entry_points` is a list of function names that the AgentOS should expose
-    to AgentOS users (e.g., via the CLI or runtime client API).
-    """
-
-    entry_points = ["run", "learn"]
-
     def init(self):
         self.sb3_ppo = PPO("MlpPolicy", self.environment)
 

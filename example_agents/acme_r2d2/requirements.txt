@@ -22,7 +22,7 @@ databricks-cli==0.14.3
 decorator==5.0.9
 distlib==0.3.0
 distro==1.4.0
-dm-acme==0.2.1
+dm-acme[tensorflow]==0.2.1
 dm-env==1.5
 dm-reverb==0.3.1
 dm-reverb-nightly==0.3.0.dev20210712

@@ -22,8 +22,7 @@ def run_component(
     param_file=None,
 ):
     """
-    :param component_spec_file: file containing this component's spec
-        (i.e. 'component spec').
+    :param component_spec_file: file containing this component's specification.
     :param component_name: name of component to run.
     :param entry_point: name of function to call on component.
     :param agentos_dir: Directory path containing AgentOS components and data.
