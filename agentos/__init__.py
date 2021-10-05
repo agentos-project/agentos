@@ -9,15 +9,8 @@ from agentos.core import (
     Dataset,
     Trainer,
 )
-from agentos.runtime import (
-    run_agent,
-    learn,
-    save_data,
-    save_tensorflow,
-    restore_data,
-    restore_tensorflow,
-    parameters,
-)
+from agentos.tracking import Tracker
+from agentos.runtime import run_component
 
 __all__ = [
     "Agent",
@@ -26,11 +19,6 @@ __all__ = [
     "EnvironmentSpec",
     "Dataset",
     "Trainer",
-    "run_agent",
-    "learn",
-    "save_data",
-    "save_tensorflow",
-    "restore_data",
-    "restore_tensorflow",
-    "parameters",
+    "Tracker",
+    "run_component",
 ]

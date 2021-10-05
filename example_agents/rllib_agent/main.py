@@ -1,4 +1,4 @@
-from agentos import Agent, run_agent
+from agentos import Agent, run_component
 import argparse
 import gym
 import importlib
@@ -49,12 +49,12 @@ def test_rllib_agent():
     from gym.envs.classic_control import CartPoleEnv
 
     agent = RLlibAgent(CartPoleEnv, "PPO")
-    done = agent.step()
+    done = agent.advance()
     assert not done, "CartPole should not finish after one random step."
     agent.train(1)
     while not done:
         print("stepping agent")
-        done = agent.step()
+        done = agent.advance()
     assert done
 
 
@@ -88,4 +88,4 @@ if __name__ == "__main__":
     if args.env_module:
         module = importlib.import_module(args.env_module)
         env = getattr(module, args.env_classname)
-    run_agent(RLlibAgent, env, algo_name=args.algorithm)
+    run_component(RLlibAgent, env, algo_name=args.algorithm)

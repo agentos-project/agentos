@@ -52,7 +52,7 @@ if __name__ == "__main__":
             CartPoleEnv().observation_space,
         ),
     )
-    agentos.run_agent(random_nn_agent, max_iters=10)
+    agentos.run_component(random_nn_agent, max_iters=10)
     print(
         f"Agent done!\n"
         f"Num rollouts: {len(random_nn_agent.ret_vals)}\n"

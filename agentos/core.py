@@ -1,7 +1,7 @@
 """Core AgentOS classes."""
 from collections import namedtuple
-from agentos.runtime import restore_data
-from agentos.runtime import save_data
+import statistics
+import agentos.tracking
 
 
 class MemberInitializer:
@@ -13,12 +13,6 @@ class MemberInitializer:
     assert a.foo == 'bar'
     """
 
-    @classmethod
-    def ready_to_initialize(cls, shared_data):
-        """Allows you to check shared_data for all your requirements before you
-        get initialized"""
-        return True
-
     def __init__(self, **kwargs):
         """Sets all the kwargs as members on the class"""
         for k, v in kwargs.items():
@@ -27,14 +21,6 @@ class MemberInitializer:
 
 class Agent(MemberInitializer):
     """An Agent observes and takes actions in its Environment.
-
-    An Agent holds the following pointers:
-
-        * self.environment - The Environment with which the Agent interacts
-        * self.policy - The Policy used to choose the Agent's next action
-        * self.dataset - A Dataset to record the Agent's experience
-        * self.trainer - A Trainer that updates the Policy based on the
-                         Agent's experience
 
     The primary methods on an Agent are:
 
@@ -50,15 +36,92 @@ class Agent(MemberInitializer):
         self.curr_obs = None
         self._should_reset = True
 
+    def init(self, backing_dir=".aos"):
+        self.tracker = agentos.tracking.Tracker(backing_dir)
+
+    def evaluate(
+        self,
+        num_episodes,
+        should_learn=False,
+        max_transitions=None,
+        backup_dst=None,
+        print_stats=True,
+    ):
+        """Runs an agent specified by a given [agent_file]
+
+        :param num_episodes: number of episodes to run the agent through
+        :param should_learn: boolean, if True we will call policy.improve
+        :param max_transitions: If not None, max transitions performed before
+                                truncating an episode.
+        :param backup_dst: if specified, will print backup path to stdout
+        :param print_stats: if True, will print run stats to stdout
+
+        :returns: None
+        """
+        print("running Acme R2D2 agent")
+        all_steps = []
+        for i in range(int(num_episodes)):
+            steps = self.rollout(
+                should_learn=should_learn, max_transitions=max_transitions
+            )
+            all_steps.append(steps)
+        print(f"print_stats is {print_stats}")
+        if (
+            print_stats != "False"
+            and print_stats != "false"
+            and print_stats != "f"
+        ):
+            self._print_run_results(all_steps, backup_dst)
+
+    def learn(
+        self,
+        num_episodes,
+        test_every,
+        test_num_episodes,
+        max_transitions=None,
+    ):
+        """Trains an agent by calling its learn() method in a loop."""
+        num_episodes = int(num_episodes)
+        test_num_episodes = int(test_num_episodes)
+        # Handle strings from -P
+        # TODO: fix that ugliness!
+        if isinstance(test_every, str):
+            test_every = False
+            if test_every == "True":
+                test_every = True
+        test_every = int(test_every)
+        run_size = test_every if test_every else num_episodes
+        total_episodes = 0
+
+        while total_episodes < num_episodes:
+            if test_every:
+                backup_dst = self.tracker._backup_agent()
+                self.evaluate(
+                    num_episodes=test_num_episodes,
+                    should_learn=False,
+                    max_transitions=max_transitions,
+                    backup_dst=backup_dst,
+                    print_stats=True,
+                )
+            self.evaluate(
+                num_episodes=run_size,
+                should_learn=True,
+                max_transitions=max_transitions,
+                backup_dst=None,
+                print_stats=True,
+            )
+            total_episodes += run_size
+
+    def reset(self, from_backup_id=None):
+        self.tracker.reset(from_backup_id)
+
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""
         if self._should_reset:
             self.curr_obs = self.environment.reset()
             self._should_reset = False
             self.dataset.add(None, None, self.curr_obs, None, None, {})
-        action = self.policy.decide(
-            self.curr_obs, self.environment.valid_actions
-        )
+        action = self.policy.decide(self.curr_obs)
         prev_obs = self.curr_obs
         self.curr_obs, reward, done, info = self.environment.step(action)
         self.dataset.add(prev_obs, action, self.curr_obs, reward, done, info)
@@ -93,34 +156,32 @@ class Agent(MemberInitializer):
                 self.trainer.improve(self.dataset, self.policy)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
-            prev_transition_count = self.get_transition_count()
+            prev_transition_count = self.tracker.get_transition_count()
             new_transition_count = prev_transition_count + transition_count
-            self.save_transition_count(new_transition_count)
-            prev_episode_count = self.get_episode_count()
-            self.save_episode_count(prev_episode_count + 1)
+            self.tracker.save_transition_count(new_transition_count)
+            prev_episode_count = self.tracker.get_episode_count()
+            self.tracker.save_episode_count(prev_episode_count + 1)
         return transition_count
 
-    def _episode_truncated(self):
-        # TODO - record truncations to improve training?
-        # See truncation() in
-        # https://github.com/deepmind/dm_env/blob/master/dm_env/_environment.py
-        pass
-
-    def get_transition_count(self):
-        """Gets the number of transitions the Agent has been trained on."""
-        return restore_data("transition_count")
-
-    def get_episode_count(self):
-        """Gets the number of episodes the Agent has been trained on."""
-        return restore_data("episode_count")
-
-    def save_transition_count(self, transition_count):
-        """Saves the number of transitions the Agent has been trained on."""
-        return save_data("transition_count", transition_count)
-
-    def save_episode_count(self, episode_count):
-        """Saves the number of episodes the Agent has been trained on."""
-        return save_data("episode_count", episode_count)
+    def _print_run_results(self, all_steps, backup_dst):
+        if not all_steps:
+            return
+        mean = statistics.mean(all_steps)
+        median = statistics.median(all_steps)
+        print()
+        print(f"Benchmark results after {len(all_steps)} rollouts:")
+        print(
+            "\tBenchmarked agent was trained on "
+            f"{self.tracker.get_transition_count()} "
+            f"transitions over {self.tracker.get_episode_count()} episodes"
+        )
+        print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
+        print(f"\tMean steps over {len(all_steps)} trials: {mean}")
+        print(f"\tMedian steps over {len(all_steps)} trials: {median}")
+        print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
+        if backup_dst:
+            print(f"Agent backed up in {backup_dst}")
+        print()
 
 
 class Policy(MemberInitializer):
@@ -130,15 +191,12 @@ class Policy(MemberInitializer):
     to decide on a next action given the last observation from an env.
     """
 
-    # FIXME - actions param unnecessary with environment specs
-    def decide(self, observation, actions, should_learn=False):
+    def decide(self, observation):
         """Takes an observation and valid actions and returns next action to
         take.
 
         :param observation: should be in the `observation_space` of the
             environments that this policy is compatible with.
-        :param actions: the action set from which the agent should choose.
-        :param should_learn: should the agent learn from the transition?
         :returns: action to take, should be in `action_space` of the
             environments that this policy is compatible with.
         """
@@ -180,16 +238,15 @@ class Dataset(MemberInitializer):
         raise NotImplementedError
 
 
-# Inspired by OpenAI's gym.Env
-# https://github.com/openai/gym/blob/master/gym/core.py
 class Environment(MemberInitializer):
-    """Minimalist port of OpenAI's gym.Env."""
+    """
+    An Env inspired by OpenAI's gym.Env and DM_Env
+    https://github.com/openai/gym/blob/master/gym/core.py
+    https://github.com/deepmind/dm_env/blob/master/docs/index.md
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if "shared_data" in kwargs:
-            shared_data = kwargs["shared_data"]
-            shared_data["environment_spec"] = self.get_spec()
         self.action_space = None
         self.observation_space = None
         self.reward_range = None

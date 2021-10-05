@@ -9,3 +9,8 @@ entry_points:
       env_class: {type: string, default: CartPoleEnv}
       algo_name: {type: string, default: PPO}
     command: "python main.py {env_module} {env_class} {algo_name}"
+  agentos_run:
+    command: "agentos run"
+  agentos_learn:
+    command: "agentos learn"
+

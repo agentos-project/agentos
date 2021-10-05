@@ -140,4 +140,4 @@ if __name__ == "__main__":
             env_class().action_space, env_class().observation_space
         ),
     )
-    agentos.run_agent(my_agent, max_iters=100)
+    agentos.run_component(my_agent, max_iters=100)

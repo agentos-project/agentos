@@ -5,7 +5,7 @@ See repo README for instructions to run tests.
 import pytest
 import subprocess
 from pathlib import Path
-from agentos import run_agent
+from agentos import run_component
 
 
 def test_cli(tmpdir):
@@ -21,9 +21,21 @@ def test_cli(tmpdir):
     for expected_file_name in expected_file_names:
         expected_path = Path(tmpdir) / expected_file_name
         assert expected_path.is_file(), f"{expected_file_name} not found"
-    subprocess.run(["agentos", "run"], cwd=tmpdir, check=True)
-    subprocess.run(["agentos", "learn"], cwd=tmpdir, check=True)
-    subprocess.run(["agentos", "reset"], cwd=tmpdir, check=True)
+    subprocess.run(
+        ["agentos", "run", "agent", "-Pnum_episodes=10"],
+        cwd=tmpdir,
+        check=True,
+    )
+    subprocess.run(
+        ["agentos", "run", "agent", "--entry-point=learn"],
+        cwd=tmpdir,
+        check=True,
+    )
+    subprocess.run(
+        ["agentos", "run", "agent", "--entry-point=reset"],
+        cwd=tmpdir,
+        check=True,
+    )
 
     # TODO(andyk): add functionality for creating a conda env
     #              automatically if an MLProject file does not
@@ -53,7 +65,7 @@ def test_random_agent():
     agent = RandomAgent(environment=environment)
     done = agent.advance()
     assert not done, "CartPole never finishes after one random step."
-    run_agent(agent)
+    run_component(agent)
 
 
 @pytest.mark.skip(
@@ -116,7 +128,7 @@ def run_agent_in_dir(
     )
 
 
-@pytest.mark.skip(reason="TODO: port run_agent to new abstractions")
+@pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_rl_agents(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "rl_agents"
     run_agent_in_dir(
@@ -129,11 +141,11 @@ def test_rl_agents(virtualenv):
     # TODO: add tests for DQN, RandomTFAgent
     # from example_agents.rl_agents.dqn_agent import DQNAgent
     # from example_agents.rl_agents.random_nn_policy_agent import RandomTFAgent
-    # run_agent(DQNAgent, CartPoleEnv, max_iters=10)
-    # run_agent(RandomTFAgent, CartPoleEnv, max_iters=10)
+    # run_component(DQNAgent, CartPoleEnv, max_iters=10)
+    # run_component(RandomTFAgent, CartPoleEnv, max_iters=10)
 
 
-@pytest.mark.skip(reason="TODO: port run_agent to new abstractions")
+@pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_predictive_coding(virtualenv):
     agent_dir = (
         Path(__file__).parent
@@ -144,7 +156,7 @@ def test_predictive_coding(virtualenv):
     run_agent_in_dir(agent_dir, virtualenv)
 
 
-@pytest.mark.skip(reason="TODO: port run_agent to new abstractions")
+@pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_evolutionary_agent(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "evolutionary_agent"
     run_agent_in_dir(

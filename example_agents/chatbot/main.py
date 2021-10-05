@@ -26,7 +26,7 @@ class ChatBot(agentos.Agent):
 
 if __name__ == "__main__":
     env_generator = MultiChatEnv()
-    agentos.run_agent(ChatBot, env_generator, 1, as_thread=True)
+    agentos.run_component(ChatBot, env_generator, 1, as_thread=True)
 
     cmd_line = CommandLineClient(env_generator())
     cmd_line.start()

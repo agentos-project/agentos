@@ -1,61 +1,65 @@
 """Functions and classes used by the AOS runtime."""
-import pickle
-import agentos
-import shutil
+from inspect import signature, Parameter
+import json
+from functools import partial
 import subprocess
 import os
-import uuid
 import sys
 import yaml
 import click
-import pprint
 from datetime import datetime
 import importlib.util
 from pathlib import Path
 import configparser
 import importlib
-import statistics
 
 
-# TODO - reimplement hz, max_iters, and threading
-def run_agent(
-    num_episodes,
-    agent_file,
-    agentos_dir,
-    should_learn,
-    verbose,
-    max_transitions=None,
-    backup_dst=None,
-    print_stats=False,
+def run_component(
+    component_spec_file,
+    component_name,
+    entry_point,
+    params={},
+    param_file=None,
 ):
-    """Runs an agent specified by a given [agent_file]
-
-    :param num_episodes: number of episodes to run the agent through
-    :param agent_file: path to the agent config file
-    :param agentos_dir: Directory path containing AgentOS components and data
-    :param should_learn: boolean, if True we will call policy.improve
-    :param verbose: boolean, if True will print debugging data to stdout
-    :param max_transitions: If not None, max transitions performed before
-                            truncating an episode.
-    :param backup_dst: if specified, will print backup path to stdout
-    :param print_stats: if True, will print run stats to stdout
-
-    :returns: None
     """
-    _check_path_exists(agentos_dir)
-    all_steps = []
-    agent = load_agent_from_path(agent_file, agentos_dir, verbose)
-    if print_stats:
-        _print_agent_parameters(agent)
+    :param component_spec_file: file containing this component's specification.
+    :param component_name: name of component to run.
+    :param entry_point: name of function to call on component.
+    :param agentos_dir: Directory path containing AgentOS components and data.
+    :param params: dict of params for the entry point being run.
+    :param param_file: YAML to load params from for entry point being run.
+    """
 
-    for i in range(num_episodes):
-        steps = agent.rollout(
-            should_learn=should_learn, max_transitions=max_transitions
-        )
-        all_steps.append(steps)
+    entry_point_params = params
+    if params:
+        # NOTES: we currently assume the params arg contains params for the
+        # call to the component entry point. We don't currently support CLI
+        # arguments for other component entry points besides the entry_point
+        # currently being run (e.g., params for the init() function of a
+        # descendent dependency of the component being run).
+        fully_qualified_params = {component_name: {entry_point: params}}
+    else:
+        fully_qualified_params = {}
+    if param_file:
+        params_from_file = _load_parameters(param_file)
+        if params_from_file:
+            try:
+                fully_qualified_params = {
+                    **params_from_file,
+                    **fully_qualified_params,
+                }
+                entry_point_params = fully_qualified_params[component_name][
+                    entry_point
+                ]
+            except KeyError:
+                pass
 
-    if print_stats:
-        _print_run_results(agent, all_steps, backup_dst)
+    component = load_component_from_file(
+        component_spec_file, component_name, fully_qualified_params
+    )
+
+    entry_point_fn = getattr(component, entry_point)
+    entry_point_fn(**entry_point_params)
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
@@ -67,8 +71,7 @@ def install_component(component_name, agentos_dir, agent_file, assume_yes):
     )
     if confirmed:
         # Blow away agent training step count
-        _create_core_data(agentos_dir)
-        _create_agentos_directory_structure(agentos_dir)
+        agentos_dir.mkdir(exist_ok=True)
         release_entry = _get_release_entry(registry_entry)
         repo = _clone_component_repo(release_entry, agentos_dir)
         _checkout_release_hash(release_entry, repo)
@@ -85,9 +88,7 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
 
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-        curr_agentos_dir = d / agentos_dir
-        _create_agent_directory_structure(curr_agentos_dir)
-        _create_core_data(curr_agentos_dir)
+        os.makedirs(agentos_dir, exist_ok=True)
         _instantiate_template_files(d, agent_name)
         d = "current working directory" if d == Path(".") else d
         click.echo(
@@ -95,173 +96,126 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
         )
 
 
-def learn(
-    num_episodes,
-    test_every,
-    test_num_episodes,
-    agent_file,
-    agentos_dir,
-    verbose,
-    max_transitions=None,
-):
-    """Trains an agent by calling its learn() method in a loop."""
-    _check_path_exists(agentos_dir)
-    run_size = test_every if test_every else num_episodes
-    total_episodes = 0
+def _load_component(config, component_name, visited_components):
+    """Recursively load a component from a config instance.
 
-    while total_episodes < num_episodes:
-        if test_every:
-            backup_dst = _backup_agent(agentos_dir)
-            run_agent(
-                num_episodes=test_num_episodes,
-                agent_file=agent_file,
-                agentos_dir=agentos_dir,
-                should_learn=False,
-                verbose=verbose,
-                max_transitions=max_transitions,
-                backup_dst=backup_dst,
-                print_stats=True,
-            )
-        run_agent(
-            num_episodes=run_size,
-            agent_file=agent_file,
-            agentos_dir=agentos_dir,
-            should_learn=True,
-            verbose=verbose,
-            max_transitions=max_transitions,
-            backup_dst=None,
-            print_stats=True,
-        )
-        total_episodes += run_size
-
-
-def load_agent_from_path(agent_file, agentos_dir, verbose):
-    """Loads agent from an agent directory
-
-    :param agent_file: path the agentos.ini config file
-    :param agentos_dir: Directory path containing AgentOS components and data
-
-    :returns: Instantiated Agent class from directory
+    :param config: an instance of a parsed agentos.ini file.
+    :param component_name: name of the component class instance to return.
+        The spec_file provided must contain a component spec with this name.
+    :returns: Instantiated component class.
+    :param visited_components: Dict of all classes instantiated in this
+        recursive algorithm so far.
     """
-    agent_path = Path(agent_file)
-    agent_dir_path = agent_path.parent.absolute()
+    assert component_name not in visited_components.keys()
+    component_cls = _get_class_from_config_section(config[component_name])
+    component_instance = component_cls()
+    visited_components[component_name] = component_instance
+
+    # if this component has dependencies, load them first (recursively)
+    # Handle circular dependencies by giving components pointers to each other.
+    # then load an instance of this components class, and set up attributes
+    # that point to the instances of its dependencies.
+    if "dependencies" in config[component_name].keys():
+        dep_names = json.loads(config[component_name]["dependencies"])
+        for dep_name in dep_names:
+            if dep_name not in visited_components.keys():
+                _load_component(config, dep_name, visited_components)
+        for dep_name in dep_names:
+            print(f"Adding {dep_name} as dependency of {component_name}")
+            setattr(component_instance, dep_name, visited_components[dep_name])
+            if (
+                component_name
+                not in visited_components["__stack_contents_set__"]
+            ):
+                visited_components["__component_stack__"].append(
+                    (component_name, component_instance)
+                )
+                visited_components["__stack_contents_set__"].add(
+                    component_name
+                )
+    return component_instance
+
+
+def load_component_from_file(spec_file, component_name, params):
+    """Loads component from a component spec file.
+
+    :param spec_file: the AgentOS component spec file
+    :param component_name: name of the component class instance to return.
+        The spec_file provided must contain a component spec with this name.
+    :returns: Instantiated component class.
+    """
+    spec_path = Path(spec_file)
     config = configparser.ConfigParser()
-    config.read(agent_path)
+    config.read(spec_path)
 
-    _decorate_save_data_fns(agentos_dir)
-
-    env_cls = _get_class_from_config(agent_dir_path, config["Environment"])
-    policy_cls = _get_class_from_config(agent_dir_path, config["Policy"])
-    dataset_cls = _get_class_from_config(agent_dir_path, config["Dataset"])
-    trainer_cls = _get_class_from_config(agent_dir_path, config["Trainer"])
-    agent_cls = _get_class_from_config(agent_dir_path, config["Agent"])
-
-    agent_kwargs = {}
-    shared_data = {}
-    component_cls = {
-        "environment": env_cls,
-        "policy": policy_cls,
-        "dataset": dataset_cls,
-        "trainer": trainer_cls,
+    visited_components = {
+        "__component_stack__": [],
+        "__stack_contents_set__": set(),
     }
-    while len(component_cls) > 0:
-        to_initialize_name = None
-        to_initialize_cls = None
-        for name, cls in component_cls.items():
-            if cls.ready_to_initialize(shared_data):
-                to_initialize_name = name
-                to_initialize_cls = cls
-                break
-        if to_initialize_name is None or to_initialize_cls is None:
-            exc_msg = (
-                "Could not find component ready to initialize.  "
-                "Perhaps there is a circular dependency?  "
-                f"Remaining components: {component_cls}"
-            )
-            raise Exception(exc_msg)
+    component = _load_component(config, component_name, visited_components)
+    for c_name, c_instance in visited_components["__component_stack__"]:
+        if hasattr(c_instance, "init"):
+            try:
+                component_init_params = params[c_name]["init"]
+            except KeyError:
+                component_init_params = {}
+            try:
+                global_params = params["__global__"]
+            except KeyError:
+                global_params = {}
+            init_params = {**global_params, **component_init_params}
+            sig = signature(c_instance.init)
+            partial_init = c_instance.init
+            """
+            look through all params:
+              If param.type == POSITION_ONLY:
+                error: agentos does now allow init() to have position-only args
+              else if param.type is POSITION_OR_KEYWORD or KEYWORD_ONLY:
+                assert this param.name is in the param dict provided by user
+                new partial with param.name=user_params[param.name], and remove
+                    it from the user param dict
+              else if it is type VAR_KEYWORD:
+                # bind all remaining params from user param dict
+                for user_param in user param dict:
+                  new partial with user_param call with user_param
+              Note that we implicitly ignore the final case, i.e.,
+              that the parm was of type VAR_POSITIONAL
+              since all user specified params are named.
+            """
+            for param in sig.parameters.values():
+                # AgentOS ignores arguments that it was of type VAR_POSITIONAL
+                # since all user specified params are named.
+                if param.kind == Parameter.POSITIONAL_ONLY:
+                    raise Exception(
+                        "AgentOS does not allow component init() functions to "
+                        "accept position-only args."
+                    )
+                elif param.kind in [
+                    Parameter.POSITIONAL_OR_KEYWORD,
+                    Parameter.KEYWORD_ONLY,
+                ]:
+                    try:
+                        partial_init = partial(
+                            partial_init,
+                            **{param.name: init_params.pop(param.name)},
+                        )
+                    except KeyError:
+                        f"Argument {param.name} required by {c_name}.init() "
+                        "but not found in provided parameters."
+                elif param.kind == Parameter.VAR_KEYWORD:
+                    for p_name, p_val in init_params.items():
+                        partial_init = partial(partial_init, **{p_name: p_val})
+            try:
+                partial_init()
+            except Exception as e:
+                # Print helpful message for debugging.
+                print(
+                    f"\nThe AgentOS call to component initialization "
+                    f"{c_name}.init() failed."
+                )
+                raise e
+    return component
 
-        del component_cls[to_initialize_name]
-        agent_kwargs[to_initialize_name] = to_initialize_cls(
-            shared_data=shared_data, **config[to_initialize_name.capitalize()]
-        )
-
-    agent_kwargs = {
-        "shared_data": shared_data,
-        **agent_kwargs,
-        "verbose": verbose,
-        **config["Agent"],
-    }
-    return agent_cls(**agent_kwargs)
-
-
-def reset_agent_directory(agentos_dir, from_backup_id):
-    _check_path_exists(agentos_dir)
-    if from_backup_id:
-        restore_src = _get_backups_location(agentos_dir) / from_backup_id
-        if not restore_src.exists():
-            raise click.BadParameter(
-                f"{restore_src.absolute()} does not exist!"
-            )
-    backup_dst = _backup_agent(agentos_dir)
-    print(f"Current agent backed up to {backup_dst}.")
-    data_location = _get_data_location(agentos_dir)
-    shutil.rmtree(data_location)
-    _create_agent_directory_structure(agentos_dir)
-    if from_backup_id:
-        print(restore_src)
-        print(_get_data_location(agentos_dir))
-        shutil.copytree(
-            restore_src, _get_data_location(agentos_dir), dirs_exist_ok=True
-        )
-        print(f"Agent state at {restore_src.absolute()} restored.")
-    else:
-        _create_core_data(agentos_dir)
-        print("Agent state reset.")
-
-
-# https://github.com/deepmind/sonnet#tensorflow-checkpointing
-# TODO - custom saver/restorer functions
-# TODO - V hacky way to pass in the global data location; we decorate
-#        this function with the location in restore_saved_data in cli.py
-# TODO - ONLY works for the demo (Acme on TF) because the dynamic module
-#        loading in ACR core breaks pickle. Need to figure out a more general
-#        way to handle this
-def save_tensorflow(name, network):
-    import tensorflow as tf
-
-    checkpoint = tf.train.Checkpoint(module=network)
-    checkpoint.save(save_tensorflow.data_location / name)
-
-
-# https://github.com/deepmind/sonnet#tensorflow-checkpointing
-# Same caveats as save_tensorflow above
-def restore_tensorflow(name, network):
-    import tensorflow as tf
-
-    checkpoint = tf.train.Checkpoint(module=network)
-    latest = tf.train.latest_checkpoint(restore_tensorflow.data_location)
-    if latest is not None:
-        print("AOS: Restoring policy network from checkpoint")
-        checkpoint.restore(latest)
-    else:
-        print("AOS: No checkpoint found for policy network")
-
-
-def save_data(name, data):
-    with open(save_data.data_location / name, "wb") as f:
-        pickle.dump(data, f)
-
-
-def restore_data(name):
-    with open(restore_data.data_location / name, "rb") as f:
-        return pickle.load(f)
-
-
-class ParameterObject:
-    pass
-
-
-parameters = ParameterObject()
 
 ################################
 # Private helper functions below
@@ -274,82 +228,26 @@ def _check_path_exists(path):
         raise click.BadParameter(f"{path} does not exist!")
 
 
-def _print_agent_parameters(agent):
-    print()
-    print("Agent parameters:")
-    pprint.pprint(agentos.parameters.__dict__)
-    print()
-
-
-def _print_run_results(agent, all_steps, backup_dst):
-    if not all_steps:
-        return
-    mean = statistics.mean(all_steps)
-    median = statistics.median(all_steps)
-    print()
-    print(f"Benchmark results after {len(all_steps)} rollouts:")
-    print(
-        "\tBenchmarked agent was trained on "
-        f"{agent.get_transition_count()} "
-        f"transitions over {agent.get_episode_count()} episodes"
-    )
-    print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
-    print(f"\tMean steps over {len(all_steps)} trials: {mean}")
-    print(f"\tMedian steps over {len(all_steps)} trials: {median}")
-    print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
-    if backup_dst:
-        print(f"Agent backed up in {backup_dst}")
-    print()
-
-
-def _backup_agent(agentos_dir):
-    """Creates a snapshot of an agent at a given moment in time.
-
-    :param agentos_dir: Directory path containing AgentOS components and data
-
-    :returns: Path to the back up directory
-    """
-    agentos_dir = Path(agentos_dir).absolute()
-    data_location = _get_data_location(agentos_dir)
-    backup_dst = _get_backups_location(agentos_dir) / str(uuid.uuid4())
-    shutil.copytree(data_location, backup_dst)
-    return backup_dst
-
-
-def _load_parameters(parameters_file):
-    if not os.path.isfile(parameters_file):
-        return
+def _load_parameters(parameters_file) -> dict:
     with open(parameters_file) as file_in:
-        component_parameters = yaml.full_load(file_in)
-    # Throw error if two components specify same param with different values
-    for k, v in component_parameters.items():
-        if k in agentos.parameters.__dict__:
-            if v != agentos.parameters.__dict__[k]:
-                raise Exception(f"Unharmonized global setting {k}:{v}")
-        agentos.parameters.__dict__[k] = v
+        params = yaml.full_load(file_in)
+        assert isinstance(params, dict)
+        return params
 
 
-def _get_class_from_config(agent_dir_path, config):
+def _get_class_from_config_section(section):
     """Takes class_path of form "module.Class" and returns the class object."""
-    sys.path.append(config["python_path"])
-    file_path = agent_dir_path / Path(config["file_path"])
-    spec = importlib.util.spec_from_file_location("TEMP_MODULE", file_path)
+    module_file = Path(section["file_path"])
+    assert module_file.is_file(), f"{module_file} is not a file"
+    sys.path.append(str(module_file.parent))
+    spec = importlib.util.spec_from_file_location(
+        "TEMP_MODULE", str(module_file)
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    cls = getattr(module, config["class_name"])
-    _load_parameters(Path(config["python_path"]) / "parameters.yaml")
+    cls = getattr(module, section["class_name"])
     sys.path.pop()
     return cls
-
-
-# TODO - V hacky!  is this the a reasonable way to go?
-# TODO - uglily communicates to save_data() the dynamic data location
-def _decorate_save_data_fns(agentos_dir):
-    dl = _get_data_location(agentos_dir)
-    save_data.__dict__["data_location"] = dl
-    restore_data.__dict__["data_location"] = dl
-    save_tensorflow.__dict__["data_location"] = dl
-    restore_tensorflow.__dict__["data_location"] = dl
 
 
 def _get_registry_entry(component_name):
@@ -371,10 +269,6 @@ def _confirm_component_installation(registry_entry, location):
         f"to {location}.  Continue? (Y/N) "
     )
     return answer.strip().lower() == "y"
-
-
-def _create_agentos_directory_structure(agentos_dir):
-    os.makedirs(agentos_dir, exist_ok=True)
 
 
 def _get_release_entry(registry_entry):
@@ -441,18 +335,6 @@ def _install_requirements(repo, release_entry):
     print(f"\n\tpip install -r {req_path}\n")
 
 
-def _create_agent_directory_structure(agentos_dir):
-    os.makedirs(agentos_dir, exist_ok=True)
-    os.makedirs(_get_data_location(agentos_dir), exist_ok=True)
-    os.makedirs(_get_backups_location(agentos_dir), exist_ok=True)
-
-
-def _create_core_data(agentos_dir):
-    _decorate_save_data_fns(agentos_dir)
-    agentos.save_data("transition_count", 0)
-    agentos.save_data("episode_count", 0)
-
-
 def _instantiate_template_files(d, agent_name):
     AOS_PATH = Path(__file__).parent
     for file_path in _INIT_FILES:
@@ -481,14 +363,6 @@ _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
 _AGENT_INI_FILE = Path("./templates/agentos.ini")
-
-
-def _get_data_location(agentos_dir):
-    return Path(agentos_dir).absolute() / "data"
-
-
-def _get_backups_location(agentos_dir):
-    return Path(agentos_dir).absolute() / "backups"
 
 
 _INIT_FILES = [
