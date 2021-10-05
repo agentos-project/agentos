@@ -29,7 +29,6 @@ def run_component(
     :param params: dict of params for the entry point being run.
     :param param_file: YAML to load params from for entry point being run.
     """
-
     entry_point_params = params
     if params:
         # NOTES: we currently assume the params arg contains params for the
@@ -44,10 +43,9 @@ def run_component(
         params_from_file = _load_parameters(param_file)
         if params_from_file:
             try:
-                fully_qualified_params = {
-                    **params_from_file,
-                    **fully_qualified_params,
-                }
+                fully_qualified_params = _merge_settings_dicts(
+                    params_from_file, fully_qualified_params
+                )
                 entry_point_params = fully_qualified_params[component_name][
                     entry_point
                 ]
@@ -200,7 +198,7 @@ def load_component_from_file(spec_file, component_name, params):
                             **{param.name: init_params.pop(param.name)},
                         )
                     except KeyError:
-                        f"Argument {param.name} required by {c_name}.init() "
+                        f"Argument {param.name} required by {c_name}.init()"
                         "but not found in provided parameters."
                 elif param.kind == Parameter.VAR_KEYWORD:
                     for p_name, p_val in init_params.items():
@@ -220,6 +218,23 @@ def load_component_from_file(spec_file, component_name, params):
 ################################
 # Private helper functions below
 ################################
+
+# Modified from https://stackoverflow.com/a/7205107
+def _merge_settings_dicts(a, b, path=None):
+    """Merges dict b into dict a, overwriting duplicate keys in a"""
+    if path is None:
+        path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                _merge_settings_dicts(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass  # same leaf value
+            else:
+                a[key] = b[key]  # Keep differing value from b
+        else:
+            a[key] = b[key]
+    return a
 
 
 # Necessary because the agentos_dir will **not** exist on `agentos init`
