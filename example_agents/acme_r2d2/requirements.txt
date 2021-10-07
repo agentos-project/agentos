@@ -22,7 +22,7 @@ cryptography==3.4.7
 cycler==0.10.0
 databricks-cli==0.14.3
 decorator==5.0.9
-distlib==0.3.0
+distlib==0.3.3
 distro==1.4.0
 dm-acme==0.2.1
 dm-env==1.5
