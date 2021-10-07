@@ -1,0 +1,16 @@
+agent:
+    __init__:
+        batch_size: 10
+        samples_per_insert: 2
+        min_replay_size: 10
+    evaluate:
+        num_episodes: 100
+    learn:
+        num_episodes: 100
+network:
+    __init__:
+        backing_dir: "./.aos/data"
+environment:
+    __init__:
+__global__:
+    discount: .99
