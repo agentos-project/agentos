@@ -120,7 +120,7 @@ termcolor==1.1.0
 toml==0.10.2
 trfl==1.1.0
 typing-extensions==3.7.4.3
-urllib3==1.25.8
+urllib3==1.26.5
 webencodings==0.5.1
 websocket-client==1.1.0
 Werkzeug==2.0.1
