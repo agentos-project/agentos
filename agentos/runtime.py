@@ -121,16 +121,11 @@ def _load_component(config, component_name, visited_components):
         for dep_name in dep_names:
             print(f"Adding {dep_name} as dependency of {component_name}")
             setattr(component_instance, dep_name, visited_components[dep_name])
-            if (
-                component_name
-                not in visited_components["__stack_contents_set__"]
-            ):
-                visited_components["__component_stack__"].append(
-                    (component_name, component_instance)
-                )
-                visited_components["__stack_contents_set__"].add(
-                    component_name
-                )
+    if component_name not in visited_components["__stack_contents_set__"]:
+        visited_components["__component_stack__"].append(
+            (component_name, component_instance)
+        )
+        visited_components["__stack_contents_set__"].add(component_name)
     return component_instance
 
 
