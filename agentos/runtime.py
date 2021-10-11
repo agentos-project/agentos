@@ -121,16 +121,11 @@ def _load_component(config, component_name, visited_components):
         for dep_name in dep_names:
             print(f"Adding {dep_name} as dependency of {component_name}")
             setattr(component_instance, dep_name, visited_components[dep_name])
-            if (
-                component_name
-                not in visited_components["__stack_contents_set__"]
-            ):
-                visited_components["__component_stack__"].append(
-                    (component_name, component_instance)
-                )
-                visited_components["__stack_contents_set__"].add(
-                    component_name
-                )
+    if component_name not in visited_components["__stack_contents_set__"]:
+        visited_components["__component_stack__"].append(
+            (component_name, component_instance)
+        )
+        visited_components["__stack_contents_set__"].add(component_name)
     return component_instance
 
 
@@ -156,10 +151,14 @@ def load_component_from_file(spec_file, component_name, params):
             try:
                 component_init_params = params[c_name]["init"]
             except KeyError:
+                component_init_params = None
+            if component_init_params is None:
                 component_init_params = {}
             try:
                 global_params = params["__global__"]
             except KeyError:
+                global_params = None
+            if global_params is None:
                 global_params = {}
             init_params = {**global_params, **component_init_params}
             sig = signature(c_instance.init)
