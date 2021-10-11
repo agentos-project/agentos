@@ -151,10 +151,14 @@ def load_component_from_file(spec_file, component_name, params):
             try:
                 component_init_params = params[c_name]["init"]
             except KeyError:
+                component_init_params = None
+            if component_init_params is None:
                 component_init_params = {}
             try:
                 global_params = params["__global__"]
             except KeyError:
+                global_params = None
+            if global_params is None:
                 global_params = {}
             init_params = {**global_params, **component_init_params}
             sig = signature(c_instance.init)
