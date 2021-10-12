@@ -7,15 +7,9 @@ import numpy as np
 
 
 class CartPole(CartPoleEnv, agentos.Environment):
-    @classmethod
-    def ready_to_initialize(cls, shared_data):
-        return True
-
     def __init__(self, **kwargs):
         agentos.Environment.__init__(self, **kwargs)
         CartPoleEnv.__init__(self)
-        if hasattr(self, "shared_data"):
-            self.shared_data["environment_spec"] = self.get_spec()
 
     def step(self, action):
         assert action in [0, 1]

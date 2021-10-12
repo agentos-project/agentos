@@ -6,7 +6,8 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 # A basic agent.
 class SB3PPOAgent(agentos.Agent):
-    def init(self):
+    def __init__(self):
+        super().__init__()
         self.sb3_ppo = PPO("MlpPolicy", self.environment)
 
     def evaluate(

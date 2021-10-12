@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-class EpsilonGreedyTFPolicy(agentos.Policy):
+class EpsilonGreedyTFPolicy:
     def __init__(self, action_space, observation_space):
         self.action_space = action_space
         self.observation_space = observation_space
@@ -109,13 +109,7 @@ class EpsilonGreedyTFPolicy(agentos.Policy):
                 self.optimizer.minimize(loss, self.model.trainable_variables)
 
 
-class OnlineBatchAgent(agentos.Agent):
-    def __init__(self, environment, policy):
-        super().__init__(env=environment, policy=policy)
-        self.policy = policy
-        self.environment = environment
-        self.first_obs = self.env.reset()
-
+class OnlineBatchAgent(agentos.Runnable):
     def advance(self):
         print("Training")
         self.learn()

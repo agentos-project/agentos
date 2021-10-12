@@ -60,6 +60,146 @@ def run_component(
     entry_point_fn(**entry_point_params)
 
 
+def load_component_from_file(spec_file, component_name, params):
+    """Loads component from a component spec file. This returns an instance
+    of a python class as specified by the named agentOS component spec,
+    having been set up with attributes that reference all of its dependencies
+    as specified in the same component spec.
+
+    :param spec_file: an AgentOS component spec file
+    :param component_name: name of the component class instance to return.
+        The spec_file provided must contain a component spec with this name.
+    :returns: Instantiated component class.
+    """
+    spec_path = Path(spec_file)
+    config = configparser.ConfigParser()
+    config.read(spec_path)
+    visited_components = set()
+    component = _load_component(
+        config, component_name, params, visited_components
+    )
+    return component
+
+
+def _load_component(config, component_name, params, visited_components):
+    """Recursively load a component from a config instance.
+
+    :param config: an instance of a parsed agentos.ini file.
+    :param component_name: name of the component class instance to return.
+        The spec_file provided must contain a component spec with this name.
+    :returns: Instantiated component class.
+    :param visited_components: Dict of all classes instantiated in this
+        recursive algorithm so far.
+    """
+    assert component_name not in visited_components, (
+        "AgentOS encountered a cycle in the component dependencies."
+    )
+    visited_components.add(component_name)
+
+    # if this component has dependencies, load them first (recursively)
+    # Circular dependencies are not allowed.
+    # then load an instance of this components class, and set up attributes
+    # that point to the instances of its dependencies.
+    dependencies = {}
+    if "dependencies" in config[component_name].keys():
+        dep_names = json.loads(config[component_name]["dependencies"])
+        for dep_name in dep_names:
+            if dep_name not in visited_components:
+                dep_obj = _load_component(
+                    config, dep_name, params, visited_components
+                )
+                dependencies[dep_name] = dep_obj
+    component_class = _get_class_from_config_section(config[component_name])
+    """
+    For each component being loaded, AgentOS sets up an attribute for each 
+    of that component's dependencies. Then AgentOS calls the component's
+    __init__() function, passing in any parameters specified by the user.
+    To get this ordering correct AgentOS first initializes each component
+    using a dummy empty __init__() function, then sets up its dependency
+    attributes, then calls its true __init__() function.
+    """
+    component_class.__agentos_tmp_ini__ = component_class.__init__
+    component_class.__init__ = lambda self: None
+    component_instance = component_class()
+    for dep_name, dep_obj in dependencies.items():
+        setattr(component_instance, dep_name, dep_obj)
+    component_class.__init__ = component_class.__agentos_tmp_ini__
+    _call_component_func(component_name, component_instance, "__init__", params)
+    print(f"Loaded component {component_name}.")
+    return component_instance
+
+
+def _call_component_func(c_name, c_instance, func_name, params):
+    assert hasattr(c_instance, func_name), (
+        f"component {c_name} does not have a function named {func_name}."
+    )
+    try:
+        func_params = params[c_name][func_name]
+    except KeyError:
+        func_params = None
+    if func_params is None:
+        func_params = {}
+    try:
+        global_params = params["__global__"]
+    except KeyError:
+        global_params = None
+    if global_params is None:
+        global_params = {}
+    merged_params = _merge_settings_dicts(
+        global_params, func_params
+    )
+    partial_func = getattr(c_instance, func_name)
+    sig = signature(partial_func)
+    """
+    look through all except the first param (first one was `self`):
+      If param.type == POSITION_ONLY:
+        error: agentos does now allow init() to have position-only args
+      else if param.type is POSITION_OR_KEYWORD or KEYWORD_ONLY:
+        assert this param.name is in the param dict provided by user
+        new partial with param.name=user_params[param.name], and remove
+            it from the user param dict
+      else if it is type VAR_KEYWORD:
+        # bind all remaining params from user param dict
+        for user_param in user param dict:
+          new partial with user_param call with user_param
+      Note that we implicitly ignore the final case, i.e.,
+      that the parm was of type VAR_POSITIONAL
+      since all user specified params are named.
+    """
+    for param in sig.parameters.values():
+        # AgentOS ignores arguments that it was of type VAR_POSITIONAL
+        # since all user specified params are named.
+        if param.kind == Parameter.POSITIONAL_ONLY:
+            raise Exception(
+                f"AgentOS does not allow component entry points to "
+                "accept position-only args."
+            )
+        elif param.kind in [
+            Parameter.POSITIONAL_OR_KEYWORD,
+            Parameter.KEYWORD_ONLY,
+        ]:
+            try:
+                partial_func = partial(
+                    partial_func,
+                    **{param.name: merged_params.pop(param.name)},
+                )
+            except KeyError:
+                f"Argument {param.name} required by {c_name}.{func_name}()"
+                "but not found in provided parameters."
+        elif param.kind == Parameter.VAR_KEYWORD:
+            for p_name, p_val in merged_params.items():
+                partial_func = partial(partial_func, **{p_name: p_val})
+    try:
+        partial_func()
+    except Exception as e:
+        # This helpful message hopefully makes debugging easier.
+        print(
+            f"\nThe AgentOS call to component initialization "
+            f"{c_name}.{func_name}() failed."
+        )
+        raise e
+
+
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
     _check_path_exists(agentos_dir)
     agentos_dir = Path(agentos_dir).absolute()
@@ -92,126 +232,6 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
         click.echo(
             f"Finished initializing AgentOS agent '{agent_name}' in {d}."
         )
-
-
-def _load_component(config, component_name, visited_components):
-    """Recursively load a component from a config instance.
-
-    :param config: an instance of a parsed agentos.ini file.
-    :param component_name: name of the component class instance to return.
-        The spec_file provided must contain a component spec with this name.
-    :returns: Instantiated component class.
-    :param visited_components: Dict of all classes instantiated in this
-        recursive algorithm so far.
-    """
-    assert component_name not in visited_components.keys()
-    component_cls = _get_class_from_config_section(config[component_name])
-    component_instance = component_cls()
-    visited_components[component_name] = component_instance
-
-    # if this component has dependencies, load them first (recursively)
-    # Handle circular dependencies by giving components pointers to each other.
-    # then load an instance of this components class, and set up attributes
-    # that point to the instances of its dependencies.
-    if "dependencies" in config[component_name].keys():
-        dep_names = json.loads(config[component_name]["dependencies"])
-        for dep_name in dep_names:
-            if dep_name not in visited_components.keys():
-                _load_component(config, dep_name, visited_components)
-        for dep_name in dep_names:
-            print(f"Adding {dep_name} as dependency of {component_name}")
-            setattr(component_instance, dep_name, visited_components[dep_name])
-    if component_name not in visited_components["__stack_contents_set__"]:
-        visited_components["__component_stack__"].append(
-            (component_name, component_instance)
-        )
-        visited_components["__stack_contents_set__"].add(component_name)
-    return component_instance
-
-
-def load_component_from_file(spec_file, component_name, params):
-    """Loads component from a component spec file.
-
-    :param spec_file: the AgentOS component spec file
-    :param component_name: name of the component class instance to return.
-        The spec_file provided must contain a component spec with this name.
-    :returns: Instantiated component class.
-    """
-    spec_path = Path(spec_file)
-    config = configparser.ConfigParser()
-    config.read(spec_path)
-
-    visited_components = {
-        "__component_stack__": [],
-        "__stack_contents_set__": set(),
-    }
-    component = _load_component(config, component_name, visited_components)
-    for c_name, c_instance in visited_components["__component_stack__"]:
-        if hasattr(c_instance, "init"):
-            try:
-                component_init_params = params[c_name]["init"]
-            except KeyError:
-                component_init_params = None
-            if component_init_params is None:
-                component_init_params = {}
-            try:
-                global_params = params["__global__"]
-            except KeyError:
-                global_params = None
-            if global_params is None:
-                global_params = {}
-            init_params = {**global_params, **component_init_params}
-            sig = signature(c_instance.init)
-            partial_init = c_instance.init
-            """
-            look through all params:
-              If param.type == POSITION_ONLY:
-                error: agentos does now allow init() to have position-only args
-              else if param.type is POSITION_OR_KEYWORD or KEYWORD_ONLY:
-                assert this param.name is in the param dict provided by user
-                new partial with param.name=user_params[param.name], and remove
-                    it from the user param dict
-              else if it is type VAR_KEYWORD:
-                # bind all remaining params from user param dict
-                for user_param in user param dict:
-                  new partial with user_param call with user_param
-              Note that we implicitly ignore the final case, i.e.,
-              that the parm was of type VAR_POSITIONAL
-              since all user specified params are named.
-            """
-            for param in sig.parameters.values():
-                # AgentOS ignores arguments that it was of type VAR_POSITIONAL
-                # since all user specified params are named.
-                if param.kind == Parameter.POSITIONAL_ONLY:
-                    raise Exception(
-                        "AgentOS does not allow component init() functions to "
-                        "accept position-only args."
-                    )
-                elif param.kind in [
-                    Parameter.POSITIONAL_OR_KEYWORD,
-                    Parameter.KEYWORD_ONLY,
-                ]:
-                    try:
-                        partial_init = partial(
-                            partial_init,
-                            **{param.name: init_params.pop(param.name)},
-                        )
-                    except KeyError:
-                        f"Argument {param.name} required by {c_name}.init()"
-                        "but not found in provided parameters."
-                elif param.kind == Parameter.VAR_KEYWORD:
-                    for p_name, p_val in init_params.items():
-                        partial_init = partial(partial_init, **{p_name: p_val})
-            try:
-                partial_init()
-            except Exception as e:
-                # Print helpful message for debugging.
-                print(
-                    f"\nThe AgentOS call to component initialization "
-                    f"{c_name}.init() failed."
-                )
-                raise e
-    return component
 
 
 ################################
