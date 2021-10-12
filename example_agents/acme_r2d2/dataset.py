@@ -12,11 +12,8 @@ from dm_env import StepType
 
 class ReverbDataset(agentos.Dataset):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def init(self, **params):
-        self.parameters = params
-        initial_state = self.network.initial_state(1)
+        self.parameters = kwargs
+        initial_state = self.network.rnn.initial_state(1)
         extra_spec = {
             "core_state": tf2_utils.squeeze_batch_dim(initial_state),
         }
@@ -66,8 +63,8 @@ class ReverbDataset(agentos.Dataset):
         mean_priority = tf.reduce_mean(abs_errors, axis=0)
         max_priority = tf.reduce_max(abs_errors, axis=0)
         priorities = (
-            self.parameters.max_priority_weight * max_priority
-            + (1 - self.parameters.max_priority_weight) * mean_priority
+            self.parameters["max_priority_weight"] * max_priority
+            + (1 - self.parameters["max_priority_weight"]) * mean_priority
         )
 
         # Compute priorities and add an op to update them on the reverb
