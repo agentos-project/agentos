@@ -113,7 +113,9 @@ def run_component_in_dir(
     if req_file:
         print(f"Installing {req_file} with cwd {dir_name}")
         virtualenv.run(
-            ["pip", "install", "-r", req_file], cwd=Path(dir_name), capture=True
+            ["pip", "install", "-r", req_file],
+            cwd=Path(dir_name),
+            capture=True,
         )
     for entry_point in entry_points:
         print(f"Using CLI to run component {component_name}.{entry_point}.")
@@ -123,21 +125,18 @@ def run_component_in_dir(
 
 def test_sb3_agent(virtualenv):
     agent_dir = Path(__file__).parent.parent / "example_agents" / "sb3_agent"
-    run_component_in_dir(agent_dir,
-                         virtualenv,
-                         "agent",
-                         entry_points=["evaluate", "learn"])
+    run_component_in_dir(
+        agent_dir, virtualenv, "agent", entry_points=["evaluate", "learn"]
+    )
 
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_rl_agents(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "rl_agents"
-    run_agent_in_dir(
+    run_component_in_dir(
         agent_dir,
         virtualenv,
-        main_file="reinforce_agent.py",
-        env_arg="gym.envs.classic_control.CartPoleEnv",
-        main_file_args=["5"],
+        "ReinforceAgent",
     )
     # TODO: add tests for DQN, RandomTFAgent
     # from example_agents.rl_agents.dqn_agent import DQNAgent
@@ -154,15 +153,10 @@ def test_predictive_coding(virtualenv):
         / "predictive_coding"
         / "free_energy_tutorial"
     )
-    run_agent_in_dir(agent_dir, virtualenv)
+    run_component_in_dir(agent_dir, virtualenv, "agent")
 
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_evolutionary_agent(virtualenv):
     agent_dir = Path(__file__).parent / "example_agents" / "evolutionary_agent"
-    run_agent_in_dir(
-        agent_dir,
-        virtualenv,
-        main_file="agent.py",
-        env_arg="gym.envs.classic_control.CartPoleEnv",
-    )
+    run_component_in_dir(agent_dir, virtualenv, "agent")
