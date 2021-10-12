@@ -91,9 +91,9 @@ def _load_component(config, component_name, params, visited_components):
     :param visited_components: Dict of all classes instantiated in this
         recursive algorithm so far.
     """
-    assert component_name not in visited_components, (
-        "AgentOS encountered a cycle in the component dependencies."
-    )
+    assert (
+        component_name not in visited_components
+    ), "AgentOS encountered a cycle in the component dependencies."
     visited_components.add(component_name)
 
     # if this component has dependencies, load them first (recursively)
@@ -111,7 +111,7 @@ def _load_component(config, component_name, params, visited_components):
                 dependencies[dep_name] = dep_obj
     component_class = _get_class_from_config_section(config[component_name])
     """
-    For each component being loaded, AgentOS sets up an attribute for each 
+    For each component being loaded, AgentOS sets up an attribute for each
     of that component's dependencies. Then AgentOS calls the component's
     __init__() function, passing in any parameters specified by the user.
     To get this ordering correct AgentOS first initializes each component
@@ -124,15 +124,17 @@ def _load_component(config, component_name, params, visited_components):
     for dep_name, dep_obj in dependencies.items():
         setattr(component_instance, dep_name, dep_obj)
     component_class.__init__ = component_class.__agentos_tmp_ini__
-    _call_component_func(component_name, component_instance, "__init__", params)
+    _call_component_func(
+        component_name, component_instance, "__init__", params
+    )
     print(f"Loaded component {component_name}.")
     return component_instance
 
 
 def _call_component_func(c_name, c_instance, func_name, params):
-    assert hasattr(c_instance, func_name), (
-        f"component {c_name} does not have a function named {func_name}."
-    )
+    assert hasattr(
+        c_instance, func_name
+    ), f"component {c_name} does not have a function named {func_name}."
     try:
         func_params = params[c_name][func_name]
     except KeyError:
@@ -145,9 +147,7 @@ def _call_component_func(c_name, c_instance, func_name, params):
         global_params = None
     if global_params is None:
         global_params = {}
-    merged_params = _merge_settings_dicts(
-        global_params, func_params
-    )
+    merged_params = _merge_settings_dicts(global_params, func_params)
     partial_func = getattr(c_instance, func_name)
     sig = signature(partial_func)
     """
@@ -171,7 +171,7 @@ def _call_component_func(c_name, c_instance, func_name, params):
         # since all user specified params are named.
         if param.kind == Parameter.POSITIONAL_ONLY:
             raise Exception(
-                f"AgentOS does not allow component entry points to "
+                "AgentOS does not allow component entry points to "
                 "accept position-only args."
             )
         elif param.kind in [

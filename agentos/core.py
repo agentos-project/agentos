@@ -289,11 +289,12 @@ class Runnable:
         use case for this agent_run.
         :param agent: The agent object you want to run
         :param hz: Rate at which to call agent's `advance` function. If None,
-            call `advance` repeatedly in a tight loop (i.e., as fast as possible).
+            call `advance` repeatedly in a tight loop (i.e., as fast as
+            possible).
         :param max_iters: Maximum times to call agent's `advance` function,
             defaults to None.
-        :param as_thread: Set to True to run this agent in a new thread, defaults
-            to False.
+        :param as_thread: Set to True to run this agent in a new thread,
+            defaults to False.
         :returns: Either a running thread (if as_thread=True) or None.
         """
 
