@@ -13,11 +13,11 @@ import tensorflow as tf
 
 
 class R2D2Trainer(agentos.Trainer):
-    def init(self, **params):
-        self.parameters = AttrDict(params)
-        self.target_network = copy.deepcopy(self.network)
+    def __init__(self, **kwargs):
+        self.parameters = AttrDict(kwargs)
+        self.target_network = copy.deepcopy(self.network.rnn)
         self.optimizer = snt.optimizers.Adam(
-            params["learning_rate"], params["adam_epsilon"]
+            kwargs["learning_rate"], kwargs["adam_epsilon"]
         )
         tf2_utils.create_variables(
             self.target_network, [self.environment.get_spec().observations]
@@ -26,9 +26,9 @@ class R2D2Trainer(agentos.Trainer):
             0.0, dtype=tf.float32, trainable=False, name="step"
         )
 
-        if not isinstance(self.network, networks.RNNCore):
-            self.network.unroll = functools.partial(
-                snt.static_unroll, self.network
+        if not isinstance(self.network.rnn, networks.RNNCore):
+            self.network.rnn.unroll = functools.partial(
+                snt.static_unroll, self.network.rnn
             )
             self.target_network.unroll = functools.partial(
                 snt.static_unroll, self.target_network
@@ -68,7 +68,7 @@ class R2D2Trainer(agentos.Trainer):
                 lambda x: x[0], extra["core_state"]
             )
         else:
-            core_state = self.network.initial_state(batch_size)
+            core_state = self.network.rnn.initial_state(batch_size)
         target_core_state = tree.map_structure(tf.identity, core_state)
 
         # Before training, optionally unroll LSTM for a fixed warmup period.
@@ -87,7 +87,7 @@ class R2D2Trainer(agentos.Trainer):
 
         with tf.GradientTape() as tape:
             # Unroll the online and target Q-networks on the sequences.
-            q_values, _ = self.network.unroll(
+            q_values, _ = self.network.rnn.unroll(
                 observations, core_state, self.parameters.sequence_length
             )
             target_q_values, _ = self.target_network.unroll(
@@ -129,14 +129,14 @@ class R2D2Trainer(agentos.Trainer):
             loss = tf.reduce_mean(loss)  # []
 
         # Apply gradients via optimizer.
-        gradients = tape.gradient(loss, self.network.trainable_variables)
+        gradients = tape.gradient(loss, self.network.rnn.trainable_variables)
         # Clip and apply gradients.
         if self.parameters.clip_grad_norm is not None:
             gradients, _ = tf.clip_by_global_norm(
                 gradients, self.parameters.clip_grad_norm
             )
 
-        self.optimizer.apply(gradients, self.network.trainable_variables)
+        self.optimizer.apply(gradients, self.network.rnn.trainable_variables)
 
         # Periodically update the target network.
         if (
@@ -144,7 +144,7 @@ class R2D2Trainer(agentos.Trainer):
             == 0
         ):
             for src, dest in zip(
-                self.network.variables, self.target_network.variables
+                self.network.rnn.variables, self.target_network.variables
             ):
                 dest.assign(src)
         self.num_steps.assign_add(1)
@@ -157,7 +157,7 @@ class R2D2Trainer(agentos.Trainer):
 
     def _burn_in(self, burn_in_obs, core_state):
         if self.parameters.burn_in_length:
-            return self.network.unroll(
+            return self.network.rnn.unroll(
                 burn_in_obs, core_state, self.parameters.burn_in_length
             )
         return (burn_in_obs, core_state)
