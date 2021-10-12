@@ -3,10 +3,11 @@
 from agentos.version import VERSION as __version__  # noqa: F401
 from agentos.core import (
     Agent,
-    Policy,
+    Dataset,
     Environment,
     EnvironmentSpec,
-    Dataset,
+    Policy,
+    Runnable,
     Trainer,
 )
 from agentos.tracking import Tracker
@@ -14,10 +15,11 @@ from agentos.runtime import run_component
 
 __all__ = [
     "Agent",
-    "Policy",
+    "Dataset",
     "Environment",
     "EnvironmentSpec",
-    "Dataset",
+    "Policy",
+    "Runnable",
     "Trainer",
     "Tracker",
     "run_component",

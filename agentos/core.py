@@ -2,6 +2,8 @@
 from collections import namedtuple
 import statistics
 import agentos.tracking
+import time
+from threading import Thread
 
 
 class MemberInitializer:
@@ -31,12 +33,10 @@ class Agent(MemberInitializer):
                             learn.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, backing_dir=".aos", **kwargs):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-
-    def init(self, backing_dir=".aos"):
         self.tracker = agentos.tracking.Tracker(backing_dir)
 
     def evaluate(
@@ -276,3 +276,40 @@ class Environment(MemberInitializer):
 EnvironmentSpec = namedtuple(
     "EnvironmentSpec", ["observations", "actions", "rewards", "discounts"]
 )
+
+
+class Runnable:
+    def run(self, hz=40, max_iters=None, as_thread=False):
+        """Run an agent, optionally in a new thread.
+        If as_thread is True, agent is run in a thread, and the
+        thread object is returned to the caller. The caller may
+        need to call join on that that thread depending on their
+        use case for this agent_run.
+        :param agent: The agent object you want to run
+        :param hz: Rate at which to call agent's `advance` function. If None,
+            call `advance` repeatedly in a tight loop (i.e., as fast as
+            possible).
+        :param max_iters: Maximum times to call agent's `advance` function,
+            defaults to None.
+        :param as_thread: Set to True to run this agent in a new thread,
+            defaults to False.
+        :returns: Either a running thread (if as_thread=True) or None.
+        """
+
+        def runner():
+            done = False
+            iter_count = 0
+            while not done:
+                if max_iters and iter_count >= max_iters:
+                    break
+                done = self.advance()
+                if hz:
+                    time.sleep(1 / hz)
+                iter_count += 1
+
+        if as_thread:
+            t = Thread(target=runner)
+            t.start()
+            return t
+        else:
+            runner()

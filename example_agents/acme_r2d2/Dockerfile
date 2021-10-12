@@ -17,7 +17,7 @@ RUN ln -s $CONTAINER_HOME/diff-so-fancy/diff-so-fancy /usr/local/bin/diff-so-fan
 # Manually install reqs
 COPY . agentos
 WORKDIR ./agentos/example_agents/acme_r2d2/
-RUN pip install -r requirements.txt
+#RUN pip install -r requirements.txt
 
 # Commenting out these, which were copied from
 # https://github.com/nickjalbert/acme-test

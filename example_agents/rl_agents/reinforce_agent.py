@@ -35,7 +35,7 @@ class TwoLayerTFPolicy(agentos.Policy):
         return int(round(self.nn(np.array(obs)[np.newaxis]).numpy()[0][0]))
 
 
-class ReinforceAgent(agentos.Agent):
+class ReinforceAgent(agentos.Runnable):
     def __init__(
         self,
         environment,
@@ -44,7 +44,9 @@ class ReinforceAgent(agentos.Agent):
         max_steps_per_rollout=200,
         discount_rate=0.9,
     ):
-        super().__init__(environment=environment, policy=policy)
+        super().__init__()
+        self.environment = environment
+        self.policy = policy
         self.rollouts_per_iter = rollouts_per_iter
         self.max_steps_per_rollout = max_steps_per_rollout
         self.discount_rate = discount_rate
