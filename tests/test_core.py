@@ -103,29 +103,30 @@ def test_chatbot(capsys):
     # TODO(andyk): also test CommandLineListener
 
 
-def run_agent_in_dir(
-    agent_dir,
+def run_component_in_dir(
+    dir_name,
     virtualenv,
-    main_file="main.py",
-    env_arg="",
+    component_name,
+    entry_points=["evaluate"],
     req_file="requirements.txt",
-    main_file_args=[],
 ):
-    print(f"Installing {req_file} with cwd {agent_dir}")
-    virtualenv.run(
-        ["pip", "install", "-r", req_file], cwd=Path(agent_dir), capture=True
-    )
-    print(f"Using CLI to run agent in {main_file}")
-    args = ["agentos", "run", "--max-iters", "2", main_file]
-    if env_arg:
-        args.append(env_arg)
-    virtualenv.run(args, cwd=Path(agent_dir), capture=True)
-    print(f"Running {main_file} with cwd {agent_dir}")
-    virtualenv.run(
-        ["python", main_file] + main_file_args,
-        cwd=Path(agent_dir),
-        capture=True,
-    )
+    if req_file:
+        print(f"Installing {req_file} with cwd {dir_name}")
+        virtualenv.run(
+            ["pip", "install", "-r", req_file], cwd=Path(dir_name), capture=True
+        )
+    for entry_point in entry_points:
+        print(f"Using CLI to run component {component_name}.{entry_point}.")
+        args = ["agentos", "run", component_name, "--entry-point", entry_point]
+        virtualenv.run(args, cwd=Path(dir_name), capture=True)
+
+
+def test_sb3_agent(virtualenv):
+    agent_dir = Path(__file__).parent.parent / "example_agents" / "sb3_agent"
+    run_component_in_dir(agent_dir,
+                         virtualenv,
+                         "agent",
+                         entry_points=["evaluate", "learn"])
 
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")

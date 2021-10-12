@@ -33,12 +33,10 @@ class Agent(MemberInitializer):
                             learn.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, backing_dir=".aos", **kwargs):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-
-    def init(self, backing_dir=".aos"):
         self.tracker = agentos.tracking.Tracker(backing_dir)
 
     def evaluate(

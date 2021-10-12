@@ -74,7 +74,7 @@ def load_component_from_file(spec_file, component_name, params):
     spec_path = Path(spec_file)
     config = configparser.ConfigParser()
     config.read(spec_path)
-    visited_components = set()
+    visited_components = {}
     component = _load_component(
         config, component_name, params, visited_components
     )
@@ -88,13 +88,13 @@ def _load_component(config, component_name, params, visited_components):
     :param component_name: name of the component class instance to return.
         The spec_file provided must contain a component spec with this name.
     :returns: Instantiated component class.
-    :param visited_components: Dict of all classes instantiated in this
-        recursive algorithm so far.
+    :param visited_components: Dict of all classes visited or instantiated
+        in this recursive algorithm so far.
     """
     assert (
         component_name not in visited_components
     ), "AgentOS encountered a cycle in the component dependencies."
-    visited_components.add(component_name)
+    visited_components[component_name] = None
 
     # if this component has dependencies, load them first (recursively)
     # Circular dependencies are not allowed.
@@ -104,11 +104,14 @@ def _load_component(config, component_name, params, visited_components):
     if "dependencies" in config[component_name].keys():
         dep_names = json.loads(config[component_name]["dependencies"])
         for dep_name in dep_names:
-            if dep_name not in visited_components:
+            if dep_name in visited_components:
+                assert visited_components[dep_name]
+                dep_obj = visited_components[dep_name]
+            else:
                 dep_obj = _load_component(
                     config, dep_name, params, visited_components
                 )
-                dependencies[dep_name] = dep_obj
+            dependencies[dep_name] = dep_obj
     component_class = _get_class_from_config_section(config[component_name])
     """
     For each component being loaded, AgentOS sets up an attribute for each
@@ -128,6 +131,7 @@ def _load_component(config, component_name, params, visited_components):
         component_name, component_instance, "__init__", params
     )
     print(f"Loaded component {component_name}.")
+    visited_components[component_name] = component_instance
     return component_instance
 
 
