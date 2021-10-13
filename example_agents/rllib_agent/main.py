@@ -5,7 +5,7 @@ from ray.rllib.agents.trainer import COMMON_CONFIG
 
 
 class RLlibAgent:
-    def init(self, algo_name="PPO", trainer_config=COMMON_CONFIG):
+    def __init__(self, algo_name="PPO", trainer_config=COMMON_CONFIG):
         """Init a Ray agent with the given env_class and an algorithm name.
 
         :param algo_name: A string. For valid values of algo_name, see
