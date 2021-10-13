@@ -68,17 +68,6 @@ def test_random_agent():
     run_component(agent)
 
 
-@pytest.mark.skip(
-    reason="Version of Ray we currently use (ray[rllib]==0.8.5) requires "
-    "manual build for windows."
-)
-def test_rllib_agent():
-    import mlflow
-
-    mlflow.run("example_agents/rllib_agent")
-
-
-@pytest.mark.skip(reason="TODO: port example agents to new abstractions")
 def test_chatbot(capsys):
     import sys
 
@@ -105,31 +94,46 @@ def test_chatbot(capsys):
 
 def run_component_in_dir(
     dir_name,
-    virtualenv,
+    venv,
     component_name,
     entry_points=["evaluate"],
+    entry_point_params=[""],
     req_file="requirements.txt",
 ):
     if req_file:
         print(f"Installing {req_file} with cwd {dir_name}")
-        virtualenv.run(
-            ["pip", "install", "-r", req_file],
-            cd=Path(dir_name),
-            capture=True,
+        req_cmd = [venv.python, '-m', 'pip', 'install', '-r', req_file]
+        subprocess.check_call(req_cmd, cwd=dir_name)
+    for i, entry_point in enumerate(entry_points):
+        params = ""
+        if entry_point_params:
+            assert len(entry_point_params) == len(entry_points), (
+                "If not None, entry_point_params must has same len() "
+                "as :entry_points:"""
+            )
+            params = entry_point_params[i]
+
+        run_cmd = (
+            f". {Path(venv.bin)}/activate; agentos "
+            f"run {component_name} --entry-point {entry_point} {params}"
         )
-    for entry_point in entry_points:
-        print(f"Using CLI to run component {component_name}.{entry_point}.")
-        args = ["agentos", "run", component_name, "--entry-point", entry_point]
-        virtualenv.run(args, cwd=Path(dir_name), capture=True)
+        print(f"Using CLI to run the following command: {run_cmd} with "
+              f"cwd={dir_name}.")
+        subprocess.check_call(run_cmd, shell=True, cwd=dir_name)
 
 
-@pytest.mark.skip(reason="TODO: fix installing sb3 requirements.")
-def test_sb3_agent(virtualenv):
+def test_sb3_agent(venv):
     agent_dir = Path(__file__).parent.parent / "example_agents" / "sb3_agent"
     run_component_in_dir(
-        agent_dir, virtualenv, "agent", entry_points=["evaluate", "learn"]
+        agent_dir, venv, "agent", entry_points=["evaluate", "learn"]
     )
 
+def test_rllib_agent(venv):
+    agent_dir = Path(__file__).parent.parent / "example_agents" / "rllib_agent"
+    run_component_in_dir(
+        agent_dir, venv, "agent", entry_points=["evaluate", "learn"],
+        entry_point_params=["", "-P num_iterations=5"]
+    )
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_rl_agents(virtualenv):

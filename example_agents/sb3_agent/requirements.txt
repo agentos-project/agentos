@@ -1,1 +1,2 @@
+-e ../../
 stable_baselines3==1.2.0
