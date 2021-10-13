@@ -13,11 +13,7 @@ class RLlibAgent:
         https://github.com/ray-project/ray/blob/master/rllib/agents/registry.py
         """
         if not trainer_config:
-            trainer_config = merge_dicts(
-                COMMON_CONFIG,
-                {
-                    "framework": "torch"
-                })
+            trainer_config = merge_dicts(COMMON_CONFIG, {"framework": "torch"})
         if not ray.is_initialized():
             ray.init()
         env_class = self.env.unwrapped.__class__
@@ -25,6 +21,7 @@ class RLlibAgent:
 
         def wrapper(conf):
             return env_class()  # Ray requires env.__init__() take config.
+
         rllib_reg_env(env_class.__name__, wrapper)
         self.ray_trainer = trainer_class(
             config=trainer_config, env=env_class.__name__
