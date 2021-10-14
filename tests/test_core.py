@@ -97,7 +97,7 @@ def run_component_in_dir(
     venv,
     component_name,
     entry_points=["evaluate"],
-    entry_point_params=[""],
+    entry_point_params=None,
     req_file="requirements.txt",
 ):
     if req_file:
