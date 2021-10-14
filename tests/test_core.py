@@ -4,6 +4,7 @@ See repo README for instructions to run tests.
 """
 import pytest
 import subprocess
+import os
 from pathlib import Path
 from agentos import run_component
 
@@ -114,10 +115,16 @@ def run_component_in_dir(
             )
             params = entry_point_params[i]
 
-        run_cmd = (
-            f". {Path(venv.bin)}/activate; agentos "
-            f"run {component_name} --entry-point {entry_point} {params}"
-        )
+        if os.name == "nt":
+            run_cmd = (
+                f"{Path(venv.bin)}/activate.bat & agentos "
+                f"run {component_name} --entry-point {entry_point} {params}"
+            )
+        else:
+            run_cmd = (
+                f". {Path(venv.bin)}/activate; agentos "
+                f"run {component_name} --entry-point {entry_point} {params}"
+            )
         print(
             f"Using CLI to run the following command: {run_cmd} with "
             f"cwd={dir_name}."
