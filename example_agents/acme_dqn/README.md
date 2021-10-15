@@ -10,7 +10,7 @@ agentos run agent --entry-point learn --param-file parameters.yaml
 
 Optional command-line arguments:
 
-    * `-Pnum_episodes=X` - Run the learning algorithm for X episodes.
+* `-Pnum_episodes=X` - Run the learning algorithm for X episodes.
 
 
 ### Agent Evaluation
@@ -23,6 +23,6 @@ agentos run agent --entry-point evaluate --param-file parameters.yaml
 
 Optional command-line arguments:
 
-    * `-Pnum_episodes=X` - Evaluate the agent over X episodes.
+* `-Pnum_episodes=X` - Evaluate the agent over X episodes.
 
 
