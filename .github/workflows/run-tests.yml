@@ -37,5 +37,4 @@ jobs:
       - name: Test with pytest on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          $ENV:MLFLOW_CONDA_HOME=$ENV:CONDA
-          pytest --durations=0  --ignore=tests/test_acme_demo.py
+          python -m pytest --durations=0  --ignore=tests/test_acme_demo.py
