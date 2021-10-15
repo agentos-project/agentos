@@ -1,4 +1,3 @@
-import agentos
 import acme
 from acme.agents.tf import dqn
 from acme.utils.loggers import Logger
@@ -39,7 +38,7 @@ class DQNLogger(Logger):
         pass
 
 
-class AcmeDQNAgent(agentos.Agent):
+class AcmeDQNAgent:
     def __init__(self, **kwargs):
         self.discount = (np.float32(kwargs["discount"]),)
         self.agent = dqn.DQN(
@@ -52,6 +51,7 @@ class AcmeDQNAgent(agentos.Agent):
         )
 
     def evaluate(self, num_episodes):
+        num_episodes = int(num_episodes)
         print(f"Evaluating agent for {num_episodes} episodes...")
         logger = DQNLogger()
         loop = acme.EnvironmentLoop(
@@ -64,6 +64,7 @@ class AcmeDQNAgent(agentos.Agent):
         logger.print_results()
 
     def learn(self, num_episodes):
+        num_episodes = int(num_episodes)
         print(f"Training agent for {num_episodes} episodes...")
         logger = DQNLogger()
         loop = acme.EnvironmentLoop(
