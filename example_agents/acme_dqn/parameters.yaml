@@ -6,7 +6,7 @@ agent:
     evaluate:
         num_episodes: 100
     learn:
-        num_episodes: 100
+        num_episodes: 200
 network:
     __init__:
         backing_dir: "./.aos/data"
