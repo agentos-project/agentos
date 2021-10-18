@@ -7,6 +7,8 @@ import numpy as np
 
 
 class CartPole(CartPoleEnv, agentos.Environment):
+    MAX_STEPS_PER_EPISODE = 500
+
     def __init__(self, **kwargs):
         agentos.Environment.__init__(self, **kwargs)
         CartPoleEnv.__init__(self)
@@ -15,6 +17,13 @@ class CartPole(CartPoleEnv, agentos.Environment):
         assert action in [0, 1]
         result = CartPoleEnv.step(self, action)
         self.last_obs, self.last_reward, self.done, self.info = result
+        self.episode_steps += 1
+        if self.episode_steps > self.MAX_STEPS_PER_EPISODE:
+            print(
+                f"CartPole: Reached {self.MAX_STEPS_PER_EPISODE} steps "
+                "per episode limit!  Truncating episode."
+            )
+            self.done = True
         # FIXME - this cast makes it match spec
         return (
             np.float32(self.last_obs),
@@ -33,6 +42,7 @@ class CartPole(CartPoleEnv, agentos.Environment):
         self.last_done = False
         self.last_info = None
         self.last_obs = CartPoleEnv.reset(self)
+        self.episode_steps = 0
         # FIXME - this cast makes it match spec
         return np.float32(self.last_obs)
 

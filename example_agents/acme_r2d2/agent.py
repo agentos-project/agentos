@@ -1,7 +1,7 @@
 import acme
 
 
-class R2D2Agent:
+class AcmeR2D2Agent:
     def __init__(self, *args, **kwargs):
         pass
 
