@@ -3,7 +3,6 @@ import yaml
 import tempfile
 import shutil
 import statistics
-import tensorflow as tf
 from pathlib import Path
 
 
@@ -122,34 +121,6 @@ class BaseTracker:
             f"{min(episode_lengths)}"
         )
         print()
-
-    def save_tensorflow(self, name, network):
-        assert mlflow.active_run() is not None
-        dir_path = Path(tempfile.mkdtemp())
-        checkpoint = tf.train.Checkpoint(module=network)
-        checkpoint.save(dir_path / name / name)
-        mlflow.log_artifact(dir_path / name)
-        shutil.rmtree(dir_path)
-
-    def restore_tensorflow(self, name, network):
-        runs = self._get_all_runs()
-        for run in runs:
-            if run is None:
-                continue
-            artifacts_uri = run.info.artifact_uri
-            if "file://" != artifacts_uri[:7]:
-                raise Exception(f"Non-local artifacts path: {artifacts_uri}")
-            artifacts_dir = Path(artifacts_uri[7:]).absolute()
-            save_path = artifacts_dir / name
-            if save_path.is_dir():
-
-                checkpoint = tf.train.Checkpoint(module=network)
-                latest = tf.train.latest_checkpoint(save_path)
-                if latest is not None:
-                    checkpoint.restore(latest)
-                    print(f"AcmeTracker: Restored Tensorflow model {name}.")
-                    return
-        print(f"AcmeTracker: No saved Tensorflow model {name} found.")
 
     def reset(self):
         tracking_uri = mlflow.get_tracking_uri()
