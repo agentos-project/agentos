@@ -9,7 +9,7 @@ class R2D2Policy:
     def __init__(self, **kwargs):
         self.epsilon = kwargs["epsilon"]
         self.store_lstm_state = kwargs["store_lstm_state"]
-        self.network.restore_tensorflow()
+        self.network.restore()
         tf2_utils.create_variables(
             self.network.rnn, [self.environment.get_spec().observations]
         )

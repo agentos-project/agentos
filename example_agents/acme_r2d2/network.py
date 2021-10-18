@@ -1,27 +1,16 @@
 from acme.tf import networks
 import sonnet as snt
-from pathlib import Path
-import tensorflow as tf
 
 
 class R2D2Network:
     def __init__(self, **kwargs):
-        self.backing_dir = kwargs["backing_dir"]
         self.rnn = BasicRNN(self.environment)
 
-    # https://github.com/deepmind/sonnet#tensorflow-checkpointing
-    def save_tensorflow(self):
-        checkpoint = tf.train.Checkpoint(module=self.rnn)
-        checkpoint.save(Path(self.backing_dir) / "network")
+    def restore(self):
+        self.tracker.restore_tensorflow("rnn", self.rnn)
 
-    def restore_tensorflow(self):
-        checkpoint = tf.train.Checkpoint(module=self.rnn)
-        latest = tf.train.latest_checkpoint(self.backing_dir)
-        if latest is not None:
-            print("AgentOS: Restoring policy network from checkpoint")
-            checkpoint.restore(latest)
-        else:
-            print("AgentOS: No checkpoint found for policy network")
+    def save(self):
+        self.tracker.save_tensorflow("rnn", self.rnn)
 
 
 # BasicRNN, taken from r2d2 test
