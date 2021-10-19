@@ -29,8 +29,16 @@ jobs:
       - name: Install agentos
         run: |
           pip install -e .
-      - name: Test with pytest on linux or macos
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - name: Test with pytest on linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pushd example_agents/acme_r2d2
+          pip install -r requirements.txt
+          popd
+          export MLFLOW_CONDA_HOME=$CONDA
+          python -m pytest --durations=0
+      - name: Test with pytest on macos
+        if: matrix.os == 'macos-latest'
         run: |
           export MLFLOW_CONDA_HOME=$CONDA
           pytest --durations=0  --ignore=tests/test_acme_demo.py
