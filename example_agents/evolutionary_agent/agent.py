@@ -71,7 +71,7 @@ class EvolutionaryAgent(agentos.Agent):
         reproduction_rate = int(1 / self.survival_rate)
         evolved_population = []
         for p in top_performers:
-            for r in range(reproduction_rate):
+            for _ in range(reproduction_rate):
                 new_p = copy.deepcopy(p)
                 for i in range(len(p.tf_model.weights)):
                     noise = np.random.normal(

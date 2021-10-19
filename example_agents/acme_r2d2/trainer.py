@@ -50,7 +50,7 @@ class R2D2Trainer(agentos.Trainer):
     @tf.function
     def _improve(self, dataset, policy):
         # Draw a batch of data from replay.
-        sample = dataset.next()
+        sample = dataset.next()  # noqa: B305
 
         data = tf2_utils.batch_to_sequence(sample.data)
         observations, actions, rewards, discounts, extra = (

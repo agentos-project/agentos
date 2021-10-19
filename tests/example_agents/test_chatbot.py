@@ -1,5 +1,3 @@
-import pytest
-
 def test_chatbot(capsys):
     import sys
 
@@ -22,5 +20,3 @@ def test_chatbot(capsys):
     response_txt, _, _, _ = client_env.step("")
     assert response_txt == "one", "chatbot should repeat strings from memory"
     # TODO(andyk): also test CommandLineListener
-
-

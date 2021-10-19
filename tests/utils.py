@@ -4,13 +4,14 @@ from pathlib import Path
 
 
 def run_component_in_dir(
-        dir_name,
-        venv,
-        component_name,
-        entry_points=["evaluate"],
-        entry_point_params=None,
-        req_file="requirements.txt",
+    dir_name,
+    venv,
+    component_name,
+    entry_points=None,
+    entry_point_params=None,
+    req_file="requirements.txt",
 ):
+    entry_points = entry_points or ["evaluate"]
     if req_file:
         print(f"Installing {req_file} with cwd {dir_name}")
         req_cmd = [venv.python, "-m", "pip", "install", "-r", req_file]
@@ -40,5 +41,3 @@ def run_component_in_dir(
             f"cwd={dir_name}."
         )
         subprocess.check_call(run_cmd, shell=True, cwd=dir_name)
-
-

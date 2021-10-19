@@ -21,10 +21,10 @@ def test_rl_agents(virtualenv):
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_predictive_coding(virtualenv):
     agent_dir = (
-            Path(__file__).parent
-            / "example_agents"
-            / "predictive_coding"
-            / "free_energy_tutorial"
+        Path(__file__).parent
+        / "example_agents"
+        / "predictive_coding"
+        / "free_energy_tutorial"
     )
     run_component_in_dir(agent_dir, virtualenv, "agent")
 

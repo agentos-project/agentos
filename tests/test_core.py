@@ -2,7 +2,6 @@
 
 See repo README for instructions to run tests.
 """
-import pytest
 import subprocess
 from pathlib import Path
 

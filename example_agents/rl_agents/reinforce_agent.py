@@ -81,7 +81,7 @@ class ReinforceAgent(agentos.Runnable):
             )
             return action
 
-        for episode_num in range(self.max_steps_per_rollout):
+        for _ in range(self.max_steps_per_rollout):
             grads.append([])
             result = agentos.rollout(
                 self.policy,
