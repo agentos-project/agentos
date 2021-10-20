@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -31,4 +31,4 @@ jobs:
           pip install -e .
       - name: Run pytest
         run: |
-          python -m pytest -k test_sb3 --durations=0 --ignore=tests/test_acme_from_registry.py --ignore=tests/example_agents/test_acme_r2d2.py
+          python -m pytest --durations=0 --ignore=tests/test_acme_from_registry.py --ignore=tests/example_agents/test_acme_r2d2.py
