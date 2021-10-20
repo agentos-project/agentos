@@ -2,4 +2,4 @@
 -e ../../
 requests==2.21.0  # Needed till https://github.com/ray-project/ray/issues/8373 fixed.
 torch==1.9.1
-ray[rllib]==0.8.5
+ray[rllib]==1.7.0

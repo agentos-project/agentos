@@ -60,7 +60,7 @@ class Agent(MemberInitializer):
         """
         print("running Acme R2D2 agent")
         all_steps = []
-        for i in range(int(num_episodes)):
+        for _ in range(int(num_episodes)):
             steps = self.rollout(
                 should_learn=should_learn, max_transitions=max_transitions
             )

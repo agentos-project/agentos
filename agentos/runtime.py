@@ -18,7 +18,7 @@ def run_component(
     component_spec_file,
     component_name,
     entry_point,
-    params={},
+    params=None,
     param_file=None,
 ):
     """
@@ -29,6 +29,7 @@ def run_component(
     :param params: dict of params for the entry point being run.
     :param param_file: YAML to load params from for entry point being run.
     """
+    params = params or {}
     entry_point_params = params
     if params:
         # NOTES: we currently assume the params arg contains params for the

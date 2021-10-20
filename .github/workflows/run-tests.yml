@@ -15,6 +15,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.6, 3.7, 3.8]
+        exclude:
+          - os: windows-latest
+            python-version: 3.7
+          - os: windows-latest
+            python-version: 3.8
 
     steps:
       - uses: actions/checkout@v2
@@ -29,13 +34,7 @@ jobs:
       - name: Install agentos
         run: |
           pip install -e .
-      - name: Test with pytest on linux or macos
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - name: Run pytest
         run: |
-          export MLFLOW_CONDA_HOME=$CONDA
-          pytest --durations=0  --ignore=tests/test_acme_demo.py
-      - name: Test with pytest on Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          $ENV:MLFLOW_CONDA_HOME=$ENV:CONDA
-          pytest --durations=0  --ignore=tests/test_acme_demo.py
+          echo running pytest now
+          python -m pytest -s --durations=0 --ignore=tests/test_acme_from_registry.py --ignore=tests/example_agents/test_acme_r2d2.py
