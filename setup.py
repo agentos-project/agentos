@@ -24,6 +24,7 @@ setup(
         "numpy>=1.18.5",
         "dm-env>=1.5",
         "pyyaml>=5.4.1",
+        "mlflow>=1.20.2",
     ],
     entry_points="""
         [console_scripts]
