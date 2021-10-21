@@ -28,8 +28,6 @@ class AcmeTracker(BaseTracker):
     def restore_tensorflow(self, name, network):
         runs = self._get_all_runs()
         for run in runs:
-            if run is None:
-                continue
             artifacts_uri = run.info.artifact_uri
             if "file://" != artifacts_uri[:7]:
                 raise Exception(f"Non-local artifacts path: {artifacts_uri}")

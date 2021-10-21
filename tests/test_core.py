@@ -30,7 +30,13 @@ def test_cli(tmpdir):
         check=True,
     )
     subprocess.run(
-        ["agentos", "run", "agent", "--entry-point=reset"],
+        [
+            "agentos",
+            "run",
+            "agent",
+            "--entry-point=reset",
+            "-Pskip_confirmation=True",
+        ],
         cwd=tmpdir,
         check=True,
     )

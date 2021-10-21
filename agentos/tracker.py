@@ -73,8 +73,15 @@ class BaseTracker:
     def log_learn_run_metrics(self):
         assert self.episode_data, "No episode data!"
         assert mlflow.active_run() is not None
-        mlflow.log_param(self.EPISODE_KEY, self.episode_data[-1]["episodes"])
-        mlflow.log_param(self.STEP_KEY, self.episode_data[-1]["steps"])
+        data = self.episode_data[-1]
+        self.log_episode_count(data["episodes"])
+        self.log_step_count(data["steps"])
+
+    def log_episode_count(self, count):
+        mlflow.log_metric(self.EPISODE_KEY, count)
+
+    def log_step_count(self, count):
+        mlflow.log_metric(self.STEP_KEY, count)
 
     def get_training_info(self):
         runs = self._get_all_runs()
@@ -82,8 +89,10 @@ class BaseTracker:
         total_steps = 0
         for run in runs:
             if run.data.tags.get(self.RUN_TYPE_TAG) == self.LEARN_KEY:
-                total_episodes += int(run.data.params.get(self.EPISODE_KEY, 0))
-                total_steps += int(run.data.params.get(self.STEP_KEY, 0))
+                total_episodes += int(
+                    run.data.metrics.get(self.EPISODE_KEY, 0)
+                )
+                total_steps += int(run.data.metrics.get(self.STEP_KEY, 0))
         return total_episodes, total_steps
 
     def _get_all_runs(self):
@@ -95,7 +104,8 @@ class BaseTracker:
         runs = [
             mlflow.get_run(run_id=run_info.run_id) for run_info in run_infos
         ]
-        return [mlflow.active_run()] + runs
+        runs = [mlflow.active_run()] + runs
+        return [run for run in runs if run is not None]
 
     def print_results(self):
         if not self.episode_data:
@@ -122,16 +132,14 @@ class BaseTracker:
         )
         print()
 
-    def reset(self):
+    def reset(self, skip_confirmation=False):
         tracking_uri = mlflow.get_tracking_uri()
         mlflow.end_run()
         if "file://" != tracking_uri[:7]:
             raise Exception(f"Non-local tracking path: {tracking_uri}")
         tracking_dir = Path(tracking_uri[7:]).absolute()
         assert tracking_dir.is_dir()
-        if input(f"Reset agent by removing {tracking_dir} [y/n]?  ") in [
-            "y",
-            "Y",
-        ]:
+        query = f"Reset agent by removing {tracking_dir} [y/n]?  "
+        if skip_confirmation or input(query) in ["y", "Y"]:
             shutil.rmtree(tracking_dir)
             print("Agent reset")
