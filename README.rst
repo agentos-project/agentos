@@ -124,6 +124,12 @@ Also, we use Github Actions to run ``tests/test_core.py`` with every commit
 and pull request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
+If you want, you can speed up local testing by skipping the creation of a
+clean virtualenv for each example agent by either defining environment
+variable or creating a `.env` file with
+`AGENTOS_SKIP_REQUIREMENT_INSTALL=True`.  This requires you to have all agent
+requirements already installed in your environment.
+
 
 Building Docs
 =============

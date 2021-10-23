@@ -1,10 +1,12 @@
 """Test suite for Acme R2D2 Agent demo."""
 import subprocess
+import pytest
 
 
 # TODO - slow test; is there a way to speed this up?
 # TODO - this needs an environment where dependencies are already installed
 # TODO - is there a way to make this not depend on network?
+@pytest.mark.skip(reason="TODO: port registry")
 def test_acme_r2d2_agent(tmpdir):
     try:
         import acme  # noqa: F401

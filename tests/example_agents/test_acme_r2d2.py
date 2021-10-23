@@ -12,7 +12,7 @@ def test_acme_r2d2_agent(venv):
         "agent",
         entry_points=["evaluate", "learn"],
         entry_point_params=[
-            "--param-file parameters.yaml",
-            "--param-file parameters.yaml",
+            "--param-file parameters.yaml -Pnum_episodes=1",
+            "--param-file parameters.yaml -Pnum_episodes=1",
         ],
     )
