@@ -417,6 +417,7 @@ _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
+_TRACKER_DEF_FILE = Path("./templates/tracker.py")
 _AGENT_INI_FILE = Path("./templates/agentos.ini")
 
 
@@ -426,5 +427,6 @@ _INIT_FILES = [
     _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
     _TRAINER_DEF_FILE,
+    _TRACKER_DEF_FILE,
     _AGENT_INI_FILE,
 ]

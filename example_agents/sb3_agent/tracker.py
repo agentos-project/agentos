@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
-from agentos.tracker import BaseTracker
+from agentos.tracker import AgentTracker
 
 
 class EvaluateCallback:
@@ -75,7 +75,7 @@ class LearnCallback(BaseCallback):
         self.curr_reward = 0
 
 
-class SB3Tracker(BaseTracker):
+class SB3Tracker(AgentTracker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.evaluate_callback = EvaluateCallback(self)

@@ -14,6 +14,7 @@ def test_cli(tmpdir):
         "policy.py",
         "dataset.py",
         "trainer.py",
+        "tracker.py",
         "agentos.ini",
     ]
     for expected_file_name in expected_file_names:
@@ -35,7 +36,6 @@ def test_cli(tmpdir):
             "run",
             "agent",
             "--entry-point=reset",
-            "-Pskip_confirmation=True",
         ],
         cwd=tmpdir,
         check=True,

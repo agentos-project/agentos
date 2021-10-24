@@ -3,7 +3,6 @@ from collections import namedtuple
 import statistics
 import time
 from threading import Thread
-from agentos import tracker
 
 
 class MemberInitializer:
@@ -37,7 +36,6 @@ class Agent(MemberInitializer):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-        self.tracker = tracker.BaseTracker()
 
     def evaluate(
         self,
@@ -111,8 +109,8 @@ class Agent(MemberInitializer):
             )
             total_episodes += run_size
 
-    def reset(self, skip_confirmation=False):
-        self.tracker.reset(skip_confirmation=skip_confirmation)
+    def reset(self):
+        self.tracker.reset()
 
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""

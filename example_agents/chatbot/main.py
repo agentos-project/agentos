@@ -8,14 +8,10 @@ from numpy import random as np_random
 class ChatBot(agentos.Runnable):
     """A simple chatbot that speaks by parroting back things it has heard."""
 
-    def __init__(self, env_class=None):
+    def __init__(self):
         super().__init__()
         self.memory = deque(maxlen=2048)
         self.reply_flag = False
-        if env_class:
-            self.env = env_class()
-
-    def init(self):
         self.env = self.env_class()
 
     def advance(self):

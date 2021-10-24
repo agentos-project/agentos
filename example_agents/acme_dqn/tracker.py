@@ -3,12 +3,12 @@ import tempfile
 import shutil
 import tensorflow as tf
 from pathlib import Path
-from agentos.tracker import BaseTracker
+from agentos.tracker import AgentTracker
 
 
 # Adheres to Acme Logger interface
 # https://github.com/deepmind/acme/blob/master/acme/utils/loggers/base.py
-class AcmeTracker(BaseTracker):
+class AcmeTracker(AgentTracker):
     # Acme logger API
     def write(self, data):
         self.episode_data.append(data)

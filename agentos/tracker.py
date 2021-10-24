@@ -29,11 +29,12 @@ class LearnRunManager:
         self.tracker.print_results()
 
 
-class BaseTracker:
+class AgentTracker:
     MLFLOW_EXPERIMENT_ID = "0"
     STEP_KEY = "steps"
     EPISODE_KEY = "episodes"
     LEARN_KEY = "learn"
+    RESET_KEY = "reset"
     EVALUATE_KEY = "evaluate"
     RUN_TYPE_TAG = "run_type"
 
@@ -51,6 +52,10 @@ class BaseTracker:
         self._start_generic_run()
         mlflow.set_tag(self.RUN_TYPE_TAG, self.LEARN_KEY)
 
+    def start_reset_run(self):
+        self._start_generic_run()
+        mlflow.set_tag(self.RUN_TYPE_TAG, self.RESET_KEY)
+
     def _start_generic_run(self):
         assert mlflow.active_run() is not None
         mlflow.log_param("component_name", self.__agentos__["component_name"])
@@ -58,11 +63,11 @@ class BaseTracker:
         mlflow.log_artifact(
             Path(self.__agentos__["component_spec_file"]).absolute()
         )
-        self.log_data_artifact(
-            "parameter_file", self.__agentos__["fully_qualified_params"]
+        self.log_data_as_artifact(
+            "parameter_file.yaml", self.__agentos__["fully_qualified_params"]
         )
 
-    def log_data_artifact(self, name, data):
+    def log_data_as_artifact(self, name, data):
         dir_path = Path(tempfile.mkdtemp())
         artifact_path = dir_path / name
         with open(artifact_path, "w") as file_out:
@@ -95,7 +100,7 @@ class BaseTracker:
                 total_steps += int(run.data.metrics.get(self.STEP_KEY, 0))
         return total_episodes, total_steps
 
-    def _get_all_runs(self):
+    def _get_all_runs(self, respect_reset=True):
         assert mlflow.active_run() is not None
         run_infos = mlflow.list_run_infos(
             experiment_id=self.MLFLOW_EXPERIMENT_ID,
@@ -105,7 +110,15 @@ class BaseTracker:
             mlflow.get_run(run_id=run_info.run_id) for run_info in run_infos
         ]
         runs = [mlflow.active_run()] + runs
-        return [run for run in runs if run is not None]
+        runs = [run for run in runs if run is not None]
+        if respect_reset:
+            latest_runs = []
+            for run in runs:
+                if run.data.tags.get(self.RUN_TYPE_TAG) == self.RESET_KEY:
+                    break
+                latest_runs.append(run)
+            return latest_runs
+        return runs
 
     def print_results(self):
         if not self.episode_data:
@@ -132,16 +145,5 @@ class BaseTracker:
         )
         print()
 
-    def reset(self, skip_confirmation=False):
-        tracking_uri = mlflow.get_tracking_uri()
-        mlflow.end_run()
-        if "file://" != tracking_uri[:7]:
-            raise Exception(f"Non-local tracking path: {tracking_uri}")
-        tracking_dir = Path(tracking_uri[7:]).absolute()
-        if tracking_dir.is_dir():
-            query = f"Reset agent by removing {tracking_dir} [y/n]?  "
-            if skip_confirmation or input(query) in ["y", "Y"]:
-                shutil.rmtree(tracking_dir)
-                print("Agent reset")
-        else:
-            print(f"Could not find tracking path to reset: {tracking_dir}")
+    def reset(self):
+        self.start_reset_run()
