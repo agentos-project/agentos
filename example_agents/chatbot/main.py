@@ -1,7 +1,7 @@
 import agentos
 from collections import deque
-from env import MultiChatEnv
-from env_utils import CommandLineClient
+from example_agents.chatbot.env import MultiChatEnv
+from example_agents.chatbot.env_utils import CommandLineClient
 from numpy import random as np_random
 
 

@@ -1,10 +1,8 @@
+from example_agents.chatbot.main import ChatBot
+from example_agents.chatbot.env import MultiChatEnv
+
+
 def test_chatbot(capsys):
-    import sys
-
-    sys.path.append("example_agents/chatbot")
-    from example_agents.chatbot.main import ChatBot
-    from example_agents.chatbot.env import MultiChatEnv
-
     env_generator = MultiChatEnv()
     client_env = env_generator()
     client_env.reset()
