@@ -138,8 +138,10 @@ class BaseTracker:
         if "file://" != tracking_uri[:7]:
             raise Exception(f"Non-local tracking path: {tracking_uri}")
         tracking_dir = Path(tracking_uri[7:]).absolute()
-        assert tracking_dir.is_dir()
-        query = f"Reset agent by removing {tracking_dir} [y/n]?  "
-        if skip_confirmation or input(query) in ["y", "Y"]:
-            shutil.rmtree(tracking_dir)
-            print("Agent reset")
+        if tracking_dir.is_dir():
+            query = f"Reset agent by removing {tracking_dir} [y/n]?  "
+            if skip_confirmation or input(query) in ["y", "Y"]:
+                shutil.rmtree(tracking_dir)
+                print("Agent reset")
+        else:
+            print(f"Could not find tracking path to reset: {tracking_dir}")
