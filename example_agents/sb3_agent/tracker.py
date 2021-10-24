@@ -3,12 +3,14 @@ import tempfile
 import shutil
 from pathlib import Path
 from stable_baselines3 import PPO
+from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.callbacks import BaseCallback
 from agentos.tracker import AgentTracker
+from typing import Optional
 
 
 class EvaluateCallback:
-    def __init__(self, tracker):
+    def __init__(self, tracker: AgentTracker):
         self.tracker = tracker
 
     def __call__(self, *args, **kwargs):
@@ -35,7 +37,7 @@ class EvaluateCallback:
 
 
 class LearnCallback(BaseCallback):
-    def __init__(self, tracker):
+    def __init__(self, tracker: AgentTracker):
         super().__init__()
         self.tracker = tracker
         self.curr_steps = 0
@@ -81,7 +83,7 @@ class SB3Tracker(AgentTracker):
         self.evaluate_callback = EvaluateCallback(self)
         self.learn_callback = LearnCallback(self)
 
-    def save(self, name, policy):
+    def save(self, name: str, policy: BasePolicy):
         assert mlflow.active_run() is not None
         zipped_name = f"{name}.zip"
         dir_path = Path(tempfile.mkdtemp())
@@ -91,7 +93,7 @@ class SB3Tracker(AgentTracker):
         mlflow.log_artifact(artifact_path)
         shutil.rmtree(dir_path)
 
-    def restore(self, name):
+    def restore(self, name: str) -> Optional[BasePolicy]:
         zipped_name = f"{name}.zip"
         runs = self._get_all_runs()
         for run in runs:

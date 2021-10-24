@@ -10,14 +10,14 @@ from agentos.tracker import AgentTracker
 # https://github.com/deepmind/acme/blob/master/acme/utils/loggers/base.py
 class AcmeTracker(AgentTracker):
     # Acme logger API
-    def write(self, data):
+    def write(self, data: dict):
         self.episode_data.append(data)
 
     # Acme logger API
     def close(self):
         pass
 
-    def save_tensorflow(self, name, network):
+    def save_tensorflow(self, name: str, network: tf.Module):
         assert mlflow.active_run() is not None
         dir_path = Path(tempfile.mkdtemp())
         checkpoint = tf.train.Checkpoint(module=network)
@@ -25,7 +25,7 @@ class AcmeTracker(AgentTracker):
         mlflow.log_artifact(dir_path / name)
         shutil.rmtree(dir_path)
 
-    def restore_tensorflow(self, name, network):
+    def restore_tensorflow(self, name: str, network: tf.Module) -> None:
         runs = self._get_all_runs()
         for run in runs:
             artifacts_uri = run.info.artifact_uri

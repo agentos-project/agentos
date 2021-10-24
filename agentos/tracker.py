@@ -1,32 +1,11 @@
 import mlflow
+from mlflow.entities import Run
 import yaml
 import tempfile
 import shutil
 import statistics
+from typing import List
 from pathlib import Path
-
-
-class EvaluateRunManager:
-    def __init__(self, tracker):
-        self.tracker = tracker
-
-    def __enter__(self):
-        self.tracker.start_evaluate_run()
-
-    def __exit__(self, type, value, traceback):
-        self.tracker.print_results()
-
-
-class LearnRunManager:
-    def __init__(self, tracker):
-        self.tracker = tracker
-
-    def __enter__(self):
-        self.tracker.start_learn_run()
-
-    def __exit__(self, type, value, traceback):
-        self.tracker.log_learn_run_metrics()
-        self.tracker.print_results()
 
 
 class AgentTracker:
@@ -67,7 +46,7 @@ class AgentTracker:
             "parameter_file.yaml", self.__agentos__["fully_qualified_params"]
         )
 
-    def log_data_as_artifact(self, name, data):
+    def log_data_as_artifact(self, name: str, data: dict):
         dir_path = Path(tempfile.mkdtemp())
         artifact_path = dir_path / name
         with open(artifact_path, "w") as file_out:
@@ -82,13 +61,13 @@ class AgentTracker:
         self.log_episode_count(data["episodes"])
         self.log_step_count(data["steps"])
 
-    def log_episode_count(self, count):
+    def log_episode_count(self, count: int):
         mlflow.log_metric(self.EPISODE_KEY, count)
 
-    def log_step_count(self, count):
+    def log_step_count(self, count: int):
         mlflow.log_metric(self.STEP_KEY, count)
 
-    def get_training_info(self):
+    def get_training_info(self) -> (int, int):
         runs = self._get_all_runs()
         total_episodes = 0
         total_steps = 0
@@ -100,7 +79,7 @@ class AgentTracker:
                 total_steps += int(run.data.metrics.get(self.STEP_KEY, 0))
         return total_episodes, total_steps
 
-    def _get_all_runs(self, respect_reset=True):
+    def _get_all_runs(self, respect_reset: bool = True) -> List[Run]:
         assert mlflow.active_run() is not None
         run_infos = mlflow.list_run_infos(
             experiment_id=self.MLFLOW_EXPERIMENT_ID,
@@ -147,3 +126,26 @@ class AgentTracker:
 
     def reset(self):
         self.start_reset_run()
+
+
+class EvaluateRunManager:
+    def __init__(self, tracker: AgentTracker):
+        self.tracker = tracker
+
+    def __enter__(self):
+        self.tracker.start_evaluate_run()
+
+    def __exit__(self, type, value, traceback):
+        self.tracker.print_results()
+
+
+class LearnRunManager:
+    def __init__(self, tracker: AgentTracker):
+        self.tracker = tracker
+
+    def __enter__(self):
+        self.tracker.start_learn_run()
+
+    def __exit__(self, type, value, traceback):
+        self.tracker.log_learn_run_metrics()
+        self.tracker.print_results()
