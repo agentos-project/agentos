@@ -22,6 +22,7 @@ IGNORED_FILES = [
     "agentos/templates/environment.py",
     "agentos/templates/dataset.py",
     "agentos/templates/trainer.py",
+    "agentos/templates/tracker.py",
 ]
 
 
