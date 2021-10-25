@@ -14,13 +14,14 @@ def test_cli(tmpdir):
         "policy.py",
         "dataset.py",
         "trainer.py",
+        "tracker.py",
         "agentos.ini",
     ]
     for expected_file_name in expected_file_names:
         expected_path = Path(tmpdir) / expected_file_name
         assert expected_path.is_file(), f"{expected_file_name} not found"
     subprocess.run(
-        ["agentos", "run", "agent", "-Pnum_episodes=10"],
+        ["agentos", "run", "agent", "-Pnum_episodes=1"],
         cwd=tmpdir,
         check=True,
     )
@@ -30,7 +31,12 @@ def test_cli(tmpdir):
         check=True,
     )
     subprocess.run(
-        ["agentos", "run", "agent", "--entry-point=reset"],
+        [
+            "agentos",
+            "run",
+            "agent",
+            "--entry-point=reset",
+        ],
         cwd=tmpdir,
         check=True,
     )

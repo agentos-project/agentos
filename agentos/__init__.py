@@ -10,7 +10,6 @@ from agentos.core import (
     Runnable,
     Trainer,
 )
-from agentos.tracking import Tracker
 from agentos.runtime import run_component
 
 __all__ = [
@@ -21,6 +20,5 @@ __all__ = [
     "Policy",
     "Runnable",
     "Trainer",
-    "Tracker",
     "run_component",
 ]

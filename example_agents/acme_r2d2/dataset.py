@@ -5,9 +5,6 @@ import tensorflow as tf
 from acme.tf import utils as tf2_utils
 from acme.adders import reverb as adders
 import reverb
-import numpy as np
-from dm_env import TimeStep
-from dm_env import StepType
 
 
 class ReverbDataset(agentos.Dataset):
@@ -75,37 +72,11 @@ class ReverbDataset(agentos.Dataset):
             priorities=tf.cast(priorities, tf.float64),
         )
 
-    # https://github.com/deepmind/acme/blob/master/acme/agents/tf/actors.py#L164
-    def add(self, prev_obs, action, curr_obs, reward, done, info):
-        if action is None:  # No action -> first step
-            timestep = TimeStep(StepType.FIRST, None, None, curr_obs)
-            self.adder.add_first(timestep)
-        else:
-            if done:
-                timestep = TimeStep(
-                    StepType.LAST,
-                    reward,
-                    np.float32(self.parameters["discount"]),
-                    curr_obs,
-                )
-            else:
-                timestep = TimeStep(
-                    StepType.MID,
-                    reward,
-                    np.float32(self.parameters["discount"]),
-                    curr_obs,
-                )
+    def add_first(self, timestep):
+        self.adder.add_first(timestep)
 
-            # FIXME - hacky way to push observation counts
-            if not hasattr(self, "num_observations"):
-                self.num_observations = 0
-            self.num_observations += 1
-
-            # FIXME - hacky way to push recurrent state
-            if self.prev_state is not None:
-                numpy_state = tf2_utils.to_numpy_squeeze(self.prev_state)
-                self.adder.add(action, timestep, extras=(numpy_state,))
-
-            else:
-                # self.adder.add(action, timestep)
-                raise Exception("Recurrent state not available")
+    def add(self, action, timestep):
+        self.num_observations += 1
+        assert self.prev_state is not None, "Recurrent state not available!"
+        numpy_state = tf2_utils.to_numpy_squeeze(self.prev_state)
+        self.adder.add(action, timestep, extras=(numpy_state,))

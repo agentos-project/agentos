@@ -7,5 +7,12 @@ def test_sb3_agent(venv):
         Path(__file__).parent.parent.parent / "example_agents" / "sb3_agent"
     )
     run_component_in_dir(
-        agent_dir, venv, "agent", entry_points=["evaluate", "learn"]
+        agent_dir,
+        venv,
+        "agent",
+        entry_points=["evaluate", "learn"],
+        entry_point_params=[
+            "-Pn_eval_episodes=1",
+            "-Ptotal_timesteps=100",
+        ],
     )

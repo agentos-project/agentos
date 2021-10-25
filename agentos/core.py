@@ -1,7 +1,6 @@
 """Core AgentOS classes."""
 from collections import namedtuple
 import statistics
-import agentos.tracking
 import time
 from threading import Thread
 
@@ -33,11 +32,10 @@ class Agent(MemberInitializer):
                             learn.
     """
 
-    def __init__(self, backing_dir=".aos", **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-        self.tracker = agentos.tracking.Tracker(backing_dir)
 
     def evaluate(
         self,
@@ -95,12 +93,11 @@ class Agent(MemberInitializer):
 
         while total_episodes < num_episodes:
             if test_every:
-                backup_dst = self.tracker._backup_agent()
                 self.evaluate(
                     num_episodes=test_num_episodes,
                     should_learn=False,
                     max_transitions=max_transitions,
-                    backup_dst=backup_dst,
+                    backup_dst=None,
                     print_stats=True,
                 )
             self.evaluate(
@@ -112,8 +109,8 @@ class Agent(MemberInitializer):
             )
             total_episodes += run_size
 
-    def reset(self, from_backup_id=None):
-        self.tracker.reset(from_backup_id)
+    def reset(self):
+        self.tracker.reset()
 
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""
@@ -136,7 +133,7 @@ class Agent(MemberInitializer):
         :param should_learn: if True, then Trainer.improve() will be called
                              every time the Agent advances one step through the
                              environment and the core training metrics
-                             (transition_count and episode_count) will be
+                             (step_count and episode_count) will be
                              updated after the rollout.
         :param max_transitions: If not None, the episode and rollout will be
                                 truncated after the specified number of
@@ -145,35 +142,34 @@ class Agent(MemberInitializer):
         :returns: Number of transitions experienced in this episode.
         """
         done = False
-        transition_count = 0
+        step_count = 0
         while not done:
-            if max_transitions and transition_count > max_transitions:
+            if max_transitions and step_count > max_transitions:
                 self._episode_truncated()
                 break
             _, _, _, _, done, _ = self.advance()
-            transition_count += 1
+            step_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
-            prev_transition_count = self.tracker.get_transition_count()
-            new_transition_count = prev_transition_count + transition_count
-            self.tracker.save_transition_count(new_transition_count)
-            prev_episode_count = self.tracker.get_episode_count()
-            self.tracker.save_episode_count(prev_episode_count + 1)
-        return transition_count
+            total_episodes, total_steps = self.tracker.get_training_info()
+            new_step_count = total_steps + step_count
+            self.tracker.log_step_count(new_step_count)
+            self.tracker.log_episode_count(total_episodes + 1)
+        return step_count
 
     def _print_run_results(self, all_steps, backup_dst):
         if not all_steps:
             return
         mean = statistics.mean(all_steps)
         median = statistics.median(all_steps)
+        total_episodes, total_steps = self.tracker.get_training_info()
         print()
         print(f"Benchmark results after {len(all_steps)} rollouts:")
         print(
             "\tBenchmarked agent was trained on "
-            f"{self.tracker.get_transition_count()} "
-            f"transitions over {self.tracker.get_episode_count()} episodes"
+            f"{total_steps} transitions over {total_episodes} episodes"
         )
         print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
         print(f"\tMean steps over {len(all_steps)} trials: {mean}")

@@ -1,11 +1,8 @@
-import tensorflow as tf
 import sonnet as snt
-from pathlib import Path
 
 
 class AcmeDQNNetwork:
     def __init__(self, **kwargs):
-        self.backing_dir = kwargs["backing_dir"]
         self.net = snt.Sequential(
             [
                 snt.Flatten(),
@@ -14,17 +11,10 @@ class AcmeDQNNetwork:
                 ),
             ]
         )
-        self.restore_tensorflow()
+        self.restore()
 
-    def save_tensorflow(self):
-        checkpoint = tf.train.Checkpoint(self.net)
-        checkpoint.save(Path(self.backing_dir) / "dqn_network")
+    def restore(self):
+        self.tracker.restore_tensorflow("network", self.net)
 
-    def restore_tensorflow(self):
-        checkpoint = tf.train.Checkpoint(self.net)
-        latest = tf.train.latest_checkpoint(self.backing_dir)
-        if latest is not None:
-            print("AgentOS: Restoring backing network from checkpoint")
-            checkpoint.restore(latest)
-        else:
-            print("AgentOS: No checkpoint found for backing network")
+    def save(self):
+        self.tracker.save_tensorflow("network", self.net)

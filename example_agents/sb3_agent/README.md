@@ -1,16 +1,16 @@
-## Acme DQN Agent port
+## Stable Baselines3 PPO Agent port
 
 ### Agent Training
 
 Train the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point learn --param-file parameters.yaml
+agentos run agent --entry-point learn
 ```
 
 Optional command-line arguments:
 
-* `-Pnum_episodes=X` - Run the learning algorithm for X episodes.
+* `-Ptotal_timesteps=X` - Run the learning algorithm for X environment steps.
 
 
 ### Agent Evaluation
@@ -18,12 +18,12 @@ Optional command-line arguments:
 Evaluate the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point evaluate --param-file parameters.yaml
+agentos run agent --entry-point evaluate
 ```
 
 Optional command-line arguments:
 
-* `-Pnum_episodes=X` - Evaluate the agent over X episodes.
+* `-Pn_eval_episodes=X` - Evaluate the agent over X episodes.
 
 
 ### Agent Reset
@@ -32,7 +32,7 @@ Reset agent (including the backing model) by running the following from the
 command-line:
 
 ```bash
-agentos run agent --entry-point reset --param-file parameters.yaml
+agentos run agent --entry-point reset
 ```
 
 

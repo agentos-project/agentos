@@ -34,24 +34,16 @@ class R2D2Trainer(agentos.Trainer):
                 snt.static_unroll, self.target_network
             )
 
-    def improve(self, dataset, policy):
-        num_steps = self._get_update_step_count()
-        for _ in range(num_steps):
-            # Run learner steps (usually means gradient steps).
-            self._improve(dataset, policy)
-        if num_steps > 0:
-            # Update the actor weights when learner updates.
-            # FIXME - I think actor update is only needed in distributed case
-            # because the network is shared between the actor and the learner.
-            # self.actor.update()
-            pass
-        self.network.save_tensorflow()
+    def improve(self):
+        # Run learner steps (usually means gradient steps).
+        for _ in range(self._get_learning_step_count()):
+            self._improve()
+        self.network.save()
 
     @tf.function
-    def _improve(self, dataset, policy):
+    def _improve(self):
         # Draw a batch of data from replay.
-        sample = dataset.next()  # noqa: B305
-
+        sample = self.dataset.next()
         data = tf2_utils.batch_to_sequence(sample.data)
         observations, actions, rewards, discounts, extra = (
             data.observation,
@@ -149,9 +141,7 @@ class R2D2Trainer(agentos.Trainer):
                 dest.assign(src)
         self.num_steps.assign_add(1)
 
-        # FIXME - ugly duck typing and custom API
-        if hasattr(dataset, "update_priorities"):
-            dataset.update_priorities(extra, keys)
+        self.dataset.update_priorities(extra, keys)
 
         return {"loss": loss}
 
@@ -162,7 +152,7 @@ class R2D2Trainer(agentos.Trainer):
             )
         return (burn_in_obs, core_state)
 
-    def _get_update_step_count(self):
+    def _get_learning_step_count(self):
         # ======================
         # improve the R2D2 agent.
         # code from:

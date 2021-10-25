@@ -25,7 +25,6 @@ def run_component(
     :param component_spec_file: file containing this component's specification.
     :param component_name: name of component to run.
     :param entry_point: name of function to call on component.
-    :param agentos_dir: Directory path containing AgentOS components and data.
     :param params: dict of params for the entry point being run.
     :param param_file: YAML to load params from for entry point being run.
     """
@@ -53,15 +52,24 @@ def run_component(
             except KeyError:
                 pass
 
+    extras = {
+        "__agentos__": {
+            "component_spec_file": component_spec_file,
+            "component_name": component_name,
+            "entry_point": entry_point,
+            "fully_qualified_params": fully_qualified_params,
+        }
+    }
+
     component = load_component_from_file(
-        component_spec_file, component_name, fully_qualified_params
+        component_spec_file, component_name, fully_qualified_params, extras
     )
 
     entry_point_fn = getattr(component, entry_point)
     entry_point_fn(**entry_point_params)
 
 
-def load_component_from_file(spec_file, component_name, params):
+def load_component_from_file(spec_file, component_name, params, extras):
     """Loads component from a component spec file. This returns an instance
     of a python class as specified by the named agentOS component spec,
     having been set up with attributes that reference all of its dependencies
@@ -70,6 +78,8 @@ def load_component_from_file(spec_file, component_name, params):
     :param spec_file: an AgentOS component spec file
     :param component_name: name of the component class instance to return.
         The spec_file provided must contain a component spec with this name.
+    :param params: Parameters for entry point and __init__ functions.
+    :param extras: Dictionary of attributes to be attached to all components.
     :returns: Instantiated component class.
     """
     spec_path = Path(spec_file)
@@ -77,20 +87,24 @@ def load_component_from_file(spec_file, component_name, params):
     config.read(spec_path)
     visited_components = {}
     component = _load_component(
-        config, component_name, params, visited_components
+        config, component_name, params, visited_components, extras
     )
     return component
 
 
-def _load_component(config, component_name, params, visited_components):
+def _load_component(
+    config, component_name, params, visited_components, extras
+):
     """Recursively load a component from a config instance.
 
     :param config: an instance of a parsed agentos.ini file.
     :param component_name: name of the component class instance to return.
         The spec_file provided must contain a component spec with this name.
-    :returns: Instantiated component class.
     :param visited_components: Dict of all classes visited or instantiated
         in this recursive algorithm so far.
+    :param extras: Dictionary of attributes to be attached to all components.
+
+    :returns: Instantiated component class.
     """
     assert (
         component_name not in visited_components
@@ -110,7 +124,7 @@ def _load_component(config, component_name, params, visited_components):
                 dep_obj = visited_components[dep_name]
             else:
                 dep_obj = _load_component(
-                    config, dep_name, params, visited_components
+                    config, dep_name, params, visited_components, extras
                 )
             dependencies[dep_name] = dep_obj
     component_class = _get_class_from_config_section(config[component_name])
@@ -131,8 +145,10 @@ def _load_component(config, component_name, params, visited_components):
     _call_component_func(
         component_name, component_instance, "__init__", params
     )
-    print(f"Loaded component {component_name}.")
+    for k, v in extras.items():
+        setattr(component_instance, k, v)
     visited_components[component_name] = component_instance
+    print(f"Loaded component {component_name}.")
     return component_instance
 
 
@@ -401,6 +417,7 @@ _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
+_TRACKER_DEF_FILE = Path("./templates/tracker.py")
 _AGENT_INI_FILE = Path("./templates/agentos.ini")
 
 
@@ -410,5 +427,6 @@ _INIT_FILES = [
     _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
     _TRAINER_DEF_FILE,
+    _TRACKER_DEF_FILE,
     _AGENT_INI_FILE,
 ]

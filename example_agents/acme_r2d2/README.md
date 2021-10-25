@@ -1,4 +1,8 @@
-## Acme DQN Agent port
+## Acme R2D2 Agent port
+
+This agent was broken up into finer grained components to explore communication
+patterns used within Acme and to demonstrate the flexibility of the AgentOS
+runtime.
 
 ### Agent Training
 
