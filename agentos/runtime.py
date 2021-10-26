@@ -2,6 +2,7 @@
 from inspect import signature, Parameter
 from functools import partial
 import subprocess
+import hashlib
 import os
 import sys
 import yaml
@@ -10,6 +11,7 @@ from datetime import datetime
 import importlib.util
 from pathlib import Path
 import importlib
+from contextlib import contextmanager
 
 
 def run_component(
@@ -288,19 +290,58 @@ def _load_parameters(parameters_file) -> dict:
         return params
 
 
-def _get_class_from_config_section(section):
-    """Takes class_path of form "module.Class" and returns the class object."""
+def _get_section_id_hash(section):
+    to_hash = hashlib.sha256()
+    to_hash.update(section["file_path"].encode("utf-8"))
+    to_hash.update(section["class_name"].encode("utf-8"))
+    for dependency in sorted(section.get("dependencies", [])):
+        to_hash.update(dependency.encode("utf-8"))
+    for requirement in sorted(section.get("requirements", [])):
+        to_hash.update(requirement.encode("utf-8"))
+    return to_hash.hexdigest()
+
+
+# FIXME - handle inline imports
+# FIXME - isolation from agentos runtime requirements
+@contextmanager
+def _handle_env_manipulation(section):
+    DEFAULT_MODULES = ["sys", "builtins"]
     module_file = Path(section["file_path"])
     assert module_file.is_file(), f"{module_file} is not a file"
     sys.path.append(str(module_file.parent))
-    spec = importlib.util.spec_from_file_location(
-        "TEMP_MODULE", str(module_file)
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    cls = getattr(module, section["class_name"])
-    sys.path.pop()
-    return cls
+    req_list = section.get("requirements")
+    # current_runtime_modules = {k:v for k,v in sys.modules.items() if k in default_modules}
+    if req_list:
+        AOS_ENV_CACHE_PATH = Path(Path.home() / ".aos_environment_cache")
+        AOS_ENV_CACHE_PATH.mkdir(exist_ok=True)
+        section_id = _get_section_id_hash(section)
+        env_path = AOS_ENV_CACHE_PATH / section_id
+        # FIXME - we assume everything is installed correctly if dir exists
+        if not env_path.is_dir():
+            env_path.mkdir()
+            cmd = ["pip", "install", "-t", env_path] + req_list
+            subprocess.run(cmd)
+        sys.path.insert(0, str(env_path))
+    try:
+        yield module_file
+    finally:
+        sys.path.pop()
+        if req_list:
+            del sys.path[0]
+            for name in list(sys.modules.keys()):
+                if name not in DEFAULT_MODULES:
+                    del sys.modules[name]
+
+
+def _get_class_from_config_section(section):
+    """Takes class_path of form "module.Class" and returns the class object."""
+    with _handle_env_manipulation(section) as module_file:
+        spec = importlib.util.spec_from_file_location(
+            "TEMP_MODULE", str(module_file)
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return getattr(module, section["class_name"])
 
 
 def _get_registry_entry(component_name):

@@ -1,0 +1,18 @@
+agent:
+    file_path: ./agent.py
+    class_name: ComponentTestAgent
+    dependencies:
+        - numpy_a
+        - numpy_b
+
+numpy_a:
+    file_path: ./numpy_a.py
+    class_name: NumpyTestA
+    requirements:
+        - numpy==1.21.3
+
+numpy_b:
+    file_path: ./numpy_b.py
+    class_name: NumpyTestB
+    requirements:
+        - numpy==1.20.0
