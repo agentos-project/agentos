@@ -310,7 +310,6 @@ def _handle_env_manipulation(section):
     assert module_file.is_file(), f"{module_file} is not a file"
     sys.path.append(str(module_file.parent))
     req_list = section.get("requirements")
-    # current_runtime_modules = {k:v for k,v in sys.modules.items() if k in default_modules}
     if req_list:
         AOS_ENV_CACHE_PATH = Path(Path.home() / ".aos_environment_cache")
         AOS_ENV_CACHE_PATH.mkdir(exist_ok=True)
