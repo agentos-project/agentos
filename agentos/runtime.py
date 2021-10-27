@@ -1,6 +1,5 @@
 """Functions and classes used by the AOS runtime."""
 from inspect import signature, Parameter
-import json
 from functools import partial
 import subprocess
 import os
@@ -10,7 +9,6 @@ import click
 from datetime import datetime
 import importlib.util
 from pathlib import Path
-import configparser
 import importlib
 
 
@@ -83,8 +81,8 @@ def load_component_from_file(spec_file, component_name, params, extras):
     :returns: Instantiated component class.
     """
     spec_path = Path(spec_file)
-    config = configparser.ConfigParser()
-    config.read(spec_path)
+    with open(spec_path) as file_in:
+        config = yaml.safe_load(file_in)
     visited_components = {}
     component = _load_component(
         config, component_name, params, visited_components, extras
@@ -97,7 +95,7 @@ def _load_component(
 ):
     """Recursively load a component from a config instance.
 
-    :param config: an instance of a parsed agentos.ini file.
+    :param config: an instance of a parsed agentos.yaml file.
     :param component_name: name of the component class instance to return.
         The spec_file provided must contain a component spec with this name.
     :param visited_components: Dict of all classes visited or instantiated
@@ -117,7 +115,7 @@ def _load_component(
     # that point to the instances of its dependencies.
     dependencies = {}
     if "dependencies" in config[component_name].keys():
-        dep_names = json.loads(config[component_name]["dependencies"])
+        dep_names = config[component_name]["dependencies"]
         for dep_name in dep_names:
             if dep_name in visited_components:
                 assert visited_components[dep_name]
@@ -234,7 +232,7 @@ def install_component(component_name, agentos_dir, agent_file, assume_yes):
         release_entry = _get_release_entry(registry_entry)
         repo = _clone_component_repo(release_entry, agentos_dir)
         _checkout_release_hash(release_entry, repo)
-        _update_agentos_ini(registry_entry, release_entry, repo, agent_file)
+        _update_agentos_yaml(registry_entry, release_entry, repo, agent_file)
         _install_requirements(repo, release_entry)
     else:
         raise Exception("Aborting installation...")
@@ -353,34 +351,8 @@ def _checkout_release_hash(release, repo):
     os.chdir(curr_dir)
 
 
-def _update_agentos_ini(registry_entry, release_entry, repo, agent_file):
-    print(repo)
-    config = configparser.ConfigParser()
-    config.read(agent_file)
-    if registry_entry["type"] == "environment":
-        section = "Environment"
-    elif registry_entry["type"] == "policy":
-        section = "Policy"
-    elif registry_entry["type"] == "dataset":
-        section = "Dataset"
-    elif registry_entry["type"] == "trainer":
-        section = "Trainer"
-    else:
-        raise Exception(f"Component component type: {registry_entry['type']}")
-
-    # TODO - allow multiple components of same type installed
-    if section in config:
-        print(
-            f"Replacing current environment {dict(config[section])} "
-            f'with {registry_entry["_name"]}'
-        )
-    module_path = Path(repo).absolute()
-    file_path = (module_path / release_entry["file_path"]).absolute()
-    config[section]["file_path"] = str(file_path)
-    config[section]["class_name"] = release_entry["class_name"]
-    config[section]["python_path"] = str(module_path)
-    with open(agent_file, "w") as out_file:
-        config.write(out_file)
+def _update_agentos_yaml(registry_entry, release_entry, repo, agent_file):
+    raise NotImplementedError()
 
 
 # TODO - automatically install?
@@ -418,7 +390,7 @@ _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
 _TRACKER_DEF_FILE = Path("./templates/tracker.py")
-_AGENT_INI_FILE = Path("./templates/agentos.ini")
+_AGENT_YAML_FILE = Path("./templates/agentos.yaml")
 
 
 _INIT_FILES = [
@@ -428,5 +400,5 @@ _INIT_FILES = [
     _DATASET_DEF_FILE,
     _TRAINER_DEF_FILE,
     _TRACKER_DEF_FILE,
-    _AGENT_INI_FILE,
+    _AGENT_YAML_FILE,
 ]

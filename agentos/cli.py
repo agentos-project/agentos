@@ -50,8 +50,8 @@ _option_agent_file = click.option(
     "--agent-file",
     "-f",
     type=click.Path(exists=True),
-    default="./agentos.ini",
-    help="Path to agent definition file (agentos.ini).",
+    default="./agentos.yaml",
+    help="Path to agent definition file (agentos.yaml).",
 )
 
 _option_assume_yes = click.option(
@@ -105,8 +105,8 @@ def init(dir_names, agent_name, agentos_dir):
     "--component-spec-file",
     "-s",
     type=click.Path(exists=True),
-    default="./agentos.ini",
-    help="Path to component spec file (agentos.ini).",
+    default="./agentos.yaml",
+    help="Path to component spec file (agentos.yaml).",
 )
 @click.option(
     "--entry-point",
