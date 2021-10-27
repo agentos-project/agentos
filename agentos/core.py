@@ -56,7 +56,6 @@ class Agent(MemberInitializer):
 
         :returns: None
         """
-        print("running Acme R2D2 agent")
         all_steps = []
         for _ in range(int(num_episodes)):
             steps = self.rollout(

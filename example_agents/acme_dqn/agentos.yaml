@@ -1,0 +1,22 @@
+agent:
+    file_path: "./agent.py"
+    class_name: "AcmeDQNAgent"
+    dependencies: 
+        - "network"
+        - "environment"
+        - "tracker"
+
+network:
+    file_path: "./network.py"
+    class_name: "AcmeDQNNetwork"
+    dependencies: 
+        - "environment"
+        - "tracker"
+
+environment:
+    file_path: "./environment.py"
+    class_name: "CartPole"
+
+tracker:
+    file_path: "./tracker.py"
+    class_name: "AcmeTracker"
