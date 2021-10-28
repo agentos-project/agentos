@@ -39,4 +39,27 @@ command-line:
 agentos run agent --entry-point reset --param-file parameters.yaml
 ```
 
+### Troubleshooting
+
+If you see an error that looks like the following:
+
+```bash
+  File "/home/user/agentos/3.6env/lib/python3.6/site-packages/reverb/pybind.py", line 1, in <module>
+    import tensorflow as _tf; from .libpybind import *; del _tf
+ImportError: libpython3.6m.so.1.0: cannot open shared object file: No such file or directory
+
+```
+
+You must install the dev packages for the version of Python you are running.
+For example, run the following if you are on Ubuntu running Python 3.6:
+
+```bash
+sudo apt-get install python3.6-dev
+```
+
+You may also need to reinstall Reverb and Tensorflow
+
+```bash
+pip uninstall dm-reverb tensorflow
+pip install dm-reverb[tensorflow]
 
