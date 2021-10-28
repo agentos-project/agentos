@@ -321,7 +321,7 @@ def _handle_env_manipulation(section):
             subprocess.run(cmd)
         sys.path.insert(0, str(env_path))
     try:
-        yield module_file
+        yield module_file, bool(req_list)
     finally:
         sys.path.pop()
         if req_list:
@@ -333,14 +333,17 @@ def _handle_env_manipulation(section):
 
 def _get_class_from_config_section(section):
     """Takes class_path of form "module.Class" and returns the class object."""
-    with _handle_env_manipulation(section) as module_file:
+    with _handle_env_manipulation(section) as (module_file, has_reqs):
         spec = importlib.util.spec_from_file_location(
             "TEMP_MODULE", str(module_file)
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         cls = getattr(module, section["class_name"])
-        _wrap_class_methods(cls)
+        # FIXME - RLlib has a pickle issue with current wrap strategy
+        #    agentos run agent --entry-point learn -P num_iterations=5
+        if has_reqs:
+            _wrap_class_methods(cls)
         return cls
 
 
@@ -364,6 +367,9 @@ def _wrap_class_method(cls, field_name, field):
         _set_sys_path_to(cls_sys_path)
 
         result = field(*args, **kwargs)
+
+        for k, v in sys.modules.items():
+            cls_sys_modules[k] = v
 
         _set_sys_modules_to(saved_sys_modules)
         _set_sys_path_to(saved_sys_path)
