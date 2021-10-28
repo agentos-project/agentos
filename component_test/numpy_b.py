@@ -1,8 +1,7 @@
-import numpy as np
-
-
 class NumpyTestB:
     def check_numpy_version(self):
+        import numpy as np
+
         print()
         print(f"Checking if numpy version {np.__version__} is 1.20.0")
         assert np.__version__ == "1.20.0", "Check failed!"

@@ -301,7 +301,6 @@ def _get_section_id_hash(section):
     return to_hash.hexdigest()
 
 
-# FIXME - handle inline imports
 # FIXME - isolation from agentos runtime requirements
 @contextmanager
 def _handle_env_manipulation(section):
@@ -340,7 +339,52 @@ def _get_class_from_config_section(section):
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return getattr(module, section["class_name"])
+        cls = getattr(module, section["class_name"])
+        _wrap_class_methods(cls)
+        return cls
+
+
+def _wrap_class_methods(cls):
+    # TODO - does this wrap everything of interest?
+    fields = list(cls.__dict__.items())
+    for field_name, field in fields:
+        if callable(field):
+            _wrap_class_method(cls, field_name, field)
+
+
+def _wrap_class_method(cls, field_name, field):
+    cls_sys_modules = {k: v for k, v in sys.modules.items()}
+    cls_sys_path = [p for p in sys.path]
+
+    def wrapped(*args, **kwargs):
+        saved_sys_modules = {k: v for k, v in sys.modules.items()}
+        saved_sys_path = [p for p in sys.path]
+
+        _set_sys_modules_to(cls_sys_modules)
+        _set_sys_path_to(cls_sys_path)
+
+        result = field(*args, **kwargs)
+
+        _set_sys_modules_to(saved_sys_modules)
+        _set_sys_path_to(saved_sys_path)
+
+        return result
+
+    setattr(cls, field_name, wrapped)
+
+
+def _set_sys_modules_to(target):
+    for k, v in target.items():
+        sys.modules[k] = v
+    for k in list(sys.modules.keys()):
+        if k not in target.keys():
+            del sys.modules[k]
+
+
+def _set_sys_path_to(target):
+    sys.path.clear()
+    for p in target:
+        sys.path.append(p)
 
 
 def _get_registry_entry(component_name):
