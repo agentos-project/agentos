@@ -1,22 +1,33 @@
-agent:
-    file_path: "./agent.py"
-    class_name: "AcmeDQNAgent"
-    dependencies: 
-        - "network"
-        - "environment"
-        - "tracker"
+repos:
+    local_dir:
+        type: local
+        path: .
 
-network:
-    file_path: "./network.py"
-    class_name: "AcmeDQNNetwork"
-    dependencies: 
-        - "environment"
-        - "tracker"
 
-environment:
-    file_path: "./environment.py"
-    class_name: "CartPole"
-
-tracker:
-    file_path: "./tracker.py"
-    class_name: "AcmeTracker"
+components:
+    agent:
+        repo: local_dir
+        file_path: ./agent.py
+        class_name: AcmeDQNAgent
+        dependencies: 
+            network: network
+            environment: environment
+            tracker: tracker
+    
+    network:
+        repo: local_dir
+        file_path: ./network.py
+        class_name: AcmeDQNNetwork
+        dependencies: 
+            environment: environment
+            tracker: tracker
+    
+    environment:
+        repo: local_dir
+        file_path: ./environment.py
+        class_name: CartPole
+    
+    tracker:
+        repo: local_dir
+        file_path: ./tracker.py
+        class_name: AcmeTracker

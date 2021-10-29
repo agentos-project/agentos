@@ -1,15 +1,11 @@
 import mlflow
 from mlflow.entities import Run
-import yaml
-import tempfile
-import shutil
 import statistics
 from typing import List
-from pathlib import Path
+from agentos.utils import MLFLOW_EXPERIMENT_ID
 
 
 class AgentTracker:
-    MLFLOW_EXPERIMENT_ID = "0"
     STEP_KEY = "steps"
     EPISODE_KEY = "episodes"
     LEARN_KEY = "learn"
@@ -18,41 +14,18 @@ class AgentTracker:
     RUN_TYPE_TAG = "run_type"
 
     def __init__(self, *args, **kwargs):
-        mlflow.start_run(experiment_id=self.MLFLOW_EXPERIMENT_ID)
         self.episode_data = []
         self.evaluate_run = lambda: EvaluateRunManager(self)
         self.learn_run = lambda: LearnRunManager(self)
 
     def start_evaluate_run(self):
-        self._start_generic_run()
         mlflow.set_tag(self.RUN_TYPE_TAG, self.EVALUATE_KEY)
 
     def start_learn_run(self):
-        self._start_generic_run()
         mlflow.set_tag(self.RUN_TYPE_TAG, self.LEARN_KEY)
 
     def start_reset_run(self):
-        self._start_generic_run()
         mlflow.set_tag(self.RUN_TYPE_TAG, self.RESET_KEY)
-
-    def _start_generic_run(self):
-        assert mlflow.active_run() is not None
-        mlflow.log_param("component_name", self.__agentos__["component_name"])
-        mlflow.log_param("entry_point", self.__agentos__["entry_point"])
-        mlflow.log_artifact(
-            Path(self.__agentos__["component_spec_file"]).absolute()
-        )
-        self.log_data_as_artifact(
-            "parameter_file.yaml", self.__agentos__["fully_qualified_params"]
-        )
-
-    def log_data_as_artifact(self, name: str, data: dict):
-        dir_path = Path(tempfile.mkdtemp())
-        artifact_path = dir_path / name
-        with open(artifact_path, "w") as file_out:
-            file_out.write(yaml.safe_dump(data))
-        mlflow.log_artifact(artifact_path)
-        shutil.rmtree(dir_path)
 
     def log_learn_run_metrics(self):
         assert self.episode_data, "No episode data!"
@@ -82,7 +55,7 @@ class AgentTracker:
     def _get_all_runs(self, respect_reset: bool = True) -> List[Run]:
         assert mlflow.active_run() is not None
         run_infos = mlflow.list_run_infos(
-            experiment_id=self.MLFLOW_EXPERIMENT_ID,
+            experiment_id=MLFLOW_EXPERIMENT_ID,
             order_by=["attribute.end_time DESC"],
         )
         runs = [
