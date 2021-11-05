@@ -11,6 +11,7 @@ from agentos.core import (
     Trainer,
 )
 from agentos.runtime import run_component
+from agentos.component import Component
 
 __all__ = [
     "Agent",
@@ -20,5 +21,6 @@ __all__ = [
     "Policy",
     "Runnable",
     "Trainer",
+    "Component",
     "run_component",
 ]

@@ -11,7 +11,7 @@ from datetime import datetime
 import importlib.util
 from pathlib import Path
 import importlib
-from agentos.component import ComponentNamespace
+from agentos.component import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
 
 
@@ -36,11 +36,10 @@ def run_component(
         params,
         param_file,
     )
-    registry = ComponentNamespace()
-    registry.parse_spec_file(component_spec_file)
-    registry.parse_param_file(param_file)
-    registry.add_params(component_name, entry_point, params)
-    component = registry.get_component(component_name)
+    component = Component.get_from_yaml(
+        component_name, component_spec_file, param_file
+    )
+    component.add_params(entry_point, params)
     component.call(entry_point)
 
 
