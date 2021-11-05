@@ -1,5 +1,9 @@
+shared: &shared
+    discount: .99
+
 agent:
     __init__:
+        <<: *shared
         batch_size: 10
         samples_per_insert: 2
         min_replay_size: 10
@@ -11,5 +15,4 @@ network:
     __init__:
 environment:
     __init__:
-__global__:
-    discount: .99
+        <<: *shared

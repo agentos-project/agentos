@@ -1,31 +1,43 @@
-agent:
-    file_path: "./agent.py"
-    class_name: "{agent_name}"
-    dependencies:
-        - "environment"
-        - "policy"
-        - "dataset"
-        - "trainer"
-        - "tracker"
+repos:
+    local_dir:
+        type: local
+        path: .
 
-environment:
-    file_path: "./environment.py"
-    class_name: "Corridor"
-
-policy:
-    file_path: "./policy.py"
-    class_name: "RandomPolicy"
-    dependencies:
-        - "environment"
-
-dataset:
-    file_path: "./dataset.py"
-    class_name: "BasicDataset"
-
-trainer:
-    file_path: "./trainer.py"
-    class_name: "BasicTrainer"
-
-tracker:
-    file_path: "./tracker.py"
-    class_name: "BasicTracker"
+components:
+    agent:
+        repo: local_dir
+        file_path: ./agent.py
+        class_name: {agent_name}
+        dependencies:
+            environment: environment
+            policy: policy
+            dataset: dataset
+            trainer: trainer
+            tracker: tracker
+    
+    environment:
+        repo: local_dir
+        file_path: ./environment.py
+        class_name: Corridor
+    
+    policy:
+        repo: local_dir
+        file_path: ./policy.py
+        class_name: RandomPolicy
+        dependencies:
+            environment: environment
+    
+    dataset:
+        repo: local_dir
+        file_path: ./dataset.py
+        class_name: BasicDataset
+    
+    trainer:
+        repo: local_dir
+        file_path: ./trainer.py
+        class_name: BasicTrainer
+    
+    tracker:
+        repo: local_dir
+        file_path: ./tracker.py
+        class_name: BasicTracker

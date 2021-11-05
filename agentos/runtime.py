@@ -1,15 +1,18 @@
 """Functions and classes used by the AOS runtime."""
-from inspect import signature, Parameter
-from functools import partial
 import subprocess
 import os
 import sys
 import yaml
 import click
+import mlflow
+import tempfile
+import shutil
 from datetime import datetime
 import importlib.util
 from pathlib import Path
 import importlib
+from agentos.component import Component
+from agentos.utils import MLFLOW_EXPERIMENT_ID
 
 
 def run_component(
@@ -26,197 +29,38 @@ def run_component(
     :param params: dict of params for the entry point being run.
     :param param_file: YAML to load params from for entry point being run.
     """
-    params = params or {}
-    entry_point_params = params
-    if params:
-        # NOTES: we currently assume the params arg contains params for the
-        # call to the component entry point. We don't currently support CLI
-        # arguments for other component entry points besides the entry_point
-        # currently being run (e.g., params for the init() function of a
-        # descendent dependency of the component being run).
-        fully_qualified_params = {component_name: {entry_point: params}}
-    else:
-        fully_qualified_params = {}
-    if param_file:
-        params_from_file = _load_parameters(param_file)
-        if params_from_file:
-            try:
-                fully_qualified_params = _merge_settings_dicts(
-                    params_from_file, fully_qualified_params
-                )
-                entry_point_params = fully_qualified_params[component_name][
-                    entry_point
-                ]
-            except KeyError:
-                pass
-
-    extras = {
-        "__agentos__": {
-            "component_spec_file": component_spec_file,
-            "component_name": component_name,
-            "entry_point": entry_point,
-            "fully_qualified_params": fully_qualified_params,
-        }
-    }
-
-    component = load_component_from_file(
-        component_spec_file, component_name, fully_qualified_params, extras
+    _log_run_info(
+        component_name,
+        entry_point,
+        component_spec_file,
+        params,
+        param_file,
     )
-
-    entry_point_fn = getattr(component, entry_point)
-    entry_point_fn(**entry_point_params)
-
-
-def load_component_from_file(spec_file, component_name, params, extras):
-    """Loads component from a component spec file. This returns an instance
-    of a python class as specified by the named agentOS component spec,
-    having been set up with attributes that reference all of its dependencies
-    as specified in the same component spec.
-
-    :param spec_file: an AgentOS component spec file
-    :param component_name: name of the component class instance to return.
-        The spec_file provided must contain a component spec with this name.
-    :param params: Parameters for entry point and __init__ functions.
-    :param extras: Dictionary of attributes to be attached to all components.
-    :returns: Instantiated component class.
-    """
-    spec_path = Path(spec_file)
-    with open(spec_path) as file_in:
-        config = yaml.safe_load(file_in)
-    visited_components = {}
-    component = _load_component(
-        config, component_name, params, visited_components, extras
+    component = Component.get_from_yaml(
+        component_name, component_spec_file, param_file
     )
-    return component
+    component.add_params(entry_point, params)
+    component.call(entry_point)
 
 
-def _load_component(
-    config, component_name, params, visited_components, extras
-):
-    """Recursively load a component from a config instance.
-
-    :param config: an instance of a parsed agentos.yaml file.
-    :param component_name: name of the component class instance to return.
-        The spec_file provided must contain a component spec with this name.
-    :param visited_components: Dict of all classes visited or instantiated
-        in this recursive algorithm so far.
-    :param extras: Dictionary of attributes to be attached to all components.
-
-    :returns: Instantiated component class.
-    """
-    assert (
-        component_name not in visited_components
-    ), "AgentOS encountered a cycle in the component dependencies."
-    visited_components[component_name] = None
-
-    # if this component has dependencies, load them first (recursively)
-    # Circular dependencies are not allowed.
-    # then load an instance of this components class, and set up attributes
-    # that point to the instances of its dependencies.
-    dependencies = {}
-    if "dependencies" in config[component_name].keys():
-        dep_names = config[component_name]["dependencies"]
-        for dep_name in dep_names:
-            if dep_name in visited_components:
-                assert visited_components[dep_name]
-                dep_obj = visited_components[dep_name]
-            else:
-                dep_obj = _load_component(
-                    config, dep_name, params, visited_components, extras
-                )
-            dependencies[dep_name] = dep_obj
-    component_class = _get_class_from_config_section(config[component_name])
-    """
-    For each component being loaded, AgentOS sets up an attribute for each
-    of that component's dependencies. Then AgentOS calls the component's
-    __init__() function, passing in any parameters specified by the user.
-    To get this ordering correct AgentOS first initializes each component
-    using a dummy empty __init__() function, then sets up its dependency
-    attributes, then calls its true __init__() function.
-    """
-    component_class.__agentos_tmp_ini__ = component_class.__init__
-    component_class.__init__ = lambda self: None
-    component_instance = component_class()
-    for dep_name, dep_obj in dependencies.items():
-        setattr(component_instance, dep_name, dep_obj)
-    component_class.__init__ = component_class.__agentos_tmp_ini__
-    _call_component_func(
-        component_name, component_instance, "__init__", params
-    )
-    for k, v in extras.items():
-        setattr(component_instance, k, v)
-    visited_components[component_name] = component_instance
-    print(f"Loaded component {component_name}.")
-    return component_instance
+# TODO - move into and integrate with ComponentNamespace + Component
+def _log_run_info(name, entry_point, spec_file, params, param_file):
+    mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
+    mlflow.log_param("component_name", name)
+    mlflow.log_param("entry_point", entry_point)
+    mlflow.log_artifact(Path(spec_file).absolute())
+    _log_data_as_artifact("cli_parameters.yaml", params)
+    if param_file is not None:
+        mlflow.log_artifact(Path(param_file).absolute())
 
 
-def _call_component_func(c_name, c_instance, func_name, params):
-    assert hasattr(
-        c_instance, func_name
-    ), f"component {c_name} does not have a function named {func_name}."
-    try:
-        func_params = params[c_name][func_name]
-    except KeyError:
-        func_params = None
-    if func_params is None:
-        func_params = {}
-    try:
-        global_params = params["__global__"]
-    except KeyError:
-        global_params = None
-    if global_params is None:
-        global_params = {}
-    merged_params = _merge_settings_dicts(global_params, func_params)
-    partial_func = getattr(c_instance, func_name)
-    sig = signature(partial_func)
-    """
-    look through all except the first param (first one was `self`):
-      If param.type == POSITION_ONLY:
-        error: agentos does now allow init() to have position-only args
-      else if param.type is POSITION_OR_KEYWORD or KEYWORD_ONLY:
-        assert this param.name is in the param dict provided by user
-        new partial with param.name=user_params[param.name], and remove
-            it from the user param dict
-      else if it is type VAR_KEYWORD:
-        # bind all remaining params from user param dict
-        for user_param in user param dict:
-          new partial with user_param call with user_param
-      Note that we implicitly ignore the final case, i.e.,
-      that the parm was of type VAR_POSITIONAL
-      since all user specified params are named.
-    """
-    for param in sig.parameters.values():
-        # AgentOS ignores arguments that it was of type VAR_POSITIONAL
-        # since all user specified params are named.
-        if param.kind == Parameter.POSITIONAL_ONLY:
-            raise Exception(
-                "AgentOS does not allow component entry points to "
-                "accept position-only args."
-            )
-        elif param.kind in [
-            Parameter.POSITIONAL_OR_KEYWORD,
-            Parameter.KEYWORD_ONLY,
-        ]:
-            try:
-                partial_func = partial(
-                    partial_func,
-                    **{param.name: merged_params.pop(param.name)},
-                )
-            except KeyError:
-                f"Argument {param.name} required by {c_name}.{func_name}()"
-                "but not found in provided parameters."
-        elif param.kind == Parameter.VAR_KEYWORD:
-            for p_name, p_val in merged_params.items():
-                partial_func = partial(partial_func, **{p_name: p_val})
-    try:
-        partial_func()
-    except Exception as e:
-        # This helpful message hopefully makes debugging easier.
-        print(
-            f"\nThe AgentOS call to component initialization "
-            f"{c_name}.{func_name}() failed."
-        )
-        raise e
+def _log_data_as_artifact(name: str, data: dict):
+    dir_path = Path(tempfile.mkdtemp())
+    artifact_path = dir_path / name
+    with open(artifact_path, "w") as file_out:
+        file_out.write(yaml.safe_dump(data))
+    mlflow.log_artifact(artifact_path)
+    shutil.rmtree(dir_path)
 
 
 def install_component(component_name, agentos_dir, agent_file, assume_yes):
@@ -256,24 +100,6 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
 ################################
 # Private helper functions below
 ################################
-
-# Modified from https://stackoverflow.com/a/7205107
-def _merge_settings_dicts(a, b, path=None):
-    """Merges dict b into dict a, overwriting duplicate keys in a"""
-    if path is None:
-        path = []
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                _merge_settings_dicts(a[key], b[key], path + [str(key)])
-            elif a[key] == b[key]:
-                pass  # same leaf value
-            else:
-                a[key] = b[key]  # Keep differing value from b
-        else:
-            a[key] = b[key]
-    return a
-
 
 # Necessary because the agentos_dir will **not** exist on `agentos init`
 def _check_path_exists(path):

@@ -1,14 +1,24 @@
-agent:
-    file_path: "./agent.py"
-    class_name: "SB3PPOAgent"
-    dependencies: 
-        - "environment"
-        - "tracker"
+repos:
+    sb3_agent_dir:
+        type: local
+        path: .
 
-environment:
-    file_path: "./environment.py"
-    class_name: "CartPole"
 
-tracker:
-    file_path: "./tracker.py"
-    class_name: "SB3Tracker"
+components:
+    agent:
+        repo: sb3_agent_dir
+        file_path: agent.py
+        class_name: SB3PPOAgent
+        dependencies: 
+            environment: environment
+            tracker: tracker
+    
+    environment:
+        repo: sb3_agent_dir
+        file_path: environment.py
+        class_name: CartPole
+    
+    tracker:
+        repo: sb3_agent_dir
+        file_path: tracker.py
+        class_name: SB3Tracker
