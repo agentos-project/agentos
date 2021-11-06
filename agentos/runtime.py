@@ -1,16 +1,12 @@
 """Functions and classes used by the AOS runtime."""
-import subprocess
 import os
-import sys
 import yaml
 import click
 import mlflow
 import tempfile
 import shutil
 from datetime import datetime
-import importlib.util
 from pathlib import Path
-import importlib
 from agentos.component import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
 
@@ -63,25 +59,6 @@ def _log_data_as_artifact(name: str, data: dict):
     shutil.rmtree(dir_path)
 
 
-def install_component(component_name, agentos_dir, agent_file, assume_yes):
-    _check_path_exists(agentos_dir)
-    agentos_dir = Path(agentos_dir).absolute()
-    registry_entry = _get_registry_entry(component_name)
-    confirmed = assume_yes or _confirm_component_installation(
-        registry_entry, agentos_dir
-    )
-    if confirmed:
-        # Blow away agent training step count
-        agentos_dir.mkdir(exist_ok=True)
-        release_entry = _get_release_entry(registry_entry)
-        repo = _clone_component_repo(release_entry, agentos_dir)
-        _checkout_release_hash(release_entry, repo)
-        _update_agentos_yaml(registry_entry, release_entry, repo, agent_file)
-        _install_requirements(repo, release_entry)
-    else:
-        raise Exception("Aborting installation...")
-
-
 def initialize_agent_directories(dir_names, agent_name, agentos_dir):
     dirs = [Path(".")]
     if dir_names:
@@ -100,92 +77,6 @@ def initialize_agent_directories(dir_names, agent_name, agentos_dir):
 ################################
 # Private helper functions below
 ################################
-
-# Necessary because the agentos_dir will **not** exist on `agentos init`
-def _check_path_exists(path):
-    if not Path(path).absolute().exists():
-        raise click.BadParameter(f"{path} does not exist!")
-
-
-def _load_parameters(parameters_file) -> dict:
-    with open(parameters_file) as file_in:
-        params = yaml.full_load(file_in)
-        assert isinstance(params, dict)
-        return params
-
-
-def _get_class_from_config_section(section):
-    """Takes class_path of form "module.Class" and returns the class object."""
-    module_file = Path(section["file_path"])
-    assert module_file.is_file(), f"{module_file} is not a file"
-    sys.path.append(str(module_file.parent))
-    spec = importlib.util.spec_from_file_location(
-        "TEMP_MODULE", str(module_file)
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    cls = getattr(module, section["class_name"])
-    sys.path.pop()
-    return cls
-
-
-def _get_registry_entry(component_name):
-    agentos_root_path = Path(__file__).parent.parent
-    registry_path = agentos_root_path / "registry.yaml"
-    if not registry_path.is_file():
-        raise Exception(f"Could not find AgentOS registry at {registry_path}")
-    with open(registry_path) as file_in:
-        registry = yaml.full_load(file_in)
-    if component_name not in registry:
-        raise click.BadParameter(f'Cannot find component "{component_name}"')
-    registry[component_name]["_name"] = component_name
-    return registry[component_name]
-
-
-def _confirm_component_installation(registry_entry, location):
-    answer = input(
-        f'ACR will install component {registry_entry["_name"]} '
-        f"to {location}.  Continue? (Y/N) "
-    )
-    return answer.strip().lower() == "y"
-
-
-def _get_release_entry(registry_entry):
-    # TODO - allow specification of release
-    return registry_entry["releases"][0]
-
-
-def _clone_component_repo(release, location):
-    repo_name = release["github_url"].split("/")[-1]
-    clone_destination = (Path(location) / repo_name).absolute()
-    if clone_destination.exists():
-        raise click.BadParameter(f"{clone_destination} already exists!")
-    cmd = ["git", "clone", release["github_url"], clone_destination]
-    result = subprocess.run(cmd)
-    assert result.returncode == 0, "Git returned non-zero on repo checkout"
-    assert clone_destination.exists(), f"Unable to clone repo {repo_name}"
-    return clone_destination
-
-
-def _checkout_release_hash(release, repo):
-    curr_dir = os.getcwd()
-    os.chdir(repo)
-    git_hash = release["hash"]
-    cmd = ["git", "checkout", "-q", git_hash]
-    result = subprocess.run(cmd)
-    assert result.returncode == 0, f"FAILED: checkout {git_hash} in {repo}"
-    os.chdir(curr_dir)
-
-
-def _update_agentos_yaml(registry_entry, release_entry, repo, agent_file):
-    raise NotImplementedError()
-
-
-# TODO - automatically install?
-def _install_requirements(repo, release_entry):
-    req_path = (repo / release_entry["requirements_path"]).absolute()
-    print("\nInstall component requirements with the following command:")
-    print(f"\n\tpip install -r {req_path}\n")
 
 
 def _instantiate_template_files(d, agent_name):

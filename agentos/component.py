@@ -56,12 +56,6 @@ class ComponentNamespace:
     def add_component(self, name: str, component: "Component"):
         self.components[name] = component
 
-    def add_params(self, component_name: str, fn_name: str, params: Dict):
-        component = self.components.get(component_name)
-        if component is None or params is None:
-            return
-        component.add_params(fn_name, params)
-
     def get_component(self, name: str) -> "Component":
         """Gets the Component associated with ``name``. Guarantees the
         Component's dependency DAG is properly hooked up."""
@@ -84,8 +78,11 @@ class ComponentNamespace:
         with open(param_file) as file_in:
             param_yaml = yaml.safe_load(file_in)
         for c_name, param_dict in param_yaml.items():
+            component = self.components.get(c_name)
             for fn_name, fn_params in param_dict.items():
-                self.add_params(c_name, fn_name, fn_params)
+                if component is None or fn_params is None:
+                    continue
+                component.add_params(fn_name, fn_params)
 
     def parse_spec_file(self, spec_file: str) -> None:
         """Parses a spec file and adds all Repos and Components to this
@@ -110,28 +107,11 @@ class ComponentNamespace:
 
     def _parse_components(self, components_spec: Dict) -> None:
         for name, spec in components_spec.items():
-            cls = self._get_managed_class(
-                spec["class_name"], spec["repo"], spec["file_path"]
-            )
-            component = Component(managed_cls=cls)
+            repo = self.repos[spec["repo"]]
+            full_path = repo.file_path / Path(spec["file_path"])
+            component = Component.get_from_file(spec["class_name"], full_path)
             self.add_component(name, component)
             self.dependency_names[name] = spec.get("dependencies", {})
-
-    def _get_managed_class(
-        self, class_name: str, repo_name: str, file_path: str
-    ) -> Type[T]:
-        repo = self.repos[repo_name]
-        module_path = repo.file_path / Path(file_path)
-        assert module_path.is_file(), f"{module_path} does not exist"
-        sys.path.append(str(module_path.parent))
-        spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE_{class_name.upper()}", str(module_path)
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        cls = getattr(module, class_name)
-        sys.path.pop()
-        return cls
 
 
 class Component:
@@ -164,15 +144,21 @@ class Component:
         return ns.get_component(component_name)
 
     @classmethod
-    def get_from_class(
-        cls,
-        managed_cls: Type[T],
-        dunder_name: str = "__component__",
-    ) -> "Component":
-        return Component(
-            managed_cls=managed_cls,
-            dunder_name=dunder_name,
+    def get_from_class(cls, managed_cls: Type[T]) -> "Component":
+        return Component(managed_cls=managed_cls)
+
+    @classmethod
+    def get_from_file(cls, class_name: str, file_path: str) -> "Component":
+        assert file_path.is_file(), f"{file_path} does not exist"
+        sys.path.append(str(file_path.parent))
+        spec = importlib.util.spec_from_file_location(
+            f"AOS_MODULE_{class_name.upper()}", str(file_path)
         )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cls = getattr(module, class_name)
+        sys.path.pop()
+        return Component(managed_cls=cls)
 
     @property
     def name(self):
@@ -192,6 +178,15 @@ class Component:
         curr_params.update(params)
         self._params[fn_name] = curr_params
 
+    def add_params_to_all(self, fn_name: str, params: Dict):
+        """
+        Add the passed ``params`` dict to all function named ``fn_name`` in all
+        components within the dependency graph.
+        """
+        self.add_params(fn_name, params)
+        for alias, dep in self._dependencies.items():
+            dep.add_params_to_all(fn_name, params)
+
     def add_dependency(self, component: "Component", alias: str = None):
         if type(component) is not type(self):
             raise Exception("add_dependency() must be passed a Component")
@@ -206,6 +201,7 @@ class Component:
         self._managed_cls.__init__ = lambda self: None
         self._instance = self._managed_cls()
         for dep_alias, dep_component in self._dependencies.items():
+            print(f"Adding {dep_alias} to {self.name}")
             dep_component.instantiate_class()
             setattr(self._instance, dep_alias, dep_component._instance)
         setattr(self._instance, self._dunder_name, self)
