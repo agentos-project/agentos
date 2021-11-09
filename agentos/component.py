@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import yaml
 from enum import Enum
-from typing import TypeVar, Dict, Type
+from typing import TypeVar, Dict, Type, Any
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -20,16 +20,18 @@ class Repo:
 
 
 class GitHubRepo(Repo):
-    def __init__(self, url: str, default_version: str = None):
+    def __init__(self, name: str, url: str, default_version: str = None):
         """If ``default_version`` is not provided, HEAD of master will be
         used."""
+        self.name = name
         self.type = RepoType.GITHUB
         self.url = url
         self.default_version = default_version
 
 
 class LocalRepo(Repo):
-    def __init__(self, file_path: str):
+    def __init__(self, name: str, file_path: str):
+        self.name = name
         self.type = RepoType.LOCAL
         self.file_path = Path(file_path)
 
@@ -37,81 +39,6 @@ class LocalRepo(Repo):
 class InMemoryRepo(Repo):
     def __init__(self):
         self.type = RepoType.IN_MEMORY
-
-
-class ComponentNamespace:
-    """
-    Associates names (as one might find in the agentos.yaml) to Component
-    objects.
-    """
-
-    def __init__(self):
-        self.repos = {}
-        self.components = {}
-        self.dependency_names = {}
-
-    def add_repo(self, name: str, repo: "Repo"):
-        self.repos[name] = repo
-
-    def add_component(self, name: str, component: "Component"):
-        self.components[name] = component
-
-    def get_component(self, name: str) -> "Component":
-        """Gets the Component associated with ``name``. Guarantees the
-        Component's dependency DAG is properly hooked up."""
-        rehydrate_list = [name]
-        while len(rehydrate_list) > 0:
-            curr_name = rehydrate_list.pop(0)
-            curr_component = self.components[curr_name]
-            dependency_names = self.dependency_names[curr_name]
-            for alias, dependency_name in dependency_names.items():
-                dependency = self.components[dependency_name]
-                curr_component.add_dependency(dependency, alias=alias)
-                rehydrate_list.append(dependency_name)
-        return self.components[name]
-
-    def parse_param_file(self, param_file: str) -> None:
-        """Parses a param file and adds the parameters to the appropriate
-        Component methods."""
-        if param_file is None:
-            return
-        with open(param_file) as file_in:
-            param_yaml = yaml.safe_load(file_in)
-        for c_name, param_dict in param_yaml.items():
-            component = self.components.get(c_name)
-            for fn_name, fn_params in param_dict.items():
-                if component is None or fn_params is None:
-                    continue
-                component.add_params(fn_name, fn_params)
-
-    def parse_spec_file(self, spec_file: str) -> None:
-        """Parses a spec file and adds all Repos and Components to this
-        namespace."""
-        with open(spec_file) as file_in:
-            config = yaml.safe_load(file_in)
-        self._parse_repos(config.get("repos", {}))
-        self._parse_components(config.get("components", {}))
-
-    def _parse_repos(self, repos_spec: Dict) -> None:
-        for name, spec in repos_spec.items():
-            self.repos[name] = spec
-            if spec["type"] == RepoType.LOCAL.value:
-                repo = LocalRepo(spec["path"])
-                self.add_repo(name, repo)
-            elif spec["type"] == RepoType.GITHUB.value:
-                raise NotImplementedError()
-            elif spec["type"] == RepoType.IN_MEMORY.value:
-                raise NotImplementedError()
-            else:
-                raise NotImplementedError()
-
-    def _parse_components(self, components_spec: Dict) -> None:
-        for name, spec in components_spec.items():
-            repo = self.repos[spec["repo"]]
-            full_path = repo.file_path / Path(spec["file_path"])
-            component = Component.get_from_file(spec["class_name"], full_path)
-            self.add_component(name, component)
-            self.dependency_names[name] = spec.get("dependencies", {})
 
 
 class Component:
@@ -122,7 +49,10 @@ class Component:
     """
 
     def __init__(
-        self, managed_cls: Type[T], dunder_name: str = "__component__"
+        self,
+        managed_cls: Type[T],
+        name: str = None,
+        dunder_name: str = "__component__",
     ):
         self._managed_cls = managed_cls
         self._dunder_name = dunder_name
@@ -130,25 +60,27 @@ class Component:
         self._dependencies = {}
         self._params = {}
         self._instance = None
+        self.name = name if name else self._managed_cls.__name__
 
     @classmethod
     def get_from_yaml(
         cls,
-        component_name: str,
+        name: str,
         component_spec_file: str,
-        param_file: str = None,
     ) -> "Component":
-        ns = ComponentNamespace()
-        ns.parse_spec_file(component_spec_file)
-        ns.parse_param_file(param_file)
-        return ns.get_component(component_name)
+        components = cls.parse_spec_file(component_spec_file)
+        return components[name]
 
     @classmethod
-    def get_from_class(cls, managed_cls: Type[T]) -> "Component":
-        return Component(managed_cls=managed_cls)
+    def get_from_class(
+        cls, managed_cls: Type[T], name: str = None
+    ) -> "Component":
+        return Component(managed_cls=managed_cls, name=name)
 
     @classmethod
-    def get_from_file(cls, class_name: str, file_path: str) -> "Component":
+    def get_from_file(
+        cls, class_name: str, file_path: str, name: str = None
+    ) -> "Component":
         assert file_path.is_file(), f"{file_path} does not exist"
         sys.path.append(str(file_path.parent))
         spec = importlib.util.spec_from_file_location(
@@ -158,11 +90,36 @@ class Component:
         spec.loader.exec_module(module)
         cls = getattr(module, class_name)
         sys.path.pop()
-        return Component(managed_cls=cls)
+        return Component(managed_cls=cls, name=name)
 
-    @property
-    def name(self):
-        return self._managed_cls.__name__
+    def parse_param_file(self, param_file: str) -> None:
+        """Parses a param file and adds the parameters to the appropriate
+        Component methods."""
+        if param_file is None:
+            return
+        with open(param_file) as file_in:
+            params = yaml.safe_load(file_in)
+        self.add_params(params)
+
+    def add_params(self, params: Dict):
+        for c_name, param_dict in params.items():
+            component = self.get_dependency_with_name(c_name)
+            for fn_name, fn_params in param_dict.items():
+                if component is None or fn_params is None:
+                    continue
+                component.add_params_to_fn(fn_name, fn_params)
+
+    def get_dependency_with_name(self, name: str):
+        """Searches the Component dependency DAG rooted at ``self`` for a
+        component named ``name``.  Note, the root component's name (``self``)
+        will also be checked."""
+        if self.name == name:
+            return self
+        for dep_name, dep_component in self._dependencies.items():
+            found = dep_component.get_dependency_with_name(name)
+            if found:
+                return found
+        return None
 
     def call(self, fn_name: str):
         self.instantiate_class()
@@ -172,20 +129,11 @@ class Component:
         print(f"Calling {self.name}.{fn_name}(**{params})")
         return fn(**params)
 
-    def add_params(self, fn_name: str, params: Dict):
+    def add_params_to_fn(self, fn_name: str, params: Dict[str, Any]):
         print(f"{self.name}: adding {params} to {fn_name}()")
         curr_params = self._params.get(fn_name, {})
         curr_params.update(params)
         self._params[fn_name] = curr_params
-
-    def add_params_to_all(self, fn_name: str, params: Dict):
-        """
-        Add the passed ``params`` dict to all function named ``fn_name`` in all
-        components within the dependency graph.
-        """
-        self.add_params(fn_name, params)
-        for alias, dep in self._dependencies.items():
-            dep.add_params_to_all(fn_name, params)
 
     def add_dependency(self, component: "Component", alias: str = None):
         if type(component) is not type(self):
@@ -211,3 +159,49 @@ class Component:
     def get_instance(self) -> T:
         self.instantiate_class()
         return self._instance
+
+    @classmethod
+    def parse_spec_file(cls, spec_file: str) -> None:
+        """Returns all Repos and Components defined by this ``spec_file``."""
+        with open(spec_file) as file_in:
+            config = yaml.safe_load(file_in)
+        repos = cls._parse_repos(config.get("repos", {}))
+        components = cls._parse_components(config.get("components", {}), repos)
+        return components
+
+    @classmethod
+    def _parse_repos(cls, repos_spec: Dict) -> None:
+        repos = {}
+        for name, spec in repos_spec.items():
+            repos[name] = spec
+            if spec["type"] == RepoType.LOCAL.value:
+                repo = LocalRepo(name=name, file_path=spec["path"])
+                repos[name] = repo
+            elif spec["type"] == RepoType.GITHUB.value:
+                raise NotImplementedError()
+            elif spec["type"] == RepoType.IN_MEMORY.value:
+                raise NotImplementedError()
+            else:
+                raise NotImplementedError()
+        return repos
+
+    @classmethod
+    def _parse_components(cls, components_spec: Dict, repos: Dict) -> None:
+        components = {}
+        dependency_names = {}
+        for name, spec in components_spec.items():
+            repo = repos[spec["repo"]]
+            full_path = repo.file_path / Path(spec["file_path"])
+            component = Component.get_from_file(
+                class_name=spec["class_name"], file_path=full_path, name=name
+            )
+            components[name] = component
+            dependency_names[name] = spec.get("dependencies", {})
+
+        # Wire up the dependency graph
+        for name, component in components.items():
+            for alias, dependency_name in dependency_names[name].items():
+                dependency = components[dependency_name]
+                component.add_dependency(dependency, alias=alias)
+
+        return components

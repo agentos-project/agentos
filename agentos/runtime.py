@@ -32,10 +32,9 @@ def run_component(
         params,
         param_file,
     )
-    component = Component.get_from_yaml(
-        component_name, component_spec_file, param_file
-    )
-    component.add_params(entry_point, params)
+    component = Component.get_from_yaml(component_name, component_spec_file)
+    component.parse_param_file(param_file)
+    component.add_params_to_fn(entry_point, params)
     component.call(entry_point)
 
 

@@ -19,7 +19,9 @@ class Registry:
         local_repo_path = self._clone_repo(spec["repo"])
         self._checkout_version(local_repo_path, spec["version"])
         file_path = local_repo_path / spec["file_path"]
-        component = Component.get_from_file(spec["class_name"], file_path)
+        component = Component.get_from_file(
+            spec["class_name"], file_path, name=name
+        )
         for alias, dep_name in spec["dependencies"].items():
             dep_component = self.get_component(dep_name)
             component.add_dependency(dep_component, alias=alias)
@@ -49,34 +51,67 @@ class Registry:
 
 if __name__ == "__main__":
     params = {
-        "evaluate": {"num_episodes": 50},
-        "learn": {"num_episodes": 100},
-        "__init__": {
-            "discount": 0.99,
-            "sequence_length": 13,
-            "store_lstm_state": True,
-            "replay_period": 40,
-            "batch_size": 32,
-            "max_replay_size": 500,
-            "priority_exponent": 0.6,
-            "max_priority_weight": 0.9,
-            "epsilon": 0.01,
-            "learning_rate": 0.001,
-            "target_update_period": 20,
-            "adam_epsilon": 0.001,
-            "burn_in_length": 2,
-            "n_step": 5,
-            "min_replay_size": 50,
-            "importance_sampling_exponent": 0.2,
-            "clip_grad_norm": None,
-            "samples_per_insert": 32.0,
+        "acme_r2d2_agent": {
+            "evaluate": {"num_episodes": 50},
+            "learn": {"num_episodes": 100},
+        },
+        "acme_r2d2_dataset": {
+            "__init__": {
+                "batch_size": 32,
+                "discount": 0.99,
+                "max_priority_weight": 0.9,
+                "max_replay_size": 500,
+                "priority_exponent": 0.6,
+                "replay_period": 40,
+                "sequence_length": 13,
+                "store_lstm_state": True,
+            }
+        },
+        "acme_cartpole": {
+            "__init__": {
+                "batch_size": 32,
+                "discount": 0.99,
+                "max_replay_size": 500,
+                "replay_period": 40,
+                "sequence_length": 13,
+                "store_lstm_state": True,
+            }
+        },
+        "acme_r2d2_policy": {
+            "__init__": {
+                "batch_size": 32,
+                "discount": 0.99,
+                "epsilon": 0.01,
+                "max_replay_size": 500,
+                "replay_period": 40,
+                "sequence_length": 13,
+                "store_lstm_state": True,
+            }
+        },
+        "acme_r2d2_trainer": {
+            "__init__": {
+                "adam_epsilon": 0.001,
+                "batch_size": 32,
+                "burn_in_length": 2,
+                "clip_grad_norm": None,
+                "discount": 0.99,
+                "importance_sampling_exponent": 0.2,
+                "learning_rate": 0.001,
+                "max_replay_size": 500,
+                "min_replay_size": 50,
+                "n_step": 5,
+                "replay_period": 40,
+                "samples_per_insert": 32.0,
+                "sequence_length": 13,
+                "store_lstm_state": True,
+                "target_update_period": 20,
+            }
         },
     }
 
     mlflow.start_run()
     registry = Registry()
     component = registry.get_component("acme_r2d2_agent")
-    for fn_name, params in params.items():
-        component.add_params_to_all(fn_name, params)
+    component.add_params(params)
     acme_r2d2_agent = component.get_instance()
     acme_r2d2_agent.evaluate(num_episodes=10)
