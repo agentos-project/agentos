@@ -20,19 +20,8 @@ class EvaluateCallback:
         assert len(current_lengths) == 1, "Error: multiple environments"
         assert len(current_rewards) == 1, "Error: multiple environments"
         if local_vars["done"]:
-            episodes = 0
-            steps = 0
-            if len(self.tracker.episode_data) > 0:
-                episodes = self.tracker.episode_data[-1]["episodes"]
-                steps = self.tracker.episode_data[-1]["steps"]
-
-            self.tracker.episode_data.append(
-                {
-                    "episode_length": current_lengths[0],
-                    "episode_reward": current_rewards[0],
-                    "episodes": episodes + 1,
-                    "steps": steps + current_lengths[0],
-                }
+            self.tracker.add_episode_data(
+                steps=current_lengths[0], reward=current_rewards[0]
             )
 
 
@@ -43,8 +32,6 @@ class LearnCallback(BaseCallback):
         self.curr_steps = 0
         self.curr_reward = 0
         self.last_done = False
-        self.total_episodes = 0
-        self.total_steps = 0
 
     def _on_step(self):
         dones = self.locals["dones"]
@@ -63,15 +50,8 @@ class LearnCallback(BaseCallback):
             self._record_episode_data()
 
     def _record_episode_data(self):
-        self.total_episodes += 1
-        self.total_steps += self.curr_steps
-        self.tracker.episode_data.append(
-            {
-                "episode_length": self.curr_steps,  # this episode
-                "episode_reward": self.curr_reward,  # this episode
-                "episodes": self.total_episodes,
-                "steps": self.total_steps,
-            }
+        self.tracker.add_episode_data(
+            steps=self.curr_steps, reward=self.curr_reward
         )
         self.curr_steps = 0
         self.curr_reward = 0
@@ -106,5 +86,7 @@ class SB3Tracker(AgentTracker):
             save_path = artifacts_dir / zipped_name
             if save_path.is_file():
                 print(f"SB3Tracker: Restored SB3 PPO model '{name}'.")
-                return PPO.load(save_path)
+                policy = PPO.load(save_path)
+                self.save(name, policy)
+                return policy
         print(f"SB3Tracker: No saved SB3 PPO '{name}' found.")

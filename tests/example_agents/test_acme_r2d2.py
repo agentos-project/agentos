@@ -1,13 +1,10 @@
-from pathlib import Path
 from tests.utils import run_component_in_dir
+from tests.utils import ACME_R2D2_AGENT_DIR
 
 
 def test_acme_r2d2_agent(venv):
-    agent_dir = (
-        Path(__file__).parent.parent.parent / "example_agents" / "acme_r2d2"
-    )
     run_component_in_dir(
-        agent_dir,
+        ACME_R2D2_AGENT_DIR,
         venv,
         "agent",
         entry_points=["evaluate", "learn"],

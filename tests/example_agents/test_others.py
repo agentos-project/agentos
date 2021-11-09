@@ -1,13 +1,14 @@
 import pytest
-from pathlib import Path
 from tests.utils import run_component_in_dir
+from tests.utils import RL_AGENTS_DIR
+from tests.utils import PREDICTIVE_CODING_AGENT_DIR
+from tests.utils import EVOLUTIONARY_AGENT_DIR
 
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_rl_agents(virtualenv):
-    agent_dir = Path(__file__).parent / "example_agents" / "rl_agents"
     run_component_in_dir(
-        agent_dir,
+        RL_AGENTS_DIR,
         virtualenv,
         "ReinforceAgent",
     )
@@ -20,16 +21,9 @@ def test_rl_agents(virtualenv):
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_predictive_coding(virtualenv):
-    agent_dir = (
-        Path(__file__).parent
-        / "example_agents"
-        / "predictive_coding"
-        / "free_energy_tutorial"
-    )
-    run_component_in_dir(agent_dir, virtualenv, "agent")
+    run_component_in_dir(PREDICTIVE_CODING_AGENT_DIR, virtualenv, "agent")
 
 
 @pytest.mark.skip(reason="TODO: port run_component to new abstractions")
 def test_evolutionary_agent(virtualenv):
-    agent_dir = Path(__file__).parent / "example_agents" / "evolutionary_agent"
-    run_component_in_dir(agent_dir, virtualenv, "agent")
+    run_component_in_dir(EVOLUTIONARY_AGENT_DIR, virtualenv, "agent")

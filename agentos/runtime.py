@@ -1,14 +1,10 @@
 """Functions and classes used by the AOS runtime."""
 import os
-import yaml
 import click
-import mlflow
-import tempfile
-import shutil
 from datetime import datetime
 from pathlib import Path
 from agentos.component import Component
-from agentos.utils import MLFLOW_EXPERIMENT_ID
+from agentos.parameter_set import ParameterSet
 
 
 def run_component(
@@ -25,37 +21,10 @@ def run_component(
     :param params: dict of params for the entry point being run.
     :param param_file: YAML to load params from for entry point being run.
     """
-    _log_run_info(
-        component_name,
-        entry_point,
-        component_spec_file,
-        params,
-        param_file,
-    )
     component = Component.get_from_yaml(component_name, component_spec_file)
-    component.parse_param_file(param_file)
-    component.add_params_to_fn(entry_point, params)
-    component.run(entry_point)
-
-
-# TODO - move into and integrate with ComponentNamespace + Component
-def _log_run_info(name, entry_point, spec_file, params, param_file):
-    mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
-    mlflow.log_param("component_name", name)
-    mlflow.log_param("entry_point", entry_point)
-    mlflow.log_artifact(Path(spec_file).absolute())
-    _log_data_as_artifact("cli_parameters.yaml", params)
-    if param_file is not None:
-        mlflow.log_artifact(Path(param_file).absolute())
-
-
-def _log_data_as_artifact(name: str, data: dict):
-    dir_path = Path(tempfile.mkdtemp())
-    artifact_path = dir_path / name
-    with open(artifact_path, "w") as file_out:
-        file_out.write(yaml.safe_dump(data))
-    mlflow.log_artifact(artifact_path)
-    shutil.rmtree(dir_path)
+    parameters = ParameterSet.get_from_file(param_file)
+    parameters.update(component_name, entry_point, params)
+    component.run(entry_point, parameters)
 
 
 def initialize_agent_directories(dir_names, agent_name, agentos_dir):
