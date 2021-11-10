@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block head_title %}
+  Component: {{ component.name }}
+{% endblock head_title %}
+
+{% block container %}
+  <div class='title'>Component {{ component.name }}</div>
+{% endblock container %}
+
+{% block content %}
+  <div class="content">
+    <h4>Install</h4>
+    <span class="code">$ agentos install {{ component.name }}</span>
+  </div>
+
+  <div class="content">
+    <h4>Details</h4>
+    <ul>
+      <li><strong>Type:</strong> {{ component.component_type_text }}</li>
+      <li><strong>Description:</strong> {{ component.description }}</li>
+      <li>
+        <strong>Releases:</strong>
+        <ul>
+          {% for release in component.releases.all %}
+            <li>{{ release.name }}</li>
+              <ul>
+                  <li>
+                    <strong>Github URL:</strong>
+                    <a href="{{ release.github_url }}">
+                      {{ release.github_url }}
+                    </a>
+                  </li>
+                  <li>
+                    <strong>Git Hash:</strong>
+                    <a href="{{release.github_url}}/tree/{{release.git_hash}}">
+                      {{ release.git_hash }}
+                    </a>
+                  </li>
+                  <li><strong>File Path:</strong> {{ release.file_path }}</li>
+                  <li><strong>Class Name:</strong> {{ release.class_name }}</li>
+                  <li>
+                    <strong>Requirements Path:</strong> {{ release.requirements_path }}
+                  </li>
+              </ul>
+          {% endfor %}
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="content">
+    <h4>Runs</h4>
+    <ul>
+    {% for run in runs %}
+      <li>
+        {{ run.display_string }}
+        <a href="{% url 'run_detail' run.id %}">
+            details
+        </a>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+
+{% endblock content %}

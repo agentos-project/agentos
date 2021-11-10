@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block head_title %}
+  AgentOS Component Registry
+{% endblock head_title %}
+
+{% block container %}
+  <div class='title'>AgentOS Component Registry</div>
+{% endblock container %}
+
+{% block content %}
+  <div class="content">
+    <strong>Environments</strong>
+    {% if environments %}
+      <ul>
+        {% for environment in environments %}
+          <li>
+            <a href="{% url 'component_detail' environment.id %}">
+              {{ environment.name }}
+            </a>
+            - {{environment.description}}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No Environments are available.</p>
+    {% endif %}
+
+    <strong>Agents</strong>
+    {% if agents %}
+      <ul>
+        {% for agent in agents %}
+          <li>
+            <a href="{% url 'component_detail' agent.id %}">
+              {{ agent.name }}
+            </a>
+            - {{ agent.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No Agents are available.</p>
+    {% endif %}
+
+    <strong>Policies</strong>
+    {% if policies %}
+      <ul>
+        {% for policy in policies %}
+          <li>
+            <a href="{% url 'component_detail' policy.id %}">
+              {{ policy.name }}
+            </a>
+            - {{ policy.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No Policies are available.</p>
+    {% endif %}
+
+    <strong>Datasets</strong>
+    {% if datasets %}
+      <ul>
+        {% for dataset in datasets %}
+          <li>
+            <a href="{% url 'component_detail' dataset.id %}">
+              {{ dataset.name }}
+            </a>
+            - {{ dataset.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No Datasets are available.</p>
+    {% endif %}
+
+    <strong>Trainers</strong>
+    {% if trainers %}
+      <ul>
+        {% for trainer in trainers %}
+          <li>
+            <a href="{% url 'component_detail' trainer.id %}">
+              {{ trainer.name }}
+            </a>
+            - {{ trainer.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No Trainers are available.</p>
+    {% endif %}
+  </div>
+{% endblock content %}
