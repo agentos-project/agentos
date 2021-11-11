@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block head_title %}
+  Run {{ run.id }}
+{% endblock head_title %}
+
+{% block container %}
+  <div class='title'>Run {{ run.id }}</div>
+{% endblock container %}
+
+{% block content %}
+  <div class="content">
+    <h4>Download</h4>
+    <span class="code">$ agentos get {{ run.id }} .</span>
+  </div>
+
+  <div class="content">
+    <h4>Details</h4>
+    <ul>
+      <li>
+        <strong>Agent:</strong>
+        <a href="{% url 'component_detail' run.agent.id %}">
+          {{ run.agent.name }}
+        </a>
+      </li>
+      <li>
+        <strong>Environment:</strong>
+        <a href="{% url 'component_detail' run.environment.id %}">
+          {{ run.environment.name }}
+        </a>
+      </li>
+      <li>
+        <strong>Other Components:</strong>
+          <ul>
+          {% for component in run.other_components %}
+            <li>
+              <a href="{% url 'component_detail' component.id %}">
+                {{component.name}}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+
+      <li>
+        <strong>Total Training Episodes:</strong>
+        {{ run.benchmark_data.total_training_episodes }}
+      </li>
+      <li>
+        <strong>Total Training Transitions:</strong>
+        {{ run.benchmark_data.total_training_transitions }}
+      </li>
+    </ul>
+  </div>
+
+  <div class="content">
+    <h4>Results</h4>
+    <ul>
+      <li>
+        <strong>Benchmarking Episodes:</strong>
+        {{ run.benchmark_data.total_benchmarking_episodes}}
+      </li>
+
+      <li>
+        <strong>Max episode transitions:</strong>
+        {{ run.benchmark_data.max_episode_transitions }}
+      </li>
+      <li>
+        <strong>Mean episode transitions:</strong>
+        {{ run.benchmark_data.mean_episode_transitions }}
+      </li>
+      <li>
+        <strong>Median episode transitions:</strong>
+        {{ run.benchmark_data.median_episode_transitions }}
+      </li>
+      <li>
+        <strong>Min episode transitions:</strong>
+        {{ run.benchmark_data.min_episode_transitions }}
+      </li>
+    </ul>
+  </div>
+
+{% endblock content %}
