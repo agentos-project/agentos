@@ -54,6 +54,13 @@ class Component:
         name: str = None,
         dunder_name: str = "__component__",
     ):
+        """
+        :param managed_cls: The class used to create instances.
+        :param name: Name used to identify the Component.
+        :param dunder_name: Name used for the pointer to this Component on any
+                            instances of ``managed_cls`` created by this
+                            Component.
+        """
         self._managed_cls = managed_cls
         self._dunder_name = dunder_name
         self._requirements = []
@@ -73,13 +80,22 @@ class Component:
 
     @classmethod
     def get_from_class(
-        cls, managed_cls: Type[T], name: str = None
+        cls,
+        managed_cls: Type[T],
+        name: str = None,
+        dunder_name: str = "__component__",
     ) -> "Component":
-        return Component(managed_cls=managed_cls, name=name)
+        return Component(
+            managed_cls=managed_cls, name=name, dunder_name=dunder_name
+        )
 
     @classmethod
     def get_from_file(
-        cls, class_name: str, file_path: str, name: str = None
+        cls,
+        class_name: str,
+        file_path: str,
+        name: str = None,
+        dunder_name: str = "__component__",
     ) -> "Component":
         assert file_path.is_file(), f"{file_path} does not exist"
         sys.path.append(str(file_path.parent))
@@ -90,7 +106,7 @@ class Component:
         spec.loader.exec_module(module)
         cls = getattr(module, class_name)
         sys.path.pop()
-        return Component(managed_cls=cls, name=name)
+        return Component(managed_cls=cls, name=name, dunder_name=dunder_name)
 
     def parse_param_file(self, param_file: str) -> None:
         """Parses a param file and adds the parameters to the appropriate
@@ -121,13 +137,15 @@ class Component:
                 return found
         return None
 
-    def call(self, fn_name: str):
+    def run(self, fn_name: str, params: dict = None):
         self.instantiate_class()
         fn = getattr(self._instance, fn_name)
         assert fn is not None, f"{self._instance} has no function {fn_name}"
-        params = self._params.get(fn_name, {})
-        print(f"Calling {self.name}.{fn_name}(**{params})")
-        return fn(**params)
+        saved_params = self._params.get(fn_name, {})
+        params = params if params else {}
+        saved_params.update(params)
+        print(f"Calling {self.name}.{fn_name}(**{saved_params})")
+        return fn(**saved_params)
 
     def add_params_to_fn(self, fn_name: str, params: Dict[str, Any]):
         print(f"{self.name}: adding {params} to {fn_name}()")
@@ -154,14 +172,14 @@ class Component:
             setattr(self._instance, dep_alias, dep_component._instance)
         setattr(self._instance, self._dunder_name, self)
         self._managed_cls.__init__ = save_init
-        self.call("__init__")
+        self.run("__init__")
 
     def get_instance(self) -> T:
         self.instantiate_class()
         return self._instance
 
     @classmethod
-    def parse_spec_file(cls, spec_file: str) -> None:
+    def parse_spec_file(cls, spec_file: str) -> Dict:
         """Returns all Repos and Components defined by this ``spec_file``."""
         with open(spec_file) as file_in:
             config = yaml.safe_load(file_in)
@@ -170,7 +188,7 @@ class Component:
         return components
 
     @classmethod
-    def _parse_repos(cls, repos_spec: Dict) -> None:
+    def _parse_repos(cls, repos_spec: Dict) -> Dict:
         repos = {}
         for name, spec in repos_spec.items():
             repos[name] = spec
@@ -186,7 +204,7 @@ class Component:
         return repos
 
     @classmethod
-    def _parse_components(cls, components_spec: Dict, repos: Dict) -> None:
+    def _parse_components(cls, components_spec: Dict, repos: Dict) -> Dict:
         components = {}
         dependency_names = {}
         for name, spec in components_spec.items():

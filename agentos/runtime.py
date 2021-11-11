@@ -35,7 +35,7 @@ def run_component(
     component = Component.get_from_yaml(component_name, component_spec_file)
     component.parse_param_file(param_file)
     component.add_params_to_fn(entry_point, params)
-    component.call(entry_point)
+    component.run(entry_point)
 
 
 # TODO - move into and integrate with ComponentNamespace + Component
