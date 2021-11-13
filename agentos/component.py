@@ -165,8 +165,9 @@ class Component:
             alias = component.name
         self._dependencies[alias] = component
 
-    def get_instance(self, params: ParameterSet) -> None:
+    def get_instance(self, params: ParameterSet = None) -> None:
         instantiated = {}
+        params = params if params else ParameterSet({})
         return self._get_instance(params, instantiated)
 
     def _get_instance(self, params: ParameterSet, instantiated: dict) -> T:
