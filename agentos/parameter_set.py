@@ -27,7 +27,8 @@ class ParameterSet:
 
     def get(self, component_name: str, fn_name: str):
         component_params = self.parameters.get(component_name, {})
-        return component_params.get(fn_name, {})
+        fn_params = component_params.get(fn_name, {})
+        return fn_params if fn_params else {}
 
     def to_dict(self):
         return copy.deepcopy(self.parameters)
