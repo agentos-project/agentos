@@ -1,13 +1,16 @@
 import sys
 import yaml
 import copy
+import uuid
 import mlflow
 import importlib
 from typing import TypeVar, Dict, Type, Any
 from contextlib import contextmanager
 from agentos.utils import log_data_as_yaml_artifact
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.repo import RepoType, Repo, InMemoryRepo
+from agentos.utils import get_version_from_git
+from agentos.utils import get_prefixed_path_from_repo_root
+from agentos.repo import RepoType, Repo, InMemoryRepo, GitHubRepo
 from agentos.parameter_set import ParameterSet
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
@@ -111,7 +114,7 @@ class Component:
         file_path: str,
         dunder_name: str = "__component__",
     ) -> "Component":
-        full_path = repo.get_file_path(identifier.version) / file_path
+        full_path = get_full_path(repo, identifier, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
         sys.path.append(str(full_path.parent))
         spec = importlib.util.spec_from_file_location(
@@ -167,6 +170,9 @@ class Component:
                 component.add_dependency(dependency, attribute_name=attr_name)
 
         return components
+
+    def get_full_path(self):
+        return get_full_path(self.repo, self.identifier, self.file_path)
 
     def run(
         self,
@@ -239,11 +245,40 @@ class Component:
         components = [self]
         while len(components) > 0:
             component = components.pop()
+            component._handle_repo_spec(spec["repos"])
             spec["components"][component.full_name] = component.to_dict()
-            spec["repos"][component.repo.name] = component.repo.to_dict()
             for dependency in component._dependencies.values():
                 components.append(dependency)
         return spec
+
+    def _handle_repo_spec(self, repos):
+        existing_repo = repos.get(self.repo.name)
+        if existing_repo:
+            if self.repo.to_dict() != existing_repo:
+                self.repo.name = str(uuid.uuid4())
+        repos[self.repo.name] = self.repo.to_dict()
+
+    def get_pinned_component_spec(self):
+        versioned = self._get_versioned_component_dag()
+        return versioned.get_component_spec()
+
+    def _get_versioned_component_dag(self):
+        full_path = self.get_full_path()
+        repo_url, version = get_version_from_git(full_path)
+        identifier = ComponentIdentifier(self.identifier.full)
+        identifier.version = version
+        clone = Component(
+            managed_cls=self._managed_cls,
+            repo=GitHubRepo(name=self.repo.name, url=repo_url),
+            identifier=identifier,
+            class_name=self.class_name,
+            file_path=get_prefixed_path_from_repo_root(full_path),
+            dunder_name=self._dunder_name,
+        )
+        for alias, dependency in self._dependencies.items():
+            pinned_dependency = dependency._get_versioned_component_dag()
+            clone.add_dependency(pinned_dependency, alias=alias)
+        return clone
 
     @property
     def name(self):
@@ -257,7 +292,7 @@ class Component:
         dependencies = {k: v.full_name for k, v in self._dependencies.items()}
         return {
             "repo": self.repo.name,
-            "file_path": self.file_path,
+            "file_path": str(self.file_path),
             "class_name": self.class_name,
             "dependencies": dependencies,
         }
@@ -289,3 +324,7 @@ class Component:
             yield
         finally:
             pass
+
+
+def get_full_path(repo: Repo, identifier: ComponentIdentifier, file_path: str):
+    return (repo.get_file_path(identifier.version) / file_path).absolute()

@@ -4,6 +4,8 @@ from enum import Enum
 from typing import TypeVar
 from pathlib import Path
 from dulwich import porcelain
+from dulwich.objectspec import parse_commit
+from dulwich.objectspec import parse_ref
 from agentos.utils import AOS_CACHE_DIR
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
@@ -36,6 +38,9 @@ class Repo:
         else:
             raise Exception(f"Unknown repo spec type: {spec}")
 
+    def __eq__(self, other):
+        return self.to_dict() == other.to_dict()
+
     def to_dict(self):
         return {"type": self.type.value}
 
@@ -62,6 +67,7 @@ class GitHubRepo(Repo):
     def __init__(self, name: str, url: str):
         self.name = name
         self.type = RepoType.GITHUB
+        url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
         self.local_repo_path = None
 
@@ -93,13 +99,18 @@ class GitHubRepo(Repo):
         curr_dir = os.getcwd()
         os.chdir(local_repo_path)
         repo = porcelain.open_repo(local_repo_path)
-        branch_name = f"refs/remotes/origin/{to_checkout}"
-        if branch_name.encode("UTF-8") not in repo.get_refs():
-            raise Exception(f"Unknown branch: {to_checkout}")
-        porcelain.update_head(
-            repo, target=branch_name, detached=False, new_branch=None
-        )
-        repo.reset_index()
+        treeish = None
+        # Is version a branch name?
+        try:
+            treeish = parse_ref(repo, f"origin/{to_checkout}")
+        except KeyError:
+            pass
+
+        # Is version a commit hash (long or short)?
+        if treeish is None:
+            treeish = parse_commit(repo, to_checkout).sha().hexdigest()
+
+        porcelain.reset(repo=repo, mode="hard", treeish=treeish)
         os.chdir(curr_dir)
 
 
