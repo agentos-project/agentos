@@ -1,13 +1,13 @@
 import pytest
 from tests.utils import run_component_in_dir
-from tests.utils import ACME_R2D2_AGENT_DIR
+from tests.utils import ACME_DQN_AGENT_DIR
 from tests.utils import is_linux
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
-def test_acme_r2d2_agent(venv):
+def test_acme_dqn_agent(venv):
     run_component_in_dir(
-        ACME_R2D2_AGENT_DIR,
+        ACME_DQN_AGENT_DIR,
         venv,
         "agent",
         entry_points=["evaluate", "learn"],
