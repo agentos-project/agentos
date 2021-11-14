@@ -1,5 +1,5 @@
 import os
-import subprocess
+import sys
 from enum import Enum
 from typing import TypeVar
 from pathlib import Path
@@ -18,6 +18,11 @@ class RepoType(Enum):
 
 
 class Repo:
+    """
+    Base class used to encapsulate information about where a Component
+    is located.
+    """
+
     @classmethod
     def from_spec(cls, name, spec):
         if spec["type"] == RepoType.LOCAL.value:
@@ -39,12 +44,21 @@ class Repo:
 
 
 class UnknownRepo(Repo):
+    """
+    A fallback; a Component with an UnknownRepo doesn't have a known
+    public source.
+    """
+
     def __init__(self, name=None):
         self.name = name if name else "unknown_repo"
         self.type = RepoType.UNKNOWN
 
 
 class GitHubRepo(Repo):
+    """
+    A Component with an GitHubRepo can be found on GitHub.
+    """
+
     def __init__(self, name: str, url: str):
         self.name = name
         self.type = RepoType.GITHUB
@@ -60,6 +74,7 @@ class GitHubRepo(Repo):
     def get_file_path(self, version):
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
+        sys.stdout.flush()
         return local_repo_path
 
     def _clone_repo(self, version):
@@ -67,7 +82,9 @@ class GitHubRepo(Repo):
         clone_destination = AOS_CACHE_DIR / org_name / proj_name / version
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
-            porcelain.clone(self.url, target=str(clone_destination), checkout=True)
+            porcelain.clone(
+                self.url, target=str(clone_destination), checkout=True
+            )
         assert clone_destination.exists(), f"Unable to clone {self.url}"
         return clone_destination
 
@@ -76,15 +93,21 @@ class GitHubRepo(Repo):
         curr_dir = os.getcwd()
         os.chdir(local_repo_path)
         repo = porcelain.open_repo(local_repo_path)
-        branch_name = f'refs/remotes/origin/{version}'
-        if branch_name.encode('UTF-8') not in repo.get_refs():
-            raise Exception(f'Unknown branch: {version}')
-        porcelain.update_head(repo, target=branch_name, detached=False, new_branch=None)
+        branch_name = f"refs/remotes/origin/{to_checkout}"
+        if branch_name.encode("UTF-8") not in repo.get_refs():
+            raise Exception(f"Unknown branch: {to_checkout}")
+        porcelain.update_head(
+            repo, target=branch_name, detached=False, new_branch=None
+        )
         repo.reset_index()
         os.chdir(curr_dir)
 
 
 class LocalRepo(Repo):
+    """
+    A Component with a LocalRepo can be found on your local drive.
+    """
+
     def __init__(self, name: str, file_path: str):
         self.name = name
         self.type = RepoType.LOCAL
@@ -101,6 +124,11 @@ class LocalRepo(Repo):
 
 
 class InMemoryRepo(Repo):
+    """
+    A Component with a InMemoryRepo was created from a class that was
+    already loaded into Python.
+    """
+
     def __init__(self, name=None):
         self.name = name if name else "in_memory"
         self.type = RepoType.IN_MEMORY

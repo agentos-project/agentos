@@ -10,7 +10,6 @@ from agentos.core import (
     Runnable,
     Trainer,
 )
-from agentos.runtime import run_component
 from agentos.component import Component
 from agentos.registry import get_component
 from agentos.repo import Repo
@@ -24,7 +23,6 @@ __all__ = [
     "Policy",
     "Runnable",
     "Trainer",
-    "run_component",
     "Component",
     "get_component",
     "Repo",

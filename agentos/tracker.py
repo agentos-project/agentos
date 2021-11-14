@@ -27,6 +27,10 @@ RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 
 
 class AgentTracker:
+    """
+    A Component used to track Agent training and evaluation runs.
+    """
+
     LEARN_KEY = "learn"
     RESET_KEY = "reset"
     EVALUATE_KEY = "evaluate"
@@ -75,7 +79,7 @@ class AgentTracker:
         artifacts_dir = self._get_artifacts_dir(run)
         artifact_paths = []
         for name in os.listdir(self._get_artifacts_dir(run)):
-            if name in ["parameters.yaml", "agentos.yaml"]:
+            if name in ["parameter_set.yaml", "agentos.yaml"]:
                 continue
             artifact_paths.append(artifacts_dir / name)
 
@@ -84,7 +88,7 @@ class AgentTracker:
         return artifact_paths
 
     def _get_parameters(self, run):
-        return self._get_yaml_artifact(run, "parameters.yaml")
+        return self._get_yaml_artifact(run, "parameter_set.yaml")
 
     def _get_component_spec(self, run):
         return self._get_yaml_artifact(run, "agentos.yaml")

@@ -3,16 +3,42 @@ import yaml
 import copy
 import mlflow
 import importlib
-from typing import TypeVar, Dict, Type
+from typing import TypeVar, Dict, Type, Any
 from contextlib import contextmanager
 from agentos.utils import log_data_as_yaml_artifact
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.utils import ComponentIdentifier
 from agentos.repo import RepoType, Repo, InMemoryRepo
 from agentos.parameter_set import ParameterSet
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
+
+
+class ComponentIdentifier:
+    """
+    This manages a Component Identifier so we can refer to Components both as
+    [name] and [name]==[version] in agentos.yaml spec files or from the
+    command-line.
+    """
+
+    def __init__(self, identifier, latest_refs=None):
+        split_identifier = identifier.split("==")
+        assert len(split_identifier) <= 2, f"Bad identifier: '{identifier}'"
+        if len(split_identifier) == 1:
+            self.name = split_identifier[0]
+            if latest_refs:
+                self.version = latest_refs[self.name]
+            else:
+                self.version = None
+        else:
+            self.name = split_identifier[0]
+            self.version = split_identifier[1]
+
+    @property
+    def full(self):
+        if self.name and self.version:
+            return "==".join((self.name, self.version))
+        return self.name
 
 
 class Component:
@@ -142,21 +168,25 @@ class Component:
 
         return components
 
-    def run(self, fn_name: str, params: ParameterSet = None):
-        params = params if params else ParameterSet()
-        with self._track_run(fn_name, params):
-            return self._untracked_run(fn_name, params)
-
-    def _untracked_run(
-        self, fn_name: str, params: ParameterSet, instance=None
+    def run(
+        self,
+        fn_name: str,
+        params: ParameterSet = None,
+        tracked: bool = True,
+        instance: Any = None,
     ):
-        instance = instance if instance else self.get_instance(params=params)
-        fn = getattr(instance, fn_name)
-        assert fn is not None, f"{instance} has no attr {fn_name}"
-        fn_params = params.get(self.name, fn_name)
-        print(f"Calling {self.name}.{fn_name}(**{fn_params})")
-        result = fn(**fn_params)
-        return result
+        params = params if params else ParameterSet()
+        manager = self._track_run if tracked else self._no_track_run
+        with manager(fn_name, params):
+            instance = (
+                instance if instance else self.get_instance(params=params)
+            )
+            fn = getattr(instance, fn_name)
+            assert fn is not None, f"{instance} has no attr {fn_name}"
+            fn_params = params.get(self.name, fn_name)
+            print(f"Calling {self.name}.{fn_name}(**{fn_params})")
+            result = fn(**fn_params)
+            return result
 
     def add_dependency(self, component: "Component", alias: str = None):
         if type(component) is not type(self):
@@ -184,12 +214,12 @@ class Component:
             setattr(instance, dep_alias, dep_instance)
         setattr(instance, self._dunder_name, self)
         self._managed_cls.__init__ = save_init
-        self._untracked_run("__init__", params=params, instance=instance)
+        self.run("__init__", params=params, instance=instance, tracked=False)
         instantiated[self.name] = instance
         return instance
 
     def _log_params(self, params: ParameterSet) -> None:
-        log_data_as_yaml_artifact("parameters.yaml", params.to_dict())
+        log_data_as_yaml_artifact("parameter_set.yaml", params.to_dict())
 
     def _log_component_spec(self) -> None:
         spec = self.get_component_spec()
@@ -250,3 +280,10 @@ class Component:
             yield
         finally:
             mlflow.end_run()
+
+    @contextmanager
+    def _no_track_run(self, fn_name: str, params: ParameterSet):
+        try:
+            yield
+        finally:
+            pass

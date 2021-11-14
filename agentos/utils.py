@@ -19,27 +19,6 @@ def log_data_as_yaml_artifact(name: str, data: dict):
     shutil.rmtree(tmp_dir_path)
 
 
-class ComponentIdentifier:
-    def __init__(self, identifier, latest_refs=None):
-        split_identifier = identifier.split("==")
-        assert len(split_identifier) <= 2, f"Bad identifier: '{identifier}'"
-        if len(split_identifier) == 1:
-            self.name = split_identifier[0]
-            if latest_refs:
-                self.version = latest_refs[self.name]
-            else:
-                self.version = None
-        else:
-            self.name = split_identifier[0]
-            self.version = split_identifier[1]
-
-    @property
-    def full(self):
-        if self.name and self.version:
-            return "==".join((self.name, self.version))
-        return self.name
-
-
 DUMMY_DEV_REGISTRY = {
     "components": {
         "acme_cartpole==nj_registry_2next": {

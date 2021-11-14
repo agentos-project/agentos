@@ -1,5 +1,5 @@
 from agentos.utils import DUMMY_DEV_REGISTRY
-from agentos.utils import ComponentIdentifier
+from agentos.component import ComponentIdentifier
 from agentos.component import Component
 from agentos.repo import Repo
 
@@ -10,6 +10,11 @@ def get_component(name):
 
 
 class Registry:
+    """
+    This encapsulates interactions with an external registry that contains
+    information about publicly-available Components.
+    """
+
     def __init__(self, registry=None):
         self.registry = registry if registry else DUMMY_DEV_REGISTRY
         self.latest_refs = self.registry["latest_refs"]

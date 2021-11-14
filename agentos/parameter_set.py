@@ -7,6 +7,11 @@ T = TypeVar("T")
 
 
 class ParameterSet:
+    """
+    This object is used to encapsulate a set of parameters that are used to
+    initialize a Component dependency DAG and to run methods on this DAG.
+    """
+
     def __init__(self, parameters: Dict = None):
         self.parameters = parameters if parameters else {}
 
