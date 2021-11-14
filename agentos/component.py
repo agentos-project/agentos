@@ -1,44 +1,44 @@
-import importlib
-from pathlib import Path
 import sys
 import yaml
-from enum import Enum
+import copy
+import mlflow
+import importlib
 from typing import TypeVar, Dict, Type, Any
+from contextlib import contextmanager
+from agentos.utils import log_data_as_yaml_artifact
+from agentos.utils import MLFLOW_EXPERIMENT_ID
+from agentos.repo import RepoType, Repo, InMemoryRepo
+from agentos.parameter_set import ParameterSet
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
 
 
-class RepoType(Enum):
-    LOCAL = "local"
-    GITHUB = "github"
-    IN_MEMORY = "in_memory"
+class ComponentIdentifier:
+    """
+    This manages a Component Identifier so we can refer to Components both as
+    [name] and [name]==[version] in agentos.yaml spec files or from the
+    command-line.
+    """
 
+    def __init__(self, identifier, latest_refs=None):
+        split_identifier = identifier.split("==")
+        assert len(split_identifier) <= 2, f"Bad identifier: '{identifier}'"
+        if len(split_identifier) == 1:
+            self.name = split_identifier[0]
+            if latest_refs:
+                self.version = latest_refs[self.name]
+            else:
+                self.version = None
+        else:
+            self.name = split_identifier[0]
+            self.version = split_identifier[1]
 
-class Repo:
-    pass
-
-
-class GitHubRepo(Repo):
-    def __init__(self, name: str, url: str, default_version: str = None):
-        """If ``default_version`` is not provided, HEAD of master will be
-        used."""
-        self.name = name
-        self.type = RepoType.GITHUB
-        self.url = url
-        self.default_version = default_version
-
-
-class LocalRepo(Repo):
-    def __init__(self, name: str, file_path: str):
-        self.name = name
-        self.type = RepoType.LOCAL
-        self.file_path = Path(file_path)
-
-
-class InMemoryRepo(Repo):
-    def __init__(self):
-        self.type = RepoType.IN_MEMORY
+    @property
+    def full(self):
+        if self.name and self.version:
+            return "==".join((self.name, self.version))
+        return self.name
 
 
 class Component:
@@ -51,7 +51,10 @@ class Component:
     def __init__(
         self,
         managed_cls: Type[T],
-        name: str = None,
+        repo: Repo,
+        identifier: ComponentIdentifier,
+        class_name: str,
+        file_path: str,
         dunder_name: str = "__component__",
     ):
         """
@@ -62,12 +65,13 @@ class Component:
                             Component.
         """
         self._managed_cls = managed_cls
+        self.repo = repo
+        self.identifier = identifier
+        self.class_name = class_name
+        self.file_path = file_path
         self._dunder_name = dunder_name
         self._requirements = []
         self._dependencies = {}
-        self._params = {}
-        self._instance = None
-        self.name = name if name else self._managed_cls.__name__
 
     @classmethod
     def get_from_yaml(
@@ -76,7 +80,11 @@ class Component:
         component_spec_file: str,
     ) -> "Component":
         components = cls.parse_spec_file(component_spec_file)
-        return components[name]
+        # User may run without version string (e.g. "agent" not "agent==1.2.3")
+        names = {ComponentIdentifier(n).name: n for n in components.keys()}
+        names.update({n: n for n in components.keys()})
+        assert name in names, f'"{name}" not found in {names}'
+        return components[names[name]]
 
     @classmethod
     def get_from_class(
@@ -86,97 +94,41 @@ class Component:
         dunder_name: str = "__component__",
     ) -> "Component":
         return Component(
-            managed_cls=managed_cls, name=name, dunder_name=dunder_name
+            managed_cls=managed_cls,
+            repo=InMemoryRepo(),
+            identifier=ComponentIdentifier(managed_cls.__name__),
+            class_name=managed_cls.__name__,
+            file_path=".",
+            dunder_name=dunder_name,
         )
 
     @classmethod
-    def get_from_file(
+    def get_from_repo(
         cls,
+        repo: Repo,
+        identifier: ComponentIdentifier,
         class_name: str,
         file_path: str,
-        name: str = None,
         dunder_name: str = "__component__",
     ) -> "Component":
-        assert file_path.is_file(), f"{file_path} does not exist"
-        sys.path.append(str(file_path.parent))
+        full_path = repo.get_file_path(identifier.version) / file_path
+        assert full_path.is_file(), f"{full_path} does not exist"
+        sys.path.append(str(full_path.parent))
         spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE_{class_name.upper()}", str(file_path)
+            f"AOS_MODULE_{class_name.upper()}", str(full_path)
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         cls = getattr(module, class_name)
         sys.path.pop()
-        return Component(managed_cls=cls, name=name, dunder_name=dunder_name)
-
-    def parse_param_file(self, param_file: str) -> None:
-        """Parses a param file and adds the parameters to the appropriate
-        Component methods."""
-        if param_file is None:
-            return
-        with open(param_file) as file_in:
-            params = yaml.safe_load(file_in)
-        self.add_params(params)
-
-    def add_params(self, params: Dict):
-        for c_name, param_dict in params.items():
-            component = self.get_dependency_with_name(c_name)
-            for fn_name, fn_params in param_dict.items():
-                if component is None or fn_params is None:
-                    continue
-                component.add_params_to_fn(fn_name, fn_params)
-
-    def get_dependency_with_name(self, name: str):
-        """Searches the Component dependency DAG rooted at ``self`` for a
-        component named ``name``.  Note, the root component's name (``self``)
-        will also be checked."""
-        if self.name == name:
-            return self
-        for dep_name, dep_component in self._dependencies.items():
-            found = dep_component.get_dependency_with_name(name)
-            if found:
-                return found
-        return None
-
-    def run(self, fn_name: str, params: dict = None):
-        self.instantiate_class()
-        fn = getattr(self._instance, fn_name)
-        assert fn is not None, f"{self._instance} has no function {fn_name}"
-        saved_params = self._params.get(fn_name, {})
-        params = params if params else {}
-        saved_params.update(params)
-        print(f"Calling {self.name}.{fn_name}(**{saved_params})")
-        return fn(**saved_params)
-
-    def add_params_to_fn(self, fn_name: str, params: Dict[str, Any]):
-        print(f"{self.name}: adding {params} to {fn_name}()")
-        curr_params = self._params.get(fn_name, {})
-        curr_params.update(params)
-        self._params[fn_name] = curr_params
-
-    def add_dependency(self, component: "Component", alias: str = None):
-        if type(component) is not type(self):
-            raise Exception("add_dependency() must be passed a Component")
-        if alias is None:
-            alias = component.name
-        self._dependencies[alias] = component
-
-    def instantiate_class(self) -> None:
-        if self._instance is not None:
-            return
-        save_init = self._managed_cls.__init__
-        self._managed_cls.__init__ = lambda self: None
-        self._instance = self._managed_cls()
-        for dep_alias, dep_component in self._dependencies.items():
-            print(f"Adding {dep_alias} to {self.name}")
-            dep_component.instantiate_class()
-            setattr(self._instance, dep_alias, dep_component._instance)
-        setattr(self._instance, self._dunder_name, self)
-        self._managed_cls.__init__ = save_init
-        self.run("__init__")
-
-    def get_instance(self) -> T:
-        self.instantiate_class()
-        return self._instance
+        return Component(
+            managed_cls=cls,
+            repo=repo,
+            identifier=identifier,
+            class_name=class_name,
+            file_path=file_path,
+            dunder_name=dunder_name,
+        )
 
     @classmethod
     def parse_spec_file(cls, spec_file: str) -> Dict:
@@ -191,16 +143,7 @@ class Component:
     def _parse_repos(cls, repos_spec: Dict) -> Dict:
         repos = {}
         for name, spec in repos_spec.items():
-            repos[name] = spec
-            if spec["type"] == RepoType.LOCAL.value:
-                repo = LocalRepo(name=name, file_path=spec["path"])
-                repos[name] = repo
-            elif spec["type"] == RepoType.GITHUB.value:
-                raise NotImplementedError()
-            elif spec["type"] == RepoType.IN_MEMORY.value:
-                raise NotImplementedError()
-            else:
-                raise NotImplementedError()
+            repos[name] = Repo.from_spec(name, spec)
         return repos
 
     @classmethod
@@ -208,10 +151,11 @@ class Component:
         components = {}
         dependency_names = {}
         for name, spec in components_spec.items():
-            repo = repos[spec["repo"]]
-            full_path = repo.file_path / Path(spec["file_path"])
-            component = Component.get_from_file(
-                class_name=spec["class_name"], file_path=full_path, name=name
+            component = Component.get_from_repo(
+                repo=repos[spec["repo"]],
+                identifier=ComponentIdentifier(name),
+                class_name=spec["class_name"],
+                file_path=spec["file_path"],
             )
             components[name] = component
             dependency_names[name] = spec.get("dependencies", {})
@@ -223,3 +167,123 @@ class Component:
                 component.add_dependency(dependency, alias=alias)
 
         return components
+
+    def run(
+        self,
+        fn_name: str,
+        params: ParameterSet = None,
+        tracked: bool = True,
+        instance: Any = None,
+    ):
+        params = params if params else ParameterSet()
+        manager = self._track_run if tracked else self._no_track_run
+        with manager(fn_name, params):
+            instance = (
+                instance if instance else self.get_instance(params=params)
+            )
+            fn = getattr(instance, fn_name)
+            assert fn is not None, f"{instance} has no attr {fn_name}"
+            fn_params = params.get(self.name, fn_name)
+            print(f"Calling {self.name}.{fn_name}(**{fn_params})")
+            result = fn(**fn_params)
+            return result
+
+    def add_dependency(self, component: "Component", alias: str = None):
+        if type(component) is not type(self):
+            raise Exception("add_dependency() must be passed a Component")
+        if alias is None:
+            alias = component.name
+        self._dependencies[alias] = component
+
+    def get_instance(self, params: ParameterSet = None) -> None:
+        instantiated = {}
+        params = params if params else ParameterSet({})
+        return self._get_instance(params, instantiated)
+
+    def _get_instance(self, params: ParameterSet, instantiated: dict) -> T:
+        if self.name in instantiated:
+            return instantiated[self.name]
+        save_init = self._managed_cls.__init__
+        self._managed_cls.__init__ = lambda self: None
+        instance = self._managed_cls()
+        for dep_alias, dep_component in self._dependencies.items():
+            print(f"Adding {dep_alias} to {self.name}")
+            dep_instance = dep_component._get_instance(
+                params=params, instantiated=instantiated
+            )
+            setattr(instance, dep_alias, dep_instance)
+        setattr(instance, self._dunder_name, self)
+        self._managed_cls.__init__ = save_init
+        self.run("__init__", params=params, instance=instance, tracked=False)
+        instantiated[self.name] = instance
+        return instance
+
+    def _log_params(self, params: ParameterSet) -> None:
+        log_data_as_yaml_artifact("parameter_set.yaml", params.to_dict())
+
+    def _log_component_spec(self) -> None:
+        spec = self.get_component_spec()
+        log_data_as_yaml_artifact("agentos.yaml", spec)
+        is_published = True
+        for repo_name, repo_data in spec["repos"].items():
+            is_published &= repo_data["type"] == RepoType.GITHUB.value
+        mlflow.log_param("is_published", is_published)
+
+    def _log_call(self, fn_name) -> None:
+        mlflow.log_param("entry_point", fn_name)
+
+    def get_component_spec(self):
+        spec = {"repos": {}, "components": {}}
+        components = [self]
+        while len(components) > 0:
+            component = components.pop()
+            spec["components"][component.full_name] = component.to_dict()
+            spec["repos"][component.repo.name] = component.repo.to_dict()
+            for dependency in component._dependencies.values():
+                components.append(dependency)
+        return spec
+
+    @property
+    def name(self):
+        return self.identifier.name
+
+    @property
+    def full_name(self):
+        return self.identifier.full
+
+    def to_dict(self):
+        dependencies = {k: v.full_name for k, v in self._dependencies.items()}
+        return {
+            "repo": self.repo.name,
+            "file_path": self.file_path,
+            "class_name": self.class_name,
+            "dependencies": dependencies,
+        }
+
+    def get_param_dict(self) -> Dict:
+        param_dict = {}
+        components = [self]
+        while len(components) > 0:
+            component = components.pop()
+            param_dict[component.name] = copy.deepcopy(component._params)
+            for dependency in component._dependencies.values():
+                components.append(dependency)
+        return param_dict
+
+    @contextmanager
+    def _track_run(self, fn_name: str, params: ParameterSet):
+        mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
+        self._log_params(params)
+        self._log_component_spec()
+        self._log_call(fn_name)
+        try:
+            yield
+        finally:
+            mlflow.end_run()
+
+    @contextmanager
+    def _no_track_run(self, fn_name: str, params: ParameterSet):
+        try:
+            yield
+        finally:
+            pass

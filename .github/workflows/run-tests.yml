@@ -37,4 +37,4 @@ jobs:
       - name: Run pytest
         run: |
           echo running pytest now
-          python -m pytest -s --durations=0 --ignore=tests/test_acme_from_registry.py --ignore=tests/example_agents/test_acme_r2d2.py
+          python -m pytest -s --durations=0 --ignore=tests/test_acme_from_registry.py

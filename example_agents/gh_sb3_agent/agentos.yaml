@@ -1,0 +1,36 @@
+repos:
+    aos_github:
+        type: github
+        url: https://github.com/nickjalbert/agentos.git
+
+
+components:
+    agent==nj_registry_2next:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/agent.py
+        class_name: SB3PPOAgent
+        dependencies: 
+            environment: environment==nj_registry_2next
+            tracker: tracker==nj_registry_2next
+            blah: agent==nj_registry_2next
+
+    agent==nj_registry_2next:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/agent.py
+        class_name: SB3PPOAgent
+        dependencies: 
+            environment: environment==nj_registry_2next
+            tracker: tracker==nj_registry_2next
+   
+    environment==nj_registry_2next:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/environment.py
+        class_name: CartPole
+    
+    tracker==nj_registry_2next:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/tracker.py
+        class_name: SB3Tracker
+
+
+

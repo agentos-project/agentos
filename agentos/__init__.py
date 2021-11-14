@@ -10,8 +10,10 @@ from agentos.core import (
     Runnable,
     Trainer,
 )
-from agentos.runtime import run_component
 from agentos.component import Component
+from agentos.registry import get_component
+from agentos.repo import Repo
+from agentos.parameter_set import ParameterSet
 
 __all__ = [
     "Agent",
@@ -22,5 +24,7 @@ __all__ = [
     "Runnable",
     "Trainer",
     "Component",
-    "run_component",
+    "get_component",
+    "Repo",
+    "ParameterSet",
 ]

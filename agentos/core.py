@@ -142,20 +142,19 @@ class Agent(MemberInitializer):
         """
         done = False
         step_count = 0
+        reward = 0
         while not done:
             if max_transitions and step_count > max_transitions:
                 self._episode_truncated()
                 break
-            _, _, _, _, done, _ = self.advance()
+            _, _, _, tmp_reward, done, _ = self.advance()
+            reward += tmp_reward
             step_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
+        self.tracker.add_episode_data(steps=step_count, reward=reward)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
-            total_episodes, total_steps = self.tracker.get_training_info()
-            new_step_count = total_steps + step_count
-            self.tracker.log_step_count(new_step_count)
-            self.tracker.log_episode_count(total_episodes + 1)
         return step_count
 
     def _print_run_results(self, all_steps, backup_dst):

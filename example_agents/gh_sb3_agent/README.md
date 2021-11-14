@@ -1,5 +1,8 @@
 ## Stable Baselines3 PPO Agent port
 
+This is the same as `example_agents/sb3_agent/`, but runs against versions of
+components available on GitHub.
+
 ### Agent Training
 
 Train the agent by running the following from the command-line:

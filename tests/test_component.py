@@ -16,12 +16,11 @@ def test_component_repl_demo():
             print("SimpleEnvironment.reset() called")
 
     # Generate Components from Classes
-    agent_component = Component(SimpleAgent)
-    environment_component = Component(SimpleEnvironment)
+    agent_component = Component.get_from_class(SimpleAgent)
+    environment_component = Component.get_from_class(SimpleEnvironment)
 
     # Add Dependency to SimpleAgent
     agent_component.add_dependency(environment_component, alias="env")
 
     # Instantiate a SimpleAgent and run reset_env() method
-    agent = agent_component.get_instance()
-    agent.reset_env()
+    agent_component.run("reset_env")

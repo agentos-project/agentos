@@ -1,13 +1,10 @@
-from pathlib import Path
 from tests.utils import run_component_in_dir
+from tests.utils import RLLIB_AGENT_DIR
 
 
 def test_rllib_agent(venv):
-    agent_dir = (
-        Path(__file__).parent.parent.parent / "example_agents" / "rllib_agent"
-    )
     run_component_in_dir(
-        agent_dir,
+        RLLIB_AGENT_DIR,
         venv,
         "agent",
         entry_points=["evaluate", "learn"],

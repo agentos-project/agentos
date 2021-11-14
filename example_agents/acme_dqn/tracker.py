@@ -11,7 +11,10 @@ from agentos.tracker import AgentTracker
 class AcmeTracker(AgentTracker):
     # Acme logger API
     def write(self, data: dict):
-        self.episode_data.append(data)
+        self.add_episode_data(
+            steps=data["episode_length"],
+            reward=data["episode_return"].item(),
+        )
 
     # Acme logger API
     def close(self):
@@ -39,6 +42,8 @@ class AcmeTracker(AgentTracker):
                 latest = tf.train.latest_checkpoint(save_path)
                 if latest is not None:
                     checkpoint.restore(latest)
+                    self.save_tensorflow(name, network)
                     print(f"AcmeTracker: Restored Tensorflow model {name}.")
                     return
+        self.save_tensorflow(name, network)
         print(f"AcmeTracker: No saved Tensorflow model {name} found.")
