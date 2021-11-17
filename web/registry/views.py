@@ -1,14 +1,12 @@
+import yaml
+import json
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-
-import yaml
-import json
-
 from .models import Component
-from .models import ComponentRelease
+from .models import ComponentDependency
 from .models import Run
 
 
@@ -16,7 +14,7 @@ def index(request):
     return HttpResponse(
         "Hello, world. You're at the registry index."
         f"There are {Component.objects.count()} Components with "
-        f"{ComponentRelease.objects.count()} releases."
+        f"{ComponentDependency.objects.count()} dependencies."
     )
 
 
@@ -56,6 +54,11 @@ def api_components(request):
             releases.append(release_data)
         all_components[component.name] = component_data
     return HttpResponse(yaml.dump(all_components))
+
+
+@csrf_exempt
+def api_v2_components(request):
+    raise NotImplementedError()
 
 
 @csrf_exempt

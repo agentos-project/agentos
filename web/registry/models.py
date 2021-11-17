@@ -9,64 +9,54 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class Component(TimeStampedModel):
-    ENVIRONMENT = "EN"
-    POLICY = "PO"
-    AGENT = "AG"
-    DATASET = "DA"
-    TRAINER = "TR"
-    COMPONENT_TYPES = [
-        (ENVIRONMENT, "EN"),
-        (POLICY, "PO"),
-        (AGENT, "AG"),
-        (DATASET, "DA"),
-        (TRAINER, "TR"),
-    ]
-    name = models.CharField(max_length=200, unique=True)
-    component_type = models.CharField(max_length=2, choices=COMPONENT_TYPES)
-    description = models.TextField()
-
-    @property
-    def is_environment(self):
-        return self.component_type == Component.ENVIRONMENT
-
-    @property
-    def is_policy(self):
-        return self.component_type == Component.POLICY
-
-    @property
-    def is_agent(self):
-        return self.component_type == Component.AGENT
-
-    @property
-    def is_dataset(self):
-        return self.component_type == Component.DATASET
-
-    @property
-    def is_trainer(self):
-        return self.component_type == Component.TRAINER
-
-    @property
-    def component_type_text(self):
-        return {
-            Component.ENVIRONMENT: "Environment",
-            Component.POLICY: "Policy",
-            Component.AGENT: "Agent",
-            Component.DATASET: "Dataset",
-            Component.TRAINER: "Trainer",
-        }[self.component_type]
-
-
-class ComponentRelease(TimeStampedModel):
-    component = models.ForeignKey(
-        "Component", on_delete=models.CASCADE, related_name="releases"
+class ComponentDependency(TimeStampedModel):
+    depender = models.ForeignKey(
+        "Component", on_delete=models.CASCADE, related_name="depender_set"
     )
+    dependee = models.ForeignKey(
+        "Component", on_delete=models.CASCADE, related_name="dependee_set"
+    )
+    alias = models.TextField()
+    unique_together = ["depender", "dependee", "alias"]
+
+    def __str__(self):
+        return (
+            f"<ComponentDependency {self.pk}: "
+            f"{self.depender} depends on {self.dependee}>"
+        )
+
+
+class Component(TimeStampedModel):
     name = models.CharField(max_length=200)
-    git_hash = models.CharField(max_length=200)
-    github_url = models.CharField(max_length=200)
+    version = models.CharField(max_length=200)
+    unique_together = ["name", "version"]
+    repo = models.ForeignKey(
+        "Repo", on_delete=models.CASCADE, related_name="repos"
+    )
     file_path = models.TextField()
     class_name = models.CharField(max_length=200)
-    requirements_path = models.TextField()
+    description = models.TextField()
+
+    dependencies = models.ManyToManyField(
+        "Component",
+        through="ComponentDependency",
+        through_fields=("depender", "dependee"),
+    )
+
+    def __str__(self):
+        display_version = self.version
+        if len(display_version) == 40:
+            display_version = display_version[:7]
+
+        return f"<Component {self.pk}: {self.name}=={display_version}>"
+
+
+class Repo(TimeStampedModel):
+    name = models.CharField(max_length=200, unique=True)
+    github_url = models.CharField(max_length=200)
+
+    def __str__(self):
+        return f"<Repo {self.pk}: " f'"{self.name}" at {self.github_url}>'
 
 
 class Run(TimeStampedModel):
