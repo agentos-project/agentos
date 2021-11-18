@@ -154,12 +154,12 @@ def run(
 @agentos_cmd.command()
 @_arg_component_name
 @_option_component_spec_file
-def pin(component_name, component_spec_file):
+def freeze(component_name, component_spec_file):
     """
     Creates a version of ``component_spec_file`` for Component
-    ``component_name`` where all Components in the dependency tree are pinned
-    to a specific git commit.  The resulting ``component_spec_file`` can be run
-    on any machine with AgentOS installed.
+    ``component_name`` where all Components in the dependency tree are
+    associated with a specific git commit.  The resulting
+    ``component_spec_file`` can be run on any machine with AgentOS installed.
 
     The requirements for pinning a Component spec are as follows:
         * All Components in the dependency tree must be in git repos
@@ -169,10 +169,8 @@ def pin(component_name, component_spec_file):
         * There are no uncommitted changes in the local repo
     """
     component = Component.get_from_yaml(component_name, component_spec_file)
-    pinned_spec = component.get_pinned_component_spec()
-    with open(component_spec_file, "w") as file_out:
-        yaml.dump(pinned_spec, file_out)
-    print(f"Pinned spec written to {Path(component_spec_file).absolute()}")
+    frozen_spec = component.get_frozen_component_spec()
+    print(yaml.dump(frozen_spec))
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501

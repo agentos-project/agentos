@@ -25,8 +25,8 @@ class Repo:
     is located.
     """
 
-    @classmethod
-    def from_spec(cls, name, spec):
+    @staticmethod
+    def from_spec(name, spec):
         if spec["type"] == RepoType.LOCAL.value:
             return LocalRepo(name=name, file_path=spec["path"])
         elif spec["type"] == RepoType.GITHUB.value:
@@ -67,6 +67,7 @@ class GitHubRepo(Repo):
     def __init__(self, name: str, url: str):
         self.name = name
         self.type = RepoType.GITHUB
+        # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
         self.local_repo_path = None

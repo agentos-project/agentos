@@ -76,22 +76,20 @@ class Component:
         self._requirements = []
         self._dependencies = {}
 
-    @classmethod
+    @staticmethod
     def get_from_yaml(
-        cls,
         name: str,
         component_spec_file: str,
     ) -> "Component":
-        components = cls.parse_spec_file(component_spec_file)
+        components = Component.parse_spec_file(component_spec_file)
         # User may run without version string (e.g. "agent" not "agent==1.2.3")
         names = {ComponentIdentifier(n).name: n for n in components.keys()}
         names.update({n: n for n in components.keys()})
         assert name in names, f'"{name}" not found in {names}'
         return components[names[name]]
 
-    @classmethod
+    @staticmethod
     def get_from_class(
-        cls,
         managed_cls: Type[T],
         name: str = None,
         dunder_name: str = "__component__",
@@ -105,16 +103,15 @@ class Component:
             dunder_name=dunder_name,
         )
 
-    @classmethod
+    @staticmethod
     def get_from_repo(
-        cls,
         repo: Repo,
         identifier: ComponentIdentifier,
         class_name: str,
         file_path: str,
         dunder_name: str = "__component__",
     ) -> "Component":
-        full_path = get_full_path(repo, identifier, file_path)
+        full_path = Component.get_full_path(repo, identifier, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
         sys.path.append(str(full_path.parent))
         spec = importlib.util.spec_from_file_location(
@@ -122,10 +119,10 @@ class Component:
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        cls = getattr(module, class_name)
+        managed_cls = getattr(module, class_name)
         sys.path.pop()
         return Component(
-            managed_cls=cls,
+            managed_cls=managed_cls,
             repo=repo,
             identifier=identifier,
             class_name=class_name,
@@ -133,24 +130,26 @@ class Component:
             dunder_name=dunder_name,
         )
 
-    @classmethod
-    def parse_spec_file(cls, spec_file: str) -> Dict:
+    @staticmethod
+    def parse_spec_file(spec_file: str) -> Dict:
         """Returns all Repos and Components defined by this ``spec_file``."""
         with open(spec_file) as file_in:
             config = yaml.safe_load(file_in)
-        repos = cls._parse_repos(config.get("repos", {}))
-        components = cls._parse_components(config.get("components", {}), repos)
+        repos = Component._parse_repos(config.get("repos", {}))
+        components = Component._parse_components(
+            config.get("components", {}), repos
+        )
         return components
 
-    @classmethod
-    def _parse_repos(cls, repos_spec: Dict) -> Dict:
+    @staticmethod
+    def _parse_repos(repos_spec: Dict) -> Dict:
         repos = {}
         for name, spec in repos_spec.items():
             repos[name] = Repo.from_spec(name, spec)
         return repos
 
-    @classmethod
-    def _parse_components(cls, components_spec: Dict, repos: Dict) -> Dict:
+    @staticmethod
+    def _parse_components(components_spec: Dict, repos: Dict) -> Dict:
         components = {}
         dependency_names = {}
         for name, spec in components_spec.items():
@@ -171,8 +170,11 @@ class Component:
 
         return components
 
-    def get_full_path(self):
-        return get_full_path(self.repo, self.identifier, self.file_path)
+    @staticmethod
+    def get_full_path(
+        repo: Repo, identifier: ComponentIdentifier, file_path: str
+    ):
+        return (repo.get_file_path(identifier.version) / file_path).absolute()
 
     def run(
         self,
@@ -258,12 +260,14 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def get_pinned_component_spec(self):
+    def get_frozen_component_spec(self):
         versioned = self._get_versioned_component_dag()
         return versioned.get_component_spec()
 
     def _get_versioned_component_dag(self):
-        full_path = self.get_full_path()
+        full_path = self.get_full_path(
+            self.repo, self.identifier, self.file_path
+        )
         repo_url, version = get_version_from_git(full_path)
         identifier = ComponentIdentifier(self.identifier.full)
         identifier.version = version
@@ -275,18 +279,10 @@ class Component:
             file_path=get_prefixed_path_from_repo_root(full_path),
             dunder_name=self._dunder_name,
         )
-        for alias, dependency in self._dependencies.items():
+        for attr_name, dependency in self._dependencies.items():
             pinned_dependency = dependency._get_versioned_component_dag()
-            clone.add_dependency(pinned_dependency, alias=alias)
+            clone.add_dependency(pinned_dependency, attribute_name=attr_name)
         return clone
-
-    @property
-    def name(self):
-        return self.identifier.name
-
-    @property
-    def full_name(self):
-        return self.identifier.full
 
     def to_dict(self):
         dependencies = {k: v.full_name for k, v in self._dependencies.items()}
@@ -307,6 +303,14 @@ class Component:
                 components.append(dependency)
         return param_dict
 
+    @property
+    def name(self):
+        return self.identifier.name
+
+    @property
+    def full_name(self):
+        return self.identifier.full
+
     @contextmanager
     def _track_run(self, fn_name: str, params: ParameterSet):
         mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
@@ -324,7 +328,3 @@ class Component:
             yield
         finally:
             pass
-
-
-def get_full_path(repo: Repo, identifier: ComponentIdentifier, file_path: str):
-    return (repo.get_file_path(identifier.version) / file_path).absolute()
