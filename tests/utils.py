@@ -25,37 +25,50 @@ def run_component_in_dir(
     dir_name,
     venv,
     component_name,
+    agentos_cmd=None,
     entry_points=None,
     entry_point_params=None,
     req_file="requirements.txt",
 ):
-    entry_points = entry_points or ["evaluate"]
     install_requirements(dir_name, venv, req_file)
+    if entry_points is None:
+        run_cmd = get_os_aware_run_command(
+            venv, agentos_cmd, component_name, entry_points, ""
+        )
+        run_cli_command(run_cmd, dir_name)
+        return
+
     for i, entry_point in enumerate(entry_points):
         params = ""
         if entry_point_params:
-            assert len(entry_point_params) == len(entry_points), (
-                "If not None, entry_point_params must has same len() "
-                "as :entry_points:"
-                ""
+            error_msg = (
+                ":entry_point_params: must has same len() as :entry_points:"
             )
+            assert len(entry_point_params) == len(entry_points), error_msg
             params = entry_point_params[i]
-
-        if os.name == "nt":
-            run_cmd = (
-                f"{Path(venv.bin)}/activate.bat & agentos "
-                f"run {component_name} --entry-point {entry_point} {params}"
-            )
-        else:
-            run_cmd = (
-                f". {Path(venv.bin)}/activate; agentos "
-                f"run {component_name} --entry-point {entry_point} {params}"
-            )
-        print(
-            f"Using CLI to run the following command: {run_cmd} with "
-            f"cwd={dir_name}."
+        run_cmd = get_os_aware_run_command(
+            venv, agentos_cmd, component_name, entry_point, params
         )
-        subprocess.run(run_cmd, shell=True, cwd=dir_name, check=True)
+        run_cli_command(run_cmd, dir_name)
+
+
+def run_cli_command(run_cmd, dir_name):
+    print(f"Run the following CLI command: {run_cmd} with cwd={dir_name}.")
+    subprocess.run(run_cmd, shell=True, cwd=dir_name, check=True)
+
+
+def get_os_aware_run_command(
+    venv, agentos_cmd, component_name, entry_point, params
+):
+    if os.name == "nt":
+        run_cmd = f"{Path(venv.bin)}/activate.bat & agentos "
+    else:
+        run_cmd = f". {Path(venv.bin)}/activate; agentos "
+
+    run_cmd += f"{agentos_cmd} {component_name} {params} "
+    if entry_point:
+        run_cmd += f"--entry-point {entry_point}"
+    return run_cmd
 
 
 def skip_requirements_install():

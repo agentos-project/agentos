@@ -4,6 +4,7 @@ The CLI allows creation of a simple template agent.
 """
 import os
 import sys
+import yaml
 import click
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +29,16 @@ _arg_component_name = click.argument(
 )
 
 _arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
+
+
+_option_component_spec_file = click.option(
+    "--component-spec-file",
+    "-s",
+    type=click.Path(exists=True),
+    default="./agentos.yaml",
+    help="Path to component spec file (agentos.yaml).",
+)
+
 
 _option_agent_name = click.option(
     "--agent-name",
@@ -98,13 +109,7 @@ def init(dir_names, agent_name, agentos_dir):
 
 @agentos_cmd.command()
 @_arg_component_name
-@click.option(
-    "--component-spec-file",
-    "-s",
-    type=click.Path(exists=True),
-    default="./agentos.yaml",
-    help="Path to component spec file (agentos.yaml).",
-)
+@_option_component_spec_file
 @click.option(
     "--entry-point",
     metavar="ENTRY_POINT",
@@ -144,6 +149,28 @@ def run(
     parameters = ParameterSet.get_from_file(param_file)
     parameters.update(component_name, entry_point, param_dict)
     component.run(entry_point, parameters)
+
+
+@agentos_cmd.command()
+@_arg_component_name
+@_option_component_spec_file
+def freeze(component_name, component_spec_file):
+    """
+    Creates a version of ``component_spec_file`` for Component
+    ``component_name`` where all Components in the dependency tree are
+    associated with a specific git commit.  The resulting
+    ``component_spec_file`` can be run on any machine with AgentOS installed.
+
+    The requirements for pinning a Component spec are as follows:
+        * All Components in the dependency tree must be in git repos
+        * Those git repos must have GitHub as their origin
+        * The current local branch and its counterpart on origin are at
+          the same commit
+        * There are no uncommitted changes in the local repo
+    """
+    component = Component.get_from_yaml(component_name, component_spec_file)
+    frozen_spec = component.get_frozen_component_spec()
+    print(yaml.dump(frozen_spec))
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501
