@@ -162,9 +162,9 @@ class Component:
 
         # Wire up the dependency graph
         for name, component in components.items():
-            for alias, dependency_name in dependency_names[name].items():
+            for attr_name, dependency_name in dependency_names[name].items():
                 dependency = components[dependency_name]
-                component.add_dependency(dependency, alias=alias)
+                component.add_dependency(dependency, attribute_name=attr_name)
 
         return components
 
@@ -188,12 +188,14 @@ class Component:
             result = fn(**fn_params)
             return result
 
-    def add_dependency(self, component: "Component", alias: str = None):
+    def add_dependency(
+        self, component: "Component", attribute_name: str = None
+    ):
         if type(component) is not type(self):
             raise Exception("add_dependency() must be passed a Component")
-        if alias is None:
-            alias = component.name
-        self._dependencies[alias] = component
+        if attribute_name is None:
+            attribute_name = component.name
+        self._dependencies[attribute_name] = component
 
     def get_instance(self, params: ParameterSet = None) -> None:
         instantiated = {}
@@ -206,12 +208,12 @@ class Component:
         save_init = self._managed_cls.__init__
         self._managed_cls.__init__ = lambda self: None
         instance = self._managed_cls()
-        for dep_alias, dep_component in self._dependencies.items():
-            print(f"Adding {dep_alias} to {self.name}")
+        for dep_attr_name, dep_component in self._dependencies.items():
+            print(f"Adding {dep_attr_name} to {self.name}")
             dep_instance = dep_component._get_instance(
                 params=params, instantiated=instantiated
             )
-            setattr(instance, dep_alias, dep_instance)
+            setattr(instance, dep_attr_name, dep_instance)
         setattr(instance, self._dunder_name, self)
         self._managed_cls.__init__ = save_init
         self.run("__init__", params=params, instance=instance, tracked=False)

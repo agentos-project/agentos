@@ -20,7 +20,7 @@ def test_component_repl_demo():
     environment_component = Component.get_from_class(SimpleEnvironment)
 
     # Add Dependency to SimpleAgent
-    agent_component.add_dependency(environment_component, alias="env")
+    agent_component.add_dependency(environment_component, attribute_name="env")
 
     # Instantiate a SimpleAgent and run reset_env() method
     agent_component.run("reset_env")

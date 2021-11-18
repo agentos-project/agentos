@@ -30,6 +30,18 @@ grant all privileges on database aos_web to aos_web_user;
 
 ```
 
+## To start from scratch with the DB
+
+Warning: this deletes all data in your DB:
+
+* Remove all files under `registry/migrations/` except for `registry/migrations/__init__.py`
+* Run `./manage.py makemigrations`
+* Recreate your postgres tables
+    * sudo -u postgres psql
+    * drop database aos_web; drop user aos_web_user; create database aos_web; create user aos_web_user with encrypted password 'aabbccdd'; grant all privil
+eges on database aos_web to aos_web_user;
+* ./manage.py migrate
+
 ## Notes
 
 ```bash

@@ -38,8 +38,8 @@ class Registry:
             file_path=component_spec["file_path"],
         )
         instantiated[identifier.full] = component
-        for alias, dep_name in component_spec["dependencies"].items():
+        for attr_name, dep_name in component_spec["dependencies"].items():
             dep_id = ComponentIdentifier(dep_name, self.latest_refs)
             dep_component = self._get_component(dep_id, instantiated)
-            component.add_dependency(dep_component, alias=alias)
+            component.add_dependency(dep_component, attribute_name=attr_name)
         return component
