@@ -16,8 +16,8 @@ class ComponentDependency(TimeStampedModel):
     dependee = models.ForeignKey(
         "Component", on_delete=models.CASCADE, related_name="dependee_set"
     )
-    alias = models.TextField()
-    unique_together = ["depender", "dependee", "alias"]
+    attribute_name = models.TextField()
+    unique_together = ["depender", "dependee", "attribute_name"]
 
     def __str__(self):
         return (

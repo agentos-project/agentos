@@ -186,8 +186,8 @@ def _handle_agent(path_prefix, rename_map):
         spec["file_path"] = str(path_prefix / Path(spec["file_path"]))
         renamed[rename_map[component_name]] = spec
         renamed_dependencies = {}
-        for alias, dep_name in spec.get("dependencies", {}).items():
-            renamed_dependencies[alias] = rename_map[dep_name]
+        for attr_name, dep_name in spec.get("dependencies", {}).items():
+            renamed_dependencies[attr_name] = rename_map[dep_name]
         spec["dependencies"] = renamed_dependencies
     registry["components"] = renamed
     registry["latest_refs"] = {
