@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import dj_database_url
 import os
+import sys
+
+IS_TEST = "test" in sys.argv
 
 IS_DEPLOY = bool(os.environ.get("IS_DEPLOY", False))
 
@@ -39,6 +42,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".herokuapp.com"]
 
 INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
+    "rest_framework",
     "registry.apps.RegistryConfig",
     "leaderboard.apps.LeaderboardConfig",
     "django_extensions",
@@ -95,6 +99,14 @@ DATABASES = {
         "PORT": "5432",  # 5432 by default
     }
 }
+
+if IS_TEST:
+    assert DEBUG
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "mydatabase",
+    }
+
 
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES["default"].update(db_from_env)
@@ -158,3 +170,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",  # noqa: E501
+    "PAGE_SIZE": 10,
+}

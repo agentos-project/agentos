@@ -1,4 +1,7 @@
 from django.db import models
+from rest_framework.exceptions import ValidationError
+from typing import Dict, List
+from agentos.component import ComponentIdentifier
 
 
 class TimeStampedModel(models.Model):
@@ -17,7 +20,9 @@ class ComponentDependency(TimeStampedModel):
         "Component", on_delete=models.CASCADE, related_name="dependee_set"
     )
     attribute_name = models.TextField()
-    unique_together = ["depender", "dependee", "attribute_name"]
+
+    class Meta:
+        unique_together = [("depender", "dependee", "attribute_name")]
 
     def __str__(self):
         return (
@@ -25,11 +30,33 @@ class ComponentDependency(TimeStampedModel):
             f"{self.depender} depends on {self.dependee}>"
         )
 
+    @staticmethod
+    def create_from_dict(component_dict: Dict) -> List:
+        dependencies = []
+        for name, component in component_dict.items():
+            identifier = ComponentIdentifier(name)
+            depender = Component.objects.get(
+                name=identifier.name,
+                version=identifier.version,
+            )
+            for attr_name, dependency in component["dependencies"].items():
+                dep_identifier = ComponentIdentifier(dependency)
+                dependee = Component.objects.get(
+                    name=dep_identifier.name,
+                    version=dep_identifier.version,
+                )
+                dependency, create = ComponentDependency.objects.get_or_create(
+                    depender=depender,
+                    dependee=dependee,
+                    attribute_name=attr_name,
+                )
+                dependencies.append(dependency)
+        return dependencies
+
 
 class Component(TimeStampedModel):
     name = models.CharField(max_length=200)
     version = models.CharField(max_length=200)
-    unique_together = ["name", "version"]
     repo = models.ForeignKey(
         "Repo", on_delete=models.CASCADE, related_name="repos"
     )
@@ -43,12 +70,33 @@ class Component(TimeStampedModel):
         through_fields=("depender", "dependee"),
     )
 
+    class Meta:
+        unique_together = [("name", "version")]
+
     def __str__(self):
         display_version = self.version
         if len(display_version) == 40:
             display_version = display_version[:7]
 
         return f"<Component {self.pk}: {self.name}=={display_version}>"
+
+    @staticmethod
+    def create_from_dict(component_dict: Dict) -> List:
+        components = []
+        for name, component in component_dict.items():
+            identifier = ComponentIdentifier(name)
+            component, created = Component.objects.get_or_create(
+                name=identifier.name,
+                version=identifier.version,
+                defaults={
+                    "repo": Repo.objects.get(name=component["repo"]),
+                    "file_path": component["file_path"],
+                    "class_name": component["class_name"],
+                    "description": "",
+                },
+            )
+            components.append(component)
+        return components
 
 
 class Repo(TimeStampedModel):
@@ -57,6 +105,20 @@ class Repo(TimeStampedModel):
 
     def __str__(self):
         return f"<Repo {self.pk}: " f'"{self.name}" at {self.github_url}>'
+
+    @staticmethod
+    def create_from_dict(repo_dict: Dict) -> List:
+        repos = []
+        for name, repo in repo_dict.items():
+            if "github.com" not in repo["url"]:
+                raise ValidationError(
+                    f"Repo must be on GitHub, not {repo['url']}"
+                )
+            repo, created = Repo.objects.get_or_create(
+                name=name, github_url=repo["url"]
+            )
+            repos.append(repo)
+        return repos
 
 
 class Run(TimeStampedModel):

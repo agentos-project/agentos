@@ -14,3 +14,4 @@ dist
 documentation/_build
 website/_site
 docs
+web/static
