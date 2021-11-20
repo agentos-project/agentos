@@ -260,15 +260,15 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def get_frozen_component_spec(self):
-        versioned = self._get_versioned_component_dag()
+    def get_frozen_component_spec(self, force: bool = False):
+        versioned = self._get_versioned_component_dag(force)
         return versioned.get_component_spec()
 
-    def _get_versioned_component_dag(self):
+    def _get_versioned_component_dag(self, force: bool = False):
         full_path = self.get_full_path(
             self.repo, self.identifier, self.file_path
         )
-        repo_url, version = get_version_from_git(full_path)
+        repo_url, version = get_version_from_git(full_path, force)
         identifier = ComponentIdentifier(self.identifier.full)
         identifier.version = version
         clone = Component(
@@ -280,7 +280,9 @@ class Component:
             dunder_name=self._dunder_name,
         )
         for attr_name, dependency in self._dependencies.items():
-            pinned_dependency = dependency._get_versioned_component_dag()
+            pinned_dependency = dependency._get_versioned_component_dag(
+                force=force
+            )
             clone.add_dependency(pinned_dependency, attribute_name=attr_name)
         return clone
 

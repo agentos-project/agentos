@@ -55,11 +55,29 @@ def get_prefixed_path_from_repo_root(component_path):
             curr_path = curr_path.parent
 
 
-def get_version_from_git(component_path):
+def get_version_from_git(component_path, force: bool = False):
     """
     Given a path to a Component, this returns a git hash and GitHub repo
     URL where the current version of the Component is publicly accessible.
+    This will raise an exception if any of the following checks are true:
+
+    1. The Component is not in a git repo.
+    2. The origin of this repo is not GitHub.
+    3. The current local branch and corresponding remote branch are not at the
+       same commit.
+    4. There are uncommitted changes locally
+
+
+    If ''force'' is True, checks 2, 3, and 4 above are ignored.
     """
+    repo = _get_repo(component_path)
+    _check_for_local_changes(repo, force)
+    url = _check_for_github_url(repo, force)
+    curr_head_hash = _check_remote_branch_status(repo, force)
+    return url, curr_head_hash
+
+
+def _get_repo(component_path):
     component_path = Path(component_path).absolute()
     assert component_path.exists(), f"Path {component_path} does not exist"
 
@@ -67,25 +85,41 @@ def get_version_from_git(component_path):
         repo = Repo.discover(component_path)
     except NotGitRepository:
         raise Exception(f"No git repo with Component found: {component_path}")
+    return repo
 
-    REMOTE_GIT_PREFIX = "refs/remotes"
+
+def _check_for_github_url(repo, force):
     remote, url = porcelain.get_remote_repo(repo)
+    if "github.com" not in url:
+        error_msg = f"Remote must be on github, not {url}"
+        if force:
+            print(f"Warning: {error_msg}")
+        else:
+            raise Exception(error_msg)
+    return url
+
+
+def _check_remote_branch_status(repo, force):
+    remote, url = porcelain.get_remote_repo(repo)
+    REMOTE_GIT_PREFIX = "refs/remotes"
     branch = porcelain.active_branch(repo).decode("UTF-8")
     full_id = f"{REMOTE_GIT_PREFIX}/{remote}/{branch}".encode("UTF-8")
     curr_remote_hash = repo.refs.as_dict()[full_id].decode("UTF-8")
     curr_head_hash = repo.head().decode("UTF-8")
 
-    if "github.com" not in url:
-        raise Exception(f"Remote must be on github, not {url}")
-
     if curr_head_hash != curr_remote_hash:
         print(f"\nBranch {remote}/{branch} current commit differs from local:")
         print(f"\t{remote}/{branch}: {curr_remote_hash}")
         print(f"\tlocal/{branch}: {curr_head_hash}\n")
-        raise Exception(
-            f"Push your changes to {remote}/{branch} before pinning"
-        )
+        error_msg = f"Push your changes to {remote}/{branch} before pinning"
+        if force:
+            print(f"Warning: {error_msg}")
+        else:
+            raise Exception(error_msg)
+    return curr_head_hash
 
+
+def _check_for_local_changes(repo, force):
     # Adapted from
     # https://github.com/dulwich/dulwich/blob/master/dulwich/porcelain.py#L1200
     # 1. Get status of staged
@@ -108,15 +142,11 @@ def get_version_from_git(component_path):
         print(
             f"\nUncommitted changes: {tracked_changes} or {unstaged_changes}\n"
         )
-        raise Exception("Commit all changes before pinning")
-
-    # If we are here, then:
-    #   * The Component is in a git repo
-    #   * The origin of this repo is GitHub
-    #   * The current local branch and corresponding remote branch are at the
-    #     same commit
-    #   * There are no uncommitted changes locally
-    return url, curr_head_hash
+        error_msg = "Commit all changes before pinning"
+        if force:
+            print(f"Warning: {error_msg}")
+        else:
+            raise Exception(error_msg)
 
 
 DUMMY_DEV_REGISTRY = {
