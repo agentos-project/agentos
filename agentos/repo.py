@@ -269,7 +269,7 @@ class LocalRepo(Repo):
     def __init__(self, name: str, file_path: str):
         self.name = name
         self.type = RepoType.LOCAL
-        self.file_path = Path(file_path)
+        self.file_path = Path(file_path).absolute()
 
     def to_dict(self) -> Dict:
         return {
