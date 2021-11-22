@@ -5,9 +5,40 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+from rest_framework import viewsets
+from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from .models import Component
 from .models import ComponentDependency
+from .models import Repo
 from .models import Run
+from .serializers import ComponentSerializer
+
+
+class ComponentViewSet(viewsets.ModelViewSet):
+    queryset = Component.objects.all()
+    serializer_class = ComponentSerializer
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=["POST"], url_name="ingest-spec")
+    @transaction.atomic
+    def ingest_spec(self, request: Request, *args, **kwargs) -> Response:
+        SPEC_NAME = "components.yaml"
+        if SPEC_NAME not in request.data:
+            raise ValidationError(f"No {SPEC_NAME} included in ingest request")
+        component_spec = request.data[SPEC_NAME]
+        spec_dict = yaml.safe_load(component_spec)
+        repo_spec_dict = spec_dict.get("repos", {})
+        component_spec_dict = spec_dict.get("components", {})
+        Repo.create_from_dict(repo_spec_dict)
+        components = Component.create_from_dict(component_spec_dict)
+        ComponentDependency.create_from_dict(component_spec_dict)
+        serialized = ComponentSerializer(components, many=True)
+        return Response(serialized.data)
 
 
 def index(request):
@@ -54,11 +85,6 @@ def api_components(request):
             releases.append(release_data)
         all_components[component.name] = component_data
     return HttpResponse(yaml.dump(all_components))
-
-
-@csrf_exempt
-def api_v2_components(request):
-    raise NotImplementedError()
 
 
 @csrf_exempt

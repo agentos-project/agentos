@@ -37,7 +37,7 @@ def test_component_freezing(tmpdir):
     try:
         c = Component.get_from_yaml("agent", "agentos.yaml")
         with patch.multiple(
-            "agentos.component",
+            "agentos.repo.Repo",
             get_version_from_git=DEFAULT,
             get_prefixed_path_from_repo_root=DEFAULT,
         ) as mocks:
@@ -48,6 +48,6 @@ def test_component_freezing(tmpdir):
             mocks[
                 "get_prefixed_path_from_repo_root"
             ].return_value = "freeze/test.py"
-            c.get_frozen_component_spec()
+            c.get_frozen_spec()
     finally:
         os.chdir(curr_dir)

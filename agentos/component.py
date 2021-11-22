@@ -8,8 +8,6 @@ from typing import TypeVar, Dict, Type, Any
 from contextlib import contextmanager
 from agentos.utils import log_data_as_yaml_artifact
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.utils import get_version_from_git
-from agentos.utils import get_prefixed_path_from_repo_root
 from agentos.repo import RepoType, Repo, InMemoryRepo, GitHubRepo
 from agentos.parameter_set import ParameterSet
 
@@ -17,14 +15,14 @@ from agentos.parameter_set import ParameterSet
 T = TypeVar("T")
 
 
-class ComponentIdentifier:
+class _Identifier:
     """
     This manages a Component Identifier so we can refer to Components both as
     [name] and [name]==[version] in agentos.yaml spec files or from the
     command-line.
     """
 
-    def __init__(self, identifier, latest_refs=None):
+    def __init__(self, identifier: str, latest_refs=None):
         split_identifier = identifier.split("==")
         assert len(split_identifier) <= 2, f"Bad identifier: '{identifier}'"
         if len(split_identifier) == 1:
@@ -37,8 +35,11 @@ class ComponentIdentifier:
             self.name = split_identifier[0]
             self.version = split_identifier[1]
 
+    def __repr__(self) -> str:
+        return f"<agentos.component.Component.Identifer: {self.full}>"
+
     @property
-    def full(self):
+    def full(self) -> str:
         if self.name and self.version:
             return "==".join((self.name, self.version))
         return self.name
@@ -51,11 +52,13 @@ class Component:
     dependencies.
     """
 
+    Identifier = _Identifier
+
     def __init__(
         self,
         managed_cls: Type[T],
         repo: Repo,
-        identifier: ComponentIdentifier,
+        identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
         dunder_name: str = "__component__",
@@ -83,7 +86,7 @@ class Component:
     ) -> "Component":
         components = Component.parse_spec_file(component_spec_file)
         # User may run without version string (e.g. "agent" not "agent==1.2.3")
-        names = {ComponentIdentifier(n).name: n for n in components.keys()}
+        names = {Component.Identifier(n).name: n for n in components.keys()}
         names.update({n: n for n in components.keys()})
         assert name in names, f'"{name}" not found in {names}'
         return components[names[name]]
@@ -97,7 +100,7 @@ class Component:
         return Component(
             managed_cls=managed_cls,
             repo=InMemoryRepo(),
-            identifier=ComponentIdentifier(managed_cls.__name__),
+            identifier=Component.Identifier(managed_cls.__name__),
             class_name=managed_cls.__name__,
             file_path=".",
             dunder_name=dunder_name,
@@ -106,12 +109,12 @@ class Component:
     @staticmethod
     def get_from_repo(
         repo: Repo,
-        identifier: ComponentIdentifier,
+        identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
         dunder_name: str = "__component__",
     ) -> "Component":
-        full_path = Component.get_full_path(repo, identifier, file_path)
+        full_path = repo.get_local_file_path(identifier, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
         sys.path.append(str(full_path.parent))
         spec = importlib.util.spec_from_file_location(
@@ -155,7 +158,7 @@ class Component:
         for name, spec in components_spec.items():
             component = Component.get_from_repo(
                 repo=repos[spec["repo"]],
-                identifier=ComponentIdentifier(name),
+                identifier=Component.Identifier(name),
                 class_name=spec["class_name"],
                 file_path=spec["file_path"],
             )
@@ -169,12 +172,6 @@ class Component:
                 component.add_dependency(dependency, attribute_name=attr_name)
 
         return components
-
-    @staticmethod
-    def get_full_path(
-        repo: Repo, identifier: ComponentIdentifier, file_path: str
-    ):
-        return (repo.get_file_path(identifier.version) / file_path).absolute()
 
     def run(
         self,
@@ -260,31 +257,37 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def get_frozen_component_spec(self):
-        versioned = self._get_versioned_component_dag()
+    def get_frozen_spec(self, force: bool = False) -> Dict:
+        versioned = self._get_versioned_dependency_dag(force)
         return versioned.get_component_spec()
 
-    def _get_versioned_component_dag(self):
-        full_path = self.get_full_path(
-            self.repo, self.identifier, self.file_path
+    def _get_versioned_dependency_dag(
+        self, force: bool = False
+    ) -> "Component":
+        repo_url, version = self.repo.get_version_from_git(
+            self.identifier, self.file_path, force
         )
-        repo_url, version = get_version_from_git(full_path)
-        identifier = ComponentIdentifier(self.identifier.full)
+        identifier = Component.Identifier(self.identifier.full)
         identifier.version = version
+        prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
+            identifier, self.file_path
+        )
         clone = Component(
             managed_cls=self._managed_cls,
             repo=GitHubRepo(name=self.repo.name, url=repo_url),
             identifier=identifier,
             class_name=self.class_name,
-            file_path=get_prefixed_path_from_repo_root(full_path),
+            file_path=prefixed_file_path,
             dunder_name=self._dunder_name,
         )
         for attr_name, dependency in self._dependencies.items():
-            pinned_dependency = dependency._get_versioned_component_dag()
+            pinned_dependency = dependency._get_versioned_dependency_dag(
+                force=force
+            )
             clone.add_dependency(pinned_dependency, attribute_name=attr_name)
         return clone
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         dependencies = {k: v.full_name for k, v in self._dependencies.items()}
         return {
             "repo": self.repo.name,
@@ -304,11 +307,11 @@ class Component:
         return param_dict
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.identifier.name
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return self.identifier.full
 
     @contextmanager

@@ -1,12 +1,18 @@
-from django.urls import path
+from django.urls import path, include
 
 from . import views
 
+from .views import ComponentViewSet
+from rest_framework.routers import DefaultRouter
+
+
+router = DefaultRouter()
+router.register(r"components", ComponentViewSet)
+
+
 urlpatterns = [
     path("", views.index, name="index"),
-    path(
-        "api/v2/components/", views.api_v2_components, name="api_v2_components"
-    ),
+    path("api/v2/", include(router.urls)),
     path("api/components/", views.api_components, name="api_components"),
     path("api/runs/", views.api_runs, name="api_runs"),
     path(

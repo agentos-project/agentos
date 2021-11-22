@@ -1,0 +1,56 @@
+components:
+  agent==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: AcmeR2D2Agent
+    dependencies:
+      dataset: dataset==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      environment: environment==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      network: network==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      policy: policy==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      tracker: tracker==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      trainer: trainer==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+    file_path: example_agents/acme_r2d2/agent.py
+    repo: local_dir
+  dataset==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: ReverbDataset
+    dependencies:
+      environment: environment==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      network: network==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+    file_path: example_agents/acme_r2d2/dataset.py
+    repo: local_dir
+  environment==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: CartPole
+    dependencies: {}
+    file_path: example_agents/acme_r2d2/../acme_dqn/environment.py
+    repo: local_dir
+  network==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: R2D2Network
+    dependencies:
+      environment: environment==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      tracker: tracker==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+    file_path: example_agents/acme_r2d2/network.py
+    repo: local_dir
+  policy==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: R2D2Policy
+    dependencies:
+      dataset: dataset==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      environment: environment==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      network: network==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+    file_path: example_agents/acme_r2d2/policy.py
+    repo: local_dir
+  tracker==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: AcmeTracker
+    dependencies: {}
+    file_path: example_agents/acme_r2d2/../acme_dqn/tracker.py
+    repo: local_dir
+  trainer==abb8dc03a6d0c86bb8b6437adec7e6191488b207:
+    class_name: R2D2Trainer
+    dependencies:
+      dataset: dataset==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      environment: environment==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+      network: network==abb8dc03a6d0c86bb8b6437adec7e6191488b207
+    file_path: example_agents/acme_r2d2/trainer.py
+    repo: local_dir
+repos:
+  local_dir:
+    type: github
+    url: https://github.com/nickjalbert/agentos.git

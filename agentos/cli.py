@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from agentos import Component
 from agentos import ParameterSet
+import agentos.web as web
 
 
 @click.group()
@@ -60,19 +61,18 @@ _option_agentos_dir = click.option(
     help="Directory path AgentOS components and data",
 )
 
-_option_agent_file = click.option(
-    "--agent-file",
-    "-f",
-    type=click.Path(exists=True),
-    default="./agentos.yaml",
-    help="Path to agent definition file (agentos.yaml).",
-)
-
 _option_assume_yes = click.option(
     "--assume-yes",
     "-y",
     is_flag=True,
     help="Automatically answers 'yes' to all user prompts.",
+)
+_option_force = click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Force freeze even if repo is in a bad state.",
 )
 
 
@@ -154,7 +154,8 @@ def run(
 @agentos_cmd.command()
 @_arg_component_name
 @_option_component_spec_file
-def freeze(component_name, component_spec_file):
+@_option_force
+def freeze(component_name, component_spec_file, force):
     """
     Creates a version of ``component_spec_file`` for Component
     ``component_name`` where all Components in the dependency tree are
@@ -169,8 +170,19 @@ def freeze(component_name, component_spec_file):
         * There are no uncommitted changes in the local repo
     """
     component = Component.get_from_yaml(component_name, component_spec_file)
-    frozen_spec = component.get_frozen_component_spec()
+    frozen_spec = component.get_frozen_spec(force=force)
     print(yaml.dump(frozen_spec))
+
+
+@agentos_cmd.command()
+@_arg_component_name
+@_option_component_spec_file
+@_option_force
+def publish(component_name: str, component_spec_file: str, force: bool):
+    """ """
+    component = Component.get_from_yaml(component_name, component_spec_file)
+    frozen_spec = component.get_frozen_spec(force=force)
+    web.push_component_spec(frozen_spec)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501

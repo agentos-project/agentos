@@ -23,6 +23,7 @@ sudo service postgresql start
 sudo -u postgres psql
 create database aos_web;
 create user aos_web_user with encrypted password 'aabbccdd';
+alter user aos_web_user createdb;
 grant all privileges on database aos_web to aos_web_user;
 ./manage.py migrate
 ./manage.py runserver
