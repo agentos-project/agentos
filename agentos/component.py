@@ -8,7 +8,12 @@ from typing import TypeVar, Dict, Type, Any
 from contextlib import contextmanager
 from agentos.utils import log_data_as_yaml_artifact
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.repo import RepoType, Repo, InMemoryRepo, GitHubRepo
+from agentos.repo import (
+    Repo,
+    InMemoryRepo,
+    GitHubRepo,
+    BadGitStateException,
+)
 from agentos.parameter_set import ParameterSet
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
@@ -85,11 +90,27 @@ class Component:
         component_spec_file: str,
     ) -> "Component":
         components = Component.parse_spec_file(component_spec_file)
-        # User may run without version string (e.g. "agent" not "agent==1.2.3")
-        names = {Component.Identifier(n).name: n for n in components.keys()}
-        names.update({n: n for n in components.keys()})
+        names = Component._get_name_map(component_spec_file)
         assert name in names, f'"{name}" not found in {names}'
         return components[names[name]]
+
+    @staticmethod
+    def _get_name_map(component_spec_file: str) -> Dict:
+        """
+        User may refer to a component from, e.g., the CLI as a name without a
+        version string (e.g. ``agent`` not ``agent==1.2.3``).  However, we want
+        to map ``agent`` to ``agent==1.2.3`` if ``component_spec_file`` is
+        pinned to a version.
+
+        :returns: A dictionary that maps unversioned names to a full name that
+        will uniquely identify a Component in this run context
+        """
+        with open(component_spec_file) as file_in:
+            config = yaml.safe_load(file_in)
+        components = config.get("components", {})
+        names = {Component.Identifier(n).name: n for n in components.keys()}
+        names.update({n: n for n in components.keys()})
+        return names
 
     @staticmethod
     def get_from_class(
@@ -229,12 +250,15 @@ class Component:
         log_data_as_yaml_artifact("parameter_set.yaml", params.to_dict())
 
     def _log_component_spec(self) -> None:
-        spec = self.get_component_spec()
-        log_data_as_yaml_artifact("agentos.yaml", spec)
-        is_published = True
-        for repo_name, repo_data in spec["repos"].items():
-            is_published &= repo_data["type"] == RepoType.GITHUB.value
-        mlflow.log_param("is_published", is_published)
+        frozen = None
+        try:
+            frozen = self.get_frozen_spec()
+            log_data_as_yaml_artifact("agentos.yaml", frozen)
+        except BadGitStateException as exc:
+            print(f"Warning: component is not publishable: {str(exc)}")
+            spec = self.get_component_spec()
+            log_data_as_yaml_artifact("agentos.yaml", spec)
+        mlflow.log_param("spec_is_frozen", frozen is not None)
 
     def _log_call(self, fn_name) -> None:
         mlflow.log_param("entry_point", fn_name)

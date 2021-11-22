@@ -1,12 +1,13 @@
 import os
+import yaml
+import statistics
+from pathlib import Path
+from typing import List, Dict, Optional
+from collections import namedtuple
 import mlflow
 from mlflow.entities import Run
-import statistics
-import yaml
-from typing import List
+from agentos import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from collections import namedtuple
-from pathlib import Path
 
 
 _EPISODE_KEY = "episode_count"
@@ -35,39 +36,64 @@ class AgentTracker:
     RESET_KEY = "reset"
     EVALUATE_KEY = "evaluate"
     RUN_TYPE_TAG = "run_type"
+    AGENT_NAME_KEY = "agent_name"
+    ENV_NAME_KEY = "environment_name"
 
     def __init__(self, *args, **kwargs):
         self.episode_data = []
-        self.evaluate_run = lambda: EvaluateRunManager(self)
-        self.learn_run = lambda: LearnRunManager(self)
+
+        def evaluate_run_manager(
+            agent_name: str = None, environment_name: str = None
+        ) -> RunContextManager:
+            return RunContextManager(
+                tracker=self,
+                run_type=self.EVALUATE_KEY,
+                agent_name=agent_name,
+                environment_name=environment_name,
+            )
+
+        def learn_run_manager(
+            agent_name: str = None, environment_name: str = None
+        ) -> RunContextManager:
+            return RunContextManager(
+                tracker=self,
+                run_type=self.LEARN_KEY,
+                agent_name=agent_name,
+                environment_name=environment_name,
+            )
+
+        self.evaluate_run = evaluate_run_manager
+        self.learn_run = learn_run_manager
         self.run_type = None
 
-    def start_evaluate_run(self):
-        self.run_type = self.EVALUATE_KEY
+    def start_run_type(self, run_type: str) -> None:
+        self.run_type = run_type
         self._log_run_type()
 
-    def start_learn_run(self):
-        self.run_type = self.LEARN_KEY
-        self._log_run_type()
+    def log_agent_name(self, agent_name: str) -> None:
+        mlflow.log_param(self.AGENT_NAME_KEY, agent_name)
 
-    def start_reset_run(self):
-        self.run_type = self.RESET_KEY
-        self._log_run_type()
+    def log_environment_name(self, environment_name: str) -> None:
+        mlflow.log_param(self.ENV_NAME_KEY, environment_name)
 
-    def _log_run_type(self):
+    def _log_run_type(self) -> None:
         mlflow.set_tag(self.RUN_TYPE_TAG, self.run_type)
 
-    def publish(self):
-        benchmark_run = self._get_last_benchmark_run()
-        if benchmark_run is None:
+    def publish(self) -> None:
+        run = self._get_last_benchmark_run()
+        if run is None:
             raise Exception("No evaluation run found!")
         data = {
-            "metrics": benchmark_run.data.metrics,
-            "parameters": self._get_parameters(benchmark_run),
-            "component_spec": self._get_component_spec(benchmark_run),
-            "entry_point": benchmark_run.data.params.get("entry_point"),
-            "is_published": benchmark_run.data.params.get("is_published"),
-            "artifact_paths": self._get_artifact_paths(benchmark_run),
+            "metrics": run.data.metrics,
+            "parameters": self._get_yaml_artifact(run, "parameter_set.yaml"),
+            "component_spec": self._get_yaml_artifact(run, "agentos.yaml"),
+            "agent_name": run.data.params.get(self.AGENT_NAME_KEY),
+            "agent_exists": run.data.params.get("agent_exists"),
+            "environment_name": run.data.params.get(self.ENV_NAME_KEY),
+            "environment_exists": run.data.params.get("environment_exists"),
+            "entry_point": run.data.params.get("entry_point"),
+            "spec_is_frozen": run.data.params.get("spec_is_frozen"),
+            "artifact_paths": self._get_artifact_paths(run),
         }
         import pprint
 
@@ -78,8 +104,13 @@ class AgentTracker:
     def _get_artifact_paths(self, run):
         artifacts_dir = self._get_artifacts_dir(run)
         artifact_paths = []
+        skipped_artifacts = [
+            "parameter_set.yaml",
+            "agentos.yaml",
+            "frozen_agentos.yaml",
+        ]
         for name in os.listdir(self._get_artifacts_dir(run)):
-            if name in ["parameter_set.yaml", "agentos.yaml"]:
+            if name in skipped_artifacts:
                 continue
             artifact_paths.append(artifacts_dir / name)
 
@@ -87,17 +118,11 @@ class AgentTracker:
         assert all(exist), f"Missing artifact paths: {artifact_paths}, {exist}"
         return artifact_paths
 
-    def _get_parameters(self, run):
-        return self._get_yaml_artifact(run, "parameter_set.yaml")
-
-    def _get_component_spec(self, run):
-        return self._get_yaml_artifact(run, "agentos.yaml")
-
-    def _get_yaml_artifact(self, run, name):
+    def _get_yaml_artifact(self, run: Run, name: str) -> Dict:
         artifacts_dir = self._get_artifacts_dir(run)
         artifact_path = artifacts_dir / name
         if not artifact_path.is_file():
-            raise Exception(f"No {name} at {str(artifact_path)}")
+            return {}
         with artifact_path.open() as file_in:
             return yaml.safe_load(file_in)
 
@@ -221,29 +246,46 @@ class AgentTracker:
             }
         )
 
-    def reset(self):
-        self.start_reset_run()
+    def reset(self) -> None:
+        self.start_run_type(self.RESET_KEY)
 
 
-class EvaluateRunManager:
-    def __init__(self, tracker: AgentTracker):
+class RunContextManager:
+    def __init__(
+        self,
+        tracker: AgentTracker,
+        run_type: str,
+        agent_name: Optional[str],
+        environment_name: Optional[str],
+    ):
         self.tracker = tracker
+        self.run_type = run_type
+        self.agent_name = agent_name or "agent"
+        self.environment_name = environment_name or "environment"
+        self._check_component_exists_in_run("agent")
+        self._check_component_exists_in_run("environment")
 
-    def __enter__(self):
-        self.tracker.start_evaluate_run()
+    def _check_component_exists_in_run(self, role_type: str) -> None:
+        run = mlflow.active_run()
+        artifacts_dir = self.tracker._get_artifacts_dir(run)
+        spec_path = artifacts_dir / "agentos.yaml"
+        names = Component._get_name_map(spec_path)
+        expected_name = getattr(self, f"{role_type}_name")
+        if expected_name not in names:
+            print(
+                f"Warning: unknown {role_type.capitalize()} component: "
+                f"{expected_name}.  Run will not be publishable."
+            )
+            self.components_exist = False
+            mlflow.log_param(f"{role_type}_exists", False)
+        else:
+            mlflow.log_param(f"{role_type}_exists", True)
 
-    def __exit__(self, type, value, traceback):
-        self.tracker.log_run_metrics()
-        self.tracker.print_results()
+    def __enter__(self) -> None:
+        self.tracker.start_run_type(self.run_type)
+        self.tracker.log_agent_name(self.agent_name)
+        self.tracker.log_environment_name(self.environment_name)
 
-
-class LearnRunManager:
-    def __init__(self, tracker: AgentTracker):
-        self.tracker = tracker
-
-    def __enter__(self):
-        self.tracker.start_learn_run()
-
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value, traceback) -> None:
         self.tracker.log_run_metrics()
         self.tracker.print_results()

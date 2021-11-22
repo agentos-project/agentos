@@ -8,6 +8,7 @@ To use::
 
 import os
 import sys
+from pathlib import Path
 from subprocess import run
 from subprocess import PIPE
 
@@ -41,5 +42,10 @@ def flake_file(path):
         print()
 
 
-traverse_tracked_files(root_dir, flake_file, IGNORED_FILES)
+if len(sys.argv) > 1:
+    for arg in sys.argv[1:]:
+        path = Path(arg).absolute()
+        flake_file(path)
+else:
+    traverse_tracked_files(root_dir, flake_file, IGNORED_FILES)
 sys.exit(returncode)

@@ -15,6 +15,10 @@ from agentos import component
 T = TypeVar("T")
 
 
+class BadGitStateException(Exception):
+    pass
+
+
 class RepoType(Enum):
     LOCAL = "local"
     GITHUB = "github"
@@ -75,7 +79,9 @@ class Repo:
         try:
             self.porcelain_repo = PorcelainRepo.discover(full_path)
         except NotGitRepository:
-            raise Exception(f"No git repo with Component found: {full_path}")
+            raise BadGitStateException(
+                f"No git repo with Component found: {full_path}"
+            )
 
         self._check_for_local_changes(force)
         url = self._check_for_github_url(force)
@@ -90,7 +96,7 @@ class Repo:
             if force:
                 print(f"Warning: {error_msg}")
             else:
-                raise Exception(error_msg)
+                raise BadGitStateException(error_msg)
         return url
 
     def _check_remote_branch_status(self, force: bool) -> str:
@@ -116,7 +122,7 @@ class Repo:
             if force:
                 print(f"Warning: {error_msg}")
             else:
-                raise Exception(error_msg)
+                raise BadGitStateException(error_msg)
         return curr_head_hash
 
     def _check_for_local_changes(self, force: bool) -> None:
@@ -149,7 +155,7 @@ class Repo:
             if force:
                 print(f"Warning: {error_msg}")
             else:
-                raise Exception(error_msg)
+                raise BadGitStateException(error_msg)
 
     def get_prefixed_path_from_repo_root(
         self, identifier: "component.Component.Identifier", file_path: str
@@ -185,6 +191,7 @@ class Repo:
             except NotGitRepository:
                 path_prefix = curr_path.name / path_prefix
                 curr_path = curr_path.parent
+        raise BadGitStateException(f"Unable to find repo: {full_path}")
 
 
 class UnknownRepo(Repo):
