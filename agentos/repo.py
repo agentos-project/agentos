@@ -19,6 +19,10 @@ class BadGitStateException(Exception):
     pass
 
 
+class NoLocalPathException(Exception):
+    pass
+
+
 class RepoType(Enum):
     LOCAL = "local"
     GITHUB = "github"
@@ -90,7 +94,10 @@ class Repo:
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
-        remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        try:
+            remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        except IndexError:
+            raise BadGitStateException("Could not find remote repo")
         if "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
@@ -302,3 +309,6 @@ class InMemoryRepo(Repo):
     def __init__(self, name: str = None):
         self.name = name if name else "in_memory"
         self.type = RepoType.IN_MEMORY
+
+    def get_local_file_path(self, *args, **kwargs):
+        raise NoLocalPathException()

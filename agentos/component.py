@@ -13,6 +13,7 @@ from agentos.repo import (
     InMemoryRepo,
     GitHubRepo,
     BadGitStateException,
+    NoLocalPathException,
 )
 from agentos.parameter_set import ParameterSet
 
@@ -254,7 +255,7 @@ class Component:
         try:
             frozen = self.get_frozen_spec()
             log_data_as_yaml_artifact("agentos.yaml", frozen)
-        except BadGitStateException as exc:
+        except (BadGitStateException, NoLocalPathException) as exc:
             print(f"Warning: component is not publishable: {str(exc)}")
             spec = self.get_component_spec()
             log_data_as_yaml_artifact("agentos.yaml", spec)
