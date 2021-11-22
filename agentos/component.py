@@ -22,7 +22,7 @@ class _Identifier:
     command-line.
     """
 
-    def __init__(self, identifier, latest_refs=None):
+    def __init__(self, identifier: str, latest_refs=None):
         split_identifier = identifier.split("==")
         assert len(split_identifier) <= 2, f"Bad identifier: '{identifier}'"
         if len(split_identifier) == 1:
@@ -35,11 +35,11 @@ class _Identifier:
             self.name = split_identifier[0]
             self.version = split_identifier[1]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<agentos.component.Component.Identifer: {self.full}>"
 
     @property
-    def full(self):
+    def full(self) -> str:
         if self.name and self.version:
             return "==".join((self.name, self.version))
         return self.name
@@ -257,11 +257,13 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def get_frozen_spec(self, force: bool = False):
+    def get_frozen_spec(self, force: bool = False) -> Dict:
         versioned = self._get_versioned_dependency_dag(force)
         return versioned.get_component_spec()
 
-    def _get_versioned_dependency_dag(self, force: bool = False):
+    def _get_versioned_dependency_dag(
+        self, force: bool = False
+    ) -> "Component":
         repo_url, version = self.repo.get_version_from_git(
             self.identifier, self.file_path, force
         )
@@ -285,7 +287,7 @@ class Component:
             clone.add_dependency(pinned_dependency, attribute_name=attr_name)
         return clone
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         dependencies = {k: v.full_name for k, v in self._dependencies.items()}
         return {
             "repo": self.repo.name,
@@ -305,11 +307,11 @@ class Component:
         return param_dict
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.identifier.name
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return self.identifier.full
 
     @contextmanager

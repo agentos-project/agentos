@@ -2,11 +2,12 @@ import yaml
 import json
 import pprint
 import requests
+from typing import Dict
 
 AOS_WEB_BASE_URL = "http://localhost:8000"
 
 
-def push_component_spec(frozen_spec):
+def push_component_spec(frozen_spec: Dict) -> None:
     url = f"{AOS_WEB_BASE_URL}/registry/api/v2/components/ingest_spec/"
     data = {"components.yaml": yaml.dump(frozen_spec)}
     result = requests.post(url, data=data)

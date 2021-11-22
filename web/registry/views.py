@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -25,7 +26,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["POST"], url_name="ingest-spec")
     @transaction.atomic
-    def ingest_spec(self, request, *args, **kwargs):
+    def ingest_spec(self, request: Request, *args, **kwargs) -> Response:
         SPEC_NAME = "components.yaml"
         if SPEC_NAME not in request.data:
             raise ValidationError(f"No {SPEC_NAME} included in ingest request")

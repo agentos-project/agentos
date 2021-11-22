@@ -1,9 +1,10 @@
+from typing import Dict
 from agentos.utils import DUMMY_DEV_REGISTRY
 from agentos.component import Component
 from agentos.repo import Repo
 
 
-def get_component(name):
+def get_component(name: str) -> Component:
     registry = Registry()
     return registry.get_component(name)
 
@@ -18,12 +19,14 @@ class Registry:
         self.registry = registry if registry else DUMMY_DEV_REGISTRY
         self.latest_refs = self.registry["latest_refs"]
 
-    def get_component(self, name: str):
+    def get_component(self, name: str) -> Component:
         instantiated = {}
         identifier = Component.Identifier(name, self.latest_refs)
         return self._get_component(identifier, instantiated)
 
-    def _get_component(self, identifier, instantiated):
+    def _get_component(
+        self, identifier: Component.Identifier, instantiated: Dict
+    ) -> Component:
         if identifier.full in instantiated:
             return instantiated[identifier.full]
         component_spec = self.registry["components"][identifier.full]

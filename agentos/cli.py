@@ -178,7 +178,7 @@ def freeze(component_name, component_spec_file, force):
 @_arg_component_name
 @_option_component_spec_file
 @_option_force
-def publish(component_name, component_spec_file, force):
+def publish(component_name: str, component_spec_file: str, force: bool):
     """ """
     component = Component.get_from_yaml(component_name, component_spec_file)
     frozen_spec = component.get_frozen_spec(force=force)

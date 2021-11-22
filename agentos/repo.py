@@ -1,7 +1,7 @@
 import os
 import sys
 from enum import Enum
-from typing import TypeVar
+from typing import TypeVar, Dict
 from pathlib import Path
 from dulwich import porcelain
 from dulwich.repo import Repo as PorcelainRepo
@@ -29,7 +29,7 @@ class Repo:
     """
 
     @staticmethod
-    def from_spec(name, spec):
+    def from_spec(name: str, spec: Dict) -> "Repo":
         if spec["type"] == RepoType.LOCAL.value:
             return LocalRepo(name=name, file_path=spec["path"])
         elif spec["type"] == RepoType.GITHUB.value:
@@ -41,13 +41,13 @@ class Repo:
         else:
             raise Exception(f"Unknown repo spec type: {spec}")
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Repo") -> bool:
         return self.to_dict() == other.to_dict()
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         return {"type": self.type.value}
 
-    def get_local_repo_path(self, version):
+    def get_local_repo_path(self, version: str) -> Path:
         raise NotImplementedError()
 
     def get_version_from_git(
@@ -55,7 +55,7 @@ class Repo:
         identifier: "component.Component.Identifier",
         file_path: str,
         force: bool = False,
-    ):
+    ) -> (str, str):
         """
         Given a path to a Component, this returns a git hash and GitHub repo
         URL where the current version of the Component is publicly accessible.
@@ -83,7 +83,7 @@ class Repo:
         self.porcelain_repo = None
         return url, curr_head_hash
 
-    def _check_for_github_url(self, force):
+    def _check_for_github_url(self, force: bool) -> str:
         remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         if "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
@@ -93,7 +93,7 @@ class Repo:
                 raise Exception(error_msg)
         return url
 
-    def _check_remote_branch_status(self, force):
+    def _check_remote_branch_status(self, force: bool) -> str:
         remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         REMOTE_GIT_PREFIX = "refs/remotes"
         branch = porcelain.active_branch(self.porcelain_repo).decode("UTF-8")
@@ -119,7 +119,7 @@ class Repo:
                 raise Exception(error_msg)
         return curr_head_hash
 
-    def _check_for_local_changes(self, force):
+    def _check_for_local_changes(self, force: bool) -> None:
         # Adapted from
         # https://github.com/dulwich/dulwich/blob/master/dulwich/porcelain.py#L1200
         # 1. Get status of staged
@@ -153,7 +153,7 @@ class Repo:
 
     def get_prefixed_path_from_repo_root(
         self, identifier: "component.Component.Identifier", file_path: str
-    ):
+    ) -> Path:
         """
         Finds the 'component_path' relative to the repo containing the
         Component.  For example, if ``component_path`` is:
@@ -212,19 +212,19 @@ class GitHubRepo(Repo):
         self.local_repo_path = None
         self.porcelain_repo = None
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         return {
             "type": self.type.value,
             "url": self.url,
         }
 
-    def get_local_repo_path(self, version):
+    def get_local_repo_path(self, version: str) -> str:
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
         return local_repo_path
 
-    def _clone_repo(self, version):
+    def _clone_repo(self, version: str) -> str:
         org_name, proj_name = self.url.split("/")[-2:]
         clone_destination = AOS_CACHE_DIR / org_name / proj_name / version
         if not clone_destination.exists():
@@ -235,7 +235,7 @@ class GitHubRepo(Repo):
         assert clone_destination.exists(), f"Unable to clone {self.url}"
         return clone_destination
 
-    def _checkout_version(self, local_repo_path, version):
+    def _checkout_version(self, local_repo_path: str, version: str) -> None:
         to_checkout = version if version else "master"
         curr_dir = os.getcwd()
         os.chdir(local_repo_path)
@@ -256,7 +256,7 @@ class GitHubRepo(Repo):
 
     def get_local_file_path(
         self, identifier: "component.Component.Identifier", file_path: str
-    ):
+    ) -> Path:
         local_repo_path = self.get_local_repo_path(identifier.version)
         return (local_repo_path / file_path).absolute()
 
@@ -271,18 +271,18 @@ class LocalRepo(Repo):
         self.type = RepoType.LOCAL
         self.file_path = Path(file_path)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         return {
             "type": self.type.value,
             "path": str(self.file_path),
         }
 
-    def get_local_repo_path(self, version):
+    def get_local_repo_path(self, version: str) -> Path:
         return self.file_path
 
     def get_local_file_path(
         self, identifier: "component.Component.Identifier", file_path: str
-    ):
+    ) -> Path:
         return self.file_path / file_path
 
 
@@ -292,6 +292,6 @@ class InMemoryRepo(Repo):
     already loaded into Python.
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name: str = None):
         self.name = name if name else "in_memory"
         self.type = RepoType.IN_MEMORY
