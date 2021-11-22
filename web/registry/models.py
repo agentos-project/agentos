@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework.exceptions import ValidationError
 from typing import Dict, List
-from agentos.component import ComponentIdentifier
+from agentos.component import Component as CLI_Component
 
 
 class TimeStampedModel(models.Model):
@@ -31,16 +31,16 @@ class ComponentDependency(TimeStampedModel):
         )
 
     @staticmethod
-    def create_from_dict(component_dict: Dict) -> List:
+    def create_from_dict(component_spec_dict: Dict) -> List:
         dependencies = []
-        for name, component in component_dict.items():
-            identifier = ComponentIdentifier(name)
+        for name, component in component_spec_dict.items():
+            identifier = CLI_Component.Identifier(name)
             depender = Component.objects.get(
                 name=identifier.name,
                 version=identifier.version,
             )
             for attr_name, dependency in component["dependencies"].items():
-                dep_identifier = ComponentIdentifier(dependency)
+                dep_identifier = CLI_Component.Identifier(dependency)
                 dependee = Component.objects.get(
                     name=dep_identifier.name,
                     version=dep_identifier.version,
@@ -81,10 +81,10 @@ class Component(TimeStampedModel):
         return f"<Component {self.pk}: {self.name}=={display_version}>"
 
     @staticmethod
-    def create_from_dict(component_dict: Dict) -> List:
+    def create_from_dict(component_spec_dict: Dict) -> List:
         components = []
-        for name, component in component_dict.items():
-            identifier = ComponentIdentifier(name)
+        for name, component in component_spec_dict.items():
+            identifier = CLI_Component.Identifier(name)
             component, created = Component.objects.get_or_create(
                 name=identifier.name,
                 version=identifier.version,
@@ -107,9 +107,9 @@ class Repo(TimeStampedModel):
         return f"<Repo {self.pk}: " f'"{self.name}" at {self.github_url}>'
 
     @staticmethod
-    def create_from_dict(repo_dict: Dict) -> List:
+    def create_from_dict(repo_spec_dict: Dict) -> List:
         repos = []
-        for name, repo in repo_dict.items():
+        for name, repo in repo_spec_dict.items():
             if "github.com" not in repo["url"]:
                 raise ValidationError(
                     f"Repo must be on GitHub, not {repo['url']}"

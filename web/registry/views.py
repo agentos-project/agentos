@@ -31,11 +31,11 @@ class ComponentViewSet(viewsets.ModelViewSet):
             raise ValidationError(f"No {SPEC_NAME} included in ingest request")
         component_spec = request.data[SPEC_NAME]
         spec_dict = yaml.safe_load(component_spec)
-        repo_dict = spec_dict.get("repos", {})
-        component_dict = spec_dict.get("components", {})
-        Repo.create_from_dict(repo_dict)
-        components = Component.create_from_dict(component_dict)
-        ComponentDependency.create_from_dict(component_dict)
+        repo_spec_dict = spec_dict.get("repos", {})
+        component_spec_dict = spec_dict.get("components", {})
+        Repo.create_from_dict(repo_spec_dict)
+        components = Component.create_from_dict(component_spec_dict)
+        ComponentDependency.create_from_dict(component_spec_dict)
         serialized = ComponentSerializer(components, many=True)
         return Response(serialized.data)
 

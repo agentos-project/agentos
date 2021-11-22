@@ -170,7 +170,7 @@ def freeze(component_name, component_spec_file, force):
         * There are no uncommitted changes in the local repo
     """
     component = Component.get_from_yaml(component_name, component_spec_file)
-    frozen_spec = component.get_frozen_component_spec(force=force)
+    frozen_spec = component.get_frozen_spec(force=force)
     print(yaml.dump(frozen_spec))
 
 
@@ -181,7 +181,7 @@ def freeze(component_name, component_spec_file, force):
 def publish(component_name, component_spec_file, force):
     """ """
     component = Component.get_from_yaml(component_name, component_spec_file)
-    frozen_spec = component.get_frozen_component_spec(force=force)
+    frozen_spec = component.get_frozen_spec(force=force)
     web.push_component_spec(frozen_spec)
 
 

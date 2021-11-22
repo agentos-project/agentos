@@ -1,5 +1,4 @@
 from agentos.utils import DUMMY_DEV_REGISTRY
-from agentos.component import ComponentIdentifier
 from agentos.component import Component
 from agentos.repo import Repo
 
@@ -21,7 +20,7 @@ class Registry:
 
     def get_component(self, name: str):
         instantiated = {}
-        identifier = ComponentIdentifier(name, self.latest_refs)
+        identifier = Component.Identifier(name, self.latest_refs)
         return self._get_component(identifier, instantiated)
 
     def _get_component(self, identifier, instantiated):
@@ -39,7 +38,7 @@ class Registry:
         )
         instantiated[identifier.full] = component
         for attr_name, dep_name in component_spec["dependencies"].items():
-            dep_id = ComponentIdentifier(dep_name, self.latest_refs)
+            dep_id = Component.Identifier(dep_name, self.latest_refs)
             dep_component = self._get_component(dep_id, instantiated)
             component.add_dependency(dep_component, attribute_name=attr_name)
         return component
