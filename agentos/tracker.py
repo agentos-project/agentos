@@ -1,4 +1,5 @@
 import os
+import sys
 import yaml
 import statistics
 from pathlib import Path
@@ -130,7 +131,10 @@ class AgentTracker:
         artifacts_uri = run.info.artifact_uri
         if "file://" != artifacts_uri[:7]:
             raise Exception(f"Non-local artifacts path: {artifacts_uri}")
-        return Path(artifacts_uri[7:]).absolute()
+        slice_count = 7
+        if sys.platform in ["win32", "cygwin"]:
+            slice_count = 8
+        return Path(artifacts_uri[slice_count:]).absolute()
 
     def _get_last_benchmark_run(self):
         runs = self._get_all_runs()
