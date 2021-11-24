@@ -124,7 +124,7 @@ class Repo:
             print(f"\t{remote}/{branch}: {curr_remote_hash}")
             print(f"\tlocal/{branch}: {curr_head_hash}\n")
             error_msg = (
-                f"Push your changes to {remote}/{branch} before pinning"
+                f"Push your changes to {remote}/{branch} before freezing"
             )
             if force:
                 print(f"Warning: {error_msg}")
@@ -158,7 +158,7 @@ class Repo:
                 f"\nUncommitted changes: {tracked_changes} or "
                 f"{unstaged_changes}\n"
             )
-            error_msg = "Commit all changes before pinning"
+            error_msg = "Commit all changes before freezing"
             if force:
                 print(f"Warning: {error_msg}")
             else:

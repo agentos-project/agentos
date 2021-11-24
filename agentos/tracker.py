@@ -9,6 +9,9 @@ import mlflow
 from mlflow.entities import Run
 from agentos import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
+from agentos.web import push_run_data
+from agentos.web import push_run_artifacts
+from agentos.web import AOS_WEB_BASE_URL
 
 
 _EPISODE_KEY = "episode_count"
@@ -33,8 +36,11 @@ class AgentTracker:
     A Component used to track Agent training and evaluation runs.
     """
 
+    DEFAULT_ENTRY_POINT = "publish"
+
     LEARN_KEY = "learn"
     RESET_KEY = "reset"
+    RESTORE_KEY = "restore"
     EVALUATE_KEY = "evaluate"
     RUN_TYPE_TAG = "run_type"
     AGENT_NAME_KEY = "agent_name"
@@ -84,23 +90,29 @@ class AgentTracker:
         run = self._get_last_benchmark_run()
         if run is None:
             raise Exception("No evaluation run found!")
-        data = {
+        run_data = {
             "metrics": run.data.metrics,
-            "parameters": self._get_yaml_artifact(run, "parameter_set.yaml"),
+            "parameter_set": self._get_yaml_artifact(
+                run, "parameter_set.yaml"
+            ),
             "component_spec": self._get_yaml_artifact(run, "agentos.yaml"),
             "agent_name": run.data.params.get(self.AGENT_NAME_KEY),
-            "agent_exists": run.data.params.get("agent_exists"),
             "environment_name": run.data.params.get(self.ENV_NAME_KEY),
-            "environment_exists": run.data.params.get("environment_exists"),
             "entry_point": run.data.params.get("entry_point"),
-            "spec_is_frozen": run.data.params.get("spec_is_frozen"),
-            "artifact_paths": self._get_artifact_paths(run),
+            "root_name": run.data.params.get("root_name"),
         }
-        import pprint
 
-        pprint.pprint(data)
-        # TODO - push run data to server
-        # TODO - push artifacts to server
+        if run.data.params.get("spec_is_frozen") == "False":
+            raise Exception("Spec was not frozen at runtime!")
+        if run.data.params.get("agent_exists") == "False":
+            raise Exception("No Agent was specified runtime!")
+        if run.data.params.get("environment_exists") == "False":
+            raise Exception("No Environment was specified runtime!")
+        result = push_run_data(run_data)
+        run_id = result["id"]
+        artifact_paths = self._get_artifact_paths(run)
+        push_run_artifacts(run_id, artifact_paths)
+        print(f"Pushed Run {run_id} on {AOS_WEB_BASE_URL}")
 
     def _get_artifact_paths(self, run):
         artifacts_dir = self._get_artifacts_dir(run)
@@ -108,7 +120,6 @@ class AgentTracker:
         skipped_artifacts = [
             "parameter_set.yaml",
             "agentos.yaml",
-            "frozen_agentos.yaml",
         ]
         for name in os.listdir(self._get_artifacts_dir(run)):
             if name in skipped_artifacts:

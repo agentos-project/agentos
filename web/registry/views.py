@@ -1,26 +1,22 @@
 import yaml
-import json
-from django.http import HttpResponse
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from .models import Component
-from .models import ComponentDependency
-from .models import Repo
 from .models import Run
+from .models import Repo
+from .models import Component
+from .serializers import RunSerializer
+from .serializers import RepoSerializer
 from .serializers import ComponentSerializer
 
 
 class ComponentViewSet(viewsets.ModelViewSet):
-    queryset = Component.objects.all()
+    queryset = Component.objects.all().order_by("-created")
     serializer_class = ComponentSerializer
     permission_classes = [AllowAny]
 
@@ -30,90 +26,75 @@ class ComponentViewSet(viewsets.ModelViewSet):
         SPEC_NAME = "components.yaml"
         if SPEC_NAME not in request.data:
             raise ValidationError(f"No {SPEC_NAME} included in ingest request")
-        component_spec = request.data[SPEC_NAME]
-        spec_dict = yaml.safe_load(component_spec)
-        repo_spec_dict = spec_dict.get("repos", {})
-        component_spec_dict = spec_dict.get("components", {})
-        Repo.create_from_dict(repo_spec_dict)
-        components = Component.create_from_dict(component_spec_dict)
-        ComponentDependency.create_from_dict(component_spec_dict)
+
+        raw_spec = request.data[SPEC_NAME]
+        spec_dict = yaml.safe_load(raw_spec)
+        repos, components = Component.ingest_spec_dict(spec_dict)
         serialized = ComponentSerializer(components, many=True)
         return Response(serialized.data)
 
 
-def index(request):
-    return HttpResponse(
-        "Hello, world. You're at the registry index."
-        f"There are {Component.objects.count()} Components with "
-        f"{ComponentDependency.objects.count()} dependencies."
-    )
+def _get_from_list(name, component_list):
+    components = [c for c in component_list if c.name == name]
+    if len(components) > 1:
+        raise ValidationError(f"Repeat components named {name}: {components}")
+    if len(components) == 0:
+        raise ValidationError(f"No component named {name}: {component_list}")
+    return components[0]
 
 
-def component_detail(request, component_id):
-    component = get_object_or_404(Component, pk=component_id)
-    context = {
-        "runs": Run.objects.filter(components=component).order_by("-id"),
-        "component": component,
-    }
-    return render(request, "registry/component_detail.html", context)
+class RunViewSet(viewsets.ModelViewSet):
+    queryset = Run.objects.all().order_by("-created")
+    serializer_class = RunSerializer
+    permission_classes = [AllowAny]
+
+    @transaction.atomic
+    def create(self, request):
+        data = yaml.safe_load(request.data["run_data"])
+        # TODO - we should track provenance of all Components created
+        repos, components = Component.ingest_spec_dict(data["component_spec"])
+        root = _get_from_list(data["root_name"], components)
+        agent = _get_from_list(data["agent_name"], components)
+        environment = _get_from_list(data["environment_name"], components)
+        run = Run.objects.create(
+            root=root,
+            agent=agent,
+            environment=environment,
+            metrics=data["metrics"],
+            entry_point=data["entry_point"],
+            parameter_set=data["parameter_set"],
+        )
+        return Response(RunSerializer(run).data)
+
+    @action(detail=True, methods=["POST"], url_name="upload-artifact")
+    @transaction.atomic
+    def upload_artifact(self, request: Request, pk=None) -> Response:
+        run = self.get_object()
+        run.artifact_tarball.save(
+            f"run_{run.id}_artifacts.tar.gz", request.data["tarball"]
+        )
+        run.save()
+        return Response(RunSerializer(run).data)
+
+    @action(detail=True, methods=["GET"], url_name="download-artifact")
+    def download_artifact(self, request: Request, pk=None) -> Response:
+        run = self.get_object()
+        if not run.artifact_tarball:
+            raise ValidationError(f"No files associated with Run {run.id}")
+        response = HttpResponse(
+            run.artifact_tarball.open(), content_type="application/gzip"
+        )
+        disposition = f"attachment; filename={run.artifact_tarball.name}"
+        response["Content-Disposition"] = disposition
+        return response
+
+    @action(detail=True, methods=["GET"], url_name="root-spec")
+    def root_spec(self, request: Request, pk=None) -> Response:
+        run = self.get_object()
+        return Response(run.root.get_full_spec())
 
 
-def run_detail(request, run_id):
-    run = get_object_or_404(Run, pk=run_id)
-    context = {"run": run}
-    return render(request, "registry/run_detail.html", context)
-
-
-def api_components(request):
-    all_components = {}
-    for component in Component.objects.all():
-        releases = []
-        component_data = {
-            "type": component.component_type_text.lower(),
-            "description": component.description,
-            "releases": releases,
-        }
-        for release in component.releases.all():
-            release_data = {
-                "name": release.name,
-                "hash": release.git_hash,
-                "github_url": release.github_url,
-                "file_path": release.file_path,
-                "class_name": release.class_name,
-                "requirements_path": release.requirements_path,
-            }
-            releases.append(release_data)
-        all_components[component.name] = component_data
-    return HttpResponse(yaml.dump(all_components))
-
-
-@csrf_exempt
-def api_runs(request):
-    data = json.loads(request.body)
-    benchmark_data = data["benchmark_data"]
-    agent_data = data["agent_data"]
-    run = Run(benchmark_data=benchmark_data, agent_data=agent_data)
-    run.save()
-    for component in agent_data:
-        component = Component.objects.get(name=component["package_name"])
-        run.components.add(component)
-    return JsonResponse({"run_id": run.id})
-
-
-@csrf_exempt
-def api_tarball(request, run_id):
-    run = get_object_or_404(Run, pk=run_id)
-    run.tarball = request.FILES["file"]
-    run.save()
-    return HttpResponse("Ok!")
-
-
-def run_tarball(request, run_id):
-    run = get_object_or_404(Run, pk=run_id)
-    response = HttpResponse(
-        run.tarball.read(), content_type="application/tar.gz"
-    )
-    response[
-        "Content-Disposition"
-    ] = f"attachment; filename=run{run_id}.tar.gz"
-    return response
+class RepoViewSet(viewsets.ModelViewSet):
+    queryset = Repo.objects.all().order_by("-created")
+    serializer_class = RepoSerializer
+    permission_classes = [AllowAny]

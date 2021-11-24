@@ -67,7 +67,7 @@ class Component:
         identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
-        dunder_name: str = "__component__",
+        dunder_name: str = None,
     ):
         """
         :param managed_cls: The class used to create instances.
@@ -81,7 +81,7 @@ class Component:
         self.identifier = identifier
         self.class_name = class_name
         self.file_path = file_path
-        self._dunder_name = dunder_name
+        self._dunder_name = dunder_name or "__component__"
         self._requirements = []
         self._dependencies = {}
 
@@ -117,7 +117,7 @@ class Component:
     def get_from_class(
         managed_cls: Type[T],
         name: str = None,
-        dunder_name: str = "__component__",
+        dunder_name: str = None,
     ) -> "Component":
         return Component(
             managed_cls=managed_cls,
@@ -134,7 +134,7 @@ class Component:
         identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
-        dunder_name: str = "__component__",
+        dunder_name: str = None,
     ) -> "Component":
         full_path = repo.get_local_file_path(identifier, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
@@ -194,6 +194,13 @@ class Component:
                 component.add_dependency(dependency, attribute_name=attr_name)
 
         return components
+
+    def get_default_entry_point(self):
+        try:
+            entry_point = self._managed_cls.DEFAULT_ENTRY_POINT
+        except AttributeError:
+            entry_point = "evaluate"
+        return entry_point
 
     def run(
         self,
@@ -262,6 +269,7 @@ class Component:
         mlflow.log_param("spec_is_frozen", frozen is not None)
 
     def _log_call(self, fn_name) -> None:
+        mlflow.log_param("root_name", self.identifier.full)
         mlflow.log_param("entry_point", fn_name)
 
     def get_component_spec(self):
@@ -306,20 +314,21 @@ class Component:
             dunder_name=self._dunder_name,
         )
         for attr_name, dependency in self._dependencies.items():
-            pinned_dependency = dependency._get_versioned_dependency_dag(
+            frozen_dependency = dependency._get_versioned_dependency_dag(
                 force=force
             )
-            clone.add_dependency(pinned_dependency, attribute_name=attr_name)
+            clone.add_dependency(frozen_dependency, attribute_name=attr_name)
         return clone
 
     def to_dict(self) -> Dict:
         dependencies = {k: v.full_name for k, v in self._dependencies.items()}
-        return {
+        component_spec = {
             "repo": self.repo.name,
             "file_path": str(self.file_path),
             "class_name": self.class_name,
             "dependencies": dependencies,
         }
+        return component_spec
 
     def get_param_dict(self) -> Dict:
         param_dict = {}

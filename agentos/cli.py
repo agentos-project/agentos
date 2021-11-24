@@ -29,6 +29,8 @@ _arg_component_name = click.argument(
     "component_name", metavar="COMPONENT_NAME"
 )
 
+_arg_run_id = click.argument("run_id", type=int, metavar="RUN_ID")
+
 _arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
 
 
@@ -114,7 +116,7 @@ def init(dir_names, agent_name, agentos_dir):
     "--entry-point",
     metavar="ENTRY_POINT",
     type=str,
-    default="evaluate",
+    default=None,
     help="A function of the component that AgentOS Runtime will call with "
     "the specified params.",
 )
@@ -147,8 +149,15 @@ def run(
     param_dict = _user_args_to_dict(param_list)
     component = Component.get_from_yaml(component_name, component_spec_file)
     parameters = ParameterSet.get_from_file(param_file)
+    entry_point = entry_point or component.get_default_entry_point()
     parameters.update(component_name, entry_point, param_dict)
     component.run(entry_point, parameters)
+
+
+@agentos_cmd.command()
+@_arg_run_id
+def get_run(run_id):
+    web.get_run(run_id)
 
 
 @agentos_cmd.command()
@@ -179,7 +188,11 @@ def freeze(component_name, component_spec_file, force):
 @_option_component_spec_file
 @_option_force
 def publish(component_name: str, component_spec_file: str, force: bool):
-    """ """
+    """
+    This command pushes the spec for component ``component_name`` (and all its
+    sub-Components) to the AgentOS server.  This command will fail if any
+    Component in the dependency tree cannot be frozen.
+    """
     component = Component.get_from_yaml(component_name, component_spec_file)
     frozen_spec = component.get_frozen_spec(force=force)
     web.push_component_spec(frozen_spec)
