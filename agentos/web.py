@@ -24,11 +24,19 @@ AOS_WEB_API_EXTENSION = "/api/v1"
 AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
 
 
+def _check_response(response):
+    if not response.ok:
+        content = json.loads(response.content)
+        if type(content) == list:
+            content = content[0]
+        raise Exception(content)
+
+
 def push_component_spec(frozen_spec: Dict) -> Dict:
     url = f"{AOS_WEB_API_ROOT}/components/ingest_spec/"
     data = {"components.yaml": yaml.dump(frozen_spec)}
     response = requests.post(url, data=data)
-    response.raise_for_status()
+    _check_response(response)
     result = json.loads(response.content)
     print("\nResults:")
     pprint.pprint(result)
@@ -40,7 +48,7 @@ def push_run_data(run_data: Dict) -> List:
     url = f"{AOS_WEB_API_ROOT}/runs/"
     data = {"run_data": yaml.dump(run_data)}
     response = requests.post(url, data=data)
-    response.raise_for_status()
+    _check_response(response)
     result = json.loads(response.content)
     return result
 
