@@ -160,7 +160,7 @@ class Component(TimeStampedModel):
             return False
         if self.class_name != other_spec["class_name"]:
             return False
-        if self.description != other_spec["description"]:
+        if self.description != other_spec.get("description", ""):
             return False
         self_deps = ComponentDependency.objects.filter(
             depender=self
