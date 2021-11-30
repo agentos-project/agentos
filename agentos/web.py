@@ -63,6 +63,7 @@ def push_run_artifacts(run_id: int, run_artifacts: List) -> List:
 
 def get_run(run_id: int) -> None:
     from agentos.tracker import AgentTracker
+
     run_url = f"{AOS_WEB_API_ROOT}/runs/{run_id}"
     run_response = requests.get(run_url)
     run_data = json.loads(run_response.content)

@@ -130,20 +130,50 @@ class Component(TimeStampedModel):
     @staticmethod
     def create_from_dict(component_spec_dict: Dict) -> List:
         components = []
-        for name, component in component_spec_dict.items():
+        for name, component_spec in component_spec_dict.items():
             identifier = CLI_Component.Identifier(name)
             component, created = Component.objects.get_or_create(
                 name=identifier.name,
-                version=identifier.version,
                 defaults={
-                    "repo": Repo.objects.get(name=component["repo"]),
-                    "file_path": component["file_path"],
-                    "class_name": component["class_name"],
+                    "version": identifier.version,
+                    "repo": Repo.objects.get(name=component_spec["repo"]),
+                    "file_path": component_spec["file_path"],
+                    "class_name": component_spec["class_name"],
                     "description": "",
                 },
             )
+            if not created and not component._equals_spec(component_spec):
+                raise ValidationError(
+                    f"Component with name {name} (id: {component.id}) already "
+                    f"exists and differs from uploaded spec: {component_spec}."
+                    f"Try renaming your {name} Component."
+                )
             components.append(component)
         return components
+
+    # TODO - check versions in here once we have Component owners
+    def _equals_spec(self, other_spec):
+        other_repo = Repo.objects.get(name=other_spec["repo"])
+        if self.repo.github_url != other_repo.github_url:
+            return False
+        if self.file_path != other_spec["file_path"]:
+            return False
+        if self.class_name != other_spec["class_name"]:
+            return False
+        if self.description != other_spec["description"]:
+            return False
+        self_deps = ComponentDependency.objects.filter(
+            depender=self
+        ).distinct()
+        for self_dep in self_deps:
+            if self_dep.attribute_name not in other_spec["dependencies"]:
+                return False
+            other_dep_name = other_spec["dependencies"][
+                self_dep.attribute_name
+            ]
+            if other_dep_name != self_dep.dependee.full_name:
+                return False
+        return True
 
 
 class Repo(TimeStampedModel):
