@@ -106,7 +106,7 @@ git subtree push --prefix web heroku master
 
 # If heroku complains about non-fast-forward, try this sorcery
 git subtree split --prefix web -b heroku-deploy
-git push -f heroku heroku-deploy:gh-pages
+git push -f heroku heroku-deploy:master
 git checkout master
 git branch -D heroku-deploy
 
