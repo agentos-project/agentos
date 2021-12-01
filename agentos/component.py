@@ -199,7 +199,7 @@ class Component:
         try:
             entry_point = self._managed_cls.DEFAULT_ENTRY_POINT
         except AttributeError:
-            entry_point = "evaluate"
+            entry_point = "run"
         return entry_point
 
     def run(

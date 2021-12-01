@@ -277,8 +277,8 @@ class RunContextManager:
         self.run_type = run_type
         self.agent_name = agent_name or "agent"
         self.environment_name = environment_name or "environment"
-        self._check_component_exists_in_run("agent")
-        self._check_component_exists_in_run("environment")
+        self._check_component_exists_in_run(self.agent_name)
+        self._check_component_exists_in_run(self.environment_name)
 
     def _check_component_exists_in_run(self, role_type: str) -> None:
         run = mlflow.active_run()
