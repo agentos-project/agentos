@@ -39,8 +39,7 @@ Warning: this deletes all data in your DB:
 * Run `./manage.py makemigrations`
 * Recreate your postgres tables
     * sudo -u postgres psql
-    * drop database aos_web; drop user aos_web_user; create database aos_web; create user aos_web_user with encrypted password 'aabbccdd'; grant all privil
-eges on database aos_web to aos_web_user;
+    * drop database aos_web; drop user aos_web_user; create database aos_web; create user aos_web_user with encrypted password 'aabbccdd'; grant all privileges on database aos_web to aos_web_user;
 * ./manage.py migrate
 
 ## Notes
@@ -95,4 +94,31 @@ heroku run python manage.py migrate
 heroku run python manage.py createsuperuser
 heroku open
 # set IS_DEPLOY=True on Heroku config vars dashboard (under settings)
+```
+
+## Deploy to Heroku with web/ in the monorepo
+
+```bash
+# Add heroku remote if it's missing
+heroku git:remote -a aos-web
+# Push everything under web/ on current branch to heroku
+git subtree push --prefix web heroku master
+
+# If heroku complains about non-fast-forward, try this sorcery
+git subtree split --prefix web -b heroku-deploy
+git push -f heroku heroku-deploy:master
+git checkout master
+git branch -D heroku-deploy
+
+# COMPLETELY reset heroku database
+heroku pg:reset
+
+# Run Migrations
+heroku run python manage.py migrate
+
+# Create admin/12345678
+heroku run python manage.py create_default_admin
+
+# Tail logs
+heroku logs --tail
 ```

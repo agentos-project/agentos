@@ -98,6 +98,7 @@
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>
+        {% if is_debug %}<span aria-hidden="true"></span>{% endif %}
       </a>
     </div>
   
@@ -108,14 +109,19 @@
           Home
         </a>
 
-        <a href="/runs/" class="navbar-item">
+        <a href="{% url 'run-list' %}" class="navbar-item">
           Runs
         </a>
 
-        <a href="/components/" class="navbar-item">
+        <a href="{% url 'component-list' %}" class="navbar-item">
           Components
         </a>
 
+        {% if is_debug %}
+          <a href="{% url 'empty-database' %}" class="navbar-item">
+            DEBUG: Empty Database
+          </a>
+        {% endif %}
     </div>
   </nav>
     

@@ -1,126 +1,44 @@
 {% extends "base.html" %}
 
 {% block head_title %}
-  Welcome to the AgentOS Registry
+  AgentOS Leaderboard
 {% endblock head_title %}
 
 {% block container %}
-  <div class='title'>Welcome to the AgentOS Registry</div>
+  <div class='title'>AgentOS Environment Leaderboard</div>
 {% endblock container %}
 
 {% block content %}
+
   <div class="content">
-    <h4> Benchmarking Runs </h4>
 
-    <ul>
-      {% for run in runs %}
-        <li>
-          <ul style="list-style-type:none;">
-            <li>
-              <span>Agent:</span> 
-              <span style="font-weight:200;">
-                {{ run.agent.name }}
-              </span>
-            </li>
-            <li>
-              <span>Environment:</span>
-              <span style="font-weight:200;">
-                {{ run.environment.name }}
-              </span>
-            </li>
-            <li>
-              <span>Training Transitions:</span>
-              <span style="font-weight:200;">
-                {{ run.training_transitions }}
-              </span>
-            </li>
-            <li>
-              <a href="{% url 'run_detail' run.id %}">Details</a>
-            </li>
-          </ul>
-        </li>
-      {% endfor %}
-    </ul>
-    
-  </div>
-
- 
-  <div class="content">
-    <h4> Component Registry </h4>
-
-    <strong>Environments</strong>
     {% if environments %}
-      <ul>
-        {% for environment in environments %}
-          <li>
-            <a href="{% url 'component_detail' environment.id %}">
-              {{ environment.name }}
-            </a>
-            - {{environment.description}}</li>
-        {% endfor %}
-      </ul>
+      {% for environment in environments %}
+        <h4>
+          <a href="{% url 'component-detail' environment.id %}">
+            {{ environment.name }}=={{ environment.short_version }}
+          </a>
+          {% if environment.description %}
+              - {{environment.description}}
+          {% endif %}
+        </h4>
+        <h5>
+          Leaders:
+        </h5>
+          <ul>
+            {% for run in environment.top_five_runs %}
+              <li>
+                <a href="{% url 'run-detail' run.id %}">
+                  Run {{run.id}}
+                </a>
+                : {{run.metrics.mean_reward}} mean reward
+                over {{run.metrics.episode_count }} episodes
+              </li>
+            {% endfor %}
+          </ul>
+      {% endfor %}
     {% else %}
       <p>No Environments are available.</p>
-    {% endif %}
-
-    <strong>Agents</strong>
-    {% if agents %}
-      <ul>
-        {% for agent in agents %}
-          <li>
-            <a href="{% url 'component_detail' agent.id %}">
-              {{ agent.name }}
-            </a>
-            - {{ agent.description }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>No Agents are available.</p>
-    {% endif %}
-
-    <strong>Policies</strong>
-    {% if policies %}
-      <ul>
-        {% for policy in policies %}
-          <li>
-            <a href="{% url 'component_detail' policy.id %}">
-              {{ policy.name }}
-            </a>
-            - {{ policy.description }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>No Policies are available.</p>
-    {% endif %}
-
-    <strong>Datasets</strong>
-    {% if datasets %}
-      <ul>
-        {% for dataset in datasets %}
-          <li>
-            <a href="{% url 'component_detail' dataset.id %}">
-              {{ dataset.name }}
-            </a>
-            - {{ dataset.description }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>No Datasets are available.</p>
-    {% endif %}
-
-    <strong>Trainers</strong>
-    {% if trainers %}
-      <ul>
-        {% for trainer in trainers %}
-          <li>
-            <a href="{% url 'component_detail' trainer.id %}">
-              {{ trainer.name }}
-            </a>
-            - {{ trainer.description }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>No Trainers are available.</p>
     {% endif %}
   </div>
 {% endblock content %}

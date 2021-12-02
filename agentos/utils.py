@@ -11,12 +11,14 @@ AOS_CACHE_DIR = Path.home() / ".agentos_cache"
 
 
 def log_data_as_yaml_artifact(name: str, data: dict):
-    tmp_dir_path = Path(tempfile.mkdtemp())
-    artifact_path = tmp_dir_path / name
-    with open(artifact_path, "w") as file_out:
-        file_out.write(yaml.safe_dump(data))
-    mlflow.log_artifact(artifact_path)
-    shutil.rmtree(tmp_dir_path)
+    try:
+        tmp_dir_path = Path(tempfile.mkdtemp())
+        artifact_path = tmp_dir_path / name
+        with open(artifact_path, "w") as file_out:
+            file_out.write(yaml.safe_dump(data))
+        mlflow.log_artifact(artifact_path)
+    finally:
+        shutil.rmtree(tmp_dir_path)
 
 
 DUMMY_DEV_REGISTRY = {

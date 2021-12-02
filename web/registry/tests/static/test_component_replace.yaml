@@ -1,0 +1,10 @@
+components:
+  test-component-h42==abcde:
+    class_name: ADifferentClassName
+    file_path: example_agents/test/test.py
+    repo: gh_test
+    dependencies: {}
+repos:
+  gh_test:
+    type: github
+    url: https://github.com/nickjalbert/agentos.git

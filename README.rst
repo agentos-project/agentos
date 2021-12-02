@@ -130,6 +130,8 @@ variable or creating a `.env` file with
 `AGENTOS_SKIP_REQUIREMENT_INSTALL=True`.  This requires you to have all agent
 requirements already installed in your environment.
 
+If you want to the CLI to interact with a local development server, define the
+environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
 
 Building Docs
 =============

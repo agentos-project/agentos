@@ -1,36 +1,30 @@
+from django.urls import reverse
+from django.conf import settings
 from django.shortcuts import render
-
+from django.http import HttpResponseRedirect
+from django.http import HttpResponseBadRequest
+from registry.models import ComponentDependency
 from registry.models import Component
+from registry.models import Repo
 from registry.models import Run
 
 
 def index(request):
-    components = list(Component.objects.all())
+    environments = Component.objects.filter(
+        runs_as_environment__isnull=False
+    ).distinct()
     context = {
-        "runs": Run.objects.all().order_by("-id"),
-        "environments": [c for c in components if c.is_environment],
-        "agents": [c for c in components if c.is_agent],
-        "policies": [c for c in components if c.is_policy],
-        "datasets": [c for c in components if c.is_dataset],
-        "trainers": [c for c in components if c.is_trainer],
+        "environments": environments,
+        "is_debug": settings.DEBUG,
     }
     return render(request, "leaderboard/index.html", context)
 
 
-def runs(request):
-    context = {
-        "runs": Run.objects.all().order_by("-id"),
-    }
-    return render(request, "leaderboard/runs.html", context)
-
-
-def components(request):
-    components = list(Component.objects.all())
-    context = {
-        "environments": [c for c in components if c.is_environment],
-        "agents": [c for c in components if c.is_agent],
-        "policies": [c for c in components if c.is_policy],
-        "datasets": [c for c in components if c.is_dataset],
-        "trainers": [c for c in components if c.is_trainer],
-    }
-    return render(request, "leaderboard/components.html", context)
+def empty_database(request):
+    if not settings.DEBUG:
+        raise HttpResponseBadRequest("Not allowed.")
+    ComponentDependency.objects.all().delete()
+    Component.objects.all().delete()
+    Repo.objects.all().delete()
+    Run.objects.all().delete()
+    return HttpResponseRedirect(reverse("index"))

@@ -15,6 +15,14 @@ from agentos import component
 T = TypeVar("T")
 
 
+class BadGitStateException(Exception):
+    pass
+
+
+class NoLocalPathException(Exception):
+    pass
+
+
 class RepoType(Enum):
     LOCAL = "local"
     GITHUB = "github"
@@ -75,7 +83,9 @@ class Repo:
         try:
             self.porcelain_repo = PorcelainRepo.discover(full_path)
         except NotGitRepository:
-            raise Exception(f"No git repo with Component found: {full_path}")
+            raise BadGitStateException(
+                f"No git repo with Component found: {full_path}"
+            )
 
         self._check_for_local_changes(force)
         url = self._check_for_github_url(force)
@@ -84,13 +94,16 @@ class Repo:
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
-        remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        try:
+            remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        except IndexError:
+            raise BadGitStateException("Could not find remote repo")
         if "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
                 print(f"Warning: {error_msg}")
             else:
-                raise Exception(error_msg)
+                raise BadGitStateException(error_msg)
         return url
 
     def _check_remote_branch_status(self, force: bool) -> str:
@@ -111,12 +124,12 @@ class Repo:
             print(f"\t{remote}/{branch}: {curr_remote_hash}")
             print(f"\tlocal/{branch}: {curr_head_hash}\n")
             error_msg = (
-                f"Push your changes to {remote}/{branch} before pinning"
+                f"Push your changes to {remote}/{branch} before freezing"
             )
             if force:
                 print(f"Warning: {error_msg}")
             else:
-                raise Exception(error_msg)
+                raise BadGitStateException(error_msg)
         return curr_head_hash
 
     def _check_for_local_changes(self, force: bool) -> None:
@@ -145,11 +158,11 @@ class Repo:
                 f"\nUncommitted changes: {tracked_changes} or "
                 f"{unstaged_changes}\n"
             )
-            error_msg = "Commit all changes before pinning"
+            error_msg = "Commit all changes before freezing"
             if force:
                 print(f"Warning: {error_msg}")
             else:
-                raise Exception(error_msg)
+                raise BadGitStateException(error_msg)
 
     def get_prefixed_path_from_repo_root(
         self, identifier: "component.Component.Identifier", file_path: str
@@ -185,6 +198,7 @@ class Repo:
             except NotGitRepository:
                 path_prefix = curr_path.name / path_prefix
                 curr_path = curr_path.parent
+        raise BadGitStateException(f"Unable to find repo: {full_path}")
 
 
 class UnknownRepo(Repo):
@@ -295,3 +309,6 @@ class InMemoryRepo(Repo):
     def __init__(self, name: str = None):
         self.name = name if name else "in_memory"
         self.type = RepoType.IN_MEMORY
+
+    def get_local_file_path(self, *args, **kwargs):
+        raise NoLocalPathException()

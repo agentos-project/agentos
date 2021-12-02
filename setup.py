@@ -27,6 +27,7 @@ setup(
         "mlflow>=1.20.2",
         "dulwich>=0.20.26",
         "requests>=2.21.0",
+        "python-dotenv>=0.19.1",
     ],
     entry_points="""
         [console_scripts]
