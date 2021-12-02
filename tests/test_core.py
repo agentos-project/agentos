@@ -21,7 +21,13 @@ def test_cli(tmpdir):
         expected_path = Path(tmpdir) / expected_file_name
         assert expected_path.is_file(), f"{expected_file_name} not found"
     subprocess.run(
-        ["agentos", "run", "agent", "-Pnum_episodes=1"],
+        [
+            "agentos",
+            "run",
+            "agent",
+            "--entry-point=evaluate",
+            "-Pnum_episodes=1",
+        ],
         cwd=tmpdir,
         check=True,
     )
