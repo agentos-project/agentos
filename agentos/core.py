@@ -109,7 +109,7 @@ class Agent(MemberInitializer):
             total_episodes += run_size
 
     def reset(self):
-        self.tracker.reset()
+        self.run_manager.reset()
 
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""
@@ -152,7 +152,7 @@ class Agent(MemberInitializer):
             step_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
-        self.tracker.add_episode_data(steps=step_count, reward=reward)
+        self.run_manager.add_episode_data(steps=step_count, reward=reward)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
         return step_count
@@ -162,7 +162,7 @@ class Agent(MemberInitializer):
             return
         mean = statistics.mean(all_steps)
         median = statistics.median(all_steps)
-        total_episodes, total_steps = self.tracker.get_training_info()
+        total_episodes, total_steps = self.run_manager.get_training_info()
         print()
         print(f"Benchmark results after {len(all_steps)} rollouts:")
         print(

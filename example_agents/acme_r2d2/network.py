@@ -7,10 +7,10 @@ class R2D2Network:
         self.rnn = BasicRNN(self.environment)
 
     def restore(self):
-        self.tracker.restore_tensorflow("rnn", self.rnn)
+        self.run_manager.restore_tensorflow("rnn", self.rnn)
 
     def save(self):
-        self.tracker.save_tensorflow("rnn", self.rnn)
+        self.run_manager.save_tensorflow("rnn", self.rnn)
 
 
 # BasicRNN, taken from r2d2 test

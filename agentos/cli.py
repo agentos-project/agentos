@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from agentos import Component
 from agentos import ParameterSet
+from agentos.run import Run
 import agentos.web as web
 
 
@@ -29,7 +30,13 @@ _arg_component_name = click.argument(
     "component_name", metavar="COMPONENT_NAME"
 )
 
-_arg_run_id = click.argument("run_id", type=int, metavar="RUN_ID")
+_arg_optional_entity_id = click.argument(
+    "entity_id",
+    metavar="ENTITY_ID",
+    required=False,
+)
+
+_arg_run_id = click.argument("run_id", type=str, metavar="RUN_ID")
 
 _arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
 
@@ -38,8 +45,8 @@ _option_component_spec_file = click.option(
     "--component-spec-file",
     "-s",
     type=click.Path(exists=True),
-    default="./agentos.yaml",
-    help="Path to component spec file (agentos.yaml).",
+    default="./components.yaml",
+    help="Path to component spec file (components.yaml).",
 )
 
 
@@ -151,7 +158,37 @@ def run(
     parameters = ParameterSet.get_from_file(param_file)
     entry_point = entry_point or component.get_default_entry_point()
     parameters.update(component_name, entry_point, param_dict)
-    component.run(entry_point, parameters)
+    run = component.run(entry_point, parameters)
+    print(f"Run {run.id} recorded.  Execute the following for details:")
+    print(f"\n  agentos status {run.id}\n")
+
+
+@agentos_cmd.command()
+@_arg_optional_entity_id
+@_option_component_spec_file
+def status(entity_id, component_spec_file):
+    """
+    ENTITY_ID can be a Component name or a Run ID.
+    """
+    if Run.run_exists(entity_id):
+        Run.get_by_id(run_id=entity_id).print_status(detailed=True)
+    else:
+        Run.print_all_status()
+        if entity_id:
+            component = Component.get_from_yaml(entity_id, component_spec_file)
+            component.print_status_tree()
+
+
+@agentos_cmd.command()
+@_arg_optional_entity_id
+def publish_run(entity_id):
+    if Run.run_exists(entity_id):
+        run = Run.get_by_id(run_id=entity_id)
+    else:
+        run = Run.get_latest_publishable_run()
+        if run is None:
+            raise Exception("No publishable runs found")
+    run.publish()
 
 
 @agentos_cmd.command()
@@ -250,8 +287,8 @@ _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
-_TRACKER_DEF_FILE = Path("./templates/tracker.py")
-_AGENT_YAML_FILE = Path("./templates/agentos.yaml")
+_RUN_MANAGER_DEF_FILE = Path("./templates/run_manager.py")
+_AGENT_YAML_FILE = Path("./templates/components.yaml")
 
 
 _INIT_FILES = [
@@ -260,7 +297,7 @@ _INIT_FILES = [
     _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
     _TRAINER_DEF_FILE,
-    _TRACKER_DEF_FILE,
+    _RUN_MANAGER_DEF_FILE,
     _AGENT_YAML_FILE,
 ]
 

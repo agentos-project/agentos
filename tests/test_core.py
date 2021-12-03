@@ -14,8 +14,8 @@ def test_cli(tmpdir):
         "policy.py",
         "dataset.py",
         "trainer.py",
-        "tracker.py",
-        "agentos.yaml",
+        "run_manager.py",
+        "components.yaml",
     ]
     for expected_file_name in expected_file_names:
         expected_path = Path(tmpdir) / expected_file_name

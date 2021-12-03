@@ -91,7 +91,7 @@ class Component(TimeStampedModel):
         return (
             self.runs_as_environment.all()
             .distinct()
-            .order_by("-metrics__mean_reward")[:5]
+            .order_by("-mlflow_metrics__mean_reward")[:5]
         )
 
     def get_full_spec(self):
@@ -132,20 +132,26 @@ class Component(TimeStampedModel):
         components = []
         for name, component_spec in component_spec_dict.items():
             identifier = CLI_Component.Identifier(name)
+            default_kwargs = {
+                "repo": Repo.objects.get(name=component_spec["repo"]),
+                "file_path": component_spec["file_path"],
+                "class_name": component_spec["class_name"],
+                "description": "",
+            }
+            # TODO - When we have accounts, we need to check the the user
+            #        has permission to create a new version of this Component
+            #        (i.e. if the name already exists but not the version).
             component, created = Component.objects.get_or_create(
                 name=identifier.name,
-                defaults={
-                    "version": identifier.version,
-                    "repo": Repo.objects.get(name=component_spec["repo"]),
-                    "file_path": component_spec["file_path"],
-                    "class_name": component_spec["class_name"],
-                    "description": "",
-                },
+                version=identifier.version,
+                defaults=default_kwargs,
             )
+            # If not created and not equal, prevent Component redefinition
             if not created and not component._equals_spec(component_spec):
                 raise ValidationError(
-                    f"Component with name {name} (id: {component.id}) already "
-                    f"exists and differs from uploaded spec. "
+                    f"Component with name {name} and version "
+                    f"{component.version} (id: {component.id}) "
+                    f"already exists and differs from uploaded spec. "
                     f"Try renaming your {name} Component."
                 )
             components.append(component)
@@ -165,6 +171,7 @@ class Component(TimeStampedModel):
         self_deps = ComponentDependency.objects.filter(
             depender=self
         ).distinct()
+        print("FOOOOOOOOOOOO")
         for self_dep in self_deps:
             if self_dep.attribute_name not in other_spec["dependencies"]:
                 return False
@@ -173,6 +180,7 @@ class Component(TimeStampedModel):
             ]
             if other_dep_name != self_dep.dependee.full_name:
                 return False
+        print("BARRRRRRRRR")
         return True
 
 
@@ -209,6 +217,7 @@ class Repo(TimeStampedModel):
 
 
 class Run(TimeStampedModel):
+    id = models.CharField(max_length=200, unique=True, primary_key=True)
     root = models.ForeignKey(
         Component, on_delete=models.CASCADE, related_name="runs_as_root"
     )
@@ -218,7 +227,10 @@ class Run(TimeStampedModel):
     environment = models.ForeignKey(
         Component, on_delete=models.CASCADE, related_name="runs_as_environment"
     )
-    metrics = models.JSONField(default=dict)
+    mlflow_metrics = models.JSONField(default=dict)
+    mlflow_params = models.JSONField(default=dict)
+    mlflow_tags = models.JSONField(default=dict)
+    mlflow_info = models.JSONField(default=dict)
     entry_point = models.TextField()
     parameter_set = models.JSONField(default=dict)
     artifact_tarball = models.FileField(
@@ -233,11 +245,11 @@ class Run(TimeStampedModel):
 
     @property
     def training_step_count_metric(self):
-        return self.metrics.get("training_step_count", 0)
+        return self.mlflow_metrics.get("training_step_count", 0)
 
     @property
     def mean_reward_metric(self):
-        return self.metrics.get("mean_reward", 0)
+        return self.mlflow_metrics.get("mean_reward", 0)
 
     @property
     def display_string(self):

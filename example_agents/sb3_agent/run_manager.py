@@ -5,13 +5,14 @@ from pathlib import Path
 from stable_baselines3 import PPO
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.callbacks import BaseCallback
-from agentos.tracker import AgentTracker
+from agentos.run_manager import AgentRunManager
+from agentos.run import Run
 from typing import Optional
 
 
 class EvaluateCallback:
-    def __init__(self, tracker: AgentTracker):
-        self.tracker = tracker
+    def __init__(self, run_manager: AgentRunManager):
+        self.run_manager = run_manager
 
     def __call__(self, *args, **kwargs):
         local_vars = args[0]
@@ -20,15 +21,15 @@ class EvaluateCallback:
         assert len(current_lengths) == 1, "Error: multiple environments"
         assert len(current_rewards) == 1, "Error: multiple environments"
         if local_vars["done"]:
-            self.tracker.add_episode_data(
+            self.run_manager.add_episode_data(
                 steps=current_lengths[0], reward=current_rewards[0]
             )
 
 
 class LearnCallback(BaseCallback):
-    def __init__(self, tracker: AgentTracker):
+    def __init__(self, run_manager: AgentRunManager):
         super().__init__()
-        self.tracker = tracker
+        self.run_manager = run_manager
         self.curr_steps = 0
         self.curr_reward = 0
         self.last_done = False
@@ -50,14 +51,14 @@ class LearnCallback(BaseCallback):
             self._record_episode_data()
 
     def _record_episode_data(self):
-        self.tracker.add_episode_data(
+        self.run_manager.add_episode_data(
             steps=self.curr_steps, reward=self.curr_reward
         )
         self.curr_steps = 0
         self.curr_reward = 0
 
 
-class SB3Tracker(AgentTracker):
+class SB3RunManager(AgentRunManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.evaluate_callback = EvaluateCallback(self)
@@ -73,20 +74,21 @@ class SB3Tracker(AgentTracker):
         mlflow.log_artifact(artifact_path)
         shutil.rmtree(dir_path)
 
+    # TODO - can probably be simplified
     def restore(self, name: str) -> Optional[BasePolicy]:
         zipped_name = f"{name}.zip"
-        runs = self._get_all_runs()
+        runs = Run.get_all_runs()
         for run in runs:
             if run is None:
                 continue
-            artifacts_uri = run.info.artifact_uri
+            artifacts_uri = run.mlflow_info.artifact_uri
             if "file://" != artifacts_uri[:7]:
                 raise Exception(f"Non-local artifacts path: {artifacts_uri}")
             artifacts_dir = Path(artifacts_uri[7:]).absolute()
             save_path = artifacts_dir / zipped_name
             if save_path.is_file():
-                print(f"SB3Tracker: Restored SB3 PPO model '{name}'.")
+                print(f"SB3RunManager: Restored SB3 PPO model '{name}'.")
                 policy = PPO.load(save_path)
                 self.save(name, policy)
                 return policy
-        print(f"SB3Tracker: No saved SB3 PPO '{name}' found.")
+        print(f"SB3RunManager: No saved SB3 PPO '{name}' found.")

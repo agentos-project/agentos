@@ -1,5 +1,6 @@
 import yaml
 from django.db import transaction
+from django.urls import reverse
 from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
@@ -51,16 +52,29 @@ class RunViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request):
         data = yaml.safe_load(request.data["run_data"])
+        if Run.objects.filter(id=data["id"]).exists():
+            host = request.headers.get("HOST", "")
+            path = reverse("run-detail", kwargs={"pk": data["id"]})
+            raise ValidationError(
+                f"Run {data['id']} already exists!  View at {host}{path}"
+            )
         # TODO - we should track provenance of all Components created
         repos, components = Component.ingest_spec_dict(data["component_spec"])
-        root = _get_from_list(data["root_name"], components)
-        agent = _get_from_list(data["agent_name"], components)
-        environment = _get_from_list(data["environment_name"], components)
+        root = _get_from_list(data["root_component"], components)
+        mlflow_params = data["mlflow_data"]["params"]
+        agent = _get_from_list(mlflow_params["agent_name"], components)
+        environment = _get_from_list(
+            mlflow_params["environment_name"], components
+        )
         run = Run.objects.create(
+            id=data["id"],
             root=root,
             agent=agent,
             environment=environment,
-            metrics=data["metrics"],
+            mlflow_metrics=data["mlflow_data"]["metrics"],
+            mlflow_params=mlflow_params,
+            mlflow_tags=data["mlflow_data"]["tags"],
+            mlflow_info=data["mlflow_info"],
             entry_point=data["entry_point"],
             parameter_set=data["parameter_set"],
         )

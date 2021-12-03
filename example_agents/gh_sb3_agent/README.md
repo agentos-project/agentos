@@ -40,8 +40,15 @@ agentos run agent --entry-point reset
 
 ### Publish a run
 
+To see runs:
+
 ```bash
-agentos run tracker --entry-point publish
+agentos status
 ```
 
+To publish a particular run:
 
+
+```bash
+agentos publish-run RUN_ID
+```

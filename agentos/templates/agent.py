@@ -4,6 +4,7 @@ import agentos
 
 # A basic agent.
 class {agent_name}(agentos.Agent):
+    DEFAULT_ENTRY_POINT = "evaluate"
     def learn(self,
               num_episodes=10,
               test_every=True,

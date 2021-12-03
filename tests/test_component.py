@@ -35,7 +35,7 @@ def test_component_freezing(tmpdir):
     curr_dir = os.getcwd()
     os.chdir(tmpdir)
     try:
-        c = Component.get_from_yaml("agent", "agentos.yaml")
+        c = Component.get_from_yaml("agent", "components.yaml")
         with patch.multiple(
             "agentos.repo.Repo",
             get_version_from_git=DEFAULT,
