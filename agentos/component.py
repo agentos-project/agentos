@@ -86,7 +86,7 @@ class Component:
         self._dependencies = {}
 
     @staticmethod
-    def get_from_yaml(
+    def from_yaml(
         name: str,
         component_spec_file: str,
     ) -> "Component":
@@ -96,25 +96,7 @@ class Component:
         return components[names[name]]
 
     @staticmethod
-    def _get_name_map(component_spec_file: str) -> Dict:
-        """
-        User may refer to a component from, e.g., the CLI as a name without a
-        version string (e.g. ``agent`` not ``agent==1.2.3``).  However, we want
-        to map ``agent`` to ``agent==1.2.3`` if ``component_spec_file`` is
-        pinned to a version.
-
-        :returns: A dictionary that maps unversioned names to a full name that
-        will uniquely identify a Component in this run context
-        """
-        with open(component_spec_file) as file_in:
-            config = yaml.safe_load(file_in)
-        components = config.get("components", {})
-        names = {Component.Identifier(n).name: n for n in components.keys()}
-        names.update({n: n for n in components.keys()})
-        return names
-
-    @staticmethod
-    def get_from_class(
+    def from_class(
         managed_cls: Type[T],
         name: str = None,
         dunder_name: str = None,
@@ -129,7 +111,7 @@ class Component:
         )
 
     @staticmethod
-    def get_from_repo(
+    def from_repo(
         repo: Repo,
         identifier: "Component.Identifier",
         class_name: str,
@@ -156,6 +138,24 @@ class Component:
         )
 
     @staticmethod
+    def _get_name_map(component_spec_file: str) -> Dict:
+        """
+        User may refer to a component from, e.g., the CLI as a name without a
+        version string (e.g. ``agent`` not ``agent==1.2.3``).  However, we want
+        to map ``agent`` to ``agent==1.2.3`` if ``component_spec_file`` is
+        pinned to a version.
+
+        :returns: A dictionary that maps unversioned names to a full name that
+        will uniquely identify a Component in this run context
+        """
+        with open(component_spec_file) as file_in:
+            config = yaml.safe_load(file_in)
+        components = config.get("components", {})
+        names = {Component.Identifier(n).name: n for n in components.keys()}
+        names.update({n: n for n in components.keys()})
+        return names
+
+    @staticmethod
     def parse_spec_file(spec_file: str) -> Dict:
         """Returns all Repos and Components defined by this ``spec_file``."""
         with open(spec_file) as file_in:
@@ -178,7 +178,7 @@ class Component:
         components = {}
         dependency_names = {}
         for name, spec in components_spec.items():
-            component = Component.get_from_repo(
+            component = Component.from_repo(
                 repo=repos[spec["repo"]],
                 identifier=Component.Identifier(name),
                 class_name=spec["class_name"],

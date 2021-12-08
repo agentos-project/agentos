@@ -24,7 +24,6 @@ __all__ = [
     "Runnable",
     "Trainer",
     "Component",
-    "get_component",
     "Repo",
     "ParameterSet",
 ]

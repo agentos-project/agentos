@@ -9,9 +9,9 @@ import mlflow
 from mlflow.entities import Run
 from agentos import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.web import push_run_data
-from agentos.web import push_run_artifacts
-from agentos.web import AOS_WEB_BASE_URL
+from agentos.registry import push_run_data
+from agentos.registry import push_run_artifacts
+from agentos.registry import AOS_WEB_BASE_URL
 
 
 _EPISODE_KEY = "episode_count"

@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from agentos import Component
 from agentos import ParameterSet
-import agentos.web as web
+import agentos.registry as web
 
 
 @click.group()
@@ -147,7 +147,7 @@ def run(
     param_file,
 ):
     param_dict = _user_args_to_dict(param_list)
-    component = Component.get_from_yaml(component_name, component_spec_file)
+    component = Component.from_yaml(component_name, component_spec_file)
     parameters = ParameterSet.get_from_file(param_file)
     entry_point = entry_point or component.get_default_entry_point()
     parameters.update(component_name, entry_point, param_dict)
@@ -178,7 +178,7 @@ def freeze(component_name, component_spec_file, force):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    component = Component.get_from_yaml(component_name, component_spec_file)
+    component = Component.from_yaml(component_name, component_spec_file)
     frozen_spec = component.get_frozen_spec(force=force)
     print(yaml.dump(frozen_spec))
 
@@ -193,7 +193,7 @@ def publish(component_name: str, component_spec_file: str, force: bool):
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
-    component = Component.get_from_yaml(component_name, component_spec_file)
+    component = Component.from_yaml(component_name, component_spec_file)
     frozen_spec = component.get_frozen_spec(force=force)
     web.push_component_spec(frozen_spec)
 
