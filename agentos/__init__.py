@@ -10,6 +10,7 @@ from agentos.core import (
     Runnable,
     Trainer,
 )
+from agentos.registry import Registry
 from agentos.component import Component
 from agentos.repo import Repo
 from agentos.parameter_set import ParameterSet
@@ -21,6 +22,7 @@ __all__ = [
     "EnvironmentSpec",
     "Policy",
     "Runnable",
+    "Registry",
     "Trainer",
     "Component",
     "Repo",

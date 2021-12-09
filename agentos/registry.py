@@ -9,11 +9,11 @@ import tarfile
 import tempfile
 import requests
 from pathlib import Path
-from typing import Dict
-from typing import List
+from typing import Dict, List, TYPE_CHECKING
 from dotenv import load_dotenv
 
-from agentos.component import Component
+if TYPE_CHECKING:
+    from agentos.component import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID, _handle_acme_r2d2, \
     _handle_sb3_agent
 
@@ -54,7 +54,7 @@ class Registry(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_component(self, component: Component) -> None:
+    def add_component(self, component: 'Component') -> None:
         raise NotImplementedError
 
 
@@ -83,7 +83,7 @@ class InMemoryRegistry(Registry):
     def fallback_registries(self) -> List:
         return self._registry.get("fallback_registries", [])
 
-    def add_component(self, component: Component) -> None:
+    def add_component(self, component: 'Component') -> None:
         self._registry[component.identifer] = component
 
 

@@ -144,7 +144,7 @@ class Component:
 
     @staticmethod
     def from_registry(
-            registry, identifier: "Component.Identifier"
+            registry: Registry, identifier: "Component.Identifier"
     ) -> "Component":
         instantiated = {}
         return Component._from_registry(registry, identifier, instantiated)
