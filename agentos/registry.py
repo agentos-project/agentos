@@ -8,12 +8,12 @@ import shutil
 import tarfile
 import tempfile
 import requests
-from component import Component
 from pathlib import Path
 from typing import Dict
 from typing import List
 from dotenv import load_dotenv
 
+from agentos.component import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID, _handle_acme_r2d2, \
     _handle_sb3_agent
 
