@@ -37,9 +37,11 @@ class Repo:
     """
 
     @staticmethod
-    def from_spec(name: str, spec: Dict) -> "Repo":
+    def from_spec(name: str, spec: Dict, base_dir: Path = None) -> "Repo":
         if spec["type"] == RepoType.LOCAL.value:
-            return LocalRepo(name=name, file_path=spec["path"])
+            assert base_dir, "The `base_dir` arg must be provided to this method for local repos."
+            path = Path(base_dir) / spec["path"]
+            return LocalRepo(name=name, file_path=path)
         elif spec["type"] == RepoType.GITHUB.value:
             return GitHubRepo(name=name, url=spec["url"])
         elif spec["type"] == RepoType.IN_MEMORY.value:

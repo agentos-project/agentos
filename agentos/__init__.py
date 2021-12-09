@@ -11,7 +11,6 @@ from agentos.core import (
     Trainer,
 )
 from agentos.component import Component
-from agentos.registry import get_component
 from agentos.repo import Repo
 from agentos.parameter_set import ParameterSet
 

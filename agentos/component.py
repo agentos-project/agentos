@@ -4,6 +4,7 @@ import copy
 import uuid
 import mlflow
 import importlib
+from pathlib import Path
 from typing import TypeVar, Dict, Type, Any
 from contextlib import contextmanager
 from agentos.utils import log_data_as_yaml_artifact
@@ -15,6 +16,7 @@ from agentos.repo import (
     BadGitStateException,
     NoLocalPathException,
 )
+from agentos.registry import Registry
 from agentos.parameter_set import ParameterSet
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
@@ -67,11 +69,14 @@ class Component:
         identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
+        dependencies: Dict = None,
         dunder_name: str = None,
     ):
         """
-        :param managed_cls: The class used to create instances.
-        :param name: Name used to identify the Component.
+        :param managed_cls: The object this Component manages.
+        :param repo: Where the code for this component's managed object is.
+        :param identifier: Used to identify the Component.
+        :param dependencies: List of other components that self depends on.
         :param dunder_name: Name used for the pointer to this Component on any
                             instances of ``managed_cls`` created by this
                             Component.
@@ -83,7 +88,7 @@ class Component:
         self.file_path = file_path
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
-        self._dependencies = {}
+        self._dependencies = dependencies if dependencies else {}
 
     @staticmethod
     def from_yaml(
@@ -138,6 +143,37 @@ class Component:
         )
 
     @staticmethod
+    def from_registry(
+            registry, identifier: "Component.Identifier"
+    ) -> "Component":
+        instantiated = {}
+        return Component._from_registry(registry, identifier, instantiated)
+
+    @staticmethod
+    def _from_registry(
+            registry: Registry, identifier: "Component.Identifier", instantiated: Dict
+    ) -> "Component":
+        if identifier.full in instantiated:
+            return instantiated[identifier.full]
+        component_spec = registry.component_specs[identifier.full]
+        repo_name = component_spec["repo"]
+        repo_spec = registry.repo_specs[repo_name]
+        repo = Repo.from_spec(repo_name, repo_spec)
+        component = Component.from_repo(
+            repo=repo,
+            identifier=identifier,
+            class_name=component_spec["class_name"],
+            file_path=component_spec["file_path"],
+        )
+        instantiated[identifier.full] = component
+        for attr_name, dep_name in component_spec["dependencies"].items():
+            dep_id = Component.Identifier(dep_name, self.latest_refs)
+            dep_component = self._get_component(dep_id, instantiated)
+            component.add_dependency(dep_component,
+                                     attribute_name=attr_name)
+        return component
+
+    @staticmethod
     def _get_name_map(component_spec_file: str) -> Dict:
         """
         User may refer to a component from, e.g., the CLI as a name without a
@@ -151,6 +187,7 @@ class Component:
         with open(component_spec_file) as file_in:
             config = yaml.safe_load(file_in)
         components = config.get("components", {})
+        print()
         names = {Component.Identifier(n).name: n for n in components.keys()}
         names.update({n: n for n in components.keys()})
         return names
@@ -160,17 +197,17 @@ class Component:
         """Returns all Repos and Components defined by this ``spec_file``."""
         with open(spec_file) as file_in:
             config = yaml.safe_load(file_in)
-        repos = Component._parse_repos(config.get("repos", {}))
+        repos = Component._parse_repos(config.get("repos", {}), Path(spec_file).parent)
         components = Component._parse_components(
             config.get("components", {}), repos
         )
         return components
 
     @staticmethod
-    def _parse_repos(repos_spec: Dict) -> Dict:
+    def _parse_repos(repos_spec: Dict, base_dir: Path) -> Dict:
         repos = {}
         for name, spec in repos_spec.items():
-            repos[name] = Repo.from_spec(name, spec)
+            repos[name] = Repo.from_spec(name, spec, base_dir)
         return repos
 
     @staticmethod

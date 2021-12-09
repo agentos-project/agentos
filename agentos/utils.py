@@ -4,7 +4,6 @@ import shutil
 from pathlib import Path
 import tempfile
 
-from agentos.registry import generate_dummy_dev_registry
 
 MLFLOW_EXPERIMENT_ID = "0"
 
@@ -71,7 +70,3 @@ def _handle_agent(path_prefix, rename_map):
         v.split("==")[0]: v.split("==")[1] for v in rename_map.values()
     }
     return registry
-
-
-if __name__ == "__main__":
-    generate_dummy_dev_registry()

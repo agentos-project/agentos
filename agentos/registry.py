@@ -1,3 +1,4 @@
+import abc
 import os
 import yaml
 import json
@@ -7,12 +8,12 @@ import shutil
 import tarfile
 import tempfile
 import requests
+from component import Component
 from pathlib import Path
 from typing import Dict
 from typing import List
 from dotenv import load_dotenv
 
-from agentos import Component, Repo
 from agentos.utils import MLFLOW_EXPERIMENT_ID, _handle_acme_r2d2, \
     _handle_sb3_agent
 
@@ -27,45 +28,66 @@ AOS_WEB_API_EXTENSION = "/api/v1"
 AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
 
 
-class InMemoryRegistry:
+class Registry(abc.ABC):
+    @staticmethod
+    def from_dict(input_dict: Dict) -> "Registry":
+        return InMemoryRegistry(input_dict)
+
+    @property
+    @abc.abstractmethod
+    def component_specs(self) -> Dict:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def repo_specs(self) -> Dict:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def run_specs(self) -> Dict:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def fallback_registries(self) -> List:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def add_component(self, component: Component) -> None:
+        raise NotImplementedError
+
+
+class InMemoryRegistry(Registry):
     """
     This encapsulates interactions with an external registry that contains
     information about publicly-available Components.
     """
 
-    def __init__(self, registry=None):
-        self.registry = registry if registry else DUMMY_DEV_REGISTRY_DICT
-        self.latest_refs = self.registry["latest_refs"]
+    def __init__(self, input_dict: Dict = None):
+        self._registry = input_dict if input_dict else DUMMY_DEV_REGISTRY_DICT
 
-    def get_component(self, name: str) -> Component:
-        instantiated = {}
-        identifier = Component.Identifier(name, self.latest_refs)
-        return self._get_component(identifier, instantiated)
+    @property
+    def component_specs(self) -> Dict:
+        return self._registry.get("components", {})
 
-    def _get_component(
-            self, identifier: Component.Identifier, instantiated: Dict
-    ) -> Component:
-        if identifier.full in instantiated:
-            return instantiated[identifier.full]
-        component_spec = self.registry["components"][identifier.full]
-        repo_name = component_spec["repo"]
-        repo_spec = self.registry["repos"][repo_name]
-        repo = Repo.from_spec(repo_name, repo_spec)
-        component = Component.from_repo(
-            repo=repo,
-            identifier=identifier,
-            class_name=component_spec["class_name"],
-            file_path=component_spec["file_path"],
-        )
-        instantiated[identifier.full] = component
-        for attr_name, dep_name in component_spec["dependencies"].items():
-            dep_id = Component.Identifier(dep_name, self.latest_refs)
-            dep_component = self._get_component(dep_id, instantiated)
-            component.add_dependency(dep_component, attribute_name=attr_name)
-        return component
+    @property
+    def repo_specs(self) -> Dict:
+        return self._registry.get("repos", {})
+
+    @property
+    def run_specs(self) -> Dict:
+        return self._registry.get("runs", {})
+
+    @property
+    def fallback_registries(self) -> List:
+        return self._registry.get("fallback_registries", [])
+
+    def add_component(self, component: Component) -> None:
+        self._registry[component.identifer] = component
 
 
-class WebRegistry:
+class WebRegistry(Registry):
     @staticmethod
     def _check_response(self, response):
         if not response.ok:
