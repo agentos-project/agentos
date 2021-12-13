@@ -9,7 +9,7 @@ import mlflow
 from mlflow.entities import Run
 from agentos import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.registry import AOS_WEB_BASE_URL
+from agentos.registry import web_registry
 
 
 _EPISODE_KEY = "episode_count"
@@ -106,11 +106,10 @@ class AgentTracker:
             raise Exception("No Agent was specified runtime!")
         if run.data.params.get("environment_exists") == "False":
             raise Exception("No Environment was specified runtime!")
-        result = push_run_data(run_data)
+        result = web_registry.push_run_data(run_data)
         run_id = result["id"]
         artifact_paths = self._get_artifact_paths(run)
-        push_run_artifacts(run_id, artifact_paths)
-        print(f"Pushed Run {run_id} on {AOS_WEB_BASE_URL}")
+        web_registry.push_run_artifacts(run_id, artifact_paths)
 
     def _get_artifact_paths(self, run):
         artifacts_dir = self._get_artifacts_dir(run)
@@ -250,7 +249,7 @@ class AgentTracker:
             training_step_count=training_steps,
         )
 
-    def add_episode_data(self, steps: int, reward: float):
+    def push_episode_data(self, steps: int, reward: float):
         self.episode_data.append(
             {
                 "steps": steps,

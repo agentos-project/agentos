@@ -14,7 +14,7 @@ def test_module_level_registry(venv):
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
-def test_registry(venv):
+def test_registry_integration(venv):
     install_requirements(ACME_R2D2_AGENT_DIR, venv, "requirements.txt")
     params = {
         "acme_r2d2_agent": {
@@ -83,3 +83,29 @@ def test_registry(venv):
         "component.run('evaluate', params)\n"
     )
     run_code_in_venv(venv, code)
+
+
+def test_registry_from_dict():
+    from agentos.registry import Registry
+    from agentos.utils import DUMMY_DEV_REGISTRY_DICT
+    from agentos.component import Component
+
+    r = Registry.from_dict(DUMMY_DEV_REGISTRY_DICT)
+    assert "acme_cartpole==nj_registry_2next" in r.components().keys()
+    assert (
+        "acme_cartpole==nj_registry_2next"
+        in r.components(filter_by_name="acme_cartpole").keys()
+    )
+    assert (
+        "acme_cartpole==master"
+        in r.components(filter_by_name="acme_cartpole").keys()
+    )
+    c = Component.from_registry(r, "sb3_ppo_agent")
+    assert c.name == "sb3_ppo_agent"
+    assert c.version == "nj_registry_2next"
+    assert c.identifier == "sb3_ppo_agent==nj_registry_2next"
+    assert "environment" in c.dependencies.keys()
+    assert (
+        c.dependencies["environment"].full_name
+        == "sb3_cartpole==nj_registry_2next"
+    )

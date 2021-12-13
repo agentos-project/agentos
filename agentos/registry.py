@@ -14,8 +14,7 @@ from dotenv import load_dotenv
 
 if TYPE_CHECKING:
     from agentos.component import Component
-from agentos.utils import MLFLOW_EXPERIMENT_ID, _handle_acme_r2d2, \
-    _handle_sb3_agent
+from agentos.utils import MLFLOW_EXPERIMENT_ID
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -33,19 +32,46 @@ class Registry(abc.ABC):
     def from_dict(input_dict: Dict) -> "Registry":
         return InMemoryRegistry(input_dict)
 
-    @property
+    @staticmethod
+    def from_yaml(yaml_file: str) -> "Registry":
+        with open(yaml_file) as file_in:
+            config = yaml.safe_load(file_in)
+        return InMemoryRegistry(config)
+
     @abc.abstractmethod
-    def component_specs(self) -> Dict:
+    def components(
+        self,
+        filter_by_name: str = None,
+        filter_by_version: str = None,
+    ) -> Dict["Component.Identifier", Dict]:
+        """
+        Return dictionary of component specs in this Registry.
+        Each Component Spec is itself a dict mapping Component.Identifier to a
+        dict of properties that define the Component.
+
+        Optionally, filter the list to match all filter strings provided.
+        Filters can be provided on name, version, or both.
+        If this registry contains zero component specs that match
+        the filter criteria (if any), then an empty dictionary is returned.
+        If ``filter_by_name`` and ``filter_by_version`` are provided,
+        then 0 or 1 components will be returned.
+
+        :param filter_by_name: return only components with this name.
+        :param filter_by_version: return only components with this version.
+
+        :returns: A dictionary of components in this registry, optionally
+        filtered by name, version, or both.
+        """
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def repo_specs(self) -> Dict:
+    def repos(self) -> Dict:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def run_specs(self) -> Dict:
+    def runs(self) -> Dict:
         raise NotImplementedError
 
     @property
@@ -54,8 +80,13 @@ class Registry(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_component(self, component: 'Component') -> None:
+    def add_component(self, component: "Component") -> None:
         raise NotImplementedError
+
+    def __init__(self, base_dir: str = None):
+        self.base_dir = (
+            base_dir if base_dir else "."
+        )  # Used for file-backed Registry types.
 
 
 class InMemoryRegistry(Registry):
@@ -64,27 +95,63 @@ class InMemoryRegistry(Registry):
     information about publicly-available Components.
     """
 
-    def __init__(self, input_dict: Dict = None):
-        self._registry = input_dict if input_dict else DUMMY_DEV_REGISTRY_DICT
+    def __init__(self, input_dict: Dict = None, base_dir: str = None):
+        super().__init__(base_dir)
+        self._registry = input_dict if input_dict else {}
+        if "components" not in self._registry.keys():
+            self._registry["components"] = {}
+        if "repos" not in self._registry.keys():
+            self._registry["repos"] = {}
+        if "runs" not in self._registry.keys():
+            self._registry["runs"] = {}
+        if "fallback_registries" not in self._registry.keys():
+            self._registry["registries"] = []
+
+    def component(self, component_id: "Component.Identifier"):
+        """Returns the component with ``component_id``, if it exists."""
+        return self._registry["components"][component_id]
+
+    def components(
+        self, filter_by_name: str = None, filter_by_version: str = None
+    ) -> Dict["Component.Identifier", Dict]:
+        if filter_by_name or filter_by_version:
+            try:
+                from agentos.component import Component
+
+                components = {}
+                for k, v in self._registry["components"].items():
+                    candidate_id = Component.Identifier.from_str(k)
+                    passes_filter = True
+                    if filter_by_name and candidate_id.name != filter_by_name:
+                        passes_filter = False
+                    if (
+                        filter_by_version
+                        and candidate_id.version != filter_by_version
+                    ):
+                        passes_filter = False
+                    if passes_filter:
+                        components[k] = v
+                return components
+            except KeyError:
+                return {}
+        return self._registry["components"]
 
     @property
-    def component_specs(self) -> Dict:
-        return self._registry.get("components", {})
+    def repos(self) -> Dict:
+        return self._registry["repos"]
 
     @property
-    def repo_specs(self) -> Dict:
-        return self._registry.get("repos", {})
-
-    @property
-    def run_specs(self) -> Dict:
-        return self._registry.get("runs", {})
+    def runs(self) -> Dict:
+        return self._registry["runs"]
 
     @property
     def fallback_registries(self) -> List:
-        return self._registry.get("fallback_registries", [])
+        return self._registry["fallback_registries"]
 
-    def add_component(self, component: 'Component') -> None:
-        self._registry[component.identifer] = component
+    def add_component(self, component: "Component") -> None:
+        print(component)
+        self._registry["components"][component.identifier] = component
+        self._registry["repos"][component.repo.name] = component.repo
 
 
 class WebRegistry(Registry):
@@ -107,7 +174,7 @@ class WebRegistry(Registry):
         print()
         return result
 
-    def push_run_spec(self, run_data: Dict) -> List:
+    def push_run_data(self, run_data: Dict) -> List:
         url = f"{AOS_WEB_API_ROOT}/runs/"
         data = {"run_data": yaml.dump(run_data)}
         response = requests.post(url, data=data)
@@ -193,127 +260,4 @@ class WebRegistry(Registry):
             shutil.rmtree(tmp_dir_path)
 
 
-DUMMY_DEV_REGISTRY_DICT = {
-    "components": {
-        "acme_cartpole==nj_registry_2next": {
-            "class_name": "CartPole",
-            "dependencies": {},
-            "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
-            "repo": "dev_repo",
-        },
-        "acme_r2d2_agent==nj_registry_2next": {
-            "class_name": "AcmeR2D2Agent",
-            "dependencies": {
-                "dataset": "acme_r2d2_dataset==nj_registry_2next",
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
-                "policy": "acme_r2d2_policy==nj_registry_2next",
-                "tracker": "acme_tracker==nj_registry_2next",
-                "trainer": "acme_r2d2_trainer==nj_registry_2next",
-            },
-            "file_path": "example_agents/acme_r2d2/agent.py",
-            "repo": "dev_repo",
-        },
-        "acme_r2d2_dataset==nj_registry_2next": {
-            "class_name": "ReverbDataset",
-            "dependencies": {
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
-            },
-            "file_path": "example_agents/acme_r2d2/dataset.py",
-            "repo": "dev_repo",
-        },
-        "acme_r2d2_network==nj_registry_2next": {
-            "class_name": "R2D2Network",
-            "dependencies": {
-                "environment": "acme_cartpole==nj_registry_2next",
-                "tracker": "acme_tracker==nj_registry_2next",
-            },
-            "file_path": "example_agents/acme_r2d2/network.py",
-            "repo": "dev_repo",
-        },
-        "acme_r2d2_policy==nj_registry_2next": {
-            "class_name": "R2D2Policy",
-            "dependencies": {
-                "dataset": "acme_r2d2_dataset==nj_registry_2next",
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
-            },
-            "file_path": "example_agents/acme_r2d2/policy.py",
-            "repo": "dev_repo",
-        },
-        "acme_r2d2_trainer==nj_registry_2next": {
-            "class_name": "R2D2Trainer",
-            "dependencies": {
-                "dataset": "acme_r2d2_dataset==nj_registry_2next",
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
-            },
-            "file_path": "example_agents/acme_r2d2/trainer.py",
-            "repo": "dev_repo",
-        },
-        "acme_tracker==nj_registry_2next": {
-            "class_name": "AcmeTracker",
-            "dependencies": {},
-            "file_path": "example_agents/acme_r2d2/../acme_dqn/tracker.py",
-            "repo": "dev_repo",
-        },
-        "sb3_cartpole==nj_registry_2next": {
-            "class_name": "CartPole",
-            "dependencies": {},
-            "file_path": "example_agents/sb3_agent/environment.py",
-            "repo": "dev_repo",
-        },
-        "sb3_ppo_agent==nj_registry_2next": {
-            "class_name": "SB3PPOAgent",
-            "dependencies": {
-                "environment": "sb3_cartpole==nj_registry_2next",
-                "tracker": "sb3_tracker==nj_registry_2next",
-            },
-            "file_path": "example_agents/sb3_agent/agent.py",
-            "repo": "dev_repo",
-        },
-        "sb3_tracker==nj_registry_2next": {
-            "class_name": "SB3Tracker",
-            "dependencies": {},
-            "file_path": "example_agents/sb3_agent/tracker.py",
-            "repo": "dev_repo",
-        },
-    },
-    "latest_refs": {
-        "acme_cartpole": "nj_registry_2next",
-        "acme_r2d2_agent": "nj_registry_2next",
-        "acme_r2d2_dataset": "nj_registry_2next",
-        "acme_r2d2_network": "nj_registry_2next",
-        "acme_r2d2_policy": "nj_registry_2next",
-        "acme_r2d2_trainer": "nj_registry_2next",
-        "acme_tracker": "nj_registry_2next",
-        "sb3_cartpole": "nj_registry_2next",
-        "sb3_ppo_agent": "nj_registry_2next",
-        "sb3_tracker": "nj_registry_2next",
-    },
-    "repos": {
-        "dev_repo": {
-            "type": "github",
-            "url": "https://github.com/nickjalbert/agentos",
-        }
-    },
-}
-
-
-def generate_dummy_dev_registry():
-    registry = {}
-    VERSION_STRING = "nj_registry_2next"
-    r2d2 = _handle_acme_r2d2(VERSION_STRING)
-    _merge_registry_dict(registry, r2d2)
-    sb3 = _handle_sb3_agent(VERSION_STRING)
-    _merge_registry_dict(registry, sb3)
-    pprint.pprint(registry)
-    return registry
-
-
-def _merge_registry_dict(a, b):
-    for key, val in b.items():
-        tmp = a.get(key, {})
-        tmp.update(val)
-        a[key] = tmp
+web_registry = WebRegistry()

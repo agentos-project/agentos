@@ -1,5 +1,6 @@
 import os
 import sys
+import abc
 from enum import Enum
 from typing import TypeVar, Dict
 from pathlib import Path
@@ -39,7 +40,7 @@ class Repo:
     @staticmethod
     def from_spec(name: str, spec: Dict, base_dir: Path = None) -> "Repo":
         if spec["type"] == RepoType.LOCAL.value:
-            assert base_dir, "The `base_dir` arg must be provided to this method for local repos."
+            assert base_dir, "The `base_dir` arg is required for local repos."
             path = Path(base_dir) / spec["path"]
             return LocalRepo(name=name, file_path=path)
         elif spec["type"] == RepoType.GITHUB.value:
@@ -51,11 +52,14 @@ class Repo:
         else:
             raise Exception(f"Unknown repo spec type: {spec}")
 
-    def __eq__(self, other: "Repo") -> bool:
-        return self.to_dict() == other.to_dict()
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Repo):
+            return self.to_dict() == other.to_dict()
+        return self == other
 
+    @abc.abstractmethod
     def to_dict(self) -> Dict:
-        return {"type": self.type.value}
+        return NotImplementedError
 
     def get_local_repo_path(self, version: str) -> Path:
         raise NotImplementedError()
@@ -213,6 +217,9 @@ class UnknownRepo(Repo):
         self.name = name if name else "unknown_repo"
         self.type = RepoType.UNKNOWN
 
+    def to_dict(self) -> Dict:
+        return {"name": self.name, "type": self.type}
+
 
 class GitHubRepo(Repo):
     """
@@ -230,6 +237,7 @@ class GitHubRepo(Repo):
 
     def to_dict(self) -> Dict:
         return {
+            "name": self.name,
             "type": self.type.value,
             "url": self.url,
         }
@@ -289,6 +297,7 @@ class LocalRepo(Repo):
 
     def to_dict(self) -> Dict:
         return {
+            "name": self.name,
             "type": self.type.value,
             "path": str(self.file_path),
         }
@@ -314,3 +323,6 @@ class InMemoryRepo(Repo):
 
     def get_local_file_path(self, *args, **kwargs):
         raise NoLocalPathException()
+
+    def to_dict(self) -> Dict:
+        return {"name": self.name, "type": self.type.value}

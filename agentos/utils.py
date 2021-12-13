@@ -1,3 +1,5 @@
+import pprint
+
 import yaml
 import mlflow
 import shutil
@@ -70,3 +72,135 @@ def _handle_agent(path_prefix, rename_map):
         v.split("==")[0]: v.split("==")[1] for v in rename_map.values()
     }
     return registry
+
+
+DUMMY_DEV_REGISTRY_DICT = {
+    "components": {
+        "acme_cartpole==nj_registry_2next": {
+            "class_name": "CartPole",
+            "dependencies": {},
+            "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
+            "repo": "dev_repo",
+        },
+        "acme_cartpole==master": {
+            "class_name": "CartPole",
+            "dependencies": {},
+            "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
+            "repo": "dev_repo",
+        },
+        "acme_r2d2_agent==nj_registry_2next": {
+            "class_name": "AcmeR2D2Agent",
+            "dependencies": {
+                "dataset": "acme_r2d2_dataset==nj_registry_2next",
+                "environment": "acme_cartpole==nj_registry_2next",
+                "network": "acme_r2d2_network==nj_registry_2next",
+                "policy": "acme_r2d2_policy==nj_registry_2next",
+                "tracker": "acme_tracker==nj_registry_2next",
+                "trainer": "acme_r2d2_trainer==nj_registry_2next",
+            },
+            "file_path": "example_agents/acme_r2d2/agent.py",
+            "repo": "dev_repo",
+        },
+        "acme_r2d2_dataset==nj_registry_2next": {
+            "class_name": "ReverbDataset",
+            "dependencies": {
+                "environment": "acme_cartpole==nj_registry_2next",
+                "network": "acme_r2d2_network==nj_registry_2next",
+            },
+            "file_path": "example_agents/acme_r2d2/dataset.py",
+            "repo": "dev_repo",
+        },
+        "acme_r2d2_network==nj_registry_2next": {
+            "class_name": "R2D2Network",
+            "dependencies": {
+                "environment": "acme_cartpole==nj_registry_2next",
+                "tracker": "acme_tracker==nj_registry_2next",
+            },
+            "file_path": "example_agents/acme_r2d2/network.py",
+            "repo": "dev_repo",
+        },
+        "acme_r2d2_policy==nj_registry_2next": {
+            "class_name": "R2D2Policy",
+            "dependencies": {
+                "dataset": "acme_r2d2_dataset==nj_registry_2next",
+                "environment": "acme_cartpole==nj_registry_2next",
+                "network": "acme_r2d2_network==nj_registry_2next",
+            },
+            "file_path": "example_agents/acme_r2d2/policy.py",
+            "repo": "dev_repo",
+        },
+        "acme_r2d2_trainer==nj_registry_2next": {
+            "class_name": "R2D2Trainer",
+            "dependencies": {
+                "dataset": "acme_r2d2_dataset==nj_registry_2next",
+                "environment": "acme_cartpole==nj_registry_2next",
+                "network": "acme_r2d2_network==nj_registry_2next",
+            },
+            "file_path": "example_agents/acme_r2d2/trainer.py",
+            "repo": "dev_repo",
+        },
+        "acme_tracker==nj_registry_2next": {
+            "class_name": "AcmeTracker",
+            "dependencies": {},
+            "file_path": "example_agents/acme_r2d2/../acme_dqn/tracker.py",
+            "repo": "dev_repo",
+        },
+        "sb3_cartpole==nj_registry_2next": {
+            "class_name": "CartPole",
+            "dependencies": {},
+            "file_path": "example_agents/sb3_agent/environment.py",
+            "repo": "dev_repo",
+        },
+        "sb3_ppo_agent==nj_registry_2next": {
+            "class_name": "SB3PPOAgent",
+            "dependencies": {
+                "environment": "sb3_cartpole==nj_registry_2next",
+                "tracker": "sb3_tracker==nj_registry_2next",
+            },
+            "file_path": "example_agents/sb3_agent/agent.py",
+            "repo": "dev_repo",
+        },
+        "sb3_tracker==nj_registry_2next": {
+            "class_name": "SB3Tracker",
+            "dependencies": {},
+            "file_path": "example_agents/sb3_agent/tracker.py",
+            "repo": "dev_repo",
+        },
+    },
+    "latest_refs": {
+        "acme_cartpole": "nj_registry_2next",
+        "acme_r2d2_agent": "nj_registry_2next",
+        "acme_r2d2_dataset": "nj_registry_2next",
+        "acme_r2d2_network": "nj_registry_2next",
+        "acme_r2d2_policy": "nj_registry_2next",
+        "acme_r2d2_trainer": "nj_registry_2next",
+        "acme_tracker": "nj_registry_2next",
+        "sb3_cartpole": "nj_registry_2next",
+        "sb3_ppo_agent": "nj_registry_2next",
+        "sb3_tracker": "nj_registry_2next",
+    },
+    "repos": {
+        "dev_repo": {
+            "type": "github",
+            "url": "https://github.com/nickjalbert/agentos",
+        }
+    },
+}
+
+
+def generate_dummy_dev_registry():
+    registry = {}
+    VERSION_STRING = "nj_registry_2next"
+    r2d2 = _handle_acme_r2d2(VERSION_STRING)
+    _merge_registry_dict(registry, r2d2)
+    sb3 = _handle_sb3_agent(VERSION_STRING)
+    _merge_registry_dict(registry, sb3)
+    pprint.pprint(registry)
+    return registry
+
+
+def _merge_registry_dict(a, b):
+    for key, val in b.items():
+        tmp = a.get(key, {})
+        tmp.update(val)
+        a[key] = tmp
