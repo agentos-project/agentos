@@ -7,9 +7,9 @@ from typing import List, Dict, Optional
 from collections import namedtuple
 import mlflow
 from mlflow.entities import Run
-from agentos import Component
+from agentos.component import Component
+from agentos.registry import Registry, web_registry
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.registry import web_registry
 
 
 _EPISODE_KEY = "episode_count"
@@ -281,7 +281,10 @@ class RunContextManager:
         run = mlflow.active_run()
         artifacts_dir = self.tracker._get_artifacts_dir(run)
         spec_path = artifacts_dir / "agentos.yaml"
-        names = Component._get_name_map(spec_path)
+        names = [
+            Component.Identifier.from_str(c_id).name
+            for c_id in Registry.from_yaml(spec_path).components().keys()
+        ]
         expected_name = getattr(self, f"{role_type}_name")
         if expected_name not in names:
             print(

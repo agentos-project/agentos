@@ -36,7 +36,9 @@ class Registry(abc.ABC):
     def from_yaml(yaml_file: str) -> "Registry":
         with open(yaml_file) as file_in:
             config = yaml.safe_load(file_in)
-        return InMemoryRegistry(config)
+        return InMemoryRegistry(
+            config, base_dir=Path(yaml_file).parent
+        )
 
     @abc.abstractmethod
     def components(
@@ -163,8 +165,36 @@ class WebRegistry(Registry):
                 content = content[0]
             raise Exception(content)
 
+    def __init__(self, root_url: str, base_dir: str = None):
+        self.root_url = root_url
+        self.base_dir = (
+            base_dir if base_dir else "."
+        )  # Used for file-backed Registry types.
+
+    def components(
+            self,
+            filter_by_name: str = None,
+            filter_by_version: str = None,
+    ) -> Dict["Component.Identifier", Dict]:
+        raise NotImplementedError
+
+    @property
+    def repos(self) -> Dict:
+        raise NotImplementedError
+
+    @property
+    def runs(self) -> Dict:
+        raise NotImplementedError
+
+    @property
+    def fallback_registries(self) -> List:
+        raise NotImplementedError
+
+    def add_component(self, component: "Component") -> None:
+        raise NotImplementedError
+
     def push_component_spec(self, frozen_spec: Dict) -> Dict:
-        url = f"{AOS_WEB_API_ROOT}/components/ingest_spec/"
+        url = f"{self.root_url}/components/ingest_spec/"
         data = {"components.yaml": yaml.dump(frozen_spec)}
         response = requests.post(url, data=data)
         self._check_response(response)
@@ -175,14 +205,14 @@ class WebRegistry(Registry):
         return result
 
     def push_run_data(self, run_data: Dict) -> List:
-        url = f"{AOS_WEB_API_ROOT}/runs/"
+        url = f"{self.root_url}/runs/"
         data = {"run_data": yaml.dump(run_data)}
         response = requests.post(url, data=data)
         self._check_response(response)
         result = json.loads(response.content)
         return result
 
-    def push_run_artifacts(run_id: int, run_artifacts: List) -> List:
+    def push_run_artifacts(self, run_id: int, run_artifacts: List) -> List:
         try:
             tmp_dir_path = Path(tempfile.mkdtemp())
             tar_gz_path = tmp_dir_path / f"run_{run_id}_artifacts.tar.gz"
@@ -190,7 +220,7 @@ class WebRegistry(Registry):
                 for artifact_path in run_artifacts:
                     tar.add(artifact_path, arcname=artifact_path.name)
             files = {"tarball": open(tar_gz_path, "rb")}
-            url = f"{AOS_WEB_API_ROOT}/runs/{run_id}/upload_artifact/"
+            url = f"{self.root_url}/runs/{run_id}/upload_artifact/"
             response = requests.post(url, files=files)
             result = json.loads(response.content)
             return result
@@ -200,7 +230,7 @@ class WebRegistry(Registry):
     def get_run(self, run_id: int) -> None:
         from agentos.tracker import AgentTracker
 
-        run_url = f"{AOS_WEB_API_ROOT}/runs/{run_id}"
+        run_url = f"{self.root_url}/runs/{run_id}"
         run_response = requests.get(run_url)
         run_data = json.loads(run_response.content)
         with open("parameter_set.yaml", "w") as param_file:
@@ -259,5 +289,4 @@ class WebRegistry(Registry):
         finally:
             shutil.rmtree(tmp_dir_path)
 
-
-web_registry = WebRegistry()
+web_registry = WebRegistry(AOS_WEB_API_ROOT)

@@ -37,7 +37,6 @@ class _Identifier:
         if len(split_identifier) == 1:
             return _Identifier(split_identifier[0])
         else:
-            print(f"returning {split_identifier[0]}, {split_identifier[1]}")
             return _Identifier(split_identifier[0], split_identifier[1])
 
     def __init__(
@@ -140,7 +139,6 @@ class Component:
                 f"the name {name}. Please specify a version."
             )
         identifier = Component.Identifier.from_str(list(components.keys())[0])
-        print(f"Pushing {identifier} onto stack of components")
         component_identifiers = [identifier]
         repos = {}
         components = {}

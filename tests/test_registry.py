@@ -89,6 +89,7 @@ def test_registry_from_dict():
     from agentos.registry import Registry
     from agentos.utils import DUMMY_DEV_REGISTRY_DICT
     from agentos.component import Component
+    from agentos.parameter_set import ParameterSet
 
     r = Registry.from_dict(DUMMY_DEV_REGISTRY_DICT)
     assert "acme_cartpole==nj_registry_2next" in r.components().keys()
@@ -109,3 +110,14 @@ def test_registry_from_dict():
         c.dependencies["environment"].full_name
         == "sb3_cartpole==nj_registry_2next"
     )
+    sb3_local_ag = Component.from_registry(
+        Registry.from_yaml("example_agents/sb3_agent/agentos.yaml"),
+        "agent"
+    )
+    sb3_local_ag.run("learn", ParameterSet({
+        "sb3_ppo_agent": {
+            "init": {
+                "total_timesteps": 5000
+            }
+        }
+    }))
