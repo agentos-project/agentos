@@ -111,13 +111,9 @@ def test_registry_from_dict():
         == "sb3_cartpole==nj_registry_2next"
     )
     sb3_local_ag = Component.from_registry(
-        Registry.from_yaml("example_agents/sb3_agent/agentos.yaml"),
-        "agent"
+        Registry.from_yaml("example_agents/sb3_agent/agentos.yaml"), "agent"
     )
-    sb3_local_ag.run("learn", ParameterSet({
-        "sb3_ppo_agent": {
-            "init": {
-                "total_timesteps": 5000
-            }
-        }
-    }))
+    sb3_local_ag.run(
+        "learn",
+        ParameterSet({"sb3_ppo_agent": {"init": {"total_timesteps": 5000}}}),
+    )

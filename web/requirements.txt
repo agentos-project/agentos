@@ -1,5 +1,4 @@
-# agentos>=0.0.7
-https://github.com/nickjalbert/agentos/tarball/nj_run_publish
+-e ../
 asgiref==3.4.1
 black==21.8b0
 certifi==2021.5.30

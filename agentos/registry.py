@@ -36,9 +36,7 @@ class Registry(abc.ABC):
     def from_yaml(yaml_file: str) -> "Registry":
         with open(yaml_file) as file_in:
             config = yaml.safe_load(file_in)
-        return InMemoryRegistry(
-            config, base_dir=Path(yaml_file).parent
-        )
+        return InMemoryRegistry(config, base_dir=Path(yaml_file).parent)
 
     @abc.abstractmethod
     def components(
@@ -172,9 +170,9 @@ class WebRegistry(Registry):
         )  # Used for file-backed Registry types.
 
     def components(
-            self,
-            filter_by_name: str = None,
-            filter_by_version: str = None,
+        self,
+        filter_by_name: str = None,
+        filter_by_version: str = None,
     ) -> Dict["Component.Identifier", Dict]:
         raise NotImplementedError
 
@@ -288,5 +286,6 @@ class WebRegistry(Registry):
             print()
         finally:
             shutil.rmtree(tmp_dir_path)
+
 
 web_registry = WebRegistry(AOS_WEB_API_ROOT)
