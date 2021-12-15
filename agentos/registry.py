@@ -64,6 +64,18 @@ class Registry(abc.ABC):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_component(self, name: str, version: str = None) -> Component:
+        raise NotImplementedError
+
+    def get_component_by_identifier(
+            self, identifier: Component.Identifier
+    ) -> Component:
+        return self.get_component(identifier.name, identifier.version)
+
+    def get_default_component(self, name: str):
+        return self.get_component(name)
+
     @property
     @abc.abstractmethod
     def repos(self) -> Dict:
@@ -107,9 +119,20 @@ class InMemoryRegistry(Registry):
         if "fallback_registries" not in self._registry.keys():
             self._registry["registries"] = []
 
-    def component(self, component_id: "Component.Identifier"):
+    def get_component(self, name: str, version: str) -> Component:
         """Returns the component with ``component_id``, if it exists."""
-        return self._registry["components"][component_id]
+        components = self.get_components(name, version)
+        if len(components) == 0:
+            raise LookupError(
+                "This registry does not contain any components that match "
+                "your filter criteria."
+            )
+        if len(components) > 1:
+            raise LookupError(
+                f"This registry contains more than one component with "
+                f"the name {name}. Please specify a version."
+            )
+        return list(components.keys())[0]
 
     def components(
         self, filter_by_name: str = None, filter_by_version: str = None
@@ -174,6 +197,10 @@ class WebRegistry(Registry):
         filter_by_name: str = None,
         filter_by_version: str = None,
     ) -> Dict["Component.Identifier", Dict]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_default_component(self, name: str):
         raise NotImplementedError
 
     @property

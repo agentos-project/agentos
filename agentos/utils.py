@@ -74,7 +74,7 @@ def _handle_agent(path_prefix, rename_map):
     return registry
 
 
-DUMMY_DEV_REGISTRY_DICT = {
+DUMMY_WEB_REGISTRY_DICT = {
     "components": {
         "acme_cartpole==nj_registry_2next": {
             "class_name": "CartPole",
@@ -167,7 +167,7 @@ DUMMY_DEV_REGISTRY_DICT = {
             "repo": "dev_repo",
         },
     },
-    "latest_refs": {
+    "default_component_versions": {
         "acme_cartpole": "nj_registry_2next",
         "acme_r2d2_agent": "nj_registry_2next",
         "acme_r2d2_dataset": "nj_registry_2next",

@@ -125,20 +125,8 @@ class Component:
         Returns a Component Object from the provided registry, including
         its full dependency tree of other Component Objects.
         """
-        components = registry.components(
-            filter_by_name=name, filter_by_version=version
-        )
-        if len(components) == 0:
-            raise LookupError(
-                "This registry does not contain any components that match "
-                "your filter criteria."
-            )
-        if len(components) > 1:
-            raise LookupError(
-                f"This registry contains more than one component with "
-                f"the name {name}. Please specify a version."
-            )
-        identifier = Component.Identifier.from_str(list(components.keys())[0])
+        component_spec = registry.get_component(name, version)
+        identifier = component_spec.identifier
         component_identifiers = [identifier]
         repos = {}
         components = {}

@@ -87,11 +87,11 @@ def test_registry_integration(venv):
 
 def test_registry_from_dict():
     from agentos.registry import Registry
-    from agentos.utils import DUMMY_DEV_REGISTRY_DICT
+    from agentos.utils import DUMMY_WEB_REGISTRY_DICT
     from agentos.component import Component
     from agentos.parameter_set import ParameterSet
 
-    r = Registry.from_dict(DUMMY_DEV_REGISTRY_DICT)
+    r = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)
     assert "acme_cartpole==nj_registry_2next" in r.components().keys()
     assert (
         "acme_cartpole==nj_registry_2next"
