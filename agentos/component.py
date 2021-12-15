@@ -175,6 +175,11 @@ class Component:
         return components[identifier]
 
     @staticmethod
+    def from_yaml(yaml_file: str, name: str, version: str = None):
+        registry = Registry.from_yaml(yaml_file)
+        return Component.from_registry(registry, name, version)
+
+    @staticmethod
     def from_class(
         managed_cls: Type[T],
         name: str = None,
@@ -333,15 +338,15 @@ class Component:
         repo_url, version = self.repo.get_version_from_git(
             self.identifier, self.file_path, force
         )
-        identifier = Component.Identifier(self.identifier.full)
-        identifier.version = version
+        old_identifier = Component.Identifier(self.identifier.full)
+        new_identifier = Component.Identifier(old_identifier.name, version)
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
-            identifier, self.file_path
+            new_identifier, self.file_path
         )
         clone = Component(
             managed_cls=self._managed_cls,
             repo=GitHubRepo(name=self.repo.name, url=repo_url),
-            identifier=identifier,
+            identifier=new_identifier,
             class_name=self.class_name,
             file_path=prefixed_file_path,
             dunder_name=self._dunder_name,

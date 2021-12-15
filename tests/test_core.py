@@ -25,7 +25,6 @@ def test_cli(tmpdir):
             "agentos",
             "run",
             "agent",
-            "--entry-point=evaluate",
             "-Pnum_episodes=1",
         ],
         cwd=tmpdir,
