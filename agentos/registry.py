@@ -128,9 +128,12 @@ class InMemoryRegistry(Registry):
                 "your filter criteria."
             )
         if len(components) > 1:
+            versions = [c_id.version for c_id in components.keys()]
+            version_str = '\n'.join(versions)
             raise LookupError(
                 f"This registry contains more than one component with "
-                f"the name {name}. Please specify a version."
+                f"the name {name}. Please specify one of the following "
+                f"versions:{version_str}"
             )
         return list(components.keys())[0]
 
@@ -173,8 +176,8 @@ class InMemoryRegistry(Registry):
 
     def add_component(self, component: "Component") -> None:
         print(component)
-        self._registry["components"][component.identifier] = component
-        self._registry["repos"][component.repo.name] = component.repo
+        self._registry["components"][component.identifier] = component.to_dict()
+        self._registry["repos"][component.repo.name] = component.repo.to_dict()
 
 
 class WebRegistry(Registry):
