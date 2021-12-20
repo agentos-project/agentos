@@ -1,9 +1,8 @@
 import sys
-import copy
 import uuid
 import mlflow
 import importlib
-from typing import TypeVar, Dict, Type, Any
+from typing import TypeVar, Dict, Type, Any, Sequence
 from contextlib import contextmanager
 from agentos.utils import log_data_as_yaml_artifact
 from agentos.utils import MLFLOW_EXPERIMENT_ID
@@ -14,70 +13,13 @@ from agentos.repo import (
     BadGitStateException,
     NoLocalPathException,
 )
-from agentos.registry import Registry
+from agentos.registry import Registry, InMemoryRegistry
 from agentos.parameter_set import ParameterSet
+from agentos.component_identifier import ComponentIdentifier
+from agentos.specs import ComponentSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
-
-
-class _Identifier:
-    """
-    This manages a Component Identifier so we can refer to Components both as
-    [name] and [name]==[version] in agentos.yaml spec files or from the
-    command-line.
-    """
-
-    @staticmethod
-    def from_str(identifier_string: str) -> "Component.identifier":
-        split_identifier = str(identifier_string).split("==")
-        assert (
-            len(split_identifier) <= 2
-        ), f"Bad identifier: '{identifier_string}'"
-        if len(split_identifier) == 1:
-            return _Identifier(split_identifier[0])
-        else:
-            return _Identifier(split_identifier[0], split_identifier[1])
-
-    def __init__(
-        self,
-        name: str,
-        version: str = None,
-    ):
-        assert "==" not in name, (
-            f"Component.Identifier ({name} may not contain '=='. You should "
-            f"probably use Component.Identifier.from_str() instead."
-        )
-        self._name = name
-        self._version = version
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def version(self):
-        return self._version
-
-    @property
-    def full(self) -> str:
-        if self._name and self._version:
-            return "==".join((self._name, self._version))
-        return self._name
-
-    def __repr__(self) -> str:
-        return f"<agentos.component.Component.Identifer: {self.full}>"
-
-    def __hash__(self) -> int:
-        return hash(self.full)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.full == other.full
-        return self.full == other
-
-    def __str__(self):
-        return self.full
 
 
 class Component:
@@ -87,7 +29,7 @@ class Component:
     dependencies.
     """
 
-    Identifier = _Identifier
+    Identifier = ComponentIdentifier
 
     def __init__(
         self,
@@ -125,24 +67,26 @@ class Component:
         Returns a Component Object from the provided registry, including
         its full dependency tree of other Component Objects.
         """
-        component_spec = registry.get_component(name, version)
-        identifier = component_spec.identifier
+        identifier = Component.Identifier(name, version)
         component_identifiers = [identifier]
         repos = {}
         components = {}
         dependencies = {}
         while component_identifiers:
             component_id = component_identifiers.pop()
-            component_spec = registry.component(component_id)
+            component_spec = registry.get_component_spec_by_id(component_id)
+            component_id_from_spec = ComponentIdentifier(
+                component_spec["name"], component_spec["version"]
+            )
             repo_id = component_spec["repo"]
             if repo_id not in repos.keys():
-                repo_spec = registry.repos[repo_id]
+                repo_spec = registry.get_repo_spec(repo_id)
                 repos[repo_id] = Repo.from_spec(
                     repo_id, repo_spec, registry.base_dir
                 )
             component = Component.from_repo(
                 repo=repos[repo_id],
-                identifier=component_id,
+                identifier=component_id_from_spec,
                 class_name=component_spec["class_name"],
                 file_path=component_spec["file_path"],
             )
@@ -214,10 +158,6 @@ class Component:
         return self.identifier.name
 
     @property
-    def full_name(self) -> str:
-        return self.identifier.full
-
-    @property
     def version(self):
         return self.identifier.version
 
@@ -250,7 +190,7 @@ class Component:
 
     def add_dependency(
         self, component: "Component", attribute_name: str = None
-    ):
+    ) -> None:
         if type(component) is not type(self):
             raise Exception("add_dependency() must be passed a Component")
         if attribute_name is None:
@@ -261,6 +201,46 @@ class Component:
         instantiated = {}
         params = params if params else ParameterSet({})
         return self._get_instance(params, instantiated)
+
+    def get_transitive_dependencies(
+        self, include_root: bool = True
+    ) -> Sequence["Component"]:
+        """
+        Return a normalized (i.e. flat) list containing all transitive
+        dependencies of this component and (optionally) this component.
+
+        :param include_root: Whether to include the root component in the list.
+        :return: a list containing all all of the transitive dependencies
+                 of this component (optionally  including the root component).
+        """
+        component_queue = [self]
+        ret_val = set([self]) if include_root else set()
+        while component_queue:
+            component = component_queue.pop()
+            ret_val.add(component)
+            for dependency in component.dependencies.values():
+                component_queue.append(dependency)
+        return list(ret_val)
+
+    def register(self, registry: Registry) -> None:
+        """
+        Registering a component adds a component spec for the component
+        and each of it's transitive dependencies (which are themselves
+        components) to the specified registry.
+        """
+        for c in self.get_transitive_dependencies():
+            registry.add_component_spec(c.to_spec())
+            try:
+                repo_spec = registry.get_repo_spec(c.repo.name)
+                err_msg = (
+                    f"A Repo with identifier {c.repo.name} already exists"
+                    f"in this registry that differs from the one referred to "
+                    f"by component {c.identifier}."
+                )
+                assert repo_spec == c.repo.to_spec(), err_msg
+            except LookupError:
+                # Repo not yet registered, so so add it to this registry.
+                registry.add_repo_spec(c.repo.to_spec())
 
     def _get_instance(self, params: ParameterSet, instantiated: dict) -> T:
         if self.name in instantiated:
@@ -281,16 +261,16 @@ class Component:
         return instance
 
     def _log_params(self, params: ParameterSet) -> None:
-        log_data_as_yaml_artifact("parameter_set.yaml", params.to_dict())
+        log_data_as_yaml_artifact("parameter_set.yaml", params.to_spec())
 
     def _log_component_spec(self) -> None:
         frozen = None
         try:
-            frozen = self.get_frozen_spec()
+            frozen = self.to_frozen_registry().to_dict()
             log_data_as_yaml_artifact("agentos.yaml", frozen)
         except (BadGitStateException, NoLocalPathException) as exc:
             print(f"Warning: component is not publishable: {str(exc)}")
-            spec = self.get_component_spec()
+            spec = self.to_registry().to_dict()
             log_data_as_yaml_artifact("agentos.yaml", spec)
         mlflow.log_param("spec_is_frozen", frozen is not None)
 
@@ -298,27 +278,12 @@ class Component:
         mlflow.log_param("root_name", self.identifier.full)
         mlflow.log_param("entry_point", fn_name)
 
-    def get_component_spec(self):
-        spec = {"repos": {}, "components": {}}
-        components = [self]
-        while len(components) > 0:
-            component = components.pop()
-            component._handle_repo_spec(spec["repos"])
-            spec["components"][component.full_name] = component.to_dict()
-            for dependency in component.dependencies.values():
-                components.append(dependency)
-        return spec
-
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
         if existing_repo:
             if self.repo.to_dict() != existing_repo:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
-
-    def get_frozen_spec(self, force: bool = False) -> Dict:
-        versioned = self._get_versioned_dependency_dag(force)
-        return versioned.get_component_spec()
 
     def _get_versioned_dependency_dag(
         self, force: bool = False
@@ -346,25 +311,30 @@ class Component:
             clone.add_dependency(frozen_dependency, attribute_name=attr_name)
         return clone
 
-    def to_dict(self) -> Dict:
-        dependencies = {k: v.full_name for k, v in self.dependencies.items()}
-        component_spec = {
+    def to_spec(self) -> ComponentSpec:
+        dependencies = {
+            k: str(v.identifier) for k, v in self.dependencies.items()
+        }
+        component_spec_content = {
             "repo": self.repo.name,
             "file_path": str(self.file_path),
             "class_name": self.class_name,
             "dependencies": dependencies,
         }
-        return component_spec
+        return {str(self.identifier): component_spec_content}
 
-    def get_param_dict(self) -> Dict:
-        param_dict = {}
-        components = [self]
-        while len(components) > 0:
-            component = components.pop()
-            param_dict[component.name] = copy.deepcopy(component._params)
-            for dependency in component.dependencies.values():
-                components.append(dependency)
-        return param_dict
+    def to_registry(self) -> Registry:
+        """
+        Returns a registry containing this component and all of its
+        transitive dependents, as well the repos of all of them.
+        """
+        registry = InMemoryRegistry()
+        self.register(registry)
+        return registry
+
+    def to_frozen_registry(self, force: bool = False) -> Registry:
+        versioned = self._get_versioned_dependency_dag(force)
+        return versioned.to_registry()
 
     @contextmanager
     def _track_run(self, fn_name: str, params: ParameterSet):

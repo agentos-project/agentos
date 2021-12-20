@@ -6,15 +6,15 @@ import mlflow
 import pprint
 import shutil
 import tarfile
+
 import tempfile
 import requests
 from pathlib import Path
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, Union
 from dotenv import load_dotenv
-
-if TYPE_CHECKING:
-    from agentos.component import Component
+from agentos.component_identifier import ComponentIdentifier
 from agentos.utils import MLFLOW_EXPERIMENT_ID
+from agentos.specs import RepoSpec, ComponentSpec, NestedComponentSpec
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -28,6 +28,11 @@ AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
 
 
 class Registry(abc.ABC):
+    def __init__(self, base_dir: str = None):
+        self.base_dir = (
+            base_dir if base_dir else "."
+        )  # Used for file-backed Registry types.
+
     @staticmethod
     def from_dict(input_dict: Dict) -> "Registry":
         return InMemoryRegistry(input_dict)
@@ -36,17 +41,19 @@ class Registry(abc.ABC):
     def from_yaml(yaml_file: str) -> "Registry":
         with open(yaml_file) as file_in:
             config = yaml.safe_load(file_in)
-        return InMemoryRegistry(config, base_dir=Path(yaml_file).parent)
+        return InMemoryRegistry(config, base_dir=str(Path(yaml_file).parent))
 
     @abc.abstractmethod
-    def components(
-        self,
-        filter_by_name: str = None,
-        filter_by_version: str = None,
-    ) -> Dict["Component.Identifier", Dict]:
+    def to_dict(self) -> Dict:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_component_specs(
+        self, filter_by_name: str = None, filter_by_version: str = None
+    ) -> NestedComponentSpec:
         """
         Return dictionary of component specs in this Registry.
-        Each Component Spec is itself a dict mapping Component.Identifier to a
+        Each Component Spec is itself a dict mapping ComponentIdentifier to a
         dict of properties that define the Component.
 
         Optionally, filter the list to match all filter strings provided.
@@ -58,53 +65,122 @@ class Registry(abc.ABC):
 
         :param filter_by_name: return only components with this name.
         :param filter_by_version: return only components with this version.
+        :param include_id_in_contents: add ``name`` and ``version`` fields to
+               innermost dict of the ComponentSpec Dict. This denormalizes the
+               spec by duplicating the ``name`` and ``version`` which are
+               already included via the ComponentIdentifier Dict key.
 
         :returns: A dictionary of components in this registry, optionally
         filtered by name, version, or both.
         """
         raise NotImplementedError
 
+    def get_component_spec(
+        self, name: str, version: str = None, flattened: bool = True
+    ) -> ComponentSpec:
+        """
+        Returns the component spec with ``name`` and ``version``, if it exists.
+        A component's name and version are defined as its identifier's name
+        and version.
+
+        Registries are not allowed to contain multiple Components with the same
+        identifier. The Registry abstract base class does not enforce that all
+        Components have a version (version can be None) though some
+        sub-classes, such as web service backed registries, may choose to
+        enforce that constraint.
+
+        When version is unspecified or None, this function assumes that a
+        Component ``c`` exists where ``c.name == name`` and ``c.version is
+        None``, and throws an error otherwise.
+
+        Subclasses of Registry may choose to provide their own (more elaborate)
+        semantics for "default components". E.g., since WebRegistry does not
+        allow non-versioned components, it defines its own concept of a default
+        component by maintaining a separate map from component name to
+        a specific version of the component, and it allows that mapping to be
+        updated by users.
+
+        :param name: The name of the component to fetch.
+        :param version: Optional version of the component to fetch.
+        :param flattened: If True, flatten the outermost 2 layers of nested
+                          dicts into a single dict. In an unflattened component
+                          spec, the outermost dict is from identifier
+                          (which is a string in the format of name[==version])
+                          Component component properties (class_name, repo,
+                          etc.). In a flattened Component spec, the name and
+                          version are included in the same dictionary as the
+                          class_name, repo, dependencies, etc.
+        """
+        components = self.get_component_specs(name, version)
+        print(f"components: {components}")
+        if len(components) == 0:
+            raise LookupError(
+                f"This registry does not contain any components that match "
+                f"your filter criteria: name:'{name}', version:'{version}'."
+            )
+        if len(components) > 1:
+            versions = [
+                ComponentIdentifier.from_str(c_id).version
+                for c_id in components.keys()
+            ]
+            version_str = "\n - ".join(versions)
+            raise LookupError(
+                f"This registry contains more than one component with "
+                f"the name {name}. Please specify one of the following "
+                f"versions:\n - {version_str}"
+            )
+        if flattened:
+            component_tuple = components.popitem()
+            identifier_str = component_tuple[0]
+            identifier = ComponentIdentifier.from_str(identifier_str)
+            print(f"identifier: {identifier}")
+            flat_component_dict = component_tuple[1]
+            flat_component_dict["name"] = identifier.name
+            flat_component_dict["version"] = identifier.version
+            print(f"returning flat_component: {flat_component_dict}")
+            return flat_component_dict
+        return components
+
+    def get_component_spec_by_id(
+        self, identifier: Union[ComponentIdentifier, str]
+    ) -> ComponentSpec:
+        identifier = ComponentIdentifier.from_str(str(identifier))
+        return self.get_component_spec(identifier.name, identifier.version)
+
     @abc.abstractmethod
-    def get_component(self, name: str, version: str = None) -> Component:
+    def get_repo_spec(self, repo_id: str) -> "RepoSpec":
         raise NotImplementedError
 
-    def get_component_by_identifier(
-            self, identifier: Component.Identifier
-    ) -> Component:
-        return self.get_component(identifier.name, identifier.version)
-
-    def get_default_component(self, name: str):
-        return self.get_component(name)
-
-    @property
     @abc.abstractmethod
-    def repos(self) -> Dict:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def runs(self) -> Dict:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def fallback_registries(self) -> List:
+    # TODO: replace Dict return type with RunSpec once we have it.
+    def get_run_spec(self, run_id: str) -> Dict:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_component(self, component: "Component") -> None:
+    def get_fallback_registries(self) -> List:
         raise NotImplementedError
 
-    def __init__(self, base_dir: str = None):
-        self.base_dir = (
-            base_dir if base_dir else "."
-        )  # Used for file-backed Registry types.
+    @abc.abstractmethod
+    def add_component_spec(self, component_spec: "ComponentSpec") -> None:
+        """
+        Adds a component spec to this registry. *This does not add any
+        Registry Objects* to this registry. Those must be handled explicitely.
+
+        Typically, to register a component, it's easier to use the higher
+        level function Component.register(registry).
+
+        :param component_spec: The ``ComponentSpec`` to register.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
+        raise NotImplementedError
 
 
 class InMemoryRegistry(Registry):
     """
-    This encapsulates interactions with an external registry that contains
-    information about publicly-available Components.
+    A mutable in-memory registry.
     """
 
     def __init__(self, input_dict: Dict = None, base_dir: str = None):
@@ -119,34 +195,14 @@ class InMemoryRegistry(Registry):
         if "fallback_registries" not in self._registry.keys():
             self._registry["registries"] = []
 
-    def get_component(self, name: str, version: str) -> Component:
-        """Returns the component with ``component_id``, if it exists."""
-        components = self.get_components(name, version)
-        if len(components) == 0:
-            raise LookupError(
-                "This registry does not contain any components that match "
-                "your filter criteria."
-            )
-        if len(components) > 1:
-            versions = [c_id.version for c_id in components.keys()]
-            version_str = '\n'.join(versions)
-            raise LookupError(
-                f"This registry contains more than one component with "
-                f"the name {name}. Please specify one of the following "
-                f"versions:{version_str}"
-            )
-        return list(components.keys())[0]
-
-    def components(
+    def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
-    ) -> Dict["Component.Identifier", Dict]:
+    ) -> NestedComponentSpec:
         if filter_by_name or filter_by_version:
             try:
-                from agentos.component import Component
-
                 components = {}
                 for k, v in self._registry["components"].items():
-                    candidate_id = Component.Identifier.from_str(k)
+                    candidate_id = ComponentIdentifier.from_str(k)
                     passes_filter = True
                     if filter_by_name and candidate_id.name != filter_by_name:
                         passes_filter = False
@@ -162,32 +218,29 @@ class InMemoryRegistry(Registry):
                 return {}
         return self._registry["components"]
 
-    @property
-    def repos(self) -> Dict:
-        return self._registry["repos"]
+    def get_repo_spec(self, repo_id: str) -> "RepoSpec":
+        return self._registry["repos"][repo_id]
 
-    @property
-    def runs(self) -> Dict:
-        return self._registry["runs"]
+    def get_run_spec(self, run_id: str) -> Dict:
+        return self._registry["runs"][run_id]
 
-    @property
-    def fallback_registries(self) -> List:
+    def get_fallback_registries(self) -> List[Registry]:
         return self._registry["fallback_registries"]
 
-    def add_component(self, component: "Component") -> None:
-        print(component)
-        self._registry["components"][component.identifier] = component.to_dict()
-        self._registry["repos"][component.repo.name] = component.repo.to_dict()
+    def add_component_spec(self, component_spec: "ComponentSpec") -> None:
+        self._registry["components"].update(component_spec)
+
+    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
+        self._registry["repos"].update(repo_spec)
+
+    def to_dict(self) -> Dict:
+        return self._registry
 
 
 class WebRegistry(Registry):
-    @staticmethod
-    def _check_response(self, response):
-        if not response.ok:
-            content = json.loads(response.content)
-            if type(content) == list:
-                content = content[0]
-            raise Exception(content)
+    """
+    A web-server backed Registry.
+    """
 
     def __init__(self, root_url: str, base_dir: str = None):
         self.root_url = root_url
@@ -195,33 +248,41 @@ class WebRegistry(Registry):
             base_dir if base_dir else "."
         )  # Used for file-backed Registry types.
 
-    def components(
-        self,
-        filter_by_name: str = None,
-        filter_by_version: str = None,
-    ) -> Dict["Component.Identifier", Dict]:
+    @staticmethod
+    def _check_response(response):
+        if not response.ok:
+            content = json.loads(response.content)
+            if type(content) == list:
+                content = content[0]
+            raise Exception(content)
+
+    def get_component_specs(
+        self, filter_by_name: str = None, filter_by_version: str = None
+    ) -> NestedComponentSpec:
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_default_component(self, name: str):
         raise NotImplementedError
 
-    @property
-    def repos(self) -> Dict:
+    def get_repo_spec(self, repo_id: str) -> "RepoSpec":
         raise NotImplementedError
 
-    @property
-    def runs(self) -> Dict:
+    def get_run_spec(self, run_id: str) -> Dict:
         raise NotImplementedError
 
-    @property
-    def fallback_registries(self) -> List:
+    def get_fallback_registries(self) -> List:
         raise NotImplementedError
 
-    def add_component(self, component: "Component") -> None:
+    def add_component_spec(self, component_spec: "ComponentSpec") -> None:
+        self.push_component_spec(component_spec)
+
+    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
         raise NotImplementedError
 
-    def push_component_spec(self, frozen_spec: Dict) -> Dict:
+    def to_dict(self) -> Dict:
+        raise NotImplementedError
+
+    def push_component_spec(self, frozen_spec: "ComponentSpec") -> Dict:
         url = f"{self.root_url}/components/ingest_spec/"
         data = {"components.yaml": yaml.dump(frozen_spec)}
         response = requests.post(url, data=data)

@@ -5,14 +5,14 @@ import mlflow
 import shutil
 from pathlib import Path
 import tempfile
-
+from agentos.specs import ParameterSetSpec
 
 MLFLOW_EXPERIMENT_ID = "0"
 
 AOS_CACHE_DIR = Path.home() / ".agentos_cache"
 
 
-def log_data_as_yaml_artifact(name: str, data: dict):
+def log_data_as_yaml_artifact(name: str, data: ParameterSetSpec):
     try:
         tmp_dir_path = Path(tempfile.mkdtemp())
         artifact_path = tmp_dir_path / name

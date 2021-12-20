@@ -283,7 +283,9 @@ class RunContextManager:
         spec_path = artifacts_dir / "agentos.yaml"
         names = [
             Component.Identifier.from_str(c_id).name
-            for c_id in Registry.from_yaml(spec_path).components().keys()
+            for c_id in Registry.from_yaml(spec_path)
+            .get_component_specs()
+            .keys()
         ]
         expected_name = getattr(self, f"{role_type}_name")
         if expected_name not in names:

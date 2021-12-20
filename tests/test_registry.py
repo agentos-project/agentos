@@ -92,22 +92,29 @@ def test_registry_from_dict():
     from agentos.parameter_set import ParameterSet
 
     r = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)
-    assert "acme_cartpole==nj_registry_2next" in r.components().keys()
+    assert "acme_cartpole==nj_registry_2next" in r.get_component_specs().keys()
     assert (
         "acme_cartpole==nj_registry_2next"
-        in r.components(filter_by_name="acme_cartpole").keys()
+        in r.get_component_specs(filter_by_name="acme_cartpole").keys()
     )
     assert (
         "acme_cartpole==master"
-        in r.components(filter_by_name="acme_cartpole").keys()
+        in r.get_component_specs(filter_by_name="acme_cartpole").keys()
     )
+
+    agent_component_flat_spec = r.get_component_spec("acme_r2d2_agent")
+    assert agent_component_flat_spec["name"] == "acme_r2d2_agent"
+    assert agent_component_flat_spec["version"] == "nj_registry_2next"
+    assert agent_component_flat_spec["class_name"] == "AcmeR2D2Agent"
+    assert agent_component_flat_spec["repo"] == "dev_repo"
+
     c = Component.from_registry(r, "sb3_ppo_agent")
     assert c.name == "sb3_ppo_agent"
     assert c.version == "nj_registry_2next"
     assert c.identifier == "sb3_ppo_agent==nj_registry_2next"
     assert "environment" in c.dependencies.keys()
     assert (
-        c.dependencies["environment"].full_name
+        c.dependencies["environment"].identifier
         == "sb3_cartpole==nj_registry_2next"
     )
     sb3_local_ag = Component.from_registry(

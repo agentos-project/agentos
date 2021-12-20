@@ -48,6 +48,9 @@ def test_component_freezing(tmpdir):
             mocks[
                 "get_prefixed_path_from_repo_root"
             ].return_value = "freeze/test.py"
-            c.get_frozen_spec()
+            reg = c.to_frozen_registry()
+            agent_spec = reg.get_component_spec("agent")
+            assert agent_spec["repo"] == "local_dir"
+            assert agent_spec["version"] == "test_freezing_version"
     finally:
         os.chdir(curr_dir)
