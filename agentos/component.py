@@ -96,7 +96,6 @@ class Component:
                 component_identifiers.append(
                     Component.Identifier.from_str(d_id)
                 )
-                print(f"Pushing {d_id} onto stack of components")
 
         # Wire up the dependency graph
         for c_name, component in components.items():

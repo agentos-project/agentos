@@ -112,7 +112,6 @@ class Registry(abc.ABC):
                           class_name, repo, dependencies, etc.
         """
         components = self.get_component_specs(name, version)
-        print(f"components: {components}")
         if len(components) == 0:
             raise LookupError(
                 f"This registry does not contain any components that match "
@@ -133,11 +132,9 @@ class Registry(abc.ABC):
             component_tuple = components.popitem()
             identifier_str = component_tuple[0]
             identifier = ComponentIdentifier.from_str(identifier_str)
-            print(f"identifier: {identifier}")
             flat_component_dict = component_tuple[1]
             flat_component_dict["name"] = identifier.name
             flat_component_dict["version"] = identifier.version
-            print(f"returning flat_component: {flat_component_dict}")
             return flat_component_dict
         return components
 
