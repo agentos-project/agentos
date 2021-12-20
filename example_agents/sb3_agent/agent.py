@@ -4,6 +4,8 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 # A basic agent.
 class SB3PPOAgent:
+    DEFAULT_ENTRY_POINT = "evaluate"
+
     def __init__(self):
         super().__init__()
         self.sb3_ppo = self.tracker.restore("ppo")
