@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from agentos import Component
 from agentos import ParameterSet
-import agentos.registry as web
+from agentos.registry import web_registry
 
 
 @click.group()
@@ -157,7 +157,7 @@ def run(
 @agentos_cmd.command()
 @_arg_run_id
 def get_run(run_id):
-    web.get_run(run_id)
+    web_registry.get_run(run_id)
 
 
 @agentos_cmd.command()
@@ -195,7 +195,7 @@ def publish(component_name: str, component_spec_file: str, force: bool):
     """
     component = Component.from_yaml(component_spec_file, component_name)
     frozen_spec = component.to_frozen_registry(force=force).to_dict()
-    web.push_component_spec(frozen_spec)
+    web_registry.add_component_spec(frozen_spec)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501

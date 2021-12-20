@@ -154,11 +154,11 @@ class Registry(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_fallback_registries(self) -> List:
+    def get_registries(self) -> List:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_component_spec(self, component_spec: "ComponentSpec") -> None:
+    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
         """
         Adds a component spec to this registry. *This does not add any
         Registry Objects* to this registry. Those must be handled explicitely.
@@ -189,7 +189,7 @@ class InMemoryRegistry(Registry):
             self._registry["repos"] = {}
         if "runs" not in self._registry.keys():
             self._registry["runs"] = {}
-        if "fallback_registries" not in self._registry.keys():
+        if "registries" not in self._registry.keys():
             self._registry["registries"] = []
 
     def get_component_specs(
@@ -221,10 +221,10 @@ class InMemoryRegistry(Registry):
     def get_run_spec(self, run_id: str) -> Dict:
         return self._registry["runs"][run_id]
 
-    def get_fallback_registries(self) -> List[Registry]:
-        return self._registry["fallback_registries"]
+    def get_registries(self) -> List[Registry]:
+        return self._registry["registries"]
 
-    def add_component_spec(self, component_spec: "ComponentSpec") -> None:
+    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
         self._registry["components"].update(component_spec)
 
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
@@ -267,21 +267,22 @@ class WebRegistry(Registry):
     def get_run_spec(self, run_id: str) -> Dict:
         raise NotImplementedError
 
-    def get_fallback_registries(self) -> List:
+    def get_registries(self) -> List:
         raise NotImplementedError
-
-    def add_component_spec(self, component_spec: "ComponentSpec") -> None:
-        self.push_component_spec(component_spec)
 
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
         raise NotImplementedError
 
     def to_dict(self) -> Dict:
-        raise NotImplementedError
+        raise Exception("to_dict() is not supported on WebRegistry.")
 
-    def push_component_spec(self, frozen_spec: "ComponentSpec") -> Dict:
+    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
+        """
+        Register a Component Spec. Component spec must be frozen.
+        :param component_spec: A frozen component spec.
+        """
         url = f"{self.root_url}/components/ingest_spec/"
-        data = {"components.yaml": yaml.dump(frozen_spec)}
+        data = {"components.yaml": yaml.dump(component_spec)}
         response = requests.post(url, data=data)
         self._check_response(response)
         result = json.loads(response.content)
