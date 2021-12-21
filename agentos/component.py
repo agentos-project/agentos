@@ -106,7 +106,7 @@ class Component:
         return components[identifier]
 
     @staticmethod
-    def from_yaml(yaml_file: str, name: str, version: str = None):
+    def from_registry_file(yaml_file: str, name: str, version: str = None):
         registry = Registry.from_yaml(yaml_file)
         return Component.from_registry(registry, name, version)
 
@@ -116,10 +116,11 @@ class Component:
         name: str = None,
         dunder_name: str = None,
     ) -> "Component":
+        name = name if name else managed_cls.__name__
         return Component(
             managed_cls=managed_cls,
             repo=InMemoryRepo(),
-            identifier=Component.Identifier(managed_cls.__name__),
+            identifier=Component.Identifier(name),
             class_name=managed_cls.__name__,
             file_path=".",
             dunder_name=dunder_name,
