@@ -103,19 +103,19 @@ def test_registry_from_dict():
     assert agent_component_flat_spec["class_name"] == "AcmeR2D2Agent"
     assert agent_component_flat_spec["repo"] == "dev_repo"
 
-    c = Component.from_registry(r, "sb3_ppo_agent")
-    assert c.name == "sb3_ppo_agent"
+    c = Component.from_registry(r, "random_agent")
+    assert c.name == "random_agent"
     assert c.version == "rework_registry"
-    assert c.identifier == "sb3_ppo_agent==rework_registry"
+    assert c.identifier == "random_agent==rework_registry"
     assert "environment" in c.dependencies.keys()
     assert (
         c.dependencies["environment"].identifier
-        == "sb3_cartpole==rework_registry"
+        == "random_corridor==rework_registry"
     )
     sb3_local_ag = Component.from_registry(
-        Registry.from_yaml("example_agents/sb3_agent/agentos.yaml"), "agent"
+        Registry.from_yaml("example_agents/random/agentos.yaml"), "agent"
     )
     sb3_local_ag.run(
-        "learn",
-        ParameterSet({"sb3_ppo_agent": {"init": {"total_timesteps": 5000}}}),
+        "evaluate",
+        ParameterSet({"BasicAgent": {"evaluate": {"num_episodes": 5}}}),
     )

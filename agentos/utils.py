@@ -23,6 +23,19 @@ def log_data_as_yaml_artifact(name: str, data: ParameterSetSpec):
         shutil.rmtree(tmp_dir_path)
 
 
+def _handle_random_agent(version_string):
+    random_path_prefix = Path("example_agents") / Path("random")
+    random_rename_map = {
+        "agent": f"random_agent=={version_string}",
+        "environment": f"random_corridor=={version_string}",
+        "policy": f"random_policy=={version_string}",
+        "dataset": f"random_dataset=={version_string}",
+        "trainer": f"random_trainer=={version_string}",
+        "tracker": f"random_tracker=={version_string}",
+    }
+    return _handle_agent(random_path_prefix, random_rename_map)
+
+
 def _handle_sb3_agent(version_string):
     sb3_path_prefix = Path("example_agents") / Path("sb3_agent")
     sb3_rename_map = {
@@ -30,7 +43,6 @@ def _handle_sb3_agent(version_string):
         "environment": f"sb3_cartpole=={version_string}",
         "tracker": f"sb3_tracker=={version_string}",
     }
-
     return _handle_agent(sb3_path_prefix, sb3_rename_map)
 
 
@@ -56,7 +68,7 @@ def _handle_agent(path_prefix, rename_map):
     registry["repos"] = {}
     registry["repos"]["dev_repo"] = {
         "type": "github",
-        "url": "https://github.com/nickjalbert/agentos",
+        "url": "https://github.com/andyk/agentos.git",
     }
     renamed = {}
     for component_name, spec in registry.get("components").items():
@@ -76,13 +88,13 @@ def _handle_agent(path_prefix, rename_map):
 
 DUMMY_WEB_REGISTRY_DICT = {
     "components": {
-        "acme_cartpole==rework_registry": {
+        "acme_cartpole==master": {
             "class_name": "CartPole",
             "dependencies": {},
             "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
             "repo": "dev_repo",
         },
-        "acme_cartpole==master": {
+        "acme_cartpole==rework_registry": {
             "class_name": "CartPole",
             "dependencies": {},
             "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
@@ -145,6 +157,50 @@ DUMMY_WEB_REGISTRY_DICT = {
             "file_path": "example_agents/acme_r2d2/../acme_dqn/tracker.py",
             "repo": "dev_repo",
         },
+        "random_agent==rework_registry": {
+            "class_name": "BasicAgent",
+            "dependencies": {
+                "dataset": "random_dataset==rework_registry",
+                "environment": "random_corridor==rework_registry",
+                "policy": "random_policy==rework_registry",
+                "tracker": "random_tracker==rework_registry",
+                "trainer": "random_trainer==rework_registry",
+            },
+            "file_path": "example_agents/random/agent.py",
+            "repo": "dev_repo",
+        },
+        "random_corridor==rework_registry": {
+            "class_name": "Corridor",
+            "dependencies": {},
+            "file_path": "example_agents/random/environment.py",
+            "repo": "dev_repo",
+        },
+        "random_dataset==rework_registry": {
+            "class_name": "BasicDataset",
+            "dependencies": {},
+            "file_path": "example_agents/random/dataset.py",
+            "repo": "dev_repo",
+        },
+        "random_policy==rework_registry": {
+            "class_name": "RandomPolicy",
+            "dependencies": {
+                "environment": "random_corridor==rework_registry"
+            },
+            "file_path": "example_agents/random/policy.py",
+            "repo": "dev_repo",
+        },
+        "random_tracker==rework_registry": {
+            "class_name": "BasicTracker",
+            "dependencies": {},
+            "file_path": "example_agents/random/tracker.py",
+            "repo": "dev_repo",
+        },
+        "random_trainer==rework_registry": {
+            "class_name": "BasicTrainer",
+            "dependencies": {},
+            "file_path": "example_agents/random/trainer.py",
+            "repo": "dev_repo",
+        },
         "sb3_cartpole==rework_registry": {
             "class_name": "CartPole",
             "dependencies": {},
@@ -167,7 +223,7 @@ DUMMY_WEB_REGISTRY_DICT = {
             "repo": "dev_repo",
         },
     },
-    "default_component_versions": {
+    "latest_refs": {
         "acme_cartpole": "rework_registry",
         "acme_r2d2_agent": "rework_registry",
         "acme_r2d2_dataset": "rework_registry",
@@ -175,6 +231,12 @@ DUMMY_WEB_REGISTRY_DICT = {
         "acme_r2d2_policy": "rework_registry",
         "acme_r2d2_trainer": "rework_registry",
         "acme_tracker": "rework_registry",
+        "random_agent": "rework_registry",
+        "random_corridor": "rework_registry",
+        "random_dataset": "rework_registry",
+        "random_policy": "rework_registry",
+        "random_tracker": "rework_registry",
+        "random_trainer": "rework_registry",
         "sb3_cartpole": "rework_registry",
         "sb3_ppo_agent": "rework_registry",
         "sb3_tracker": "rework_registry",
@@ -190,11 +252,19 @@ DUMMY_WEB_REGISTRY_DICT = {
 
 def generate_dummy_dev_registry():
     registry = {}
-    VERSION_STRING = "nj_registry_2next"
+    VERSION_STRING = "rework_registry"
     r2d2 = _handle_acme_r2d2(VERSION_STRING)
     _merge_registry_dict(registry, r2d2)
     sb3 = _handle_sb3_agent(VERSION_STRING)
     _merge_registry_dict(registry, sb3)
+    rando = _handle_random_agent(VERSION_STRING)
+    _merge_registry_dict(registry, rando)
+    registry["components"]["acme_cartpole==master"] = {
+        "class_name": "CartPole",
+        "dependencies": {},
+        "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
+        "repo": "dev_repo",
+    }
     pprint.pprint(registry)
     return registry
 
