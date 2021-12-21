@@ -2,6 +2,7 @@
 #      where their dependencies are all self contained within their
 #      project directories, probably by using a virtualenv for each
 #      test the way we do currently for the evolutionary_agent test.
+#
 
 # Documentation requirements
 -e .
