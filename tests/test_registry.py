@@ -112,10 +112,10 @@ def test_registry_from_dict():
         c.dependencies["environment"].identifier
         == "random_corridor==rework_registry"
     )
-    sb3_local_ag = Component.from_registry(
+    random_local_ag = Component.from_registry(
         Registry.from_yaml("example_agents/random/agentos.yaml"), "agent"
     )
-    sb3_local_ag.run(
+    random_local_ag.run(
         "evaluate",
-        ParameterSet({"BasicAgent": {"evaluate": {"num_episodes": 5}}}),
+        ParameterSet({"agent": {"evaluate": {"num_episodes": 5}}}),
     )
