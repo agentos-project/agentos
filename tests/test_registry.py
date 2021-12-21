@@ -7,13 +7,6 @@ from tests.utils import is_linux
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
-def test_module_level_registry(venv):
-    install_requirements(ACME_R2D2_AGENT_DIR, venv, "requirements.txt")
-    code = "import agentos\n" "agentos.get_component('acme_r2d2_agent')"
-    run_code_in_venv(venv, code)
-
-
-@pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_registry_integration(venv):
     install_requirements(ACME_R2D2_AGENT_DIR, venv, "requirements.txt")
     params = {
@@ -76,9 +69,11 @@ def test_registry_integration(venv):
     }
     code = (
         "from agentos.registry import Registry\n"
+        "from agentos.component import Component\n"
+        "from agentos.utils import DUMMY_WEB_REGISTRY_DICT\n"
         "from agentos import ParameterSet\n"
-        "registry = Registry()\n"
-        "component = registry.get_component('acme_r2d2_agent')\n"
+        "registry = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)\n"
+        "component = Component.from_registry(registry, 'acme_r2d2_agent')\n"
         f"params = ParameterSet({params})\n"
         "component.run('evaluate', params)\n"
     )
@@ -92,9 +87,9 @@ def test_registry_from_dict():
     from agentos.parameter_set import ParameterSet
 
     r = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)
-    assert "acme_cartpole==nj_registry_2next" in r.get_component_specs().keys()
+    assert "acme_cartpole==rework_registry" in r.get_component_specs().keys()
     assert (
-        "acme_cartpole==nj_registry_2next"
+        "acme_cartpole==rework_registry"
         in r.get_component_specs(filter_by_name="acme_cartpole").keys()
     )
     assert (
@@ -104,18 +99,18 @@ def test_registry_from_dict():
 
     agent_component_flat_spec = r.get_component_spec("acme_r2d2_agent")
     assert agent_component_flat_spec["name"] == "acme_r2d2_agent"
-    assert agent_component_flat_spec["version"] == "nj_registry_2next"
+    assert agent_component_flat_spec["version"] == "rework_registry"
     assert agent_component_flat_spec["class_name"] == "AcmeR2D2Agent"
     assert agent_component_flat_spec["repo"] == "dev_repo"
 
     c = Component.from_registry(r, "sb3_ppo_agent")
     assert c.name == "sb3_ppo_agent"
-    assert c.version == "nj_registry_2next"
-    assert c.identifier == "sb3_ppo_agent==nj_registry_2next"
+    assert c.version == "rework_registry"
+    assert c.identifier == "sb3_ppo_agent==rework_registry"
     assert "environment" in c.dependencies.keys()
     assert (
         c.dependencies["environment"].identifier
-        == "sb3_cartpole==nj_registry_2next"
+        == "sb3_cartpole==rework_registry"
     )
     sb3_local_ag = Component.from_registry(
         Registry.from_yaml("example_agents/sb3_agent/agentos.yaml"), "agent"

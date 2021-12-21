@@ -76,7 +76,7 @@ def _handle_agent(path_prefix, rename_map):
 
 DUMMY_WEB_REGISTRY_DICT = {
     "components": {
-        "acme_cartpole==nj_registry_2next": {
+        "acme_cartpole==rework_registry": {
             "class_name": "CartPole",
             "dependencies": {},
             "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
@@ -88,79 +88,79 @@ DUMMY_WEB_REGISTRY_DICT = {
             "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
             "repo": "dev_repo",
         },
-        "acme_r2d2_agent==nj_registry_2next": {
+        "acme_r2d2_agent==rework_registry": {
             "class_name": "AcmeR2D2Agent",
             "dependencies": {
-                "dataset": "acme_r2d2_dataset==nj_registry_2next",
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
-                "policy": "acme_r2d2_policy==nj_registry_2next",
-                "tracker": "acme_tracker==nj_registry_2next",
-                "trainer": "acme_r2d2_trainer==nj_registry_2next",
+                "dataset": "acme_r2d2_dataset==rework_registry",
+                "environment": "acme_cartpole==rework_registry",
+                "network": "acme_r2d2_network==rework_registry",
+                "policy": "acme_r2d2_policy==rework_registry",
+                "tracker": "acme_tracker==rework_registry",
+                "trainer": "acme_r2d2_trainer==rework_registry",
             },
             "file_path": "example_agents/acme_r2d2/agent.py",
             "repo": "dev_repo",
         },
-        "acme_r2d2_dataset==nj_registry_2next": {
+        "acme_r2d2_dataset==rework_registry": {
             "class_name": "ReverbDataset",
             "dependencies": {
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
+                "environment": "acme_cartpole==rework_registry",
+                "network": "acme_r2d2_network==rework_registry",
             },
             "file_path": "example_agents/acme_r2d2/dataset.py",
             "repo": "dev_repo",
         },
-        "acme_r2d2_network==nj_registry_2next": {
+        "acme_r2d2_network==rework_registry": {
             "class_name": "R2D2Network",
             "dependencies": {
-                "environment": "acme_cartpole==nj_registry_2next",
-                "tracker": "acme_tracker==nj_registry_2next",
+                "environment": "acme_cartpole==rework_registry",
+                "tracker": "acme_tracker==rework_registry",
             },
             "file_path": "example_agents/acme_r2d2/network.py",
             "repo": "dev_repo",
         },
-        "acme_r2d2_policy==nj_registry_2next": {
+        "acme_r2d2_policy==rework_registry": {
             "class_name": "R2D2Policy",
             "dependencies": {
-                "dataset": "acme_r2d2_dataset==nj_registry_2next",
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
+                "dataset": "acme_r2d2_dataset==rework_registry",
+                "environment": "acme_cartpole==rework_registry",
+                "network": "acme_r2d2_network==rework_registry",
             },
             "file_path": "example_agents/acme_r2d2/policy.py",
             "repo": "dev_repo",
         },
-        "acme_r2d2_trainer==nj_registry_2next": {
+        "acme_r2d2_trainer==rework_registry": {
             "class_name": "R2D2Trainer",
             "dependencies": {
-                "dataset": "acme_r2d2_dataset==nj_registry_2next",
-                "environment": "acme_cartpole==nj_registry_2next",
-                "network": "acme_r2d2_network==nj_registry_2next",
+                "dataset": "acme_r2d2_dataset==rework_registry",
+                "environment": "acme_cartpole==rework_registry",
+                "network": "acme_r2d2_network==rework_registry",
             },
             "file_path": "example_agents/acme_r2d2/trainer.py",
             "repo": "dev_repo",
         },
-        "acme_tracker==nj_registry_2next": {
+        "acme_tracker==rework_registry": {
             "class_name": "AcmeTracker",
             "dependencies": {},
             "file_path": "example_agents/acme_r2d2/../acme_dqn/tracker.py",
             "repo": "dev_repo",
         },
-        "sb3_cartpole==nj_registry_2next": {
+        "sb3_cartpole==rework_registry": {
             "class_name": "CartPole",
             "dependencies": {},
             "file_path": "example_agents/sb3_agent/environment.py",
             "repo": "dev_repo",
         },
-        "sb3_ppo_agent==nj_registry_2next": {
+        "sb3_ppo_agent==rework_registry": {
             "class_name": "SB3PPOAgent",
             "dependencies": {
-                "environment": "sb3_cartpole==nj_registry_2next",
-                "tracker": "sb3_tracker==nj_registry_2next",
+                "environment": "sb3_cartpole==rework_registry",
+                "tracker": "sb3_tracker==rework_registry",
             },
             "file_path": "example_agents/sb3_agent/agent.py",
             "repo": "dev_repo",
         },
-        "sb3_tracker==nj_registry_2next": {
+        "sb3_tracker==rework_registry": {
             "class_name": "SB3Tracker",
             "dependencies": {},
             "file_path": "example_agents/sb3_agent/tracker.py",
@@ -168,21 +168,21 @@ DUMMY_WEB_REGISTRY_DICT = {
         },
     },
     "default_component_versions": {
-        "acme_cartpole": "nj_registry_2next",
-        "acme_r2d2_agent": "nj_registry_2next",
-        "acme_r2d2_dataset": "nj_registry_2next",
-        "acme_r2d2_network": "nj_registry_2next",
-        "acme_r2d2_policy": "nj_registry_2next",
-        "acme_r2d2_trainer": "nj_registry_2next",
-        "acme_tracker": "nj_registry_2next",
-        "sb3_cartpole": "nj_registry_2next",
-        "sb3_ppo_agent": "nj_registry_2next",
-        "sb3_tracker": "nj_registry_2next",
+        "acme_cartpole": "rework_registry",
+        "acme_r2d2_agent": "rework_registry",
+        "acme_r2d2_dataset": "rework_registry",
+        "acme_r2d2_network": "rework_registry",
+        "acme_r2d2_policy": "rework_registry",
+        "acme_r2d2_trainer": "rework_registry",
+        "acme_tracker": "rework_registry",
+        "sb3_cartpole": "rework_registry",
+        "sb3_ppo_agent": "rework_registry",
+        "sb3_tracker": "rework_registry",
     },
     "repos": {
         "dev_repo": {
             "type": "github",
-            "url": "https://github.com/nickjalbert/agentos",
+            "url": "https://github.com/andyk/agentos.git",
         }
     },
 }
