@@ -11,7 +11,7 @@ from agentos.tracker import AgentTracker
 class AcmeTracker(AgentTracker):
     # Acme logger API
     def write(self, data: dict):
-        self.add_episode_data(
+        self.push_episode_data(
             steps=data["episode_length"],
             reward=data["episode_return"].item(),
         )

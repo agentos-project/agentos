@@ -20,7 +20,7 @@ class EvaluateCallback:
         assert len(current_lengths) == 1, "Error: multiple environments"
         assert len(current_rewards) == 1, "Error: multiple environments"
         if local_vars["done"]:
-            self.tracker.add_episode_data(
+            self.tracker.push_episode_data(
                 steps=current_lengths[0], reward=current_rewards[0]
             )
 
@@ -50,7 +50,7 @@ class LearnCallback(BaseCallback):
             self._record_episode_data()
 
     def _record_episode_data(self):
-        self.tracker.add_episode_data(
+        self.tracker.push_episode_data(
             steps=self.curr_steps, reward=self.curr_reward
         )
         self.curr_steps = 0

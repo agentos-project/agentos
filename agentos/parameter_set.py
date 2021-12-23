@@ -1,6 +1,7 @@
 import copy
 import yaml
 from typing import TypeVar, Dict
+from agentos.specs import ParameterSetSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -12,11 +13,11 @@ class ParameterSet:
     initialize a Component dependency DAG and to run methods on this DAG.
     """
 
-    def __init__(self, parameters: Dict = None):
+    def __init__(self, parameters: ParameterSetSpec = None):
         self.parameters = parameters if parameters else {}
 
     @classmethod
-    def get_from_file(cls, file_path) -> "ParameterSet":
+    def from_yaml(cls, file_path) -> "ParameterSet":
         parameters = {}
         if file_path is not None:
             with open(file_path) as file_in:
@@ -35,5 +36,5 @@ class ParameterSet:
         fn_params = component_params.get(fn_name, {})
         return fn_params if fn_params else {}
 
-    def to_dict(self):
+    def to_spec(self) -> ParameterSetSpec:
         return copy.deepcopy(self.parameters)

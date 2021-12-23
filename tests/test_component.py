@@ -20,8 +20,8 @@ def test_component_repl_demo():
             print("SimpleEnvironment.reset() called")
 
     # Generate Components from Classes
-    agent_component = Component.get_from_class(SimpleAgent)
-    environment_component = Component.get_from_class(SimpleEnvironment)
+    agent_component = Component.from_class(SimpleAgent)
+    environment_component = Component.from_class(SimpleEnvironment)
 
     # Add Dependency to SimpleAgent
     agent_component.add_dependency(environment_component, attribute_name="env")
@@ -35,7 +35,7 @@ def test_component_freezing(tmpdir):
     curr_dir = os.getcwd()
     os.chdir(tmpdir)
     try:
-        c = Component.get_from_yaml("agent", "agentos.yaml")
+        c = Component.from_registry_file("agentos.yaml", "agent")
         with patch.multiple(
             "agentos.repo.Repo",
             get_version_from_git=DEFAULT,
@@ -48,6 +48,9 @@ def test_component_freezing(tmpdir):
             mocks[
                 "get_prefixed_path_from_repo_root"
             ].return_value = "freeze/test.py"
-            c.get_frozen_spec()
+            reg = c.to_frozen_registry()
+            agent_spec = reg.get_component_spec("agent")
+            assert agent_spec["repo"] == "local_dir"
+            assert agent_spec["version"] == "test_freezing_version"
     finally:
         os.chdir(curr_dir)

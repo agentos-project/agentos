@@ -2,6 +2,7 @@
 #      where their dependencies are all self contained within their
 #      project directories, probably by using a virtualenv for each
 #      test the way we do currently for the evolutionary_agent test.
+#
 
 # Documentation requirements
 -e .
@@ -23,3 +24,7 @@ python-dotenv==0.19.1
 setuptools==51.0.0
 wheel==0.36.1
 twine==3.3.0
+
+# mypy dependencies
+types-PyYAML
+types-requests

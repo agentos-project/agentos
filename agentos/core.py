@@ -152,7 +152,7 @@ class Agent(MemberInitializer):
             step_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
-        self.tracker.add_episode_data(steps=step_count, reward=reward)
+        self.tracker.push_episode_data(steps=step_count, reward=reward)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
         return step_count

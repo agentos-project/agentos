@@ -7,11 +7,9 @@ from typing import List, Dict, Optional
 from collections import namedtuple
 import mlflow
 from mlflow.entities import Run
-from agentos import Component
+from agentos.component import Component
+from agentos.registry import Registry, web_registry
 from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.web import push_run_data
-from agentos.web import push_run_artifacts
-from agentos.web import AOS_WEB_BASE_URL
 
 
 _EPISODE_KEY = "episode_count"
@@ -108,11 +106,10 @@ class AgentTracker:
             raise Exception("No Agent was specified runtime!")
         if run.data.params.get("environment_exists") == "False":
             raise Exception("No Environment was specified runtime!")
-        result = push_run_data(run_data)
+        result = web_registry.push_run_data(run_data)
         run_id = result["id"]
         artifact_paths = self._get_artifact_paths(run)
-        push_run_artifacts(run_id, artifact_paths)
-        print(f"Pushed Run {run_id} on {AOS_WEB_BASE_URL}")
+        web_registry.push_run_artifacts(run_id, artifact_paths)
 
     def _get_artifact_paths(self, run):
         artifacts_dir = self._get_artifacts_dir(run)
@@ -252,7 +249,7 @@ class AgentTracker:
             training_step_count=training_steps,
         )
 
-    def add_episode_data(self, steps: int, reward: float):
+    def push_episode_data(self, steps: int, reward: float):
         self.episode_data.append(
             {
                 "steps": steps,
@@ -284,7 +281,12 @@ class RunContextManager:
         run = mlflow.active_run()
         artifacts_dir = self.tracker._get_artifacts_dir(run)
         spec_path = artifacts_dir / "agentos.yaml"
-        names = Component._get_name_map(spec_path)
+        names = [
+            Component.Identifier.from_str(c_id).name
+            for c_id in Registry.from_yaml(spec_path)
+            .get_component_specs()
+            .keys()
+        ]
         expected_name = getattr(self, f"{role_type}_name")
         if expected_name not in names:
             print(
