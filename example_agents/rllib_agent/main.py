@@ -6,6 +6,8 @@ from ray.rllib.utils import merge_dicts
 
 
 class RLlibAgent:
+    DEFAULT_ENTRY_POINT = "evaluate"
+
     def __init__(self, algo_name="PPO", trainer_config=None):
         """Init a Ray agent with the given env_class and an algorithm name.
 

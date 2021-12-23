@@ -34,13 +34,13 @@ class ComponentDependency(TimeStampedModel):
     def create_from_dict(component_spec_dict: Dict) -> List:
         dependencies = []
         for name, component in component_spec_dict.items():
-            identifier = CLI_Component.Identifier(name)
+            identifier = CLI_Component.Identifier.from_str(name)
             depender = Component.objects.get(
                 name=identifier.name,
                 version=identifier.version,
             )
             for attr_name, dependency in component["dependencies"].items():
-                dep_identifier = CLI_Component.Identifier(dependency)
+                dep_identifier = CLI_Component.Identifier.from_str(dependency)
                 dependee = Component.objects.get(
                     name=dep_identifier.name,
                     version=dep_identifier.version,
@@ -131,7 +131,7 @@ class Component(TimeStampedModel):
     def create_from_dict(component_spec_dict: Dict) -> List:
         components = []
         for name, component_spec in component_spec_dict.items():
-            identifier = CLI_Component.Identifier(name)
+            identifier = CLI_Component.Identifier.from_str(name)
             default_kwargs = {
                 "repo": Repo.objects.get(name=component_spec["repo"]),
                 "file_path": component_spec["file_path"],
