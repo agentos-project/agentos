@@ -364,8 +364,9 @@ class WebRegistry(Registry):
             tar = tarfile.open(tarball_path)
             tar.extractall(path=tmp_dir_path)
             mlflow.start_run(experiment_id=Run.MLFLOW_EXPERIMENT_ID)
-            mlflow.set_tag(AgentRunManager.RUN_TYPE_TAG,
-                           AgentRunManager.LEARN_KEY)
+            mlflow.set_tag(
+                AgentRunManager.RUN_TYPE_TAG, AgentRunManager.LEARN_KEY
+            )
             mlflow.log_metric(
                 "episode_count",
                 run_data["mlflow_metrics"]["training_episode_count"],

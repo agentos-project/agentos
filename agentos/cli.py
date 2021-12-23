@@ -165,7 +165,7 @@ def run(
 
 @agentos_cmd.command()
 @_arg_optional_entity_id
-@_option_component_spec_file
+@_option_registry_file
 def status(entity_id, component_spec_file):
     """
     ENTITY_ID can be a Component name or a Run ID.

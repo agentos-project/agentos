@@ -5,6 +5,7 @@ from pathlib import Path
 
 AOS_CACHE_DIR = Path.home() / ".agentos_cache"
 
+
 def _handle_random_agent(version_string):
     random_path_prefix = Path("example_agents") / Path("random")
     random_rename_map = {

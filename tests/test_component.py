@@ -3,7 +3,7 @@ import os
 import subprocess
 from unittest.mock import patch
 from unittest.mock import DEFAULT
-from agentos import Component
+from agentos.component import Component
 
 
 def test_component_repl_demo():

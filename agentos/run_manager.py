@@ -153,7 +153,7 @@ class AgentRunManager:
             training_step_count=training_steps,
         )
 
-    def push_episode_data(self, steps: int, reward: float):
+    def add_episode_data(self, steps: int, reward: float):
         self.episode_data.append(
             {
                 "steps": steps,
