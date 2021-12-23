@@ -3,7 +3,7 @@ from typing import Optional
 from collections import namedtuple
 from agentos.component import Component
 from agentos.run import Run
-from agentos.registry import Registry, web_registry
+from agentos.registry import Registry
 
 
 _EPISODE_KEY = "episode_count"

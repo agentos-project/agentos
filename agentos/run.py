@@ -10,7 +10,6 @@ from typing import Dict, Optional, List, TYPE_CHECKING
 from contextlib import contextmanager
 from mlflow.entities import Run as MLflowRun
 from agentos.registry import Registry, web_registry
-from agentos.registry import AOS_WEB_BASE_URL
 from agentos.parameter_set import ParameterSet
 from agentos.repo import BadGitStateException, NoLocalPathException
 
@@ -253,7 +252,8 @@ class Run:
         frozen = None
         try:
             root_id = root_component.identifier
-            frozen = root_component.to_frozen_registry().get_component_spec_by_id(root_id)
+            frozen_reg = root_component.to_frozen_registry()
+            frozen = frozen_reg.get_component_spec_by_id(root_id)
             self.log_data_as_yaml_artifact(self.SPEC_KEY, frozen)
         except (BadGitStateException, NoLocalPathException) as exc:
             print(f"Warning: component is not publishable: {str(exc)}")
