@@ -10,9 +10,12 @@ import tarfile
 import tempfile
 import requests
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, TYPE_CHECKING
 from dotenv import load_dotenv
 from agentos.component_identifier import ComponentIdentifier
+
+if TYPE_CHECKING:
+    from agentos.component import Component
 from agentos.utils import MLFLOW_EXPERIMENT_ID
 from agentos.specs import RepoSpec, ComponentSpec, NestedComponentSpec
 
@@ -25,6 +28,10 @@ if os.getenv("USE_LOCAL_SERVER", False) == "True":
 AOS_WEB_API_EXTENSION = "/api/v1"
 
 AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
+
+
+class RegistryException(Exception):
+    pass
 
 
 class Registry(abc.ABC):
@@ -169,6 +176,11 @@ class Registry(abc.ABC):
         :param component_spec: The ``ComponentSpec`` to register.
         """
         raise NotImplementedError
+
+    def add_component(
+        self, component: "Component", recurse: bool = True, force: bool = False
+    ) -> None:
+        component.to_registry(self, recurse=recurse, force=force)
 
     @abc.abstractmethod
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:

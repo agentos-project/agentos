@@ -1,8 +1,10 @@
 class ComponentIdentifier:
     """
-    This manages a Component Identifier so we can refer to Components both as
-    [name] and [name]==[version] in agentos.yaml spec files or from the
-    command-line.
+    A Component Identifier is an immutable string-like construct that encodes a
+    name and, optionally, a version as a string using the '==' separator. It
+    allows referring to Components both as [name] and [name]==[version] (e.g.,
+    in registries or the command line).
+
     """
 
     @staticmethod

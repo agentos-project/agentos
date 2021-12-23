@@ -17,7 +17,7 @@ class ParameterSet:
         self.parameters = parameters if parameters else {}
 
     @classmethod
-    def get_from_yaml(cls, file_path) -> "ParameterSet":
+    def from_yaml(cls, file_path) -> "ParameterSet":
         parameters = {}
         if file_path is not None:
             with open(file_path) as file_in:

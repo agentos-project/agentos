@@ -34,12 +34,12 @@ _arg_run_id = click.argument("run_id", type=int, metavar="RUN_ID")
 _arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
 
 
-_option_component_spec_file = click.option(
-    "--component-spec-file",
+_option_registry_file = click.option(
+    "--registry-file",
     "-s",
     type=click.Path(exists=True),
     default="./agentos.yaml",
-    help="Path to component spec file (agentos.yaml).",
+    help="Path to registry file (agentos.yaml).",
 )
 
 
@@ -111,7 +111,7 @@ def init(dir_names, agent_name, agentos_dir):
 
 @agentos_cmd.command()
 @_arg_component_name
-@_option_component_spec_file
+@_option_registry_file
 @click.option(
     "--entry-point",
     metavar="ENTRY_POINT",
@@ -141,16 +141,14 @@ def init(dir_names, agent_name, agentos_dir):
 )
 def run(
     component_name,
-    component_spec_file,
+    registry_file,
     entry_point,
     param_list,
     param_file,
 ):
     param_dict = _user_args_to_dict(param_list)
-    component = Component.from_registry_file(
-        component_spec_file, component_name
-    )
-    parameters = ParameterSet.get_from_yaml(param_file)
+    component = Component.from_registry_file(registry_file, component_name)
+    parameters = ParameterSet.from_yaml(param_file)
     entry_point = entry_point or component.get_default_entry_point()
     parameters.update(component_name, entry_point, param_dict)
     component.run(entry_point, parameters)
@@ -164,14 +162,14 @@ def get_run(run_id):
 
 @agentos_cmd.command()
 @_arg_component_name
-@_option_component_spec_file
+@_option_registry_file
 @_option_force
-def freeze(component_name, component_spec_file, force):
+def freeze(component_name, registry_file, force):
     """
-    Creates a version of ``component_spec_file`` for Component
+    Creates a version of ``registry_file`` for Component
     ``component_name`` where all Components in the dependency tree are
     associated with a specific git commit.  The resulting
-    ``component_spec_file`` can be run on any machine with AgentOS installed.
+    ``registry_file`` can be run on any machine with AgentOS installed.
 
     The requirements for pinning a Component spec are as follows:
         * All Components in the dependency tree must be in git repos
@@ -180,26 +178,22 @@ def freeze(component_name, component_spec_file, force):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    component = Component.from_registry_file(
-        component_spec_file, component_name
-    )
+    component = Component.from_registry_file(registry_file, component_name)
     frozen_spec = component.to_frozen_registry(force=force).to_dict()
     print(yaml.dump(frozen_spec))
 
 
 @agentos_cmd.command()
 @_arg_component_name
-@_option_component_spec_file
+@_option_registry_file
 @_option_force
-def publish(component_name: str, component_spec_file: str, force: bool):
+def publish(component_name: str, registry_file: str, force: bool):
     """
     This command pushes the spec for component ``component_name`` (and all its
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
-    component = Component.from_registry_file(
-        component_spec_file, component_name
-    )
+    component = Component.from_registry_file(registry_file, component_name)
     frozen_spec = component.to_frozen_registry(force=force).to_dict()
     web_registry.add_component_spec(frozen_spec)
 

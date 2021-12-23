@@ -81,7 +81,7 @@ def test_registry_integration(venv):
 
 
 def test_registry_from_dict():
-    from agentos.registry import Registry
+    from agentos.registry import Registry, RegistryException
     from agentos.utils import DUMMY_WEB_REGISTRY_DICT
     from agentos.component import Component
     from agentos.parameter_set import ParameterSet
@@ -103,6 +103,7 @@ def test_registry_from_dict():
     assert agent_component_flat_spec["class_name"] == "AcmeR2D2Agent"
     assert agent_component_flat_spec["repo"] == "dev_repo"
 
+    # Test retrieving a component from an InMemoryRegistry.
     c = Component.from_registry(r, "random_agent")
     assert c.name == "random_agent"
     assert c.version == "rework_registry"
@@ -119,3 +120,22 @@ def test_registry_from_dict():
         "evaluate",
         ParameterSet({"agent": {"evaluate": {"num_episodes": 5}}}),
     )
+
+    # Test publishing a component to an InMemoryRegistry
+    chatbot_agent = Component.from_registry_file(
+        "example_agents/chatbot/agentos.yaml", "chatbot"
+    )
+    assert chatbot_agent.class_name == "ChatBot"
+    r.add_component(chatbot_agent)
+    assert r.get_component_spec(chatbot_agent.name, chatbot_agent.version)
+    assert r.get_component_spec("env_class")  # ensure dependencies got added.
+    chatbot_agent.class_name = "NewClassName"
+    with pytest.raises(RegistryException):
+        r.add_component(chatbot_agent)
+    r.add_component(chatbot_agent, force=True)
+    updated = r.get_component_spec(chatbot_agent.name, chatbot_agent.version)
+    assert updated["class_name"] == "NewClassName"
+
+    reg_from_component = chatbot_agent.to_registry()
+    assert reg_from_component.get_component_spec("chatbot")
+    assert reg_from_component.get_component_spec("env_class")

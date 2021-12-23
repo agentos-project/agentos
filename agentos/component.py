@@ -13,7 +13,11 @@ from agentos.repo import (
     BadGitStateException,
     NoLocalPathException,
 )
-from agentos.registry import Registry, InMemoryRegistry
+from agentos.registry import (
+    Registry,
+    InMemoryRegistry,
+    RegistryException,
+)
 from agentos.parameter_set import ParameterSet
 from agentos.component_identifier import ComponentIdentifier
 from agentos.specs import ComponentSpec
@@ -202,46 +206,6 @@ class Component:
         params = params if params else ParameterSet({})
         return self._get_instance(params, instantiated)
 
-    def get_transitive_dependencies(
-        self, include_root: bool = True
-    ) -> Sequence["Component"]:
-        """
-        Return a normalized (i.e. flat) list containing all transitive
-        dependencies of this component and (optionally) this component.
-
-        :param include_root: Whether to include the root component in the list.
-        :return: a list containing all all of the transitive dependencies
-                 of this component (optionally  including the root component).
-        """
-        component_queue = [self]
-        ret_val = set([self]) if include_root else set()
-        while component_queue:
-            component = component_queue.pop()
-            ret_val.add(component)
-            for dependency in component.dependencies.values():
-                component_queue.append(dependency)
-        return list(ret_val)
-
-    def register(self, registry: Registry) -> None:
-        """
-        Registering a component adds a component spec for the component
-        and each of it's transitive dependencies (which are themselves
-        components) to the specified registry.
-        """
-        for c in self.get_transitive_dependencies():
-            registry.add_component_spec(c.to_spec())
-            try:
-                repo_spec = registry.get_repo_spec(c.repo.name)
-                err_msg = (
-                    f"A Repo with identifier {c.repo.name} already exists"
-                    f"in this registry that differs from the one referred to "
-                    f"by component {c.identifier}."
-                )
-                assert repo_spec == c.repo.to_spec(), err_msg
-            except LookupError:
-                # Repo not yet registered, so so add it to this registry.
-                registry.add_repo_spec(c.repo.to_spec())
-
     def _get_instance(self, params: ParameterSet, instantiated: dict) -> T:
         if self.name in instantiated:
             return instantiated[self.name]
@@ -323,18 +287,86 @@ class Component:
         }
         return {str(self.identifier): component_spec_content}
 
-    def to_registry(self) -> Registry:
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,
+        force: bool = False,
+    ) -> Registry:
         """
         Returns a registry containing this component and all of its
-        transitive dependents, as well the repos of all of them.
+        transitive dependents, as well the repos of all of them. Throws
+        an exception if any of them already exist and are different
+        unless ``force`` is set to True.
+
+        :param registry: Optionally, add the component spec for this component
+                         and each of its transitive dependencies (which are
+                         themselves components) to the specified registry.
+        :param recurse: If True, check that all transitive dependencies
+                        exist in the registry already, and if they don't, then
+                        add them. If they do, ensure that they are equal to
+                        this component's dependencies (unless ``force`` is
+                        specified).
+        :param force: Optionally, if a component with the same identifier
+                      already exists and is different than the current one,
+                      attempt to overwrite the registered one with this one.
         """
-        registry = InMemoryRegistry()
-        self.register(registry)
+        if not registry:
+            registry = InMemoryRegistry()
+        for c in self.to_dependency_list():
+            existing_c_spec = registry.get_component_specs(
+                filter_by_name=c.name, filter_by_version=c.version
+            )
+            if existing_c_spec and not force:
+                if existing_c_spec != c.to_spec():
+                    raise RegistryException(
+                        f"Trying to register a component {c.identifier} that "
+                        f"already exists in a different form:\n"
+                        f"{existing_c_spec}\n"
+                        f"VS\n"
+                        f"{c.to_spec()}\n\n"
+                        f"To overwrite, specify force=true."
+                    )
+            registry.add_component_spec(c.to_spec())
+            try:
+                repo_spec = registry.get_repo_spec(c.repo.name)
+                if repo_spec != c.repo.to_spec():
+                    raise RegistryException(
+                        f"A Repo with identifier {c.repo.name} already exists"
+                        f"in this registry that differs from the one referred "
+                        f"to by component {c.identifier}."
+                    )
+            except LookupError:
+                # Repo not yet registered, so so add it to this registry.
+                registry.add_repo_spec(c.repo.to_spec())
+            if not recurse:
+                break
         return registry
 
     def to_frozen_registry(self, force: bool = False) -> Registry:
         versioned = self._get_versioned_dependency_dag(force)
         return versioned.to_registry()
+
+    def to_dependency_list(
+        self, exclude_root: bool = False
+    ) -> Sequence["Component"]:
+        """
+        Return a normalized (i.e. flat) Sequence containing all transitive
+        dependencies of this component and (optionally) this component.
+
+        :param exclude_root: Optionally exclude root component from the list.
+                             If False, self is first element in list returned.
+        :return: a list containing all all of the transitive dependencies
+                 of this component (optionally  including the root component).
+        """
+        component_queue = [self]
+        ret_val = set() if exclude_root else set([self])
+        while component_queue:
+            component = component_queue.pop()
+            ret_val.add(component)
+            for dependency in component.dependencies.values():
+                component_queue.append(dependency)
+        return list(ret_val)
 
     @contextmanager
     def _track_run(self, fn_name: str, params: ParameterSet):
