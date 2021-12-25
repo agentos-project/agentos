@@ -14,7 +14,7 @@ DUMMY_WEB_REGISTRY_DICT = {
             "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
             "repo": "dev_repo",
         },
-        "acme_cartpole==rework_registry": {
+        "acme_cartpole==master": {
             "class_name": "CartPole",
             "dependencies": {},
             "file_path": "example_agents/acme_r2d2/../acme_dqn/environment.py",
@@ -77,45 +77,45 @@ DUMMY_WEB_REGISTRY_DICT = {
             "file_path": "example_agents/acme_r2d2/../acme_dqn/run_manager.py",
             "repo": "dev_repo",
         },
-        "random_agent==rework_registry": {
+        "random_agent==nj_status_2": {
             "class_name": "BasicAgent",
             "dependencies": {
-                "dataset": "random_dataset==rework_registry",
-                "environment": "random_corridor==rework_registry",
-                "policy": "random_policy==rework_registry",
-                "tracker": "random_tracker==rework_registry",
-                "trainer": "random_trainer==rework_registry",
+                "dataset": "random_dataset==nj_status_2",
+                "environment": "random_corridor==nj_status_2",
+                "policy": "random_policy==nj_status_2",
+                "tracker": "random_tracker==nj_status_2",
+                "trainer": "random_trainer==nj_status_2",
             },
             "file_path": "example_agents/random/agent.py",
             "repo": "dev_repo",
         },
-        "random_corridor==rework_registry": {
+        "random_corridor==nj_status_2": {
             "class_name": "Corridor",
             "dependencies": {},
             "file_path": "example_agents/random/environment.py",
             "repo": "dev_repo",
         },
-        "random_dataset==rework_registry": {
+        "random_dataset==nj_status_2": {
             "class_name": "BasicDataset",
             "dependencies": {},
             "file_path": "example_agents/random/dataset.py",
             "repo": "dev_repo",
         },
-        "random_policy==rework_registry": {
+        "random_policy==nj_status_2": {
             "class_name": "RandomPolicy",
             "dependencies": {
-                "environment": "random_corridor==rework_registry"
+                "environment": "random_corridor==nj_status_2"
             },
             "file_path": "example_agents/random/policy.py",
             "repo": "dev_repo",
         },
-        "random_tracker==rework_registry": {
+        "random_tracker==nj_status_2": {
             "class_name": "BasicTracker",
             "dependencies": {},
             "file_path": "example_agents/random/tracker.py",
             "repo": "dev_repo",
         },
-        "random_trainer==rework_registry": {
+        "random_trainer==nj_status_2": {
             "class_name": "BasicTrainer",
             "dependencies": {},
             "file_path": "example_agents/random/trainer.py",
@@ -151,12 +151,12 @@ DUMMY_WEB_REGISTRY_DICT = {
         "acme_r2d2_policy": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "acme_r2d2_trainer": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "acme_run_manager": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
-        "random_agent": "rework_registry",
-        "random_corridor": "rework_registry",
-        "random_dataset": "rework_registry",
-        "random_policy": "rework_registry",
-        "random_tracker": "rework_registry",
-        "random_trainer": "rework_registry",
+        "random_agent": "nj_status_2",
+        "random_corridor": "nj_status_2",
+        "random_dataset": "nj_status_2",
+        "random_policy": "nj_status_2",
+        "random_tracker": "nj_status_2",
+        "random_trainer": "nj_status_2",
         "sb3_cartpole": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "sb3_ppo_agent": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "sb3_run_manager": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
@@ -166,7 +166,7 @@ DUMMY_WEB_REGISTRY_DICT = {
             "type": "github",
             "url": "https://github.com/andyk/agentos.git",
         }
-    },
+    }
 }
 
 
