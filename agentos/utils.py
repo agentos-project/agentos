@@ -172,7 +172,7 @@ DUMMY_WEB_REGISTRY_DICT = {
 
 def generate_dummy_dev_registry():
     registry = {}
-    VERSION_STRING = "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f"
+    VERSION_STRING = "for_tests_dummy_dev_registry"
     r2d2 = _handle_acme_r2d2(VERSION_STRING)
     _merge_registry_dict(registry, r2d2)
     sb3 = _handle_sb3_agent(VERSION_STRING)
