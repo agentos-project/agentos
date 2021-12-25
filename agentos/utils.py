@@ -83,7 +83,7 @@ DUMMY_WEB_REGISTRY_DICT = {
                 "dataset": "random_dataset==for_tests_dummy_dev_registry",
                 "environment": "random_corridor==for_tests_dummy_dev_registry",
                 "policy": "random_policy==for_tests_dummy_dev_registry",
-                "tracker": "random_tracker==for_tests_dummy_dev_registry",
+                "run_manager": "random_run_manager==for_tests_dummy_dev_registry",
                 "trainer": "random_trainer==for_tests_dummy_dev_registry",
             },
             "file_path": "example_agents/random/agent.py",
@@ -109,10 +109,10 @@ DUMMY_WEB_REGISTRY_DICT = {
             "file_path": "example_agents/random/policy.py",
             "repo": "dev_repo",
         },
-        "random_tracker==for_tests_dummy_dev_registry": {
-            "class_name": "BasicTracker",
+        "random_run_manager==for_tests_dummy_dev_registry": {
+            "class_name": "RandomRunManager",
             "dependencies": {},
-            "file_path": "example_agents/random/tracker.py",
+            "file_path": "example_agents/random/run_manager.py",
             "repo": "dev_repo",
         },
         "random_trainer==for_tests_dummy_dev_registry": {
