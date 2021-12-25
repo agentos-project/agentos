@@ -77,45 +77,45 @@ DUMMY_WEB_REGISTRY_DICT = {
             "file_path": "example_agents/acme_r2d2/../acme_dqn/run_manager.py",
             "repo": "dev_repo",
         },
-        "random_agent==nj_status_2": {
+        "random_agent==for_tests_dummy_dev_registry": {
             "class_name": "BasicAgent",
             "dependencies": {
-                "dataset": "random_dataset==nj_status_2",
-                "environment": "random_corridor==nj_status_2",
-                "policy": "random_policy==nj_status_2",
-                "tracker": "random_tracker==nj_status_2",
-                "trainer": "random_trainer==nj_status_2",
+                "dataset": "random_dataset==for_tests_dummy_dev_registry",
+                "environment": "random_corridor==for_tests_dummy_dev_registry",
+                "policy": "random_policy==for_tests_dummy_dev_registry",
+                "tracker": "random_tracker==for_tests_dummy_dev_registry",
+                "trainer": "random_trainer==for_tests_dummy_dev_registry",
             },
             "file_path": "example_agents/random/agent.py",
             "repo": "dev_repo",
         },
-        "random_corridor==nj_status_2": {
+        "random_corridor==for_tests_dummy_dev_registry": {
             "class_name": "Corridor",
             "dependencies": {},
             "file_path": "example_agents/random/environment.py",
             "repo": "dev_repo",
         },
-        "random_dataset==nj_status_2": {
+        "random_dataset==for_tests_dummy_dev_registry": {
             "class_name": "BasicDataset",
             "dependencies": {},
             "file_path": "example_agents/random/dataset.py",
             "repo": "dev_repo",
         },
-        "random_policy==nj_status_2": {
+        "random_policy==for_tests_dummy_dev_registry": {
             "class_name": "RandomPolicy",
             "dependencies": {
-                "environment": "random_corridor==nj_status_2"
+                "environment": "random_corridor==for_tests_dummy_dev_registry"
             },
             "file_path": "example_agents/random/policy.py",
             "repo": "dev_repo",
         },
-        "random_tracker==nj_status_2": {
+        "random_tracker==for_tests_dummy_dev_registry": {
             "class_name": "BasicTracker",
             "dependencies": {},
             "file_path": "example_agents/random/tracker.py",
             "repo": "dev_repo",
         },
-        "random_trainer==nj_status_2": {
+        "random_trainer==for_tests_dummy_dev_registry": {
             "class_name": "BasicTrainer",
             "dependencies": {},
             "file_path": "example_agents/random/trainer.py",
@@ -151,12 +151,12 @@ DUMMY_WEB_REGISTRY_DICT = {
         "acme_r2d2_policy": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "acme_r2d2_trainer": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "acme_run_manager": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
-        "random_agent": "nj_status_2",
-        "random_corridor": "nj_status_2",
-        "random_dataset": "nj_status_2",
-        "random_policy": "nj_status_2",
-        "random_tracker": "nj_status_2",
-        "random_trainer": "nj_status_2",
+        "random_agent": "for_tests_dummy_dev_registry",
+        "random_corridor": "for_tests_dummy_dev_registry",
+        "random_dataset": "for_tests_dummy_dev_registry",
+        "random_policy": "for_tests_dummy_dev_registry",
+        "random_run_manager": "for_tests_dummy_dev_registry",
+        "random_trainer": "for_tests_dummy_dev_registry",
         "sb3_cartpole": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "sb3_ppo_agent": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
         "sb3_run_manager": "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f",
@@ -204,7 +204,7 @@ def _handle_agent(path_prefix, rename_map):
     registry["repos"] = {}
     registry["repos"]["dev_repo"] = {
         "type": "github",
-        "url": "https://github.com/nickjalbert/agentos",
+        "url": "https://github.com/andykonwinski/agentos",
     }
     renamed = {}
     for component_name, spec in registry.get("components").items():
@@ -230,7 +230,7 @@ def _handle_random_agent(version_string):
         "policy": f"random_policy=={version_string}",
         "dataset": f"random_dataset=={version_string}",
         "trainer": f"random_trainer=={version_string}",
-        "tracker": f"random_tracker=={version_string}",
+        "run_manager": f"run_manager=={version_string}",
     }
     return _handle_agent(random_path_prefix, random_rename_map)
 
@@ -240,7 +240,7 @@ def _handle_sb3_agent(version_string):
     sb3_rename_map = {
         "agent": f"sb3_ppo_agent=={version_string}",
         "environment": f"sb3_cartpole=={version_string}",
-        "tracker": f"sb3_tracker=={version_string}",
+        "run_manager": f"sb3_run_manager=={version_string}",
     }
     return _handle_agent(sb3_path_prefix, sb3_rename_map)
 
@@ -253,7 +253,7 @@ def _handle_acme_r2d2(version_string):
         "environment": f"acme_cartpole=={version_string}",
         "network": f"acme_r2d2_network=={version_string}",
         "policy": f"acme_r2d2_policy=={version_string}",
-        "tracker": f"acme_tracker=={version_string}",
+        "run_manager": f"run_manager=={version_string}",
         "trainer": f"acme_r2d2_trainer=={version_string}",
     }
     return _handle_agent(r2d2_path_prefix, r2d2_rename_map)
