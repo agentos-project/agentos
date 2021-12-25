@@ -83,7 +83,7 @@ DUMMY_WEB_REGISTRY_DICT = {
                 "dataset": "random_dataset==for_tests_dummy_dev_registry",
                 "environment": "random_corridor==for_tests_dummy_dev_registry",
                 "policy": "random_policy==for_tests_dummy_dev_registry",
-                "run_manager": "random_run_manager==for_tests_dummy_dev_registry",
+                "run_manager": "random_run_manager==for_tests_dummy_dev_registry",  # noqa: E501
                 "trainer": "random_trainer==for_tests_dummy_dev_registry",
             },
             "file_path": "example_agents/random/agent.py",
@@ -166,7 +166,7 @@ DUMMY_WEB_REGISTRY_DICT = {
             "type": "github",
             "url": "https://github.com/andyk/agentos.git",
         }
-    }
+    },
 }
 
 

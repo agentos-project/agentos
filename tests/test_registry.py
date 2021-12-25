@@ -88,7 +88,10 @@ def test_registry_from_dict():
 
     r = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)
 
-    assert "acme_cartpole==fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f" in r.get_component_specs().keys()
+    assert (
+        "acme_cartpole==fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f"
+        in r.get_component_specs().keys()
+    )
     assert (
         "acme_cartpole==fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f"
         in r.get_component_specs(filter_by_name="acme_cartpole").keys()
@@ -100,7 +103,10 @@ def test_registry_from_dict():
 
     agent_component_flat_spec = r.get_component_spec("acme_r2d2_agent")
     assert agent_component_flat_spec["name"] == "acme_r2d2_agent"
-    assert agent_component_flat_spec["version"] == "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f"
+    assert (
+        agent_component_flat_spec["version"]
+        == "fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f"
+    )
     assert agent_component_flat_spec["class_name"] == "AcmeR2D2Agent"
     assert agent_component_flat_spec["repo"] == "dev_repo"
 
