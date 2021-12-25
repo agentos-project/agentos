@@ -87,19 +87,19 @@ DUMMY_WEB_REGISTRY_DICT = {
                 "trainer": "random_trainer==for_tests_dummy_dev_registry",
             },
             "file_path": "example_agents/random/agent.py",
-            "repo": "dev_repo",
+            "repo": "dev_repo_andyk",
         },
         "random_corridor==for_tests_dummy_dev_registry": {
             "class_name": "Corridor",
             "dependencies": {},
             "file_path": "example_agents/random/environment.py",
-            "repo": "dev_repo",
+            "repo": "dev_repo_andyk",
         },
         "random_dataset==for_tests_dummy_dev_registry": {
             "class_name": "BasicDataset",
             "dependencies": {},
             "file_path": "example_agents/random/dataset.py",
-            "repo": "dev_repo",
+            "repo": "dev_repo_andyk",
         },
         "random_policy==for_tests_dummy_dev_registry": {
             "class_name": "RandomPolicy",
@@ -107,19 +107,19 @@ DUMMY_WEB_REGISTRY_DICT = {
                 "environment": "random_corridor==for_tests_dummy_dev_registry"
             },
             "file_path": "example_agents/random/policy.py",
-            "repo": "dev_repo",
+            "repo": "dev_repo_andyk",
         },
         "random_run_manager==for_tests_dummy_dev_registry": {
             "class_name": "RandomRunManager",
             "dependencies": {},
             "file_path": "example_agents/random/run_manager.py",
-            "repo": "dev_repo",
+            "repo": "dev_repo_andyk",
         },
         "random_trainer==for_tests_dummy_dev_registry": {
             "class_name": "BasicTrainer",
             "dependencies": {},
             "file_path": "example_agents/random/trainer.py",
-            "repo": "dev_repo",
+            "repo": "dev_repo_andyk",
         },
         "sb3_cartpole==fe150c5ea8ee6e2e6c1dbbfc85cb53b85f19c55f": {
             "class_name": "CartPole",
@@ -164,8 +164,12 @@ DUMMY_WEB_REGISTRY_DICT = {
     "repos": {
         "dev_repo": {
             "type": "github",
+            "url": "https://github.com/nickjalbert/agentos.git",
+        },
+        "dev_repo_andyk": {
+            "type": "github",
             "url": "https://github.com/andyk/agentos.git",
-        }
+        },
     },
 }
 
@@ -201,14 +205,8 @@ def _handle_agent(path_prefix, rename_map):
     agent_spec = aos_root / path_prefix / "components.yaml"
     with open(agent_spec) as file_in:
         registry = yaml.safe_load(file_in)
-    registry["repos"] = {}
-    registry["repos"]["dev_repo"] = {
-        "type": "github",
-        "url": "https://github.com/andykonwinski/agentos",
-    }
     renamed = {}
     for component_name, spec in registry.get("components").items():
-        spec["repo"] = "dev_repo"
         spec["file_path"] = str(path_prefix / Path(spec["file_path"]))
         renamed[rename_map[component_name]] = spec
         renamed_dependencies = {}
