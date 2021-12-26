@@ -23,8 +23,6 @@ Key features of AgentOS include:
     runs of those agents in those environments that can be reproduced
     with a single line of code.
 
-  * One existing agents* and benchmark runs of them,
-
   * Example learning agents from different disciplines and research areas are
     available in the
     `example_agents
