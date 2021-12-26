@@ -15,22 +15,17 @@ from shared import docs_dir
 DOC_SECTIONS_PLUS_SEPARATOR_TEXT = [
     (
         "intro.rst",
-         "\n\nThe AgentOS docs are at `agentos.org "
-         "<https://agentos.org>`_.\n\n\n"
+        "\n\nThe AgentOS docs are at `agentos.org "
+        "<https://agentos.org>`_.\n\n\n",
     ),
-    (
-        "install_and_try.rst",
-        "\n\n"
-    ),
-    (
-        "developing.rst",
-        "\n\n"
-    )
+    ("install_and_try.rst", "\n\n"),
+    ("developing.rst", "\n\n"),
 ]
 
 target_readme = os.path.join(docs_dir, os.pardir, "README.rst")
 
 with open(target_readme, "w") as readme_f:
+
     def include_docs_section(src_filename, separator_text):
         text_path = os.path.join(docs_dir, "includes", src_filename)
         with open(text_path, "r") as f:
