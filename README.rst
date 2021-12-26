@@ -8,7 +8,7 @@ on the Python Component System, which implements a new programming model (the
 Component Programming Model) that makes it easier to manage and share Python
 code. AgentOS is licensed under the Apache License, Version 2.0.
 
-Key features of the Python Component System are:
+Key features of the Python Component System:
   * Transparent management of virtual environments (developers no longer
     have to think about virtual environments at all).
 
@@ -16,7 +16,7 @@ Key features of the Python Component System are:
 
   * First-class programmatic access to all functionality (unlike PIP)
 
-Key features of AgentOS include:
+Key features of AgentOS:
   * Easy to use Agent API for developing and running new agents.
 
   * A public repository of popular RL environments and agents, and
