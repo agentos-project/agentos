@@ -1,4 +1,5 @@
 import acme
+from agentos import active_component_run
 
 
 class AcmeR2D2Agent:
@@ -8,28 +9,25 @@ class AcmeR2D2Agent:
         pass
 
     def evaluate(self, num_episodes):
-        with self.run_manager.evaluate_run():
+        with self.AcmeRun("evaluate", active_component_run(self)) as run:
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self,
                 should_update=False,
-                logger=self.run_manager,
+                logger=run,
             )
             loop.run(num_episodes=int(num_episodes))
 
     def learn(self, num_episodes):
-        with self.run_manager.learn_run():
+        with self.AcmeRun("learn", active_component_run(self)) as run:
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self,
                 should_update=True,
-                logger=self.run_manager,
+                logger=run,
             )
             loop.run(num_episodes=int(num_episodes))
             self.network.save()
-
-    def reset(self):
-        self.run_manager.reset()
 
     # Acme agent API
     def observe_first(self, timestep):

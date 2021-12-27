@@ -4,7 +4,6 @@ class ComponentIdentifier:
     name and, optionally, a version as a string using the '==' separator. It
     allows referring to Components both as [name] and [name]==[version] (e.g.,
     in registries or the command line).
-
     """
 
     @staticmethod
@@ -55,7 +54,17 @@ class ComponentIdentifier:
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.full == other.full
-        return self.full == other
+        elif isinstance(other, str):
+            return self.full == other
+        else:
+            return self is other
 
     def __str__(self):
         return self.full
+
+
+# MLflow uses strings as Run identifiers, per
+# https://github.com/mlflow/mlflow/blob/v1.22.0/mlflow/entities/run_info.py#L99
+RunIdentifier = str
+
+RunCommandIdentifier = str

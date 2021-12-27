@@ -1,0 +1,6 @@
+name: policy
+file_path: ./policy.py
+class_name: PPOPolicy
+python_path: ./
+dependencies:
+  - ../../components/cartpole/agentos.yaml

@@ -1,6 +1,6 @@
 """Core AgentOS classes."""
 from collections import namedtuple
-import statistics
+from agentos.agent_run import AgentRun
 import time
 from threading import Thread
 
@@ -36,6 +36,14 @@ class Agent(MemberInitializer):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
+        self._active_agent_run_stack = []
+
+    @property
+    def active_agent_run(self):
+        if self._active_agent_run_stack:
+            return self._active_agent_run_stack[-1]
+        else:
+            return None
 
     def evaluate(
         self,
@@ -44,19 +52,24 @@ class Agent(MemberInitializer):
         max_transitions=None,
         backup_dst=None,
         print_stats=True,
+        parent_run=None,
     ):
         """Runs an agent specified by a given [agent_file]
 
         :param num_episodes: number of episodes to run the agent through
         :param should_learn: boolean, if True we will call policy.improve
         :param max_transitions: If not None, max transitions performed before
-                                truncating an episode.
+            truncating an episode.
         :param backup_dst: if specified, will print backup path to stdout
         :param print_stats: if True, will print run stats to stdout
+        :param parent_run: If set, then the AgentRun created by this function
+            will set this as their parent. Else, it will try to set the
+            currently active component run, else it won't set a parent.
 
         :returns: None
         """
         all_steps = []
+        self.start_agent_run("evaluate", parent_run)
         for _ in range(int(num_episodes)):
             steps = self.rollout(
                 should_learn=should_learn, max_transitions=max_transitions
@@ -68,7 +81,8 @@ class Agent(MemberInitializer):
             and print_stats != "false"
             and print_stats != "f"
         ):
-            self._print_run_results(all_steps, backup_dst)
+            self.active_agent_run.print_results()
+        self.end_agent_run()
 
     def learn(
         self,
@@ -80,12 +94,13 @@ class Agent(MemberInitializer):
         """Trains an agent by calling its learn() method in a loop."""
         num_episodes = int(num_episodes)
         test_num_episodes = int(test_num_episodes)
-        # Handle strings from -P
         # TODO: fix that ugliness!
+        # Handle strings from -P
         if isinstance(test_every, str):
-            test_every = False
             if test_every == "True":
                 test_every = True
+            else:
+                test_every = False
         test_every = int(test_every)
         run_size = test_every if test_every else num_episodes
         total_episodes = 0
@@ -108,8 +123,27 @@ class Agent(MemberInitializer):
             )
             total_episodes += run_size
 
-    def reset(self):
-        self.run_manager.reset()
+    def start_agent_run(self, run_type: str, parent: AgentRun) -> None:
+        from agentos import active_component_run  # avoid circular import
+
+        if not parent:
+            parent = active_component_run(self)
+            if parent:
+                assert self.environment.__component__
+                assert self.environment.__component__ in (
+                    parent.run_command.component.dependency_list()
+                ), (
+                    "This agent's environment must be in the dependency "
+                    "list of the active component run."
+                )
+        self._active_agent_run_stack.append(
+            AgentRun(run_type, parent_run=parent)
+        )
+
+    def end_agent_run(self):
+        assert self._active_agent_run_stack, "No active AgentRun to end."
+        run = self._active_agent_run_stack.pop()
+        run.end()
 
     def advance(self):
         """Takes one action within the Environment as dictated by the Policy"""
@@ -145,37 +179,16 @@ class Agent(MemberInitializer):
         reward = 0
         while not done:
             if max_transitions and step_count > max_transitions:
-                self._episode_truncated()
                 break
             _, _, _, tmp_reward, done, _ = self.advance()
             reward += tmp_reward
             step_count += 1
             if should_learn:
                 self.trainer.improve(self.dataset, self.policy)
-        self.run_manager.add_episode_data(steps=step_count, reward=reward)
+        self.active_agent_run.add_episode_data(steps=step_count, reward=reward)
         if should_learn:
             self.trainer.improve(self.dataset, self.policy)
         return step_count
-
-    def _print_run_results(self, all_steps, backup_dst):
-        if not all_steps:
-            return
-        mean = statistics.mean(all_steps)
-        median = statistics.median(all_steps)
-        total_episodes, total_steps = self.run_manager.get_training_info()
-        print()
-        print(f"Benchmark results after {len(all_steps)} rollouts:")
-        print(
-            "\tBenchmarked agent was trained on "
-            f"{total_steps} transitions over {total_episodes} episodes"
-        )
-        print(f"\tMax steps over {len(all_steps)} trials: {max(all_steps)}")
-        print(f"\tMean steps over {len(all_steps)} trials: {mean}")
-        print(f"\tMedian steps over {len(all_steps)} trials: {median}")
-        print(f"\tMin steps over {len(all_steps)} trials: {min(all_steps)}")
-        if backup_dst:
-            print(f"Agent backed up in {backup_dst}")
-        print()
 
 
 class Policy(MemberInitializer):

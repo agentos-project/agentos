@@ -1,64 +1,234 @@
-import os
-import sys
-import yaml
-import mlflow
 import pprint
-import shutil
-import tempfile
+from urllib.parse import urlparse
 from pathlib import Path
-from typing import Dict, Optional, List, TYPE_CHECKING
-from contextlib import contextmanager
-from mlflow.entities import Run as MLflowRun
-from agentos.registry import Registry, web_registry
-from agentos.parameter_set import ParameterSet
-from agentos.repo import BadGitStateException, NoLocalPathException
-
-# Avoids cicular imports
-if TYPE_CHECKING:
-    from agentos import Component
+from typing import Any, Sequence
+from mlflow.exceptions import MlflowException
+from mlflow.entities import RunStatus
+from mlflow.tracking import MlflowClient
+from agentos.registry import Registry
+from agentos.exceptions import PythonComponentSystemException
+from agentos.specs import RunSpec
+from agentos.identifiers import RunIdentifier
 
 
 class Run:
-    MLFLOW_EXPERIMENT_ID = "0"
-    PARAM_KEY = "parameter_set.yaml"
-    REG_KEY = "components.yaml"
-    FROZEN_KEY = "spec_is_frozen"
-    ROOT_NAME_KEY = "root_name"
-    ENTRY_POINT_KEY = "entry_point"
+    """
+    Conceptually, a Run represents code execution. More specifically, a Run has
+    two distinct uses. First, a Run is used to document an instance of code
+    execution and record output associated with it (similar to a logger).
+    Second is reproducibility, and for this a Run can optionally hold a
+    RunCommand, which, if it exists, can be used to recreate this run, i.e., to
+    perform a re-run.
 
-    def __init__(self, mlflow_run: MLflowRun):
-        self._mlflow_run = mlflow_run
+    Structurally, a Run is similar to a logger but provides a bit more
+    structure than loggers traditionally do. For example, instead of just a log
+    level free text, a Run allows recording of a tag, parameter, and a metric.
+    These each have their own semantics and each is represented as a key-value
+    pair. Currently, an AgentOS Run is a wrapper around an MLflow Run.
 
-    @staticmethod
-    def get_all_runs() -> List["Run"]:
-        run_infos = mlflow.list_run_infos(
-            experiment_id=Run.MLFLOW_EXPERIMENT_ID,
-            order_by=["attribute.end_time DESC"],
+    An MLflow Run is a thin container that holds an RunData and RunInfo object.
+    RunInfo contains the run metadata (id, user, timestamp, etc.)
+    RunData contains metrics, params, and tags; each of which is a dict.
+
+    AgentOS Run related abstractions are encoded into an MLflowRun as follows:
+    - Component Registry incl. root, dependencies, repos -> artifact yaml file
+    - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
+    - ParameterSet -> artifact yaml file.
+    """
+
+    _mlflow_client = MlflowClient()
+
+    DEFAULT_EXPERIMENT_ID = "0"
+    PCS_RUN_TAG = "pcs.is_run"
+    # Pass calls to the following functions through to this
+    # Run's mlflow_client. All of these take run_id as
+    # first arg, and so the pass-through logic also binds
+    # self._mlflow_run_id as the first arg of the calls.
+    PASS_THROUGH_FN_PREFIXES = [
+        "log",
+        "set_tag",
+        "list_artifacts",
+        "search_runs",
+        "set_terminated",
+        "download_artifacts",
+    ]
+
+    def __init__(
+        self,
+        experiment_id: str = None,
+        existing_run_id: str = None,
+    ) -> None:
+        """
+        Consider using class factory methods instead of directly using
+        __init__. For example: Run.from_run_command(),
+        Run.from_existing_run_id().
+
+        :param experiment_id: Optional Experiment ID.
+        :param existing_run_id: Optional Run ID.
+        """
+        self._return_value = None
+        if existing_run_id:
+            assert (
+                not experiment_id
+            ), "`existing_run_id` cannot be passed with `experiment_id`"
+            try:
+                self._mlflow_client.get_run(existing_run_id)
+            except MlflowException as mlflow_exception:
+                print(
+                    "Error: When creating an AgentOS Run using an "
+                    "existing MLflow Run ID, an MLflow run with that ID must "
+                    "be available at the current tracking URI, and "
+                    f"run_id {existing_run_id} is not."
+                )
+                raise mlflow_exception
+            self._mlflow_run_id = existing_run_id
+        else:  # new run
+            if experiment_id:
+                exp_id = experiment_id
+            else:
+                exp_id = self.DEFAULT_EXPERIMENT_ID
+            new_run = self._mlflow_client.create_run(exp_id)
+            self._mlflow_run_id = new_run.info.run_id
+            self.set_tag(self.PCS_RUN_TAG, "True")
+
+    def __del__(self):
+        self._mlflow_client.set_terminated(self._mlflow_run_id)
+
+    @classmethod
+    def run_exists(cls, run_id) -> bool:
+        try:
+            cls._mlflow_client.get_run(run_id)
+            return True
+        except MlflowException:
+            return False
+
+    @classmethod
+    def get_all_runs(cls):
+        mlflow_runs = cls._mlflow_client.search_runs(
+            experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
+            order_by=["attribute.start_time DESC"],
+            filter_string=f'tag.{cls.PCS_RUN_TAG} ILIKE "%"',
         )
-        runs = [
-            mlflow.get_run(run_id=run_info.run_id) for run_info in run_infos
-        ]
-        runs = [mlflow.active_run()] + runs
-        runs = [run for run in runs if run is not None]
-        return [Run(mlflow_run=run) for run in runs]
+        print(f"{len(mlflow_runs)} mlflow_runs")
+        print(mlflow_runs)
+        res = []
+        for mlflow_run in mlflow_runs:
+            r = Run.from_existing_run_id(mlflow_run.info.run_id)
+            print(r)
+            res.append(r)
+        return res
+
+    @classmethod
+    def from_existing_run_id(cls, run_id: RunIdentifier) -> "Run":
+        return cls(existing_run_id=run_id)
+
+    @classmethod
+    def from_tracking_store(cls, run_id: RunIdentifier):
+        return cls.from_existing_run_id(run_id)
 
     @staticmethod
-    def get_latest_publishable_run() -> Optional["Run"]:
-        all_runs = Run.get_all_runs()
-        publishable = [run for run in all_runs if run.is_publishable]
-        if len(publishable) == 0:
-            return None
+    def active_run(caller: Any, fail_if_no_active_run: bool = False) -> "Run":
+        """
+        A helper function.
+        """
+        from agentos.component import Component
+
+        if isinstance(caller, Component):
+            component = caller
         else:
-            return publishable[0]
+            try:
+                component = caller.__component__
+            except AttributeError:
+                raise PythonComponentSystemException(
+                    "active_run() was called on an object that is not "
+                    "managed by a Component. Specifically, the object passed "
+                    "to active_run() must have a ``__component__`` attribute."
+                )
+        if not component.active_run:
+            if fail_if_no_active_run:
+                raise PythonComponentSystemException(
+                    "active_run() was passed an object managed by a Component "
+                    "with no active_run, and fail_if_no_active_run flag was "
+                    "True."
+                )
+            else:
+                run = Run()
+                if isinstance(caller, Component):
+                    print(
+                        "Warning: the object passed to active_run() is "
+                        "managed by a Component that has no active_run. "
+                        f"Returning a new run (id: {run.identifier} that is "
+                        "not associated with any Run object."
+                    )
+            return run
+        else:
+            return component.active_run
 
-    @staticmethod
-    def run_exists(run_id: Optional[str]) -> bool:
-        return Run.get_by_id(run_id) is not None
+    @property
+    def _mlflow_run(self):
+        return self._mlflow_client.get_run(self._mlflow_run_id)
 
-    @staticmethod
-    def get_by_id(run_id: Optional[str]) -> Optional["Run"]:
-        run_map = {run.id: run for run in Run.get_all_runs()}
-        return run_map.get(run_id)
+    @property
+    def identifier(self) -> str:
+        return self._mlflow_run.info.run_id
+
+    @property
+    def data(self) -> dict:
+        return self._mlflow_run.data
+
+    @property
+    def info(self) -> dict:
+        return self._mlflow_run.info
+
+    def __getattr__(self, attr_name):
+        prefix_matches = [
+            attr_name.startswith(x) for x in self.PASS_THROUGH_FN_PREFIXES
+        ]
+        if any(prefix_matches):
+            try:
+                from functools import partial
+
+                mlflow_client_fn = getattr(self._mlflow_client, attr_name)
+                return partial(mlflow_client_fn, self._mlflow_run_id)
+            except AttributeError as e:
+                raise AttributeError(
+                    f"No attribute '{attr_name}' could be found in either "
+                    f"'{self.__class__} or the MlflowClient object it is "
+                    f"wrapping. " + str(e)
+                )
+        else:
+            raise AttributeError(
+                f"type object '{self.__class__}' has no attribute "
+                f"'{attr_name}'"
+            )
+
+    def _get_artifact_paths(self) -> Sequence[Path]:
+        artifacts_dir = self.download_artifacts(".")
+        artifact_paths = [
+            Path(artifacts_dir) / a.path for a in self.list_artifacts()
+        ]
+        exist = [p.exists() for p in artifact_paths]
+        assert all(exist), f"Missing artifact paths: {artifact_paths}, {exist}"
+        return artifact_paths
+
+    def end(
+        self, status: str = RunStatus.to_string(RunStatus.FINISHED)
+    ) -> None:
+        """
+        This is copied and adapted from MLflow's fluent api mlflow.end_run
+        """
+        self.set_terminated(status)
+
+    def print_status(self, detailed: bool = False) -> None:
+        if not detailed:
+            filtered_tags = {
+                k: v
+                for k, v in self.data.tags.items()
+                if not k.startswith("mlflow.")
+            }
+            print(f"\tRun {self.identifier}: {filtered_tags}")
+        else:
+            pprint.pprint(self.to_spec())
 
     @staticmethod
     def print_all_status() -> None:
@@ -69,210 +239,47 @@ class Run:
         print()
 
     @classmethod
-    def active_run(cls):
-        return cls(mlflow.active_run())
-
-    @classmethod
-    def log_param(self, name, value):
-        mlflow.log_param(name, value)
-
-    @classmethod
-    def log_metric(self, name, value):
-        mlflow.log_metric(name, value)
-
-    @classmethod
-    def set_tag(self, name, value):
-        mlflow.set_tag(name, value)
-
-    @classmethod
-    def track(
+    def from_registry(
         cls,
-        root_component: "Component",
-        fn_name: str,
-        params: ParameterSet,
-        tracked: bool,
-    ):
-        if not tracked:
-            return cls._untracked_run()
+        registry: Registry,
+        run_id: RunIdentifier,
+    ) -> "Run":
+        # TODO figure out a way to deserialize an MLflowRun from the registry
+        #     and reconcile that with what is in the tracking store.
+        # run_spec = registry.get_run_spec(run_id)
+        raise NotImplementedError
+
+    def to_registry(
+        self,
+        registry: Registry = None,
+        include_artifacts: bool = False,
+    ) -> Registry:
+        if not registry:
+            from agentos.registry import InMemoryRegistry
+
+            registry = InMemoryRegistry()
+        registry.add_run_spec(self.to_spec())
+        # If we are writing to a WebRegistry, have local artifacts, and
+        # include_artifacts is True, try uploading the artifact files to the
+        # registry.
+        if (
+            include_artifacts
+            and hasattr(registry, "add_run_artifacts")
+            and urlparse(self.info.artifact_uri).scheme == "file"
+        ):
+            local_artifact_path = self.get_artifacts_dir_path()
+            registry.add_run_artifacts(self.identifier, local_artifact_path)
+        return registry
+
+    def to_spec(self, flatten: bool = False) -> RunSpec:
+        return self._mlflow_run.to_dictionary()
+
+    def __enter__(self) -> "Run":
+        return self
+
+    def __exit__(self, type, value, traceback) -> None:
+        if type:
+            self.set_terminated(RunStatus.to_string(RunStatus.FAILED))
+            return
         else:
-            return cls._tracked_run(root_component, fn_name, params)
-
-    @classmethod
-    @contextmanager
-    def _tracked_run(
-        cls, root_component: "Component", fn_name: str, params: ParameterSet
-    ):
-        run = cls(mlflow.start_run(experiment_id=cls.MLFLOW_EXPERIMENT_ID))
-        run.log_parameter_set(params)
-        run.log_component_spec(root_component)
-        run.log_call(root_component.identifier.full, fn_name)
-        try:
-            yield run
-        finally:
-            mlflow.end_run()
-
-    @classmethod
-    @contextmanager
-    def _untracked_run(cls):
-        try:
-            yield None
-        finally:
-            pass
-
-    @property
-    def id(self) -> str:
-        return self._mlflow_run.info.run_id
-
-    @property
-    def entry_point(self) -> str:
-        return self._mlflow_run.data.params[self.ENTRY_POINT_KEY]
-
-    @property
-    def is_publishable(self) -> bool:
-        if self.FROZEN_KEY not in self._mlflow_run.data.params:
-            return False
-        return self._mlflow_run.data.params[self.FROZEN_KEY] == "True"
-
-    @property
-    def root_component(self) -> str:
-        return self._mlflow_run.data.params[self.ROOT_NAME_KEY]
-
-    @property
-    def parameter_set(self) -> Dict:
-        return self._get_yaml_artifact(self.PARAM_KEY)
-
-    @property
-    def component_spec(self) -> Dict:
-        return self._get_yaml_artifact(self.REG_KEY)
-
-    @property
-    def tags(self) -> Dict:
-        return self.mlflow_data.tags
-
-    @property
-    def metrics(self) -> Dict:
-        return self.mlflow_data.metrics
-
-    @property
-    def params(self) -> Dict:
-        return self.mlflow_data.params
-
-    @property
-    def mlflow_data(self):
-        return self._mlflow_run.data
-
-    @property
-    def mlflow_info(self):
-        return self._mlflow_run.info
-
-    def _get_yaml_artifact(self, name: str) -> Dict:
-        artifacts_dir_path = self.get_artifacts_dir_path()
-        artifact_path = artifacts_dir_path / name
-        if not artifact_path.is_file():
-            return {}
-        with artifact_path.open() as file_in:
-            return yaml.safe_load(file_in)
-
-    def get_artifacts_dir_path(self) -> Path:
-        artifacts_uri = self.mlflow_info.artifact_uri
-        if "file://" != artifacts_uri[:7]:
-            raise Exception(f"Non-local artifacts path: {artifacts_uri}")
-        slice_count = 7
-        if sys.platform in ["win32", "cygwin"]:
-            slice_count = 8
-        return Path(artifacts_uri[slice_count:]).absolute()
-
-    def print_status(self, detailed: bool = False) -> None:
-        if not detailed:
-            filtered_tags = {
-                k: v
-                for k, v in self.tags.items()
-                if not k.startswith("mlflow.")
-            }
-            filtered_tags["is_publishable"] = self.is_publishable
-            print(f"\tRun {self.id}: {filtered_tags}")
-        else:
-            pprint.pprint(self.to_dict())
-
-    def to_dict(self) -> Dict:
-        artifact_paths = [str(p) for p in self._get_artifact_paths()]
-        mlflow_info_dict = {
-            "artifact_uri": self.mlflow_info.artifact_uri,
-            "end_time": self.mlflow_info.end_time,
-            "experiment_id": self.mlflow_info.experiment_id,
-            "lifecycle_stage": self.mlflow_info.lifecycle_stage,
-            "run_id": self.mlflow_info.run_id,
-            "run_uuid": self.mlflow_info.run_uuid,
-            "start_time": self.mlflow_info.start_time,
-            "status": self.mlflow_info.status,
-            "user_id": self.mlflow_info.user_id,
-        }
-        return {
-            "id": self.id,
-            "is_publishable": self.is_publishable,
-            "root_component": self.root_component,
-            "entry_point": self.entry_point,
-            "parameter_set": self.parameter_set,
-            "component_spec": self.component_spec,
-            "artifacts": artifact_paths,
-            "mlflow_info": mlflow_info_dict,
-            "mlflow_data": self.mlflow_data.to_dictionary(),
-        }
-
-    def _get_artifact_paths(self) -> List[Path]:
-        artifacts_dir = self.get_artifacts_dir_path()
-        artifact_paths = []
-        skipped_artifacts = [
-            self.PARAM_KEY,
-            self.REG_KEY,
-        ]
-        for name in os.listdir(self.get_artifacts_dir_path()):
-            if name in skipped_artifacts:
-                continue
-            artifact_paths.append(artifacts_dir / name)
-
-        exist = [p.exists() for p in artifact_paths]
-        assert all(exist), f"Missing artifact paths: {artifact_paths}, {exist}"
-        return artifact_paths
-
-    def publish(self) -> None:
-        run_id = self.to_registry(web_registry)
-        print(f"Published Run {run_id} to {web_registry.root_url}.")
-
-    def to_registry(self, registry: Registry) -> str:
-        if not self.is_publishable:
-            raise Exception("Run not publishable; Spec is not frozen!")
-        result = registry.push_run_data(self.to_dict())
-        run_id = result["id"]
-        registry.push_run_artifacts(run_id, self._get_artifact_paths())
-        return run_id
-
-    def log_parameter_set(self, params: ParameterSet) -> None:
-        self.log_data_as_yaml_artifact(self.PARAM_KEY, params.to_spec())
-
-    def log_component_spec(self, root_component: "Component") -> None:
-        frozen = None
-        try:
-            frozen = root_component.to_frozen_registry()
-            # FIXME - Will need to be adapted for WebRegistry
-            self.log_data_as_yaml_artifact(self.REG_KEY, frozen.to_dict())
-        except (BadGitStateException, NoLocalPathException) as exc:
-            print(f"Warning: component is not publishable: {str(exc)}")
-            unfrozen = root_component.to_registry()
-            # FIXME - Will need to be adapted for WebRegistry
-            self.log_data_as_yaml_artifact(self.REG_KEY, unfrozen.to_dict())
-        mlflow.log_param(self.FROZEN_KEY, frozen is not None)
-
-    def log_call(self, root_name: str, fn_name: str) -> None:
-        mlflow.log_param(self.ROOT_NAME_KEY, root_name)
-        mlflow.log_param(self.ENTRY_POINT_KEY, fn_name)
-
-    def log_data_as_yaml_artifact(self, name: str, data: dict):
-        try:
-            tmp_dir_path = Path(tempfile.mkdtemp())
-            artifact_path = tmp_dir_path / name
-            with open(artifact_path, "w") as file_out:
-                file_out.write(yaml.safe_dump(data))
-            mlflow.log_artifact(artifact_path)
-        finally:
-            shutil.rmtree(tmp_dir_path)
+            self.end()

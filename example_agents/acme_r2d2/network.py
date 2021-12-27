@@ -3,14 +3,14 @@ import sonnet as snt
 
 
 class R2D2Network:
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.rnn = BasicRNN(self.environment)
 
     def restore(self):
-        self.run_manager.restore_tensorflow("rnn", self.rnn)
+        self.AcmeRun.restore_tensorflow("rnn", self.rnn)
 
     def save(self):
-        self.run_manager.save_tensorflow("rnn", self.rnn)
+        self.AcmeRun.save_tensorflow("rnn", self.rnn)
 
 
 # BasicRNN, taken from r2d2 test

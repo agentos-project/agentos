@@ -14,7 +14,7 @@ components:
             policy: policy
             dataset: dataset
             trainer: trainer
-            run_manager: run_manager
+            AcmeRun: AcmeRun
             network: network
     
     environment:
@@ -37,7 +37,7 @@ components:
         class_name: R2D2Network
         dependencies: 
             environment: environment
-            run_manager: run_manager
+            AcmeRun: AcmeRun
     
     dataset:
         repo: local_dir
@@ -56,7 +56,8 @@ components:
             network: network
             dataset: dataset
     
-    run_manager:
+    AcmeRun:
         repo: local_dir
-        file_path: ../acme_dqn/run_manager.py
-        class_name: AcmeRunManager
+        file_path: ../acme_dqn/run.py
+        class_name: AcmeRun
+        instantiate: False

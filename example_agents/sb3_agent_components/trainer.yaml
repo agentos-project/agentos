@@ -1,0 +1,4 @@
+name: trainer
+file_path: ./trainer.py
+class_name: PPOTrainer
+python_path: ./

@@ -11,14 +11,15 @@ components:
         class_name: SB3PPOAgent
         dependencies: 
             environment: environment
-            run_manager: run_manager
+            SB3AgentRun: SB3AgentRun
     
     environment:
         repo: sb3_agent_dir
         file_path: environment.py
         class_name: CartPole
     
-    run_manager:
+    SB3AgentRun:
         repo: sb3_agent_dir
-        file_path: run_manager.py
-        class_name: SB3RunManager
+        file_path: sb3_run.py
+        class_name: SB3Run
+        instantiate: False

@@ -1,0 +1,9 @@
+name: sb3_ppo_agent
+file_path: ./agent.py
+class_name: SB3PPOAgent
+python_path: ./
+dependencies:
+  - ../../components/cartpole/agentos.yaml
+  - ./policy.yaml
+  - ./trainer.yaml
+  - ./dataset.yaml
