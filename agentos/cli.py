@@ -166,7 +166,7 @@ def run(
 @agentos_cmd.command()
 @_arg_optional_entity_id
 @_option_registry_file
-def status(entity_id, component_spec_file):
+def status(entity_id, registry_file):
     """
     ENTITY_ID can be a Component name or a Run ID.
     """
@@ -175,7 +175,7 @@ def status(entity_id, component_spec_file):
     else:
         Run.print_all_status()
         if entity_id:
-            component = Component.get_from_yaml(entity_id, component_spec_file)
+            component = Component.from_registry_file(registry_file, entity_id)
             component.print_status_tree()
 
 

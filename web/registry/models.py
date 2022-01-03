@@ -194,6 +194,8 @@ class Repo(TimeStampedModel):
     @staticmethod
     def create_from_dict(repo_spec_dict: Dict) -> List:
         repos = []
+        print(repo_spec_dict)
+        print(type(repo_spec_dict))
         for name, repo in repo_spec_dict.items():
             if "github.com" not in repo["url"]:
                 raise ValidationError(

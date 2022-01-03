@@ -311,11 +311,12 @@ class Component:
             registry.add_component_spec(c.to_spec())
             try:
                 repo_spec = registry.get_repo_spec(c.repo.name)
-                if repo_spec != c.repo.to_spec():
+                if repo_spec != c.repo.to_spec()[c.repo.name]:
                     raise RegistryException(
-                        f"A Repo with identifier {c.repo.name} already exists"
+                        f"A Repo with identifier {c.repo.name} already exists "
                         f"in this registry that differs from the one referred "
-                        f"to by component {c.identifier}."
+                        f"to by component {c.identifier}: {repo_spec} vs "
+                        f"{c.repo.to_spec()[c.repo.name]}"
                     )
             except LookupError:
                 # Repo not yet registered, so so add it to this registry.
@@ -354,9 +355,9 @@ class Component:
         rich_print(tree)
 
     def get_status_tree(self, parent_tree: Tree = None) -> Tree:
-        self_tree = Tree(f"Component: {self.full_name}")
+        self_tree = Tree(f"Component: {self.identifier.full}")
         if parent_tree is not None:
             parent_tree.add(self_tree)
-        for dep_attr_name, dep_component in self._dependencies.items():
+        for dep_attr_name, dep_component in self.dependencies.items():
             dep_component.get_status_tree(parent_tree=self_tree)
         return self_tree

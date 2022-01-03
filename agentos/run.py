@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class Run:
     MLFLOW_EXPERIMENT_ID = "0"
     PARAM_KEY = "parameter_set.yaml"
-    SPEC_KEY = "components.yaml"
+    REG_KEY = "components.yaml"
     FROZEN_KEY = "spec_is_frozen"
     ROOT_NAME_KEY = "root_name"
     ENTRY_POINT_KEY = "entry_point"
@@ -129,6 +129,8 @@ class Run:
 
     @property
     def is_publishable(self) -> bool:
+        if self.FROZEN_KEY not in self._mlflow_run.data.params:
+            return False
         return self._mlflow_run.data.params[self.FROZEN_KEY] == "True"
 
     @property
@@ -141,7 +143,7 @@ class Run:
 
     @property
     def component_spec(self) -> Dict:
-        return self._get_yaml_artifact(self.SPEC_KEY)
+        return self._get_yaml_artifact(self.REG_KEY)
 
     @property
     def tags(self) -> Dict:
@@ -222,7 +224,7 @@ class Run:
         artifact_paths = []
         skipped_artifacts = [
             self.PARAM_KEY,
-            self.SPEC_KEY,
+            self.REG_KEY,
         ]
         for name in os.listdir(self.get_artifacts_dir_path()):
             if name in skipped_artifacts:
@@ -251,14 +253,14 @@ class Run:
     def log_component_spec(self, root_component: "Component") -> None:
         frozen = None
         try:
-            root_id = root_component.identifier
-            frozen_reg = root_component.to_frozen_registry()
-            frozen = frozen_reg.get_component_spec_by_id(root_id)
-            self.log_data_as_yaml_artifact(self.SPEC_KEY, frozen)
+            frozen = root_component.to_frozen_registry()
+            # FIXME - Will need to be adapted for WebRegistry
+            self.log_data_as_yaml_artifact(self.REG_KEY, frozen.to_dict())
         except (BadGitStateException, NoLocalPathException) as exc:
             print(f"Warning: component is not publishable: {str(exc)}")
-            spec = root_component.to_spec()
-            self.log_data_as_yaml_artifact(self.SPEC_KEY, spec)
+            unfrozen = root_component.to_registry()
+            # FIXME - Will need to be adapted for WebRegistry
+            self.log_data_as_yaml_artifact(self.REG_KEY, unfrozen.to_dict())
         mlflow.log_param(self.FROZEN_KEY, frozen is not None)
 
     def log_call(self, root_name: str, fn_name: str) -> None:

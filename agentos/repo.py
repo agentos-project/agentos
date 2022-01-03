@@ -118,9 +118,12 @@ class Repo(abc.ABC):
         REMOTE_GIT_PREFIX = "refs/remotes"
         branch = porcelain.active_branch(self.porcelain_repo).decode("UTF-8")
         full_id = f"{REMOTE_GIT_PREFIX}/{remote}/{branch}".encode("UTF-8")
-        curr_remote_hash = self.porcelain_repo.refs.as_dict()[full_id].decode(
-            "UTF-8"
-        )
+        refs_dict = self.porcelain_repo.refs.as_dict()
+        try:
+            curr_remote_hash = refs_dict[full_id].decode("UTF-8")
+        except KeyError:
+            curr_remote_hash = None
+
         curr_head_hash = self.porcelain_repo.head().decode("UTF-8")
 
         if curr_head_hash != curr_remote_hash:
@@ -219,7 +222,7 @@ class UnknownRepo(Repo):
         self.type = RepoType.UNKNOWN
 
     def to_spec(self) -> Dict:
-        return {"name": self.name, "type": self.type}
+        return {self.name: {"type": self.type}}
 
 
 class GitHubRepo(Repo):
@@ -237,11 +240,7 @@ class GitHubRepo(Repo):
         self.porcelain_repo = None
 
     def to_spec(self) -> Dict:
-        return {
-            "name": self.name,
-            "type": self.type.value,
-            "url": self.url,
-        }
+        return {self.name: {"type": self.type.value, "url": self.url}}
 
     def get_local_repo_path(self, version: str) -> str:
         local_repo_path = self._clone_repo(version)
@@ -298,9 +297,7 @@ class LocalRepo(Repo):
 
     def to_spec(self) -> Dict:
         return {
-            "name": self.name,
-            "type": self.type.value,
-            "path": str(self.file_path),
+            self.name: {"type": self.type.value, "path": str(self.file_path)}
         }
 
     def get_local_repo_path(self, version: str) -> Path:
@@ -326,4 +323,4 @@ class InMemoryRepo(Repo):
         raise NoLocalPathException()
 
     def to_spec(self) -> Dict:
-        return {"name": self.name, "type": self.type.value}
+        return {self.name: {"type": self.type.value}}

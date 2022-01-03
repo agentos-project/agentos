@@ -184,7 +184,7 @@ class RunContextManager:
     def _check_component_exists_in_run(self, role_type: str) -> None:
         run = Run.active_run()
         artifacts_dir = run.get_artifacts_dir_path()
-        spec_path = artifacts_dir / Run.SPEC_KEY
+        spec_path = artifacts_dir / Run.REG_KEY
         names = [
             Component.Identifier.from_str(c_id).name
             for c_id in Registry.from_yaml(spec_path)
