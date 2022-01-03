@@ -171,7 +171,6 @@ class Component(TimeStampedModel):
         self_deps = ComponentDependency.objects.filter(
             depender=self
         ).distinct()
-        print("FOOOOOOOOOOOO")
         for self_dep in self_deps:
             if self_dep.attribute_name not in other_spec["dependencies"]:
                 return False
@@ -180,7 +179,6 @@ class Component(TimeStampedModel):
             ]
             if other_dep_name != self_dep.dependee.full_name:
                 return False
-        print("BARRRRRRRRR")
         return True
 
 
@@ -194,8 +192,6 @@ class Repo(TimeStampedModel):
     @staticmethod
     def create_from_dict(repo_spec_dict: Dict) -> List:
         repos = []
-        print(repo_spec_dict)
-        print(type(repo_spec_dict))
         for name, repo in repo_spec_dict.items():
             if "github.com" not in repo["url"]:
                 raise ValidationError(
