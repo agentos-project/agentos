@@ -36,6 +36,9 @@ components:
         repo: local_dir
         file_path: ./trainer.py
         class_name: BasicTrainer
+        dependencies:
+            policy: policy
+            dataset: dataset
     
     run_manager:
         repo: local_dir
