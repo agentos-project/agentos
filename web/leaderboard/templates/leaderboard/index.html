@@ -31,8 +31,8 @@
                 <a href="{% url 'run-detail' run.id %}">
                   Run {{run.id}}
                 </a>
-                : {{run.metrics.mean_reward}} mean reward
-                over {{run.metrics.episode_count }} episodes
+                : {{run.mlflow_metrics.mean_reward}} mean reward
+                over {{run.mlflow_metrics.episode_count }} episodes
               </li>
             {% endfor %}
           </ul>

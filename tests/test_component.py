@@ -3,7 +3,7 @@ import os
 import subprocess
 from unittest.mock import patch
 from unittest.mock import DEFAULT
-from agentos import Component
+from agentos.component import Component
 
 
 def test_component_repl_demo():
@@ -35,7 +35,7 @@ def test_component_freezing(tmpdir):
     curr_dir = os.getcwd()
     os.chdir(tmpdir)
     try:
-        c = Component.from_registry_file("agentos.yaml", "agent")
+        c = Component.from_registry_file("components.yaml", "agent")
         with patch.multiple(
             "agentos.repo.Repo",
             get_version_from_git=DEFAULT,

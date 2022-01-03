@@ -1,26 +1,19 @@
 import sys
 import uuid
-import mlflow
 import importlib
-from typing import TypeVar, Dict, Type, Any, Sequence
-from contextlib import contextmanager
-from agentos.utils import log_data_as_yaml_artifact
-from agentos.utils import MLFLOW_EXPERIMENT_ID
-from agentos.repo import (
-    Repo,
-    InMemoryRepo,
-    GitHubRepo,
-    BadGitStateException,
-    NoLocalPathException,
-)
+from typing import TypeVar, Dict, Type, Any, Optional, Sequence
+from rich import print as rich_print
+from rich.tree import Tree
+from agentos.run import Run
+from agentos.component_identifier import ComponentIdentifier
+from agentos.specs import ComponentSpec
 from agentos.registry import (
     Registry,
     InMemoryRegistry,
     RegistryException,
 )
+from agentos.repo import Repo, InMemoryRepo, GitHubRepo
 from agentos.parameter_set import ParameterSet
-from agentos.component_identifier import ComponentIdentifier
-from agentos.specs import ComponentSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -178,10 +171,15 @@ class Component:
         params: ParameterSet = None,
         tracked: bool = True,
         instance: Any = None,
-    ):
+    ) -> Optional[Run]:
         params = params if params else ParameterSet()
-        manager = self._track_run if tracked else self._no_track_run
-        with manager(fn_name, params):
+        tracking_args = {
+            "root_component": self,
+            "fn_name": fn_name,
+            "params": params,
+            "tracked": tracked,
+        }
+        with Run.track(**tracking_args) as run:
             instance = (
                 instance if instance else self.get_instance(params=params)
             )
@@ -189,8 +187,9 @@ class Component:
             assert fn is not None, f"{instance} has no attr {fn_name}"
             fn_params = params.get(self.name, fn_name)
             print(f"Calling {self.name}.{fn_name}(**{fn_params})")
-            result = fn(**fn_params)
-            return result
+            # TODO - save result on run
+            fn(**fn_params)
+        return Run.get_by_id(run.id) if run else None
 
     def add_dependency(
         self, component: "Component", attribute_name: str = None
@@ -223,24 +222,6 @@ class Component:
         self.run("__init__", params=params, instance=instance, tracked=False)
         instantiated[self.name] = instance
         return instance
-
-    def _log_params(self, params: ParameterSet) -> None:
-        log_data_as_yaml_artifact("parameter_set.yaml", params.to_spec())
-
-    def _log_component_spec(self) -> None:
-        frozen = None
-        try:
-            frozen = self.to_frozen_registry().to_dict()
-            log_data_as_yaml_artifact("agentos.yaml", frozen)
-        except (BadGitStateException, NoLocalPathException) as exc:
-            print(f"Warning: component is not publishable: {str(exc)}")
-            spec = self.to_registry().to_dict()
-            log_data_as_yaml_artifact("agentos.yaml", spec)
-        mlflow.log_param("spec_is_frozen", frozen is not None)
-
-    def _log_call(self, fn_name) -> None:
-        mlflow.log_param("root_name", self.identifier.full)
-        mlflow.log_param("entry_point", fn_name)
 
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
@@ -368,20 +349,14 @@ class Component:
                 component_queue.append(dependency)
         return list(ret_val)
 
-    @contextmanager
-    def _track_run(self, fn_name: str, params: ParameterSet):
-        mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
-        self._log_params(params)
-        self._log_component_spec()
-        self._log_call(fn_name)
-        try:
-            yield
-        finally:
-            mlflow.end_run()
+    def print_status_tree(self) -> None:
+        tree = self.get_status_tree()
+        rich_print(tree)
 
-    @contextmanager
-    def _no_track_run(self, fn_name: str, params: ParameterSet):
-        try:
-            yield
-        finally:
-            pass
+    def get_status_tree(self, parent_tree: Tree = None) -> Tree:
+        self_tree = Tree(f"Component: {self.full_name}")
+        if parent_tree is not None:
+            parent_tree.add(self_tree)
+        for dep_attr_name, dep_component in self._dependencies.items():
+            dep_component.get_status_tree(parent_tree=self_tree)
+        return self_tree

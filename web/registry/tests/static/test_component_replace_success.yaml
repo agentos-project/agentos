@@ -1,5 +1,8 @@
+# Assumes test-component-h42==1.0.1 is created by the test setUp()
+# Should succeed (as long as user has permission to create a new version
+# of test-component-h42
 components:
-  test-component-h42==abcde:
+  test-component-h42==1.0.2:
     class_name: ADifferentClassName
     file_path: example_agents/test/test.py
     repo: gh_test

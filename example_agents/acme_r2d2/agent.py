@@ -2,32 +2,34 @@ import acme
 
 
 class AcmeR2D2Agent:
+    DEFAULT_ENTRY_POINT = "evaluate"
+
     def __init__(self, *args, **kwargs):
         pass
 
     def evaluate(self, num_episodes):
-        with self.tracker.evaluate_run():
+        with self.run_manager.evaluate_run():
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self,
                 should_update=False,
-                logger=self.tracker,
+                logger=self.run_manager,
             )
             loop.run(num_episodes=int(num_episodes))
 
     def learn(self, num_episodes):
-        with self.tracker.learn_run():
+        with self.run_manager.learn_run():
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self,
                 should_update=True,
-                logger=self.tracker,
+                logger=self.run_manager,
             )
             loop.run(num_episodes=int(num_episodes))
             self.network.save()
 
     def reset(self):
-        self.tracker.reset()
+        self.run_manager.reset()
 
     # Acme agent API
     def observe_first(self, timestep):

@@ -28,6 +28,7 @@ setup(
         "dulwich>=0.20.26",
         "requests>=2.21.0",
         "python-dotenv>=0.19.1",
+        "rich>=10.15.2",
     ],
     entry_points="""
         [console_scripts]

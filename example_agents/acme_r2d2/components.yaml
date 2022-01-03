@@ -14,7 +14,7 @@ components:
             policy: policy
             dataset: dataset
             trainer: trainer
-            tracker: tracker
+            run_manager: run_manager
             network: network
     
     environment:
@@ -37,7 +37,7 @@ components:
         class_name: R2D2Network
         dependencies: 
             environment: environment
-            tracker: tracker
+            run_manager: run_manager
     
     dataset:
         repo: local_dir
@@ -56,7 +56,7 @@ components:
             network: network
             dataset: dataset
     
-    tracker:
+    run_manager:
         repo: local_dir
-        file_path: ../acme_dqn/tracker.py
-        class_name: AcmeTracker
+        file_path: ../acme_dqn/run_manager.py
+        class_name: AcmeRunManager

@@ -16,7 +16,6 @@ from agentos.component_identifier import ComponentIdentifier
 
 if TYPE_CHECKING:
     from agentos.component import Component
-from agentos.utils import MLFLOW_EXPERIMENT_ID
 from agentos.specs import RepoSpec, ComponentSpec, NestedComponentSpec
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
@@ -326,10 +325,11 @@ class WebRegistry(Registry):
         finally:
             shutil.rmtree(tmp_dir_path)
 
-    def get_run(self, run_id: int) -> None:
-        from agentos.tracker import AgentTracker
+    def get_run(run_id: int) -> None:
+        from agentos.run_manager import AgentRunManager
+        from agentos.run import Run
 
-        run_url = f"{self.root_url}/runs/{run_id}"
+        run_url = f"{AOS_WEB_API_ROOT}/runs/{run_id}"
         run_response = requests.get(run_url)
         run_data = json.loads(run_response.content)
         with open("parameter_set.yaml", "w") as param_file:
@@ -350,7 +350,7 @@ class WebRegistry(Registry):
         spec_url = f"{run_url}/root_spec"
         spec_response = requests.get(spec_url)
         spec_dict = json.loads(spec_response.content)
-        with open("agentos.yaml", "w") as file_out:
+        with open("components.yaml", "w") as file_out:
             file_out.write(yaml.safe_dump(spec_dict))
         try:
             tar_url = f"{run_url}/download_artifact"
@@ -363,23 +363,28 @@ class WebRegistry(Registry):
                 f.write(tarball_response.content)
             tar = tarfile.open(tarball_path)
             tar.extractall(path=tmp_dir_path)
-            mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
-            mlflow.set_tag(AgentTracker.RUN_TYPE_TAG, AgentTracker.LEARN_KEY)
-            mlflow.log_metric(
-                "episode_count", run_data["metrics"]["training_episode_count"]
+            mlflow.start_run(experiment_id=Run.MLFLOW_EXPERIMENT_ID)
+            mlflow.set_tag(
+                AgentRunManager.RUN_TYPE_TAG, AgentRunManager.LEARN_KEY
             )
             mlflow.log_metric(
-                "step_count", run_data["metrics"]["training_step_count"]
+                "episode_count",
+                run_data["mlflow_metrics"]["training_episode_count"],
+            )
+            mlflow.log_metric(
+                "step_count", run_data["mlflow_metrics"]["training_step_count"]
             )
             mlflow.end_run()
-            mlflow.start_run(experiment_id=MLFLOW_EXPERIMENT_ID)
-            mlflow.set_tag(AgentTracker.RUN_TYPE_TAG, AgentTracker.RESTORE_KEY)
+            mlflow.start_run(experiment_id=Run.MLFLOW_EXPERIMENT_ID)
+            mlflow.set_tag(
+                AgentRunManager.RUN_TYPE_TAG, AgentRunManager.RESTORE_KEY
+            )
             for file_name in os.listdir(tmp_dir_path):
                 if file_name == tarball_name:
                     continue
                 file_path = tmp_dir_path / file_name
                 mlflow.log_artifact(file_path)
-            for name, value in run_data["metrics"].items():
+            for name, value in run_data["mlflow_metrics"].items():
                 mlflow.log_metric(name, value)
             mlflow.end_run()
             print("\nRerun agent as follows:")

@@ -12,7 +12,7 @@ components:
         dependencies: 
             network: network
             environment: environment
-            tracker: tracker
+            run_manager: run_manager 
     
     network:
         repo: local_dir
@@ -20,14 +20,14 @@ components:
         class_name: AcmeDQNNetwork
         dependencies: 
             environment: environment
-            tracker: tracker
+            run_manager: run_manager
     
     environment:
         repo: local_dir
         file_path: ./environment.py
         class_name: CartPole
     
-    tracker:
+    run_manager:
         repo: local_dir
-        file_path: ./tracker.py
-        class_name: AcmeTracker
+        file_path: ./run_manager.py
+        class_name: AcmeRunManager

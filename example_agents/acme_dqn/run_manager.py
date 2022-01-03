@@ -3,15 +3,16 @@ import tempfile
 import shutil
 import tensorflow as tf
 from pathlib import Path
-from agentos.tracker import AgentTracker
+from agentos.run_manager import AgentRunManager
+from agentos.run import Run
 
 
 # Adheres to Acme Logger interface
 # https://github.com/deepmind/acme/blob/master/acme/utils/loggers/base.py
-class AcmeTracker(AgentTracker):
+class AcmeRunManager(AgentRunManager):
     # Acme logger API
     def write(self, data: dict):
-        self.push_episode_data(
+        self.add_episode_data(
             steps=data["episode_length"],
             reward=data["episode_return"].item(),
         )
@@ -28,10 +29,11 @@ class AcmeTracker(AgentTracker):
         mlflow.log_artifact(dir_path / name)
         shutil.rmtree(dir_path)
 
+    # TODO - port me to new Run
     def restore_tensorflow(self, name: str, network: tf.Module) -> None:
-        runs = self._get_all_runs()
+        runs = Run.get_all_runs()
         for run in runs:
-            artifacts_uri = run.info.artifact_uri
+            artifacts_uri = run.mlflow_info.artifact_uri
             if "file://" != artifacts_uri[:7]:
                 raise Exception(f"Non-local artifacts path: {artifacts_uri}")
             artifacts_dir = Path(artifacts_uri[7:]).absolute()
@@ -43,7 +45,7 @@ class AcmeTracker(AgentTracker):
                 if latest is not None:
                     checkpoint.restore(latest)
                     self.save_tensorflow(name, network)
-                    print(f"AcmeTracker: Restored Tensorflow model {name}.")
+                    print(f"AcmeRunManager: Restored Tensorflow model {name}.")
                     return
         self.save_tensorflow(name, network)
-        print(f"AcmeTracker: No saved Tensorflow model {name} found.")
+        print(f"AcmeRunManager: No saved Tensorflow model {name} found.")

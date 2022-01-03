@@ -28,10 +28,15 @@ grant all privileges on database aos_web to aos_web_user;
 ./manage.py migrate
 ./manage.py runserver
 # navigate to http://localhost:8000
-
 ```
 
-## To start from scratch with the DB
+## To drop your local DB and recreate it
+
+```bash
+./scripts/reset_db
+```
+
+## To start from scratch with the Django App migrations
 
 Warning: this deletes all data in your DB:
 

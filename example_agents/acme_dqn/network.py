@@ -14,7 +14,7 @@ class AcmeDQNNetwork:
         self.restore()
 
     def restore(self):
-        self.tracker.restore_tensorflow("network", self.net)
+        self.run_manager.restore_tensorflow("network", self.net)
 
     def save(self):
-        self.tracker.save_tensorflow("network", self.net)
+        self.run_manager.save_tensorflow("network", self.net)
