@@ -1,8 +1,9 @@
 import statistics
 from typing import Optional
 from collections import namedtuple
-from agentos import Component
+from agentos.component import Component
 from agentos.run import Run
+from agentos.registry import Registry
 
 
 _EPISODE_KEY = "episode_count"
@@ -184,7 +185,12 @@ class RunContextManager:
         run = Run.active_run()
         artifacts_dir = run.get_artifacts_dir_path()
         spec_path = artifacts_dir / Run.SPEC_KEY
-        names = Component._get_name_map(spec_path)
+        names = [
+            Component.Identifier.from_str(c_id).name
+            for c_id in Registry.from_yaml(spec_path)
+            .get_component_specs()
+            .keys()
+        ]
         expected_name = getattr(self, f"{role_type}_name")
         if expected_name not in names:
             print(

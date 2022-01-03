@@ -1,47 +1,22 @@
 import sys
-import yaml
-import copy
 import uuid
 import importlib
-from typing import TypeVar, Dict, Type, Any, Optional
+from typing import TypeVar, Dict, Type, Any, Optional, Sequence
 from rich import print as rich_print
 from rich.tree import Tree
 from agentos.run import Run
+from agentos.component_identifier import ComponentIdentifier
+from agentos.specs import ComponentSpec
+from agentos.registry import (
+    Registry,
+    InMemoryRegistry,
+    RegistryException,
+)
 from agentos.repo import Repo, InMemoryRepo, GitHubRepo
 from agentos.parameter_set import ParameterSet
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
-
-
-class _Identifier:
-    """
-    This manages a Component Identifier so we can refer to Components both as
-    [name] and [name]==[version] in components.yaml spec files or from the
-    command-line.
-    """
-
-    def __init__(self, identifier: str, latest_refs=None):
-        split_identifier = identifier.split("==")
-        assert len(split_identifier) <= 2, f"Bad identifier: '{identifier}'"
-        if len(split_identifier) == 1:
-            self.name = split_identifier[0]
-            if latest_refs:
-                self.version = latest_refs[self.name]
-            else:
-                self.version = None
-        else:
-            self.name = split_identifier[0]
-            self.version = split_identifier[1]
-
-    def __repr__(self) -> str:
-        return f"<agentos.component.Component.Identifer: {self.full}>"
-
-    @property
-    def full(self) -> str:
-        if self.name and self.version:
-            return "==".join((self.name, self.version))
-        return self.name
 
 
 class Component:
@@ -51,7 +26,7 @@ class Component:
     dependencies.
     """
 
-    Identifier = _Identifier
+    Identifier = ComponentIdentifier
 
     def __init__(
         self,
@@ -60,11 +35,14 @@ class Component:
         identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
+        dependencies: Dict = None,
         dunder_name: str = None,
     ):
         """
-        :param managed_cls: The class used to create instances.
-        :param name: Name used to identify the Component.
+        :param managed_cls: The object this Component manages.
+        :param repo: Where the code for this component's managed object is.
+        :param identifier: Used to identify the Component.
+        :param dependencies: List of other components that self depends on.
         :param dunder_name: Name used for the pointer to this Component on any
                             instances of ``managed_cls`` created by this
                             Component.
@@ -74,55 +52,79 @@ class Component:
         self.identifier = identifier
         self.class_name = class_name
         self.file_path = file_path
+        self.dependencies = dependencies if dependencies else {}
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
-        self._dependencies = {}
 
     @staticmethod
-    def get_from_yaml(
-        name: str,
-        component_spec_file: str,
+    def from_registry(
+        registry: Registry, name: str, version: str = None
     ) -> "Component":
-        components = Component.parse_spec_file(component_spec_file)
-        names = Component._get_name_map(component_spec_file)
-        assert name in names, f'"{name}" not found in {names}'
-        return components[names[name]]
+        """
+        Returns a Component Object from the provided registry, including
+        its full dependency tree of other Component Objects.
+        """
+        identifier = Component.Identifier(name, version)
+        component_identifiers = [identifier]
+        repos = {}
+        components = {}
+        dependencies = {}
+        while component_identifiers:
+            component_id = component_identifiers.pop()
+            component_spec = registry.get_component_spec_by_id(component_id)
+            component_id_from_spec = ComponentIdentifier(
+                component_spec["name"], component_spec["version"]
+            )
+            repo_id = component_spec["repo"]
+            if repo_id not in repos.keys():
+                repo_spec = registry.get_repo_spec(repo_id)
+                repos[repo_id] = Repo.from_spec(
+                    repo_id, repo_spec, registry.base_dir
+                )
+            component = Component.from_repo(
+                repo=repos[repo_id],
+                identifier=component_id_from_spec,
+                class_name=component_spec["class_name"],
+                file_path=component_spec["file_path"],
+            )
+            components[component_id] = component
+            dependencies[component_id] = component_spec.get("dependencies", {})
+            for d_id in dependencies[component_id].values():
+                component_identifiers.append(
+                    Component.Identifier.from_str(d_id)
+                )
+
+        # Wire up the dependency graph
+        for c_name, component in components.items():
+            for attr_name, dependency_name in dependencies[c_name].items():
+                dependency = components[dependency_name]
+                component.add_dependency(dependency, attribute_name=attr_name)
+
+        return components[identifier]
 
     @staticmethod
-    def _get_name_map(component_spec_file: str) -> Dict:
-        """
-        User may refer to a component from, e.g., the CLI as a name without a
-        version string (e.g. ``agent`` not ``agent==1.2.3``).  However, we want
-        to map ``agent`` to ``agent==1.2.3`` if ``component_spec_file`` is
-        pinned to a version.
-
-        :returns: A dictionary that maps unversioned names to a full name that
-        will uniquely identify a Component in this run context
-        """
-        with open(component_spec_file) as file_in:
-            config = yaml.safe_load(file_in)
-        components = config.get("components", {})
-        names = {Component.Identifier(n).name: n for n in components.keys()}
-        names.update({n: n for n in components.keys()})
-        return names
+    def from_registry_file(yaml_file: str, name: str, version: str = None):
+        registry = Registry.from_yaml(yaml_file)
+        return Component.from_registry(registry, name, version)
 
     @staticmethod
-    def get_from_class(
+    def from_class(
         managed_cls: Type[T],
         name: str = None,
         dunder_name: str = None,
     ) -> "Component":
+        name = name if name else managed_cls.__name__
         return Component(
             managed_cls=managed_cls,
             repo=InMemoryRepo(),
-            identifier=Component.Identifier(managed_cls.__name__),
+            identifier=Component.Identifier(name),
             class_name=managed_cls.__name__,
             file_path=".",
             dunder_name=dunder_name,
         )
 
     @staticmethod
-    def get_from_repo(
+    def from_repo(
         repo: Repo,
         identifier: "Component.Identifier",
         class_name: str,
@@ -148,45 +150,13 @@ class Component:
             dunder_name=dunder_name,
         )
 
-    @staticmethod
-    def parse_spec_file(spec_file: str) -> Dict:
-        """Returns all Repos and Components defined by this ``spec_file``."""
-        with open(spec_file) as file_in:
-            config = yaml.safe_load(file_in)
-        repos = Component._parse_repos(config.get("repos", {}))
-        components = Component._parse_components(
-            config.get("components", {}), repos
-        )
-        return components
+    @property
+    def name(self) -> str:
+        return self.identifier.name
 
-    @staticmethod
-    def _parse_repos(repos_spec: Dict) -> Dict:
-        repos = {}
-        for name, spec in repos_spec.items():
-            repos[name] = Repo.from_spec(name, spec)
-        return repos
-
-    @staticmethod
-    def _parse_components(components_spec: Dict, repos: Dict) -> Dict:
-        components = {}
-        dependency_names = {}
-        for name, spec in components_spec.items():
-            component = Component.get_from_repo(
-                repo=repos[spec["repo"]],
-                identifier=Component.Identifier(name),
-                class_name=spec["class_name"],
-                file_path=spec["file_path"],
-            )
-            components[name] = component
-            dependency_names[name] = spec.get("dependencies", {})
-
-        # Wire up the dependency graph
-        for name, component in components.items():
-            for attr_name, dependency_name in dependency_names[name].items():
-                dependency = components[dependency_name]
-                component.add_dependency(dependency, attribute_name=attr_name)
-
-        return components
+    @property
+    def version(self):
+        return self.identifier.version
 
     def get_default_entry_point(self):
         try:
@@ -223,12 +193,12 @@ class Component:
 
     def add_dependency(
         self, component: "Component", attribute_name: str = None
-    ):
+    ) -> None:
         if type(component) is not type(self):
             raise Exception("add_dependency() must be passed a Component")
         if attribute_name is None:
             attribute_name = component.name
-        self._dependencies[attribute_name] = component
+        self.dependencies[attribute_name] = component
 
     def get_instance(self, params: ParameterSet = None) -> None:
         instantiated = {}
@@ -241,7 +211,7 @@ class Component:
         save_init = self._managed_cls.__init__
         self._managed_cls.__init__ = lambda self: None
         instance = self._managed_cls()
-        for dep_attr_name, dep_component in self._dependencies.items():
+        for dep_attr_name, dep_component in self.dependencies.items():
             print(f"Adding {dep_attr_name} to {self.name}")
             dep_instance = dep_component._get_instance(
                 params=params, instantiated=instantiated
@@ -253,17 +223,6 @@ class Component:
         instantiated[self.name] = instance
         return instance
 
-    def get_component_spec(self):
-        spec = {"repos": {}, "components": {}}
-        components = [self]
-        while len(components) > 0:
-            component = components.pop()
-            component._handle_repo_spec(spec["repos"])
-            spec["components"][component.full_name] = component.to_dict()
-            for dependency in component._dependencies.values():
-                components.append(dependency)
-        return spec
-
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
         if existing_repo:
@@ -271,55 +230,124 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def get_frozen_spec(self, force: bool = False) -> Dict:
-        versioned = self._get_versioned_dependency_dag(force)
-        return versioned.get_component_spec()
-
     def _get_versioned_dependency_dag(
         self, force: bool = False
     ) -> "Component":
         repo_url, version = self.repo.get_version_from_git(
             self.identifier, self.file_path, force
         )
-        identifier = Component.Identifier(self.identifier.full)
-        identifier.version = version
+        old_identifier = Component.Identifier(self.identifier.full)
+        new_identifier = Component.Identifier(old_identifier.name, version)
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
-            identifier, self.file_path
+            new_identifier, self.file_path
         )
         clone = Component(
             managed_cls=self._managed_cls,
             repo=GitHubRepo(name=self.repo.name, url=repo_url),
-            identifier=identifier,
+            identifier=new_identifier,
             class_name=self.class_name,
             file_path=prefixed_file_path,
             dunder_name=self._dunder_name,
         )
-        for attr_name, dependency in self._dependencies.items():
+        for attr_name, dependency in self.dependencies.items():
             frozen_dependency = dependency._get_versioned_dependency_dag(
                 force=force
             )
             clone.add_dependency(frozen_dependency, attribute_name=attr_name)
         return clone
 
-    def to_dict(self) -> Dict:
-        dependencies = {k: v.full_name for k, v in self._dependencies.items()}
-        component_spec = {
+    def to_spec(self) -> ComponentSpec:
+        dependencies = {
+            k: str(v.identifier) for k, v in self.dependencies.items()
+        }
+        component_spec_content = {
             "repo": self.repo.name,
             "file_path": str(self.file_path),
             "class_name": self.class_name,
             "dependencies": dependencies,
         }
-        return component_spec
+        return {str(self.identifier): component_spec_content}
 
-    def get_param_dict(self) -> Dict:
-        param_dict = {}
-        components = [self]
-        while len(components) > 0:
-            component = components.pop()
-            param_dict[component.name] = copy.deepcopy(component._params)
-            for dependency in component._dependencies.values():
-                components.append(dependency)
-        return param_dict
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,
+        force: bool = False,
+    ) -> Registry:
+        """
+        Returns a registry containing this component and all of its
+        transitive dependents, as well the repos of all of them. Throws
+        an exception if any of them already exist and are different
+        unless ``force`` is set to True.
+
+        :param registry: Optionally, add the component spec for this component
+                         and each of its transitive dependencies (which are
+                         themselves components) to the specified registry.
+        :param recurse: If True, check that all transitive dependencies
+                        exist in the registry already, and if they don't, then
+                        add them. If they do, ensure that they are equal to
+                        this component's dependencies (unless ``force`` is
+                        specified).
+        :param force: Optionally, if a component with the same identifier
+                      already exists and is different than the current one,
+                      attempt to overwrite the registered one with this one.
+        """
+        if not registry:
+            registry = InMemoryRegistry()
+        for c in self.to_dependency_list():
+            existing_c_spec = registry.get_component_specs(
+                filter_by_name=c.name, filter_by_version=c.version
+            )
+            if existing_c_spec and not force:
+                if existing_c_spec != c.to_spec():
+                    raise RegistryException(
+                        f"Trying to register a component {c.identifier} that "
+                        f"already exists in a different form:\n"
+                        f"{existing_c_spec}\n"
+                        f"VS\n"
+                        f"{c.to_spec()}\n\n"
+                        f"To overwrite, specify force=true."
+                    )
+            registry.add_component_spec(c.to_spec())
+            try:
+                repo_spec = registry.get_repo_spec(c.repo.name)
+                if repo_spec != c.repo.to_spec():
+                    raise RegistryException(
+                        f"A Repo with identifier {c.repo.name} already exists"
+                        f"in this registry that differs from the one referred "
+                        f"to by component {c.identifier}."
+                    )
+            except LookupError:
+                # Repo not yet registered, so so add it to this registry.
+                registry.add_repo_spec(c.repo.to_spec())
+            if not recurse:
+                break
+        return registry
+
+    def to_frozen_registry(self, force: bool = False) -> Registry:
+        versioned = self._get_versioned_dependency_dag(force)
+        return versioned.to_registry()
+
+    def to_dependency_list(
+        self, exclude_root: bool = False
+    ) -> Sequence["Component"]:
+        """
+        Return a normalized (i.e. flat) Sequence containing all transitive
+        dependencies of this component and (optionally) this component.
+
+        :param exclude_root: Optionally exclude root component from the list.
+                             If False, self is first element in list returned.
+        :return: a list containing all all of the transitive dependencies
+                 of this component (optionally  including the root component).
+        """
+        component_queue = [self]
+        ret_val = set() if exclude_root else set([self])
+        while component_queue:
+            component = component_queue.pop()
+            ret_val.add(component)
+            for dependency in component.dependencies.values():
+                component_queue.append(dependency)
+        return list(ret_val)
 
     def print_status_tree(self) -> None:
         tree = self.get_status_tree()
@@ -332,11 +360,3 @@ class Component:
         for dep_attr_name, dep_component in self._dependencies.items():
             dep_component.get_status_tree(parent_tree=self_tree)
         return self_tree
-
-    @property
-    def name(self) -> str:
-        return self.identifier.name
-
-    @property
-    def full_name(self) -> str:
-        return self.identifier.full

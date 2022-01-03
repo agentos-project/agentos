@@ -9,9 +9,7 @@ from pathlib import Path
 from typing import Dict, Optional, List, TYPE_CHECKING
 from contextlib import contextmanager
 from mlflow.entities import Run as MLflowRun
-from agentos.web import push_run_data
-from agentos.web import push_run_artifacts
-from agentos.web import AOS_WEB_BASE_URL
+from agentos.registry import Registry, web_registry
 from agentos.parameter_set import ParameterSet
 from agentos.repo import BadGitStateException, NoLocalPathException
 
@@ -235,25 +233,31 @@ class Run:
         assert all(exist), f"Missing artifact paths: {artifact_paths}, {exist}"
         return artifact_paths
 
-    def publish(self):
+    def publish(self) -> None:
+        run_id = self.to_registry(web_registry)
+        print(f"Published Run {run_id} to {web_registry.root_url}.")
+
+    def to_registry(self, registry: Registry) -> str:
         if not self.is_publishable:
             raise Exception("Run not publishable; Spec is not frozen!")
-        result = push_run_data(self.to_dict())
+        result = registry.push_run_data(self.to_dict())
         run_id = result["id"]
-        push_run_artifacts(run_id, self._get_artifact_paths())
-        print(f"Pushed Run {run_id} on {AOS_WEB_BASE_URL}")
+        registry.push_run_artifacts(run_id, self._get_artifact_paths())
+        return run_id
 
     def log_parameter_set(self, params: ParameterSet) -> None:
-        self.log_data_as_yaml_artifact(self.PARAM_KEY, params.to_dict())
+        self.log_data_as_yaml_artifact(self.PARAM_KEY, params.to_spec())
 
     def log_component_spec(self, root_component: "Component") -> None:
         frozen = None
         try:
-            frozen = root_component.get_frozen_spec()
+            root_id = root_component.identifier
+            frozen_reg = root_component.to_frozen_registry()
+            frozen = frozen_reg.get_component_spec_by_id(root_id)
             self.log_data_as_yaml_artifact(self.SPEC_KEY, frozen)
         except (BadGitStateException, NoLocalPathException) as exc:
             print(f"Warning: component is not publishable: {str(exc)}")
-            spec = root_component.get_component_spec()
+            spec = root_component.to_spec()
             self.log_data_as_yaml_artifact(self.SPEC_KEY, spec)
         mlflow.log_param(self.FROZEN_KEY, frozen is not None)
 

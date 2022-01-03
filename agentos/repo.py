@@ -1,5 +1,6 @@
 import os
 import sys
+import abc
 from enum import Enum
 from typing import TypeVar, Dict
 from pathlib import Path
@@ -10,6 +11,7 @@ from dulwich.objectspec import parse_commit
 from dulwich.errors import NotGitRepository
 from agentos.utils import AOS_CACHE_DIR
 from agentos import component
+from agentos.specs import RepoSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -30,16 +32,18 @@ class RepoType(Enum):
     UNKNOWN = "unknown"
 
 
-class Repo:
+class Repo(abc.ABC):
     """
     Base class used to encapsulate information about where a Component
     is located.
     """
 
     @staticmethod
-    def from_spec(name: str, spec: Dict) -> "Repo":
+    def from_spec(name: str, spec: RepoSpec, base_dir: Path = None) -> "Repo":
         if spec["type"] == RepoType.LOCAL.value:
-            return LocalRepo(name=name, file_path=spec["path"])
+            assert base_dir, "The `base_dir` arg is required for local repos."
+            path = Path(base_dir) / spec["path"]
+            return LocalRepo(name=name, file_path=path)
         elif spec["type"] == RepoType.GITHUB.value:
             return GitHubRepo(name=name, url=spec["url"])
         elif spec["type"] == RepoType.IN_MEMORY.value:
@@ -49,11 +53,14 @@ class Repo:
         else:
             raise Exception(f"Unknown repo spec type: {spec}")
 
-    def __eq__(self, other: "Repo") -> bool:
-        return self.to_dict() == other.to_dict()
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Repo):
+            return self.to_spec() == other.to_spec()
+        return self == other
 
-    def to_dict(self) -> Dict:
-        return {"type": self.type.value}
+    @abc.abstractmethod
+    def to_spec(self) -> Dict:
+        return NotImplementedError
 
     def get_local_repo_path(self, version: str) -> Path:
         raise NotImplementedError()
@@ -211,6 +218,9 @@ class UnknownRepo(Repo):
         self.name = name if name else "unknown_repo"
         self.type = RepoType.UNKNOWN
 
+    def to_spec(self) -> Dict:
+        return {"name": self.name, "type": self.type}
+
 
 class GitHubRepo(Repo):
     """
@@ -226,8 +236,9 @@ class GitHubRepo(Repo):
         self.local_repo_path = None
         self.porcelain_repo = None
 
-    def to_dict(self) -> Dict:
+    def to_spec(self) -> Dict:
         return {
+            "name": self.name,
             "type": self.type.value,
             "url": self.url,
         }
@@ -285,8 +296,9 @@ class LocalRepo(Repo):
         self.type = RepoType.LOCAL
         self.file_path = Path(file_path).absolute()
 
-    def to_dict(self) -> Dict:
+    def to_spec(self) -> Dict:
         return {
+            "name": self.name,
             "type": self.type.value,
             "path": str(self.file_path),
         }
@@ -312,3 +324,6 @@ class InMemoryRepo(Repo):
 
     def get_local_file_path(self, *args, **kwargs):
         raise NoLocalPathException()
+
+    def to_spec(self) -> Dict:
+        return {"name": self.name, "type": self.type.value}
