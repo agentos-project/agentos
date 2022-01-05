@@ -32,6 +32,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev-requirements.txt
           pip install -r web/requirements.txt
+          pip install -r example_agents/acme_dqn/requirements.txt
+          pip install -r example_agents/acme_r2d2/requirements.txt
+          pip install -r example_agents/rllib_agent/requirements.txt
+          pip install -r example_agents/sb3_agent/requirements.txt
       - name: Install agentos
         run: |
           pip install -e .

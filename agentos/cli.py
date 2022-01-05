@@ -43,7 +43,7 @@ _arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
 
 _option_registry_file = click.option(
     "--registry-file",
-    "-s",
+    "-r",
     type=click.Path(exists=True),
     default="./components.yaml",
     help="Path to registry file (components.yaml).",
