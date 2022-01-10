@@ -171,7 +171,6 @@ class Component(TimeStampedModel):
         self_deps = ComponentDependency.objects.filter(
             depender=self
         ).distinct()
-        print("FOOOOOOOOOOOO")
         for self_dep in self_deps:
             if self_dep.attribute_name not in other_spec["dependencies"]:
                 return False
@@ -180,7 +179,6 @@ class Component(TimeStampedModel):
             ]
             if other_dep_name != self_dep.dependee.full_name:
                 return False
-        print("BARRRRRRRRR")
         return True
 
 
