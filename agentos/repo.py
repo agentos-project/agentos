@@ -101,7 +101,7 @@ class Repo(abc.ABC):
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
-        url = None
+        url = "unknown_url"
         try:
             remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         except IndexError:
