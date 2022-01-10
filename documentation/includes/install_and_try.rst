@@ -1,10 +1,10 @@
 Install and Explore
 ===================
 
-AgentOS requires Python 3.7 - 3.10. To get started, use pip to
+AgentOS requires Python 3.7 - 3.9. To get started, use pip to
 install agentos, and then run a simple agent::
 
-  # Make sure you're using Python 3.7 - 3.10
+  # Make sure you're using Python 3.7 - 3.9
   pip install agentos
 
 Then, create and run your first Agent::
