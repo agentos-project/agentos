@@ -21,7 +21,7 @@ pytest-venv==0.2.1
 python-dotenv==0.19.2
 
 # Releasing requirements
-setuptools==60.5.0
+setuptools
 wheel==0.37.1
 twine==3.7.1
 
