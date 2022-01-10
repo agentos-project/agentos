@@ -1,13 +1,14 @@
 import pytest
 from tests.utils import run_test_command
 from tests.utils import is_linux
+from tests.utils import ACME_DQN_AGENT_DIR
 from agentos.cli import run
 
 component_name = "agent"
 test_args = {
-    "--registry-file": "example_agents/acme_dqn/components.yaml",
+    "--registry-file": ACME_DQN_AGENT_DIR / "components.yaml",
     "-P": "num_episodes=1",
-    "--param-file": "example_agents/acme_dqn/parameters.yaml",
+    "--param-file": ACME_DQN_AGENT_DIR / "parameters.yaml",
 }
 
 

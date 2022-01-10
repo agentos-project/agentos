@@ -1,9 +1,8 @@
 """Test suite for AgentOS Component."""
-import os
 from unittest.mock import patch
 from unittest.mock import DEFAULT
 from agentos.component import Component
-from utils import run_test_command
+from utils import run_test_command, run_in_dir
 from agentos.cli import init
 
 
@@ -32,9 +31,7 @@ def test_component_repl_demo():
 
 
 def test_component_freezing(tmpdir):
-    curr_dir = os.getcwd()
-    os.chdir(tmpdir)
-    try:
+    with run_in_dir(tmpdir):
         run_test_command(init)
         c = Component.from_registry_file("components.yaml", "agent")
         with patch.multiple(
@@ -53,5 +50,3 @@ def test_component_freezing(tmpdir):
             agent_spec = reg.get_component_spec("agent")
             assert agent_spec["repo"] == "local_dir"
             assert agent_spec["version"] == "test_freezing_version"
-    finally:
-        os.chdir(curr_dir)

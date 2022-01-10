@@ -1,13 +1,14 @@
 import pytest
 from tests.utils import run_test_command
 from tests.utils import is_linux
+from tests.utils import ACME_R2D2_AGENT_DIR
 from agentos.cli import run
 
 component_name = "agent"
 test_args = {
-    "--registry-file": "example_agents/acme_r2d2/components.yaml",
+    "--registry-file": ACME_R2D2_AGENT_DIR / "components.yaml",
     "-P": "num_episodes=1",
-    "--param-file": "example_agents/acme_r2d2/parameters.yaml",
+    "--param-file": ACME_R2D2_AGENT_DIR / "parameters.yaml",
 }
 
 
