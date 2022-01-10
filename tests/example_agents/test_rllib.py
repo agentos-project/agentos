@@ -3,7 +3,7 @@ from tests.utils import RLLIB_AGENT_DIR
 from agentos.cli import run
 
 test_args = ["agent"]
-test_kwargs = {"--registry-file": RLLIB_AGENT_DIR / "components.yaml"}
+test_kwargs = {"--registry-file": str(RLLIB_AGENT_DIR / "components.yaml")}
 
 
 def test_rllib_agent_evaluate():

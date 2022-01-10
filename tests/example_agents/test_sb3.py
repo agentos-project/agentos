@@ -3,7 +3,7 @@ from tests.utils import SB3_AGENT_DIR
 from agentos.cli import run
 
 test_args = ["agent"]
-test_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
+test_kwargs = {"--registry-file": str(SB3_AGENT_DIR / "components.yaml")}
 
 
 def test_sb3_agent_evaluate():

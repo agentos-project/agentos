@@ -6,9 +6,9 @@ from agentos.cli import run
 
 test_args = ["agent"]
 test_kwargs = {
-    "--registry-file": ACME_R2D2_AGENT_DIR / "components.yaml",
+    "--registry-file": str(ACME_R2D2_AGENT_DIR / "components.yaml"),
     "-P": "num_episodes=1",
-    "--param-file": ACME_R2D2_AGENT_DIR / "parameters.yaml",
+    "--param-file": str(ACME_R2D2_AGENT_DIR / "parameters.yaml"),
 }
 
 
