@@ -5,7 +5,6 @@ See repo README for instructions to run tests.
 from pathlib import Path
 from utils import run_test_command
 from utils import run_in_dir
-from utils import RANDOM_AGENT_DIR
 from utils import SB3_AGENT_DIR
 from agentos.cli import init, run, freeze, status
 
@@ -50,4 +49,3 @@ def test_cli_freeze(tmpdir):
     run_args = ["agent", "-f"]
     run_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
     run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)
- 
