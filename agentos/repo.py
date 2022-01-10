@@ -104,7 +104,11 @@ class Repo(abc.ABC):
         try:
             remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         except IndexError:
-            raise BadGitStateException("Could not find remote repo")
+            error_msg = "Could not find remote repo"
+            if force:
+                print(f"Warning: {error_msg}")
+            else:
+                raise BadGitStateException(error_msg)
         if "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
