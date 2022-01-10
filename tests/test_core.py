@@ -7,7 +7,7 @@ from utils import run_test_command
 from utils import run_in_dir
 from utils import RANDOM_AGENT_DIR
 from utils import SB3_AGENT_DIR
-from agentos.cli import init, run, freeze
+from agentos.cli import init, run, freeze, status
 
 
 def test_cli_init(tmpdir):
@@ -36,13 +36,10 @@ def test_cli_init(tmpdir):
 
 
 def test_cli_run():
-    run_args = ["agent"]
-    run_kwargs = {
-        "-P": "num_episodes=1",
-        "--entry-point": "evaluate",
-        "--registry-file": RANDOM_AGENT_DIR / "components.yaml",
-    }
-    run_test_command(run, cli_args=run_args, cli_kwargs=run_kwargs)
+    with run_in_dir(SB3_AGENT_DIR):
+        run_test_command(status)
+        run_args = ["agent"]
+        run_test_command(status, cli_args=run_args)
 
 
 def test_cli_status(tmpdir):
