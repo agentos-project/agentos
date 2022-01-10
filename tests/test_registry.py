@@ -1,6 +1,6 @@
 """Test suite for AgentOS Registry."""
 import pytest
-from tests.utils import is_linux
+from tests.utils import is_linux, RANDOM_AGENT_DIR, CHATBOT_AGENT_DIR
 from agentos.registry import Registry
 from agentos.component import Component
 from agentos.utils import DUMMY_WEB_REGISTRY_DICT
@@ -114,7 +114,7 @@ def test_registry_from_dict():
         == "random_corridor==for_tests_dummy_dev_registry"
     )
     random_local_ag = Component.from_registry(
-        Registry.from_yaml("example_agents/random/components.yaml"), "agent"
+        Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml"), "agent"
     )
     random_local_ag.run(
         "evaluate",
@@ -123,7 +123,7 @@ def test_registry_from_dict():
 
     # Test publishing a component to an InMemoryRegistry
     chatbot_agent = Component.from_registry_file(
-        "example_agents/chatbot/components.yaml", "chatbot"
+        CHATBOT_AGENT_DIR / "components.yaml", "chatbot"
     )
     assert chatbot_agent.class_name == "ChatBot"
     r.add_component(chatbot_agent)

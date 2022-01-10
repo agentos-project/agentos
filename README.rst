@@ -43,14 +43,11 @@ The AgentOS docs are at `agentos.org <https://agentos.org>`_.
 Install and Explore
 ===================
 
-AgentOS requires Python 3.5 - 3.8 and `conda`. To get started, use pip to
+AgentOS requires Python 3.7 - 3.10. To get started, use pip to
 install agentos, and then run a simple agent::
 
-  # Make sure you're using Python 3.5 - 3.8
-  # Make sure you have miniforge, miniconda, or conda installed (required
-  # for `agentos run`, which uses MLflow Projects).
+  # Make sure you're using Python 3.7 - 3.10
   pip install agentos
-  agentos run agentos.agents.RandomAgent gym.envs.classic_control.CartPoleEnv
 
 Then, create and run your first Agent::
 
@@ -129,21 +126,21 @@ To run tests::
 
   cd agentos # the project root, not the nested agentos/agentos dir
   pip install -r dev-requirements.txt
-  python -m pytest tests/test_core.py
-  python -m pytest tests/test_acme_demo.py
+  pytest
 
-Also, we use Github Actions to run ``tests/test_core.py`` with every commit
+Also, we use Github Actions to run tests with every commit
 and pull request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
-If you want, you can speed up local testing by skipping the creation of a
-clean virtualenv for each example agent by either defining environment
-variable or creating a `.env` file with
-`AGENTOS_SKIP_REQUIREMENT_INSTALL=True`.  This requires you to have all agent
-requirements already installed in your environment.
-
 If you want to the CLI to interact with a local development server, define the
 environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
+
+To run website tests::
+  cd web # the web directory contained in project root
+  pip install -r requirements.txt
+  pip install -e ../ # install local agentos
+  python manage.py test
+
 
 Building Docs
 =============
