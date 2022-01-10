@@ -43,10 +43,10 @@ The AgentOS docs are at `agentos.org <https://agentos.org>`_.
 Install and Explore
 ===================
 
-AgentOS requires Python 3.6 - 3.9 and `conda`. To get started, use pip to
+AgentOS requires Python 3.7 - 3.9 and `conda`. To get started, use pip to
 install agentos, and then run a simple agent::
 
-  # Make sure you're using Python 3.6 - 3.9
+  # Make sure you're using Python 3.7 - 3.9
   # Make sure you have miniforge, miniconda, or conda installed (required
   # for `agentos run`, which uses MLflow Projects).
   pip install agentos
