@@ -101,11 +101,16 @@ class Repo(abc.ABC):
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
+        url = "unknown_url"
         try:
             remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         except IndexError:
-            raise BadGitStateException("Could not find remote repo")
-        if "github.com" not in url:
+            error_msg = "Could not find remote repo"
+            if force:
+                print(f"Warning: {error_msg}")
+            else:
+                raise BadGitStateException(error_msg)
+        if url is None or "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
                 print(f"Warning: {error_msg}")
@@ -114,7 +119,15 @@ class Repo(abc.ABC):
         return url
 
     def _check_remote_branch_status(self, force: bool) -> str:
-        remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        try:
+            remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        except IndexError:
+            error_msg = "Unable to get remote repo"
+            if force:
+                print(f"Warning: {error_msg}")
+                return "unknown_version"
+            else:
+                raise BadGitStateException(error_msg)
         REMOTE_GIT_PREFIX = "refs/remotes"
         branch = porcelain.active_branch(self.porcelain_repo).decode("UTF-8")
         full_id = f"{REMOTE_GIT_PREFIX}/{remote}/{branch}".encode("UTF-8")
@@ -254,7 +267,7 @@ class GitHubRepo(Repo):
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             porcelain.clone(
-                self.url, target=str(clone_destination), checkout=True
+                source=self.url, target=str(clone_destination), checkout=True
             )
         assert clone_destination.exists(), f"Unable to clone {self.url}"
         return clone_destination

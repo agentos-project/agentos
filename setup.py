@@ -25,7 +25,7 @@ setup(
         "dm-env>=1.5",
         "pyyaml>=5.4.1",
         "mlflow>=1.20.2",
-        "dulwich>=0.20.26",
+        "dulwich==0.20.28",
         "requests>=2.21.0",
         "python-dotenv>=0.19.1",
         "rich>=10.15.2",

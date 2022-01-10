@@ -1,14 +1,14 @@
 """Test suite for AgentOS Registry."""
 import pytest
-from tests.utils import ACME_R2D2_AGENT_DIR
-from tests.utils import install_requirements
-from tests.utils import run_code_in_venv
-from tests.utils import is_linux
+from tests.utils import is_linux, RANDOM_AGENT_DIR, CHATBOT_AGENT_DIR
+from agentos.registry import Registry
+from agentos.component import Component
+from agentos.utils import DUMMY_WEB_REGISTRY_DICT
+from agentos import ParameterSet
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_registry_integration(venv):
-    install_requirements(ACME_R2D2_AGENT_DIR, venv, "requirements.txt")
     params = {
         "acme_r2d2_agent": {
             "evaluate": {"num_episodes": 10},
@@ -67,17 +67,10 @@ def test_registry_integration(venv):
             }
         },
     }
-    code = (
-        "from agentos.registry import Registry\n"
-        "from agentos.component import Component\n"
-        "from agentos.utils import DUMMY_WEB_REGISTRY_DICT\n"
-        "from agentos import ParameterSet\n"
-        "registry = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)\n"
-        "component = Component.from_registry(registry, 'acme_r2d2_agent')\n"
-        f"params = ParameterSet({params})\n"
-        "component.run('evaluate', params)\n"
-    )
-    run_code_in_venv(venv, code)
+    registry = Registry.from_dict(DUMMY_WEB_REGISTRY_DICT)
+    component = Component.from_registry(registry, "acme_r2d2_agent")
+    param_set = ParameterSet(params)
+    component.run("evaluate", param_set)
 
 
 def test_registry_from_dict():
@@ -121,7 +114,7 @@ def test_registry_from_dict():
         == "random_corridor==for_tests_dummy_dev_registry"
     )
     random_local_ag = Component.from_registry(
-        Registry.from_yaml("example_agents/random/components.yaml"), "agent"
+        Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml"), "agent"
     )
     random_local_ag.run(
         "evaluate",
@@ -130,7 +123,7 @@ def test_registry_from_dict():
 
     # Test publishing a component to an InMemoryRegistry
     chatbot_agent = Component.from_registry_file(
-        "example_agents/chatbot/components.yaml", "chatbot"
+        CHATBOT_AGENT_DIR / "components.yaml", "chatbot"
     )
     assert chatbot_agent.class_name == "ChatBot"
     r.add_component(chatbot_agent)
