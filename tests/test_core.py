@@ -3,8 +3,11 @@
 See repo README for instructions to run tests.
 """
 from pathlib import Path
-from utils import run_test_command, run_in_dir, RANDOM_AGENT_DIR
-from agentos.cli import init, run
+from utils import run_test_command
+from utils import run_in_dir
+from utils import RANDOM_AGENT_DIR
+from utils import SB3_AGENT_DIR
+from agentos.cli import init, run, freeze
 
 
 def test_cli_init(tmpdir):
@@ -23,27 +26,31 @@ def test_cli_init(tmpdir):
             expected_path = Path(tmpdir) / expected_file_name
             assert expected_path.is_file(), f"{expected_file_name} not found"
         # Test basic run commands work on initialized agent
-        run_1_params = {"-P": "num_episodes=1"}
-        run_test_command(run, component_name="agent", args=run_1_params)
-        run_2_params = {"--entry-point": "learn"}
-        run_test_command(run, component_name="agent", args=run_2_params)
-        run_3_params = {"--entry-point": "reset"}
-        run_test_command(run, component_name="agent", args=run_3_params)
+        run_args = ["agent"]
+        run_1_kwargs = {"-P": "num_episodes=1"}
+        run_test_command(run, cli_args=run_args, cli_kwargs=run_1_kwargs)
+        run_2_kwargs = {"--entry-point": "learn"}
+        run_test_command(run, cli_args=run_args, cli_kwargs=run_2_kwargs)
+        run_3_kwargs = {"--entry-point": "reset"}
+        run_test_command(run, cli_args=run_args, cli_kwargs=run_3_kwargs)
 
 
-def test_cli_run(tmpdir):
-    with run_in_dir(tmpdir):
-        run_params = {
-            "-P": "num_episodes=1",
-            "--entry-point": "evaluate",
-            "--registry-file": RANDOM_AGENT_DIR / "components.yaml",
-        }
-        run_test_command(run, component_name="agent", args=run_params)
+def test_cli_run():
+    run_args = ["agent"]
+    run_kwargs = {
+        "-P": "num_episodes=1",
+        "--entry-point": "evaluate",
+        "--registry-file": RANDOM_AGENT_DIR / "components.yaml",
+    }
+    run_test_command(run, cli_args=run_args, cli_kwargs=run_kwargs)
 
 
 def test_cli_status(tmpdir):
-    raise Exception()
+    pass
 
 
 def test_cli_freeze(tmpdir):
-    raise Exception()
+    run_args = ["agent", "-f"]
+    run_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
+    run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)
+ 
