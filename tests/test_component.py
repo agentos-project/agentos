@@ -1,9 +1,10 @@
 """Test suite for AgentOS Component."""
 import os
-import subprocess
 from unittest.mock import patch
 from unittest.mock import DEFAULT
 from agentos.component import Component
+from utils import run_test_command
+from agentos.cli import init
 
 
 def test_component_repl_demo():
@@ -31,10 +32,10 @@ def test_component_repl_demo():
 
 
 def test_component_freezing(tmpdir):
-    subprocess.run(["agentos", "init"], cwd=tmpdir, check=True)
     curr_dir = os.getcwd()
     os.chdir(tmpdir)
     try:
+        run_test_command(init)
         c = Component.from_registry_file("components.yaml", "agent")
         with patch.multiple(
             "agentos.repo.Repo",

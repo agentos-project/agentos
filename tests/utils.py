@@ -6,9 +6,10 @@ ROOT_DIR = Path(__file__).parent.parent
 EXAMPLE_AGENT_DIR = ROOT_DIR / "example_agents"
 
 
-def run_test_command(cmd, component_name, args):
+def run_test_command(cmd, component_name=None, args=None):
+    component_name = component_name or ''
     call_list = [component_name]
-    for param, val in args.items():
+    for param, val in (args or {}).items():
         call_list.append(param)
         call_list.append(val)
     runner = CliRunner()
