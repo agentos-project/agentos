@@ -101,6 +101,7 @@ class Repo(abc.ABC):
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
+        url = None
         try:
             remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         except IndexError:
@@ -109,7 +110,7 @@ class Repo(abc.ABC):
                 print(f"Warning: {error_msg}")
             else:
                 raise BadGitStateException(error_msg)
-        if "github.com" not in url:
+        if url is None or "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
                 print(f"Warning: {error_msg}")
@@ -258,7 +259,7 @@ class GitHubRepo(Repo):
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             porcelain.clone(
-                self.url, target=str(clone_destination), checkout=True
+                source=self.url, target=str(clone_destination), checkout=True
             )
         assert clone_destination.exists(), f"Unable to clone {self.url}"
         return clone_destination
