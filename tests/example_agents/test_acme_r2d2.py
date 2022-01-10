@@ -14,11 +14,13 @@ test_kwargs = {
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_acme_r2d2_agent_evaluate():
-    test_kwargs["--entry-point"] = "evaluate"
-    run_test_command(cmd=run, cli_args=test_args, cli_kwargs=test_kwargs)
+    kwargs = {k: v for k, v in test_kwargs.items()}
+    kwargs["--entry-point"] = "evaluate"
+    run_test_command(cmd=run, cli_args=test_args, cli_kwargs=kwargs)
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_acme_r2d2_agent_learn():
-    test_kwargs["--entry-point"] = "learn"
-    run_test_command(cmd=run, cli_args=test_args, cli_kwargs=test_kwargs)
+    kwargs = {k: v for k, v in test_kwargs.items()}
+    kwargs["--entry-point"] = "learn"
+    run_test_command(cmd=run, cli_args=test_args, cli_kwargs=kwargs)
