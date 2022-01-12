@@ -1,4 +1,10 @@
 # When updating here, also update conda_env.yaml
 requests==2.21.0  # Needed till https://github.com/ray-project/ray/issues/8373 fixed.
-torch==1.9.1
+
+# See https://pytorch.org/get-started/locally/ for the command to install
+# the CPU-only torch for each platform
+-f https://download.pytorch.org/whl/torch_stable.html ; sys_platform == 'linux'
+torch==1.9.1+cpu; sys_platform == 'linux'
+torch==1.9.1; sys_platform == 'windows'
+torch==1.9.1; sys_platform == 'darwin'
 ray[rllib]==1.7.0
