@@ -63,7 +63,7 @@ To run tests, first install the requirements (note, this script installs the
 Python requirements into the currently active virtual environment)::
 
   cd agentos # the project root, not the nested agentos/agentos dir
-  pip install -r dev-requirements.txt
+  python install_requirements.py
 
 Then run the tests::
 
@@ -77,9 +77,8 @@ If you want to the CLI to interact with a local development server, define the
 environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
 
 To run website tests::
+  python install_requirements.py
   cd web # the web directory contained in project root
-  pip install -r requirements.txt
-  pip install -e ../ # install local agentos
   python manage.py test
 
 
