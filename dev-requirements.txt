@@ -28,9 +28,3 @@ twine==3.7.1
 # mypy dependencies
 types-PyYAML
 types-requests
-
-# Requirements for example agents (used in tests)
--r example_agents/rllib_agent/requirements.txt
--r example_agents/sb3_agent/requirements.txt
--r example_agents/acme_dqn/requirements.txt
--r example_agents/acme_r2d2/requirements.txt

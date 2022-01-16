@@ -2,8 +2,9 @@
 requests==2.21.0  # Needed till https://github.com/ray-project/ray/issues/8373 fixed.
 
 # See https://pytorch.org/get-started/locally/ for the command to install
-# the CPU-only torch for each platform
--f https://download.pytorch.org/whl/torch_stable.html ; sys_platform == 'linux'
+# the CPU-only torch for each platform.
+# Pass the following option to pip on linux to get the CPU only torch
+# -f https://download.pytorch.org/whl/torch_stable.html
 torch==1.9.1+cpu; sys_platform == 'linux'
 torch==1.9.1; sys_platform == 'windows'
 torch==1.9.1; sys_platform == 'darwin'
