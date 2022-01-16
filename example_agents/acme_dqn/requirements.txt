@@ -1,120 +1,117 @@
 # Note: Reverb (the DeepMind experience database) is only available on linux,
-# as a result, this agent will only run on linux.  Thus, we gate this whole
-# file based on sys_platform to allow the top-level dev-requirements.txt to
-# be successfully installed regardless of OS.
+# as a result, this agent will only run on linux.  
 
-absl-py==0.13.0; sys_platform == 'linux'
-alembic==1.4.1; sys_platform == 'linux'
-appdirs==1.4.3; sys_platform == 'linux'
-astunparse==1.6.3; sys_platform == 'linux'
-attrdict==2.0.1; sys_platform == 'linux'
-azure-core==1.16.0; sys_platform == 'linux'
-azure-storage-blob==12.8.1; sys_platform == 'linux'
-CacheControl==0.12.6; sys_platform == 'linux'
-cachetools==4.2.2; sys_platform == 'linux'
-certifi==2019.11.28; sys_platform == 'linux'
-cffi==1.14.6; sys_platform == 'linux'
-chardet==3.0.4; sys_platform == 'linux'
-charset-normalizer==2.0.6; sys_platform == 'linux'
-clang==5.0; sys_platform == 'linux'
-click==8.0.1; sys_platform == 'linux'
-cloudpickle==1.3.0; sys_platform == 'linux'
-colorama==0.4.3; sys_platform == 'linux'
-contextlib2==0.6.0; sys_platform == 'linux'
-cryptography==3.4.7; sys_platform == 'linux'
-cycler==0.10.0; sys_platform == 'linux'
-databricks-cli==0.14.3; sys_platform == 'linux'
-decorator==5.0.9; sys_platform == 'linux'
-distlib==0.3.3; sys_platform == 'linux'
-distro==1.4.0; sys_platform == 'linux'
-dm-acme==0.2.1; sys_platform == 'linux'
-dm-env==1.5; sys_platform == 'linux'
-dm-reverb[tensorflow]; sys_platform == 'linux'
-dm-sonnet==2.0.0; sys_platform == 'linux'
-dm-tree==0.1.6; sys_platform == 'linux'
-docker==5.0.0; sys_platform == 'linux'
-EasyProcess==0.3; sys_platform == 'linux'
-entrypoints==0.3; sys_platform == 'linux'
-factories==1.2.0; sys_platform == 'linux'
-Flask==2.0.1; sys_platform == 'linux'
-flatbuffers==1.12; sys_platform == 'linux'
-future==0.18.2; sys_platform == 'linux'
-gast==0.4.0; sys_platform == 'linux'
-gitdb==4.0.7; sys_platform == 'linux'
-GitPython==3.1.18; sys_platform == 'linux'
-google-auth==1.32.1; sys_platform == 'linux'
-google-auth-oauthlib==0.4.4; sys_platform == 'linux'
-google-pasta==0.2.0; sys_platform == 'linux'
-gorilla==0.4.0; sys_platform == 'linux'
-grpcio==1.41.0; sys_platform == 'linux'
-gunicorn==20.1.0; sys_platform == 'linux'
-gym==0.17.1; sys_platform == 'linux'
-h5py==3.1.0; sys_platform == 'linux'
-html5lib==1.0.1; sys_platform == 'linux'
-imageio==2.9.0; sys_platform == 'linux'
-ipaddr==2.2.0; sys_platform == 'linux'
-isodate==0.6.0; sys_platform == 'linux'
-itsdangerous==2.0.1; sys_platform == 'linux'
-jax==0.2.17; sys_platform == 'linux'
-jaxlib==0.1.68; sys_platform == 'linux'
-Jinja2==3.0.1; sys_platform == 'linux'
-keras==2.7.0; sys_platform == 'linux'
-Keras-Preprocessing==1.1.2; sys_platform == 'linux'
-kiwisolver==1.3.1; sys_platform == 'linux'
-launchpad==1.1.0; sys_platform == 'linux'
-lockfile==0.12.2; sys_platform == 'linux'
-Mako==1.1.4; sys_platform == 'linux'
-Markdown==3.3.4; sys_platform == 'linux'
-MarkupSafe==2.0.1; sys_platform == 'linux'
-matplotlib>=3.3.4; sys_platform == 'linux'
-mccabe==0.6.1; sys_platform == 'linux'
-mlflow==1.20.2; sys_platform == 'linux'
-msrest==0.6.21; sys_platform == 'linux'
-mypy-extensions==0.4.3; sys_platform == 'linux'
-numpy==1.19.5; sys_platform == 'linux'
-oauthlib==3.1.1; sys_platform == 'linux'
-opt-einsum==3.3.0; sys_platform == 'linux'
-packaging==20.3; sys_platform == 'linux'
-pandas>=1.1.5; sys_platform == 'linux'
-pep517==0.8.2; sys_platform == 'linux'
-Pillow==8.3.2; sys_platform == 'linux'
-portpicker==1.4.0; sys_platform == 'linux'
-progress==1.5; sys_platform == 'linux'
-prometheus-client==0.11.0; sys_platform == 'linux'
-prometheus-flask-exporter==0.18.2; sys_platform == 'linux'
-protobuf==3.17.3; sys_platform == 'linux'
-pyasn1==0.4.8; sys_platform == 'linux'
-pyasn1-modules==0.2.8; sys_platform == 'linux'
-pycparser==2.20; sys_platform == 'linux'
-pyglet==1.5.0; sys_platform == 'linux'
-pyparsing==2.4.6; sys_platform == 'linux'
-python-dateutil==2.8.1; sys_platform == 'linux'
-python-editor==1.0.4; sys_platform == 'linux'
-pytoml==0.1.21; sys_platform == 'linux'
-pytz==2021.1; sys_platform == 'linux'
-PyVirtualDisplay==2.2; sys_platform == 'linux'
-PyYAML==5.4.1; sys_platform == 'linux'
-querystring-parser==1.2.4; sys_platform == 'linux'
-qute==3.0.11; sys_platform == 'linux'
-regex==2021.7.6; sys_platform == 'linux'
-requests==2.21.0; sys_platform == 'linux'
-requests-oauthlib==1.3.0; sys_platform == 'linux'
-retrying==1.3.3; sys_platform == 'linux'
-rsa==4.7.2; sys_platform == 'linux'
-scipy>=1.5.4; sys_platform == 'linux'
-scribble==1.0.0; sys_platform == 'linux'
-six==1.15.0; sys_platform == 'linux'
-smmap==4.0.0; sys_platform == 'linux'
-SQLAlchemy==1.3.13; sys_platform == 'linux'
-sqlparse==0.4.2; sys_platform == 'linux'
-tabulate==0.8.9; sys_platform == 'linux'
-#tensorflow==2.7.0; sys_platform == 'linux'
-tensorflow-probability==0.15.0; sys_platform == 'linux'
-termcolor==1.1.0; sys_platform == 'linux'
-toml==0.10.2; sys_platform == 'linux'
-trfl==1.1.0; sys_platform == 'linux'
-webencodings==0.5.1; sys_platform == 'linux'
-websocket-client==1.1.0; sys_platform == 'linux'
-Werkzeug==2.0.1; sys_platform == 'linux'
-wrapt==1.12.1; sys_platform == 'linux'
-zipp==3.6.0; sys_platform == 'linux'
+absl-py==0.13.0
+alembic==1.4.1
+appdirs==1.4.3
+astunparse==1.6.3
+attrdict==2.0.1
+azure-core==1.16.0
+azure-storage-blob==12.8.1
+CacheControl==0.12.6
+cachetools==4.2.2
+certifi==2019.11.28
+cffi==1.14.6
+chardet==3.0.4
+charset-normalizer==2.0.6
+clang==5.0
+click==8.0.1
+cloudpickle==1.3.0
+colorama==0.4.3
+contextlib2==0.6.0
+cryptography==3.4.7
+cycler==0.10.0
+databricks-cli==0.14.3
+decorator==5.0.9
+distlib==0.3.3
+distro==1.4.0
+dm-acme==0.2.1
+dm-env==1.5
+dm-reverb[tensorflow]
+dm-sonnet==2.0.0
+dm-tree==0.1.6
+docker==5.0.0
+EasyProcess==0.3
+entrypoints==0.3
+factories==1.2.0
+Flask==2.0.1
+flatbuffers==1.12
+future==0.18.2
+gast==0.4.0
+gitdb==4.0.7
+GitPython==3.1.18
+google-auth==1.32.1
+google-auth-oauthlib==0.4.4
+google-pasta==0.2.0
+gorilla==0.4.0
+grpcio==1.41.0
+gunicorn==20.1.0
+gym==0.17.1
+h5py==3.1.0
+html5lib==1.0.1
+imageio==2.9.0
+ipaddr==2.2.0
+isodate==0.6.0
+itsdangerous==2.0.1
+jax==0.2.17
+jaxlib==0.1.68
+Jinja2==3.0.1
+keras==2.7.0
+Keras-Preprocessing==1.1.2
+kiwisolver==1.3.1
+launchpad==1.1.0
+lockfile==0.12.2
+Mako==1.1.4
+Markdown==3.3.4
+MarkupSafe==2.0.1
+matplotlib>=3.3.4
+mccabe==0.6.1
+mlflow==1.20.2
+msrest==0.6.21
+mypy-extensions==0.4.3
+numpy==1.21.0
+oauthlib==3.1.1
+opt-einsum==3.3.0
+packaging==20.3
+pandas>=1.1.5
+pep517==0.8.2
+Pillow==9.0.0
+portpicker==1.4.0
+progress==1.5
+prometheus-client==0.11.0
+prometheus-flask-exporter==0.18.2
+protobuf==3.17.3
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pycparser==2.20
+pyglet==1.5.0
+pyparsing==2.4.6
+python-dateutil==2.8.1
+python-editor==1.0.4
+pytoml==0.1.21
+pytz==2021.1
+PyVirtualDisplay==2.2
+PyYAML==5.4.1
+querystring-parser==1.2.4
+qute==3.0.11
+regex==2021.7.6
+requests==2.21.0
+requests-oauthlib==1.3.0
+retrying==1.3.3
+rsa==4.7.2
+scipy>=1.5.4
+scribble==1.0.0
+six==1.15.0
+smmap==4.0.0
+SQLAlchemy==1.3.13
+sqlparse==0.4.2
+tabulate==0.8.9
+tensorflow-probability==0.15.0
+termcolor==1.1.0
+toml==0.10.2
+trfl==1.1.0
+webencodings==0.5.1
+websocket-client==1.1.0
+Werkzeug==2.0.1
+wrapt==1.12.1
+zipp==3.6.0

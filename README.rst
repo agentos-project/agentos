@@ -122,10 +122,15 @@ following::
 
 Testing
 =======
-To run tests::
+
+To run tests, first install the requirements (note, this script installs the
+Python requirements into the currently active virtual environment)::
 
   cd agentos # the project root, not the nested agentos/agentos dir
-  pip install -r dev-requirements.txt
+  python install_requirements.py
+
+Then run the tests::
+
   pytest
 
 Also, we use Github Actions to run tests with every commit
@@ -136,9 +141,8 @@ If you want to the CLI to interact with a local development server, define the
 environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
 
 To run website tests::
+  python install_requirements.py
   cd web # the web directory contained in project root
-  pip install -r requirements.txt
-  pip install -e ../ # install local agentos
   python manage.py test
 
 
@@ -148,9 +152,10 @@ Building Docs
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.  The docs are
 built using `Sphinx <https://www.sphinx-doc.org>`_.  To build the docs, first
-install the dev requirements::
+install the dev requirements (note, this script will install requirements into
+the currently active Python virtual environment)::
 
-  pip install -r dev-requirements.txt
+  python install_requirements.py
 
 Then use the build script::
 
@@ -214,7 +219,7 @@ Here are the steps for releasing AgentOS:
 
 #. Build and check the distribution artifacts for the release by running::
 
-   pip install -r dev-requirements.txt
+   python install_requirements.py
    python setup.py sdist --formats=gztar,zip bdist_wheel
    twine check dist/*
 
@@ -255,7 +260,7 @@ push a release to PyPI, you can approximately follow `these python.org
 instructions <https://packaging.python.org/tutorials/packaging-projects/>`_,
 which will probably look something like::
 
-  pip install -r dev-requirements.txt
+  python install_requirements.py
   rm -rf dist
   python setup.py sdist --formats=gztar bdist_wheel
   twine check dist/*
