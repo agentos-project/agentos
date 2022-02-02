@@ -127,3 +127,10 @@ heroku run python manage.py create_default_admin
 # Tail logs
 heroku logs --tail
 ```
+
+To run website tests:
+```
+python install_requirements.py
+cd web # the web directory contained in project root
+python manage.py test
+```

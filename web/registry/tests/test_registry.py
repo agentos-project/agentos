@@ -16,8 +16,8 @@ class RegistryTestCases(TestCase):
     def setUp(self):
         self.client = Client()
         self.repo = Repo.objects.create(
-            name="test-repo-a38",
-            github_url="https://github.com/example/example",
+            identifier="test-repo-a38",
+            url="https://github.com/example/example",
         )
         self.component = Component.objects.create(
             name="test-component-h42",
@@ -25,6 +25,7 @@ class RegistryTestCases(TestCase):
             repo=self.repo,
             file_path="/foo/bar/baz",
             class_name="TestComponentH42",
+            instantiate=True,
             description="",
         )
         self.run = Run.objects.create(
@@ -98,6 +99,7 @@ class RegistryTestCases(TestCase):
         self.assertEqual(self.component.repo.id, component.repo.id)
         self.assertEqual(self.component.file_path, component.file_path)
         self.assertEqual(self.component.class_name, component.class_name)
+        self.assertEqual(self.component.instantiate, component.instantiate)
         success_path = self.static_dir / "test_component_replace_success.yaml"
         success_response = self.client.post(
             url, {"components.yaml": open(success_path)}

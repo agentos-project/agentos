@@ -81,7 +81,7 @@ class ComponentRun(Run):
             self._run_command = self._fetch_run_command()
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
-            MLFLOW_RUN_NAME, f"{self.run_command.entry_point} (component_run)"
+            MLFLOW_RUN_NAME, f"PCS Component '{self.run_command.component.identifier.full}' at Entry Point '{self.run_command.entry_point}'"
         )
 
     @property

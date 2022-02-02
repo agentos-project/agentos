@@ -43,6 +43,6 @@ def test_cli_status(tmpdir):
 
 
 def test_cli_freeze(tmpdir):
-    run_args = ["agent", "-f"]
+    run_args = ["sb3_agent", "-f"]
     run_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
     run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)

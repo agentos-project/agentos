@@ -89,7 +89,12 @@ class SB3Run(AgentRun):
         agent_name: Optional[str] = None,
         environment_name: Optional[str] = None,
     ) -> None:
-        super().__init__(run_type, agent_name, environment_name, parent_run)
+        super().__init__(
+            run_type,
+            parent_run=parent_run,
+            agent_name=agent_name,
+            environment_name=environment_name
+        )
         self.evaluate_callback = EvaluateCallback(self)
         self.learn_callback = LearnCallback(self)
         self.set_tag(self.SB3_RUN_TAG_KEY, "True")

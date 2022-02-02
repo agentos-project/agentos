@@ -181,12 +181,14 @@ class Component:
     def from_repo(
         cls,
         repo: Repo,
-        identifier: "Component.Identifier",
+        identifier: Union[str, "Component.Identifier"],
         class_name: str,
         file_path: str,
         instantiate: bool = True,
         dunder_name: str = None,
     ) -> "Component":
+        # For convenience, optionally allow 'identifier' to be passed as str.
+        identifier = ComponentIdentifier.from_str(str(identifier))
         full_path = repo.get_local_file_path(identifier.version, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
         sys.path.append(str(full_path.parent))

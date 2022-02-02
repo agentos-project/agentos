@@ -17,7 +17,6 @@ from .serializers import ComponentSerializer
 
 
 class ComponentViewSet(viewsets.ModelViewSet):
-    queryset = Component.objects.all().order_by("-created")
     serializer_class = ComponentSerializer
     permission_classes = [AllowAny]
 
@@ -33,6 +32,17 @@ class ComponentViewSet(viewsets.ModelViewSet):
         repos, components = Component.ingest_spec_dict(spec_dict)
         serialized = ComponentSerializer(components, many=True)
         return Response(serialized.data)
+
+    def get_queryset(self):
+        queryset = Component.objects.all().order_by("-created")
+        # filter by url .../components?name=name&version=comp_version
+        name = self.request.query_params.get('name')
+        version = self.request.query_params.get('version')
+        if name:
+            queryset = queryset.filter(name=name)
+        if version:
+            queryset = queryset.filter(version=version)
+        return queryset
 
 
 def _get_from_list(name, component_list):
@@ -109,6 +119,13 @@ class RunViewSet(viewsets.ModelViewSet):
 
 
 class RepoViewSet(viewsets.ModelViewSet):
-    queryset = Repo.objects.all().order_by("-created")
     serializer_class = RepoSerializer
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = Repo.objects.all().order_by("-created")
+        # filter by url .../repos?identifier=repo_identifier
+        identifier = self.request.query_params.get('identifier')
+        if identifier:
+            queryset = queryset.filter(identifier=identifier)
+        return queryset

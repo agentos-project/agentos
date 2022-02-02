@@ -64,7 +64,7 @@ def _handle_random_agent(version_string):
 def _handle_sb3_agent(version_string):
     sb3_path_prefix = Path("example_agents") / Path("sb3_agent")
     sb3_rename_map = {
-        "agent": f"sb3_ppo_agent=={version_string}",
+        "sb3_agent": f"sb3_ppo_agent=={version_string}",
         "environment": f"sb3_cartpole=={version_string}",
         "SB3AgentRun": f"SB3AgentRun=={version_string}",
     }

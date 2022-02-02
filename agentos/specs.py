@@ -16,7 +16,48 @@ ParameterSetSpec, those values can themselves be mappings.
 For developer convenience many functions support flattened specs, which have
 the spec identifier at the same level as the rest of the spec properties.
 """
+
 from typing import Mapping, Union, Any
+import copy
+
+
+def flatten_spec(nested_spec: dict) -> dict:
+    assert len(nested_spec.keys()) == 1
+    flat_spec = {}
+    for identifier, inner_spec in nested_spec.items():
+        assert type(identifier) == str
+        flat_spec.update(copy.deepcopy(inner_spec))
+        assert "identifier" not in flat_spec
+        flat_spec["identifier"] = identifier
+        if "==" in identifier:
+            assert "name" not in flat_spec, (
+                "'name' cannot be a key in a nested spec that has a '==' "
+                "in its identifier."
+            )
+            assert "version" not in flat_spec, (
+                "'version' cannot be a key in a nested spec that has a '==' "
+                "in its identifier."
+            )
+            parts = identifier.split("==")
+            assert len(parts) == 2
+            flat_spec["name"], flat_spec["version"] = parts
+    return flat_spec
+
+
+def unflatten_spec(flat_spec: dict) -> dict:
+    assert "identifier" in flat_spec
+    if "==" in flat_spec["identifier"]:
+        parts = flat_spec["identifier"].split("==")
+        assert len(parts) == 2
+        assert "name" in flat_spec, (
+            "'name' must be a key in a flat spec with a versioned identifier"
+        )
+        assert "version" in flat_spec, (
+            "'version' must be a key in a flat spec that has a versioned "
+            "identifier (i.e., that has an '==' in its identifier."
+        )
+    dup_spec = copy.deepcopy(flat_spec)
+    return {dup_spec.pop("identifier"): dup_spec}
 
 
 FlatSpec = Mapping[str, str]

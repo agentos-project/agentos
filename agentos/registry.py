@@ -12,6 +12,7 @@ from typing import Dict, Sequence, Union, TYPE_CHECKING
 from dotenv import load_dotenv
 from agentos.identifiers import ComponentIdentifier, RunIdentifier
 from agentos.specs import (
+    flatten_spec,
     RepoSpec,
     ComponentSpec,
     NestedComponentSpec,
@@ -21,6 +22,7 @@ from agentos.specs import (
 
 if TYPE_CHECKING:
     from agentos.component import Component
+    from agentos.run import Run
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -68,14 +70,18 @@ class Registry(abc.ABC):
         self, filter_by_name: str = None, filter_by_version: str = None
     ) -> NestedComponentSpec:
         """
-        Return dictionary of component specs in this Registry.
+        Return dictionary of component specs in this Registry, optionally
+        filtered by name and/or version; or None if none are found.
+
         Each Component Spec is itself a dict mapping ComponentIdentifier to a
         dict of properties that define the Component.
 
         Optionally, filter the list to match all filter strings provided.
         Filters can be provided on name, version, or both.
+
         If this registry contains zero component specs that match
         the filter criteria (if any), then an empty dictionary is returned.
+
         If ``filter_by_name`` and ``filter_by_version`` are provided,
         then 0 or 1 components will be returned.
 
@@ -87,17 +93,22 @@ class Registry(abc.ABC):
                already included via the ComponentIdentifier Dict key.
 
         :returns: A dictionary of components in this registry, optionally
-        filtered by name, version, or both.
+        filtered by name, version, or both. If no matching components are
+        found, an empty dictionary is returned.
         """
         raise NotImplementedError
 
     def get_component_spec(
-        self, name: str, version: str = None, flatten: bool = False
+        self,
+        name: str,
+        version: str = None,
+        flatten: bool = False,
+        error_if_not_found: bool = True
     ) -> ComponentSpec:
         """
-        Returns the component spec with ``name`` and ``version``, if it exists.
-        A component's name and version are defined as its identifier's name
-        and version.
+        Returns the component spec with ``name`` and ``version``, if it exists,
+        or raise an Error if it does not. A component's name and version are
+        defined as its identifier's name and version.
 
         Registries are not allowed to contain multiple Components with the same
         identifier. The Registry abstract base class does not enforce that all
@@ -119,20 +130,26 @@ class Registry(abc.ABC):
         :param name: The name of the component to fetch.
         :param version: Optional version of the component to fetch.
         :param flatten: If True, flatten the outermost 2 layers of nested
-                          dicts into a single dict. In an unflattened component
-                          spec, the outermost dict is from identifier
-                          (which is a string in the format of name[==version])
-                          Component component properties (class_name, repo,
-                          etc.). In a flattened Component spec, the name and
-                          version are included in the same dictionary as the
-                          class_name, repo, dependencies, etc.
+            dicts into a single dict. In an unflattened component spec, the
+            outermost dict is from identifier (which is a string in the format
+            of name[==version]) Component component properties (class_name,
+            repo, etc.). In a flattened Component spec, the name and version
+            are included in the same dictionary as the class_name, repo,
+            dependencies, etc.
+        :param error_if_not_found: Set to False to return an empty dict in
+            the case that a matching component is not found in this registry.
+        :returns: a ComponentSpec (i.e. a dict) matching the filter criteria
+            provided, else throw an error.
         """
         components = self.get_component_specs(name, version)
         if len(components) == 0:
-            raise LookupError(
-                f"This registry does not contain any components that match "
-                f"your filter criteria: name:'{name}', version:'{version}'."
-            )
+            if error_if_not_found:
+                raise LookupError(
+                    f"This registry does not contain any components that match "
+                    f"your filter criteria: name:'{name}', version:'{version}'."
+                )
+            else:
+                return {}
         if len(components) > 1:
             versions = [
                 ComponentIdentifier.from_str(c_id).version
@@ -325,13 +342,59 @@ class WebRegistry(Registry):
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
     ) -> NestedComponentSpec:
-        raise NotImplementedError
+        url_filter_str = ""
+        if filter_by_name:
+            url_filter_str += f"name={filter_by_name}"
+        if filter_by_version:
+            if url_filter_str:
+                url_filter_str += "&"
+            url_filter_str += f"version={filter_by_version}"
+        if url_filter_str:
+            url_filter_str = f"?{url_filter_str}"
+        component_url = f"{self.root_api_url}/components{url_filter_str}"
+        print(f"trying {component_url}")
+        component_response = requests.get(component_url)
+        assert component_response.status_code == 200
+        json_results = json.loads(component_response.content)
+        component_specs = {}
+        for c_dict in json_results["results"]:
+            identifier = f"{c_dict['name']}=={c_dict['version']}"
+            component_specs[identifier] = {
+                "repo": c_dict["repo"],
+                "file_path": c_dict["file_path"],
+                "class_name": c_dict["class_name"],
+                "instantiate": c_dict["instantiate"],
+                "dependencies": c_dict["dependencies"],
+            }
+        return component_specs
 
     def get_default_component(self, name: str):
         raise NotImplementedError
 
     def get_repo_spec(self, repo_id: str, flatten: bool = False) -> "RepoSpec":
-        raise NotImplementedError
+        repo_url = f"{self.root_api_url}/repos?identifier={repo_id}"
+        print(f"trying {repo_url}")
+        repo_response = requests.get(repo_url)
+        assert repo_response.status_code == 200
+        json_results = json.loads(repo_response.content)
+        assert len(json_results["results"]) <= 1, (
+            f"{len(json_results['results'])} repos with identifier {repo_id} "
+            f"were returned by {repo_url} but only 0 or 1 should have been."
+        )
+        repo_spec = {}
+        for r_dict in json_results["results"]:
+            inner = {
+                "identifier": r_dict["identifier"],
+                "type": r_dict["type"],
+            }
+            if r_dict["type"] == "github":
+                inner["url"] = r_dict["url"]
+            if flatten:
+                repo_spec['identifier'] = r_dict["identifier"]
+                repo_spec.update(inner)
+            else:
+                repo_spec[r_dict["identifier"]] = inner
+        return repo_spec
 
     def get_run_command_spec(
         self, run_command_id: str, flatten: bool = False
@@ -351,7 +414,15 @@ class WebRegistry(Registry):
         raise NotImplementedError
 
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        raise NotImplementedError
+        url = f"{self.root_api_url}/repos/"
+        print("Sending HTTP POST with data:")
+        print(flatten_spec(repo_spec))
+        response = requests.post(url, data=flatten_spec(repo_spec))
+        self._check_response(response)
+        result = json.loads(response.content)
+        print("\nadd_repo_spec http response results:")
+        pprint.pprint(result)
+        print()
 
     def to_dict(self) -> Dict:
         raise Exception("to_dict() is not supported on WebRegistry.")
@@ -366,7 +437,7 @@ class WebRegistry(Registry):
         response = requests.post(url, data=data)
         self._check_response(response)
         result = json.loads(response.content)
-        print("\nResults:")
+        print("\nadd_component_spec http response results:")
         pprint.pprint(result)
         print()
         return result
@@ -396,7 +467,11 @@ class WebRegistry(Registry):
         finally:
             shutil.rmtree(tmp_dir_path)
 
-    def get_run(self, run_id: str) -> None:
-        from agentos.run import Run
+    def add_run_command_spec(
+        self, run_command_spec: RunCommandSpec
+    ) -> None:
+        raise NotImplementedError
 
+    def get_run(self, run_id: str) -> "Run":
+        from agentos.run import Run
         return Run.from_registry(self, run_id)

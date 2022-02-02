@@ -11,6 +11,7 @@ from typing import Optional
 from collections import namedtuple
 from agentos.run import Run
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
+from mlflow.entities import RunStatus
 
 _EPISODE_KEY = "episode_count"
 _STEP_KEY = "step_count"
@@ -65,13 +66,23 @@ class AgentRun(Run):
         super().__init__()
         self.parent_run = parent_run
         self.set_tag(self.IS_AGENT_RUN_TAG, "True")
-        self.set_tag(MLFLOW_RUN_NAME, f"{run_type} (agent_run)")
-        if self.parent_run:
-            self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
         self.episode_data = []
         self.run_type = run_type
         self.agent_name = agent_name or "agent"
         self.environment_name = environment_name or "environment"
+
+        self.set_tag(
+            MLFLOW_RUN_NAME, (
+                f"AgentOS {run_type} with Agent '{self.agent_name}' "
+                f"and Env '{self.environment_name}'"
+            )
+        )
+        if self.parent_run:
+            self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
+
+        self.log_run_type(self.run_type)
+        self.log_agent_name(self.agent_name)
+        self.log_environment_name(self.environment_name)
 
     def log_run_type(self, run_type: str) -> None:
         self.run_type = run_type
@@ -91,9 +102,7 @@ class AgentRun(Run):
             self.log_metric(key, val)
 
     def get_training_info(self) -> (int, int):
-        print("IN TRAINING INFO")
         runs = self.get_all_runs()
-        print(type(runs))
         total_episodes = 0
         total_steps = 0
         for run in runs:
@@ -160,7 +169,6 @@ class AgentRun(Run):
         )
 
     def add_episode_data(self, steps: int, reward: float):
-        print("adding episode data in agent run")
         self.episode_data.append(
             {
                 "steps": steps,
@@ -168,12 +176,15 @@ class AgentRun(Run):
             }
         )
 
+    def end(
+        self, status: str = RunStatus.to_string(RunStatus.FINISHED)
+    ) -> None:
+        super().end(status)
+        self.log_run_metrics()
+        self.print_results()
+
     def __enter__(self) -> "AgentRun":
-        self.log_run_type(self.run_type)
-        self.log_agent_name(self.agent_name)
-        self.log_environment_name(self.environment_name)
         return self
 
     def __exit__(self, type, value, traceback) -> None:
-        self.log_run_metrics()
-        self.print_results()
+        super().__exit__(type, value, traceback)

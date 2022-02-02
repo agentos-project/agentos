@@ -69,7 +69,10 @@ class Agent(MemberInitializer):
         :returns: None
         """
         all_steps = []
-        self.start_agent_run("evaluate", parent_run)
+        if should_learn:
+            self.start_agent_run("learn", parent_run)
+        else:
+            self.start_agent_run("evaluate", parent_run)
         for _ in range(int(num_episodes)):
             steps = self.rollout(
                 should_learn=should_learn, max_transitions=max_transitions

@@ -109,12 +109,9 @@ class Run:
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.PCS_RUN_TAG} ILIKE "%"',
         )
-        print(f"{len(mlflow_runs)} mlflow_runs")
-        print(mlflow_runs)
         res = []
         for mlflow_run in mlflow_runs:
             r = Run.from_existing_run_id(mlflow_run.info.run_id)
-            print(r)
             res.append(r)
         return res
 

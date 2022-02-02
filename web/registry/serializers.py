@@ -27,6 +27,7 @@ class ComponentSerializer(serializers.ModelSerializer):
             "repo_link",
             "file_path",
             "class_name",
+            "instantiate",
             "description",
             "dependencies",
             "github_source_link",
@@ -39,10 +40,10 @@ class ComponentSerializer(serializers.ModelSerializer):
         return _get_link_from_id(self, "repo-detail", obj.repo.id)
 
     def get_github_source_link(self, obj):
-        github_url = obj.repo.github_url
-        if github_url.endswith(".git"):
-            github_url = github_url[:-4]
-        final_url = f"{github_url}/tree/{obj.version}/{obj.file_path}"
+        url = obj.repo.url
+        if url.endswith(".git"):
+            url = url[:-4]
+        final_url = f"{url}/tree/{obj.version}/{obj.file_path}"
         return final_url
 
 
@@ -102,8 +103,9 @@ class RepoSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "id_link",
-            "name",
-            "github_url",
+            "identifier",
+            "type",
+            "url",
         ]
 
     def get_id_link(self, obj):

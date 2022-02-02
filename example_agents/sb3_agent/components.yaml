@@ -5,7 +5,7 @@ repos:
 
 
 components:
-    agent:
+    sb3_agent:
         repo: sb3_agent_dir
         file_path: agent.py
         class_name: SB3PPOAgent

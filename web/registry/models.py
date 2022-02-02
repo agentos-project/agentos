@@ -3,6 +3,8 @@ from rest_framework.exceptions import ValidationError
 from typing import Dict, List
 from agentos.component import Component as CLI_Component
 
+from rest_framework import serializers
+serializers.Serializer
 
 class TimeStampedModel(models.Model):
     created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -58,10 +60,13 @@ class Component(TimeStampedModel):
     name = models.CharField(max_length=200)
     version = models.CharField(max_length=200)
     repo = models.ForeignKey(
-        "Repo", on_delete=models.CASCADE, related_name="repos"
+        "Repo", on_delete=models.CASCADE,
+        related_name="repos",
+        to_field="identifier"
     )
     file_path = models.TextField()
     class_name = models.CharField(max_length=200)
+    instantiate = models.BooleanField()
     description = models.TextField()
 
     dependencies = models.ManyToManyField(
@@ -115,6 +120,7 @@ class Component(TimeStampedModel):
             "repo": self.repo.full_name,
             "file_path": self.file_path,
             "class_name": self.class_name,
+            "instantiate": self.instantiate,
             "dependencies": dependencies,
         }
 
@@ -133,9 +139,10 @@ class Component(TimeStampedModel):
         for name, component_spec in component_spec_dict.items():
             identifier = CLI_Component.Identifier.from_str(name)
             default_kwargs = {
-                "repo": Repo.objects.get(name=component_spec["repo"]),
+                "repo": Repo.objects.get(identifier=component_spec["repo"]),
                 "file_path": component_spec["file_path"],
                 "class_name": component_spec["class_name"],
+                "instantiate": component_spec["instantiate"],
                 "description": "",
             }
             # TODO - When we have accounts, we need to check the the user
@@ -159,12 +166,14 @@ class Component(TimeStampedModel):
 
     # TODO - check versions in here once we have Component owners
     def _equals_spec(self, other_spec):
-        other_repo = Repo.objects.get(name=other_spec["repo"])
-        if self.repo.github_url != other_repo.github_url:
+        other_repo = Repo.objects.get(identifier=other_spec["repo"])
+        if self.repo.url != other_repo.url:
             return False
         if self.file_path != other_spec["file_path"]:
             return False
         if self.class_name != other_spec["class_name"]:
+            return False
+        if self.instantiate != other_spec["instantiate"]:
             return False
         if self.description != other_spec.get("description", ""):
             return False
@@ -183,34 +192,38 @@ class Component(TimeStampedModel):
 
 
 class Repo(TimeStampedModel):
-    name = models.CharField(max_length=200, unique=True)
-    github_url = models.CharField(max_length=200)
+    identifier = models.CharField(max_length=200, unique=True)
+    type = models.CharField(max_length=200)
+    url = models.CharField(max_length=200)
 
     def __str__(self):
-        return f"<Repo {self.pk}: " f'"{self.name}" at {self.github_url}>'
+        return (
+            f"<Repo {self.pk}: {self.identifier} (type {self.type}) "
+            f"at {self.url}>"
+        )
 
     @staticmethod
     def create_from_dict(repo_spec_dict: Dict) -> List:
         repos = []
-        for name, repo in repo_spec_dict.items():
+        for identifier, repo in repo_spec_dict.items():
             if "github.com" not in repo["url"]:
                 raise ValidationError(
                     f"Repo must be on GitHub, not {repo['url']}"
                 )
             repo, created = Repo.objects.get_or_create(
-                name=name, github_url=repo["url"]
+                identifier=identifier, url=repo["url"]
             )
             repos.append(repo)
         return repos
 
     @property
     def full_name(self):
-        return f"{self.name}_{self.pk}"
+        return f"{self.identifier}_{self.pk}"
 
     def _to_spec(self):
         return {
             "type": "github",
-            "url": self.github_url,
+            "url": self.url,
         }
 
 
