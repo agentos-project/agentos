@@ -72,10 +72,11 @@ class AgentRun(Run):
         self.environment_name = environment_name or "environment"
 
         self.set_tag(
-            MLFLOW_RUN_NAME, (
+            MLFLOW_RUN_NAME,
+            (
                 f"AgentOS {run_type} with Agent '{self.agent_name}' "
                 f"and Env '{self.environment_name}'"
-            )
+            ),
         )
         if self.parent_run:
             self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)

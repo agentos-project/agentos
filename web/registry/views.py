@@ -36,8 +36,8 @@ class ComponentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Component.objects.all().order_by("-created")
         # filter by url .../components?name=name&version=comp_version
-        name = self.request.query_params.get('name')
-        version = self.request.query_params.get('version')
+        name = self.request.query_params.get("name")
+        version = self.request.query_params.get("version")
         if name:
             queryset = queryset.filter(name=name)
         if version:
@@ -125,7 +125,7 @@ class RepoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Repo.objects.all().order_by("-created")
         # filter by url .../repos?identifier=repo_identifier
-        identifier = self.request.query_params.get('identifier')
+        identifier = self.request.query_params.get("identifier")
         if identifier:
             queryset = queryset.filter(identifier=identifier)
         return queryset

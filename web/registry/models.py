@@ -4,7 +4,9 @@ from typing import Dict, List
 from agentos.component import Component as CLI_Component
 
 from rest_framework import serializers
+
 serializers.Serializer
+
 
 class TimeStampedModel(models.Model):
     created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -60,9 +62,10 @@ class Component(TimeStampedModel):
     name = models.CharField(max_length=200)
     version = models.CharField(max_length=200)
     repo = models.ForeignKey(
-        "Repo", on_delete=models.CASCADE,
+        "Repo",
+        on_delete=models.CASCADE,
         related_name="repos",
-        to_field="identifier"
+        to_field="identifier",
     )
     file_path = models.TextField()
     class_name = models.CharField(max_length=200)

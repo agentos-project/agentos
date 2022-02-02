@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('registry', '0001_initial'),
+        ("registry", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='component',
-            name='instantiate',
+            model_name="component",
+            name="instantiate",
             field=models.BooleanField(default=True),
             preserve_default=False,
         ),

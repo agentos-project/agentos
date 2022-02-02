@@ -7,13 +7,18 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('registry', '0004_rename_name_repo_identifier'),
+        ("registry", "0004_rename_name_repo_identifier"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='component',
-            name='repo',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='repos', to='registry.repo', to_field='identifier'),
+            model_name="component",
+            name="repo",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="repos",
+                to="registry.repo",
+                to_field="identifier",
+            ),
         ),
     ]

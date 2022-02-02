@@ -31,7 +31,7 @@ class SB3PPOAgent:
         with self.SB3AgentRun(
             run_type="evaluate",
             parent_run=self.active_run,
-            agent_name="sb3_agent"
+            agent_name="sb3_agent",
         ) as eval_run:
             evaluate_policy(
                 model=self.sb3_ppo,
@@ -49,7 +49,7 @@ class SB3PPOAgent:
         with self.SB3AgentRun(
             run_type="learn",
             parent_run=self.active_run,
-            agent_name="sb3_agent"
+            agent_name="sb3_agent",
         ) as learn_run:
             self.sb3_ppo.learn(
                 total_timesteps=int(total_timesteps),

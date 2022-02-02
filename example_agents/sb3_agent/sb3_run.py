@@ -93,7 +93,7 @@ class SB3Run(AgentRun):
             run_type,
             parent_run=parent_run,
             agent_name=agent_name,
-            environment_name=environment_name
+            environment_name=environment_name,
         )
         self.evaluate_callback = EvaluateCallback(self)
         self.learn_callback = LearnCallback(self)

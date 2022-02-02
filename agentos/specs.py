@@ -49,9 +49,9 @@ def unflatten_spec(flat_spec: dict) -> dict:
     if "==" in flat_spec["identifier"]:
         parts = flat_spec["identifier"].split("==")
         assert len(parts) == 2
-        assert "name" in flat_spec, (
-            "'name' must be a key in a flat spec with a versioned identifier"
-        )
+        assert (
+            "name" in flat_spec
+        ), "'name' must be a key in a flat spec with a versioned identifier"
         assert "version" in flat_spec, (
             "'version' must be a key in a flat spec that has a versioned "
             "identifier (i.e., that has an '==' in its identifier."

@@ -103,7 +103,7 @@ class Registry(abc.ABC):
         name: str,
         version: str = None,
         flatten: bool = False,
-        error_if_not_found: bool = True
+        error_if_not_found: bool = True,
     ) -> ComponentSpec:
         """
         Returns the component spec with ``name`` and ``version``, if it exists,
@@ -145,8 +145,9 @@ class Registry(abc.ABC):
         if len(components) == 0:
             if error_if_not_found:
                 raise LookupError(
-                    f"This registry does not contain any components that match "
-                    f"your filter criteria: name:'{name}', version:'{version}'."
+                    f"This registry does not contain any components that "
+                    f"match your filter criteria: name:'{name}', "
+                    f"version:'{version}'."
                 )
             else:
                 return {}
@@ -390,7 +391,7 @@ class WebRegistry(Registry):
             if r_dict["type"] == "github":
                 inner["url"] = r_dict["url"]
             if flatten:
-                repo_spec['identifier'] = r_dict["identifier"]
+                repo_spec["identifier"] = r_dict["identifier"]
                 repo_spec.update(inner)
             else:
                 repo_spec[r_dict["identifier"]] = inner
@@ -467,11 +468,10 @@ class WebRegistry(Registry):
         finally:
             shutil.rmtree(tmp_dir_path)
 
-    def add_run_command_spec(
-        self, run_command_spec: RunCommandSpec
-    ) -> None:
+    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
         raise NotImplementedError
 
     def get_run(self, run_id: str) -> "Run":
         from agentos.run import Run
+
         return Run.from_registry(self, run_id)
