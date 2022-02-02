@@ -326,6 +326,7 @@ _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
 _AGENT_YAML_FILE = Path("./templates/components.yaml")
+_REQUIREMENTS_FILE = Path("./templates/requirements.txt")
 
 
 _INIT_FILES = [
@@ -335,6 +336,7 @@ _INIT_FILES = [
     _DATASET_DEF_FILE,
     _TRAINER_DEF_FILE,
     _AGENT_YAML_FILE,
+    _REQUIREMENTS_FILE,
 ]
 
 

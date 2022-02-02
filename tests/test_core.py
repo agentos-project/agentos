@@ -19,6 +19,7 @@ def test_cli_init(tmpdir):
             "dataset.py",
             "trainer.py",
             "components.yaml",
+            "requirements.txt",
         ]
         for expected_file_name in expected_file_names:
             expected_path = Path(tmpdir) / expected_file_name
@@ -40,5 +41,5 @@ def test_cli_status():
 
 def test_cli_freeze(tmpdir):
     run_args = ["sb3_agent", "-f", "--use-outer-env"]
-    run_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
+    run_kwargs = {"--registry-file": str(SB3_AGENT_DIR / "components.yaml")}
     run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)
