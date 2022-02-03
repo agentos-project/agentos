@@ -29,18 +29,21 @@ def flatten_spec(nested_spec: dict) -> dict:
         flat_spec.update(copy.deepcopy(inner_spec))
         assert "identifier" not in flat_spec
         flat_spec["identifier"] = identifier
-        if "==" in identifier:
-            assert "name" not in flat_spec, (
-                "'name' cannot be a key in a nested spec that has a '==' "
-                "in its identifier."
-            )
-            assert "version" not in flat_spec, (
-                "'version' cannot be a key in a nested spec that has a '==' "
-                "in its identifier."
-            )
-            parts = identifier.split("==")
-            assert len(parts) == 2
-            flat_spec["name"], flat_spec["version"] = parts
+        assert "name" not in flat_spec, (
+            "'name' is a reserved key: it cannot be set by a developer "
+            "since PCS sets it automatically when flattening specs."
+        )
+        assert "version" not in flat_spec, (
+            "'version' is a reserved key: it cannot be set by a developer "
+            "since PCS sets it automatically when flattening specs."
+        )
+        identifier_parts = identifier.split("==")
+        assert 0 < len(identifier_parts) <= 2, "invalid identifier"
+        flat_spec["name"] = identifier_parts[0]
+        if len(identifier_parts) == 2:
+            flat_spec["version"] = identifier_parts[1]
+        else:
+            flat_spec["version"] = None
     return flat_spec
 
 

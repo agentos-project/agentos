@@ -9,11 +9,15 @@ def test_flatten_spec():
     assert "local_dir" in rand_repo_spec.keys()
     assert rand_repo_spec["local_dir"]["type"] == "local"
     assert rand_repo_spec["local_dir"]["path"] == "."
+    assert rand_repo_spec["local_dir"]["name"] == "local_dir"
+    assert rand_repo_spec["local_dir"]["version"] is None
 
     flattened = flatten_spec(rand_repo_spec)
     assert flattened["identifier"] == "local_dir"
     assert flattened["type"] == "local"
     assert flattened["path"] == "."
+    assert flattened["name"] == "local_dir"
+    assert flattened["version"] is None
 
     nested = unflatten_spec(flattened)
     assert "local_dir" in nested.keys()

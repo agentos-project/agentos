@@ -28,7 +28,6 @@ class ComponentSerializer(serializers.ModelSerializer):
             "file_path",
             "class_name",
             "instantiate",
-            "description",
             "dependencies",
             "github_source_link",
         ]

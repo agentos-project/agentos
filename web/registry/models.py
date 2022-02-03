@@ -70,7 +70,6 @@ class Component(TimeStampedModel):
     file_path = models.TextField()
     class_name = models.CharField(max_length=200)
     instantiate = models.BooleanField()
-    description = models.TextField()
 
     dependencies = models.ManyToManyField(
         "Component",
@@ -146,7 +145,6 @@ class Component(TimeStampedModel):
                 "file_path": component_spec["file_path"],
                 "class_name": component_spec["class_name"],
                 "instantiate": component_spec["instantiate"],
-                "description": "",
             }
             # TODO - When we have accounts, we need to check the the user
             #        has permission to create a new version of this Component
@@ -177,8 +175,6 @@ class Component(TimeStampedModel):
         if self.class_name != other_spec["class_name"]:
             return False
         if self.instantiate != other_spec["instantiate"]:
-            return False
-        if self.description != other_spec.get("description", ""):
             return False
         self_deps = ComponentDependency.objects.filter(
             depender=self

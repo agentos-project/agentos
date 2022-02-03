@@ -1,11 +1,3 @@
-"""
-AgentOS AgentRunManager provides an API that agents can use to log and retrieve
-agent runs and run-related data/stats/tags/etc. The two primary types of
-runs used by agents are Learning and Evaluation runs.
-
-The agent run manager also contains the logic for tracking the lineage of
-learning runs so that a model's training history is captured, and publishable.
-"""
 import statistics
 from typing import Optional
 from collections import namedtuple
@@ -32,14 +24,23 @@ RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 
 class AgentRun(Run):
     """
-    A run with functionality specific to runs of agents, such as
-    runs that *evaluate* the agent's performance in an environment,
-    or runs that cause the agent to *learn* in an environment.
+    An AgentRun provides an API that agents can use to log agent related
+    data/stats/tags/etc. AgentRun can be one of two flavors (which we call
+    ``run_type``), 'evaluate' and 'learn'.
 
-    Agents can use an AgentRun as a context manager when performing
-    these types of runs, for example:
+    The AgentRun can contain tags that reference other AgentRuns for tracking
+    the training history of an agent.
 
-         with AgentRun('evaluate', self.__component__.active_run) as run:
+    An ``AgentRun`` inherits from ``Run``, and adds functionality specific to
+    runs of agents, such as runs that *evaluate* the agent's performance in an
+    environment, or runs that cause the agent to *learn* in an environment.
+
+    Like a ``Run``, an ``AgentRun`` can be used as a context manager, so that
+    the developer doesn't need to remember to mark a run as finished, for
+    example:
+
+         with AgentRun('evaluate',
+                       parent_run=self.__component__.active_run) as run:
               # run an episode
               run.log_episode(
                     # episode_data
@@ -59,10 +60,23 @@ class AgentRun(Run):
     def __init__(
         self,
         run_type: str,
-        parent_run: str = None,
+        parent_run: Optional[str] = None,
         agent_name: Optional[str] = None,
         environment_name: Optional[str] = None,
     ) -> None:
+        """
+        Create a new AgentRun.
+
+        :param run_type: must be 'evaluate' or 'learn'
+        :param parent_run: Optionally, specify the identifier of another Run
+            that this run is a sub-run of. Setting this will result in this
+            AgentRun being visually nested under the parent_run in the MLflow
+            UI.
+        :param agent_name: The name of the agent component being evaluated or
+            trained. Defaults to "agent".
+        :param environment_name: The name of the environment component being
+            evaluated or trained. Defaults to "environment".
+        """
         super().__init__()
         self.parent_run = parent_run
         self.set_tag(self.IS_AGENT_RUN_TAG, "True")

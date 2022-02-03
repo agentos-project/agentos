@@ -3,7 +3,7 @@ import uuid
 import importlib
 from pathlib import Path
 from dill.source import getsource as dill_getsource
-from typing import Union, TypeVar, Dict, Type, Any, Sequence, Optional
+from typing import Union, TypeVar, Dict, Type, Any, Sequence
 from rich import print as rich_print
 from rich.tree import Tree
 from agentos.run import Run
@@ -39,7 +39,7 @@ class Component:
         identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
-        instantiate: Optional[bool] = True,
+        instantiate: bool = True,
         dependencies: Dict = None,
         dunder_name: str = None,
     ):
@@ -148,7 +148,11 @@ class Component:
         ):  # handle classes defined in REPL.
             repo = LocalRepo(name)
             src_file = repo.get_local_repo_dir() / f"{name}.py"
-            with open(src_file, "w") as f:
+            assert not src_file.exists(), (
+                f"Trying to create a source file from class {name} at"
+                f"{src_file} but that file already exists."
+            )
+            with open(src_file, "x") as f:
                 f.write(dill_getsource(managed_cls))
             print(f"Wrote new source file {src_file}.")
         else:
@@ -230,10 +234,10 @@ class Component:
         params: Union[ParameterSet, Dict] = None,
         publish_to: Registry = None,
         log_return_value: bool = True,
-        return_value_log_format: str = "pickle",
+        return_value_log_format: str = "yaml",
     ) -> Run:
         """
-        Run the specified entry point a new instance of this components
+        Run the specified entry point a new instance of this Component's
         managed object given the specified params, log the results
         and return the Run object.
 

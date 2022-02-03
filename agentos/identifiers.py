@@ -63,8 +63,10 @@ class ComponentIdentifier:
         return self.full
 
 
-# MLflow uses strings as Run identifiers, per
+# Like MLflow, we use strings as RunIdentifiers, per
 # https://github.com/mlflow/mlflow/blob/v1.22.0/mlflow/entities/run_info.py#L99
 RunIdentifier = str
 
 RunCommandIdentifier = str
+
+RepoIdentifier = str

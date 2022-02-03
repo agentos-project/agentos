@@ -1,3 +1,4 @@
+import tempfile
 from pathlib import Path
 from typing import Any, Optional
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
@@ -75,15 +76,14 @@ class ComponentRun(Run):
         ), "`run_command` cannot be passed with `existing_run_id`."
         self._run_command = None
         if run_command:
-            self._run_command = run_command
-            self.log_run_command(run_command)
+            self.set_and_log_run_command(run_command)
         else:
             self._run_command = self._fetch_run_command()
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
             f"PCS Component '{self.run_command.component.identifier.full}' "
-            f"at Entry Point '{self.run_command.entry_point}'"
+            f"at Entry Point '{self.run_command.entry_point}'",
         )
 
     @property
@@ -133,7 +133,7 @@ class ComponentRun(Run):
         registry = Registry.from_yaml(path)
         return RunCommand.from_registry(registry, run_command_id)
 
-    def log_run_command(self, run_command: RunCommand) -> None:
+    def set_and_log_run_command(self, run_command: RunCommand) -> None:
         """
         Log a Registry YAML file for the RunCommand of this run, including
         the ParameterSet, entry_point (i.e., function name), component ID,
@@ -149,6 +149,8 @@ class ComponentRun(Run):
         sharing purposes, which essentially normalizes the Run's root
         component's dependency graph into flat component specs.
         """
+        assert not self._run_command
+        self._run_command = run_command
         self._validate_no_run_command_logged()
         self.set_tag(self.RUN_COMMAND_ID_KEY, run_command.identifier)
         run_command_dict = run_command.to_registry().to_dict()
@@ -184,29 +186,30 @@ class ComponentRun(Run):
             not self._return_value
         ), "return_value has already been logged and can only be logged once."
         self._return_value = ret_val
-        filename_base = self.identifier + "-return_value"
+        tmp_dir_path = Path(tempfile.mkdtemp())
+        filename_base = tmp_dir_path / (self.identifier + "-return_value")
         if format == "pickle":
             import pickle
 
-            filename = filename_base + ".pickle"
+            filename = filename_base.parent / (filename_base.name + ".pickle")
             with open(filename, "wb") as f:
                 pickle.dump(ret_val, f)
         elif format == "json":
             import json
 
-            filename = filename_base + ".json"
+            filename = filename_base.parent / (filename_base.name + ".json")
             with open(filename, "w") as f:
                 json.dump(ret_val, f)
         elif format == "yaml":
             import yaml
 
-            filename = filename_base + ".yaml"
+            filename = filename_base.parent / (filename_base.name + ".yaml")
             with open(filename, "w") as f:
                 yaml.dump(ret_val, f)
         else:
             raise PythonComponentSystemException("Invalid format provided")
-        self.log_artifact(filename)
-        Path(filename).unlink()
+        self.log_artifact(str(filename))
+        filename.unlink()
 
     @property
     def is_publishable(self) -> bool:
