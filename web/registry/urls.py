@@ -15,9 +15,6 @@ router.get_api_root_view().cls.__doc__ = "AgentOS Registry API views"
 
 # import pprint; pprint.pprint(router.urls)
 
-print("router.urls is:")
-print(router.urls)
-
 urlpatterns = [
     path("v1/", include(router.urls)),
 ]
