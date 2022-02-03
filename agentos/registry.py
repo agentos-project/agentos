@@ -2,21 +2,32 @@ import abc
 import os
 import yaml
 import json
-import mlflow
 import pprint
 import shutil
 import tarfile
-
 import tempfile
 import requests
 from pathlib import Path
-from typing import Dict, List, Union, TYPE_CHECKING
+from typing import Dict, Sequence, Union, TYPE_CHECKING
 from dotenv import load_dotenv
-from agentos.component_identifier import ComponentIdentifier
+from agentos.identifiers import (
+    ComponentIdentifier,
+    RunIdentifier,
+    RepoIdentifier,
+    RunCommandIdentifier,
+)
+from agentos.specs import (
+    flatten_spec,
+    RepoSpec,
+    ComponentSpec,
+    NestedComponentSpec,
+    RunSpec,
+    RunCommandSpec,
+)
 
 if TYPE_CHECKING:
     from agentos.component import Component
-from agentos.specs import RepoSpec, ComponentSpec, NestedComponentSpec
+    from agentos.run import Run
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -27,10 +38,6 @@ if os.getenv("USE_LOCAL_SERVER", False) == "True":
 AOS_WEB_API_EXTENSION = "/api/v1"
 
 AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
-
-
-class RegistryException(Exception):
-    pass
 
 
 class Registry(abc.ABC):
@@ -49,23 +56,37 @@ class Registry(abc.ABC):
             config = yaml.safe_load(file_in)
         return InMemoryRegistry(config, base_dir=str(Path(yaml_file).parent))
 
+    @classmethod
+    def from_default(cls):
+        if not hasattr(cls, "_default_registry"):
+            cls._default_registry = WebRegistry(AOS_WEB_API_ROOT)
+        return cls._default_registry
+
     @abc.abstractmethod
     def to_dict(self) -> Dict:
         raise NotImplementedError
+
+    def to_yaml(self, filename: str) -> None:
+        with open(filename, "w") as file:
+            yaml.dump(self.to_dict(), file)
 
     @abc.abstractmethod
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
     ) -> NestedComponentSpec:
         """
-        Return dictionary of component specs in this Registry.
+        Return dictionary of component specs in this Registry, optionally
+        filtered by name and/or version; or None if none are found.
+
         Each Component Spec is itself a dict mapping ComponentIdentifier to a
         dict of properties that define the Component.
 
         Optionally, filter the list to match all filter strings provided.
         Filters can be provided on name, version, or both.
+
         If this registry contains zero component specs that match
         the filter criteria (if any), then an empty dictionary is returned.
+
         If ``filter_by_name`` and ``filter_by_version`` are provided,
         then 0 or 1 components will be returned.
 
@@ -77,17 +98,22 @@ class Registry(abc.ABC):
                already included via the ComponentIdentifier Dict key.
 
         :returns: A dictionary of components in this registry, optionally
-        filtered by name, version, or both.
+        filtered by name, version, or both. If no matching components are
+        found, an empty dictionary is returned.
         """
         raise NotImplementedError
 
     def get_component_spec(
-        self, name: str, version: str = None, flattened: bool = True
+        self,
+        name: str,
+        version: str = None,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
     ) -> ComponentSpec:
         """
-        Returns the component spec with ``name`` and ``version``, if it exists.
-        A component's name and version are defined as its identifier's name
-        and version.
+        Returns the component spec with ``name`` and ``version``, if it exists,
+        or raise an Error if it does not. A component's name and version are
+        defined as its identifier's name and version.
 
         Registries are not allowed to contain multiple Components with the same
         identifier. The Registry abstract base class does not enforce that all
@@ -108,21 +134,28 @@ class Registry(abc.ABC):
 
         :param name: The name of the component to fetch.
         :param version: Optional version of the component to fetch.
-        :param flattened: If True, flatten the outermost 2 layers of nested
-                          dicts into a single dict. In an unflattened component
-                          spec, the outermost dict is from identifier
-                          (which is a string in the format of name[==version])
-                          Component component properties (class_name, repo,
-                          etc.). In a flattened Component spec, the name and
-                          version are included in the same dictionary as the
-                          class_name, repo, dependencies, etc.
+        :param flatten: If True, flatten the outermost 2 layers of nested
+            dicts into a single dict. In an unflattened component spec, the
+            outermost dict is from identifier (which is a string in the format
+            of name[==version]) Component component properties (class_name,
+            repo, etc.). In a flattened Component spec, the name and version
+            are included in the same dictionary as the class_name, repo,
+            dependencies, etc.
+        :param error_if_not_found: Set to False to return an empty dict in
+            the case that a matching component is not found in this registry.
+        :returns: a ComponentSpec (i.e. a dict) matching the filter criteria
+            provided, else throw an error.
         """
         components = self.get_component_specs(name, version)
         if len(components) == 0:
-            raise LookupError(
-                f"This registry does not contain any components that match "
-                f"your filter criteria: name:'{name}', version:'{version}'."
-            )
+            if error_if_not_found:
+                raise LookupError(
+                    f"This registry does not contain any components that "
+                    f"match your filter criteria: name:'{name}', "
+                    f"version:'{version}'."
+                )
+            else:
+                return {}
         if len(components) > 1:
             versions = [
                 ComponentIdentifier.from_str(c_id).version
@@ -134,33 +167,37 @@ class Registry(abc.ABC):
                 f"the name {name}. Please specify one of the following "
                 f"versions:\n - {version_str}"
             )
-        if flattened:
-            component_tuple = components.popitem()
-            identifier_str = component_tuple[0]
-            identifier = ComponentIdentifier.from_str(identifier_str)
-            flat_component_dict = component_tuple[1]
-            flat_component_dict["name"] = identifier.name
-            flat_component_dict["version"] = identifier.version
-            return flat_component_dict
-        return components
+        return flatten_spec(components) if flatten else components
 
     def get_component_spec_by_id(
-        self, identifier: Union[ComponentIdentifier, str]
+        self,
+        identifier: Union[ComponentIdentifier, str],
+        flatten: bool = False,
     ) -> ComponentSpec:
         identifier = ComponentIdentifier.from_str(str(identifier))
-        return self.get_component_spec(identifier.name, identifier.version)
+        return self.get_component_spec(
+            identifier.name, identifier.version, flatten=flatten
+        )
 
     @abc.abstractmethod
-    def get_repo_spec(self, repo_id: str) -> "RepoSpec":
+    def get_repo_spec(
+        self, repo_id: RepoIdentifier, flatten: bool = False
+    ) -> RepoSpec:
         raise NotImplementedError
 
     @abc.abstractmethod
-    # TODO: replace Dict return type with RunSpec once we have it.
-    def get_run_spec(self, run_id: str) -> Dict:
+    def get_run_spec(
+        self, run_id: RunIdentifier, flatten: bool = False
+    ) -> RunSpec:
+        raise NotImplementedError
+
+    def get_run_command_spec(
+        self, run_command_id: RunCommandIdentifier, flatten: bool = False
+    ) -> RunCommandSpec:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_registries(self) -> List:
+    def get_registries(self) -> Sequence:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -185,6 +222,14 @@ class Registry(abc.ABC):
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def add_run_spec(self, run_spec: RunSpec) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
+        raise NotImplementedError
+
 
 class InMemoryRegistry(Registry):
     """
@@ -200,6 +245,8 @@ class InMemoryRegistry(Registry):
             self._registry["repos"] = {}
         if "runs" not in self._registry.keys():
             self._registry["runs"] = {}
+        if "run_commands" not in self._registry.keys():
+            self._registry["run_commands"] = {}
         if "registries" not in self._registry.keys():
             self._registry["registries"] = []
 
@@ -226,13 +273,33 @@ class InMemoryRegistry(Registry):
                 return {}
         return self._registry["components"]
 
-    def get_repo_spec(self, repo_id: str) -> "RepoSpec":
-        return self._registry["repos"][repo_id]
+    def get_repo_spec(
+        self, repo_id: RepoIdentifier, flatten: bool = False
+    ) -> "RepoSpec":
+        return self._get_spec(repo_id, "repos", flatten)
 
-    def get_run_spec(self, run_id: str) -> Dict:
-        return self._registry["runs"][run_id]
+    def get_run_spec(
+        self, run_id: RunIdentifier, flatten: bool = False
+    ) -> RunSpec:
+        return self._get_spec(run_id, "runs", flatten)
 
-    def get_registries(self) -> List[Registry]:
+    def get_run_command_spec(
+        self, run_command_id: RunCommandIdentifier, flatten: bool = False
+    ) -> RunCommandSpec:
+        return self._get_spec(run_command_id, "run_commands", flatten)
+
+    def _get_spec(self, identifier: str, spec_type: str, flatten: bool):
+        """
+        Factor out common functionality for fetching specs from the
+        internal represention of them. Because Components are special,
+        (i.e., their identifiers can be versioned) they are handled
+        differently.
+        """
+        assert spec_type in ["repos", "runs", "run_commands"]
+        spec = {identifier: self._registry[spec_type][identifier]}
+        return flatten_spec(spec) if flatten else spec
+
+    def get_registries(self) -> Sequence[Registry]:
         return self._registry["registries"]
 
     def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
@@ -240,6 +307,12 @@ class InMemoryRegistry(Registry):
 
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
         self._registry["repos"].update(repo_spec)
+
+    def add_run_spec(self, run_spec: RunSpec) -> None:
+        self._registry["runs"].update(run_spec)
+
+    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
+        self._registry["run_commands"].update(run_command_spec)
 
     def to_dict(self) -> Dict:
         return self._registry
@@ -250,8 +323,8 @@ class WebRegistry(Registry):
     A web-server backed Registry.
     """
 
-    def __init__(self, root_url: str, base_dir: str = None):
-        self.root_url = root_url
+    def __init__(self, root_api_url: str, base_dir: str = None):
+        self.root_api_url = root_api_url
         self.base_dir = (
             base_dir if base_dir else "."
         )  # Used for file-backed Registry types.
@@ -259,6 +332,8 @@ class WebRegistry(Registry):
     @staticmethod
     def _check_response(response):
         if not response.ok:
+            print("failed response: ")
+            print(response.content)
             content = json.loads(response.content)
             if type(content) == list:
                 content = content[0]
@@ -267,22 +342,96 @@ class WebRegistry(Registry):
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
     ) -> NestedComponentSpec:
-        raise NotImplementedError
+        url_filter_str = ""
+        if filter_by_name:
+            url_filter_str += f"name={filter_by_name}"
+        if filter_by_version:
+            if url_filter_str:
+                url_filter_str += "&"
+            url_filter_str += f"version={filter_by_version}"
+        if url_filter_str:
+            url_filter_str = f"?{url_filter_str}"
+        component_url = f"{self.root_api_url}/components{url_filter_str}"
+        print(f"trying {component_url}")
+        component_response = requests.get(component_url)
+        assert component_response.status_code == 200
+        json_results = json.loads(component_response.content)
+        component_specs = {}
+        for c_dict in json_results["results"]:
+            identifier = f"{c_dict['name']}=={c_dict['version']}"
+            component_specs[identifier] = {
+                "repo": c_dict["repo"],
+                "file_path": c_dict["file_path"],
+                "class_name": c_dict["class_name"],
+                "instantiate": c_dict["instantiate"],
+                "dependencies": c_dict["dependencies"],
+            }
+        return component_specs
 
     def get_default_component(self, name: str):
         raise NotImplementedError
 
-    def get_repo_spec(self, repo_id: str) -> "RepoSpec":
-        raise NotImplementedError
+    def get_repo_spec(
+        self, repo_id: RepoIdentifier, flatten: bool = False
+    ) -> "RepoSpec":
+        repo_url = f"{self.root_api_url}/repos?identifier={repo_id}"
+        print(f"trying {repo_url}")
+        repo_response = requests.get(repo_url)
+        assert repo_response.status_code == 200
+        json_results = json.loads(repo_response.content)
+        assert len(json_results["results"]) <= 1, (
+            f"{len(json_results['results'])} repos with identifier {repo_id} "
+            f"were returned by {repo_url} but only 0 or 1 should have been."
+        )
+        repo_spec = {}
+        for r_dict in json_results["results"]:
+            inner = {
+                "identifier": r_dict["identifier"],
+                "type": r_dict["type"],
+            }
+            if r_dict["type"] == "github":
+                inner["url"] = r_dict["url"]
+            if flatten:
+                repo_spec["identifier"] = r_dict["identifier"]
+                repo_spec.update(inner)
+            else:
+                repo_spec[r_dict["identifier"]] = inner
+        return repo_spec
 
-    def get_run_spec(self, run_id: str) -> Dict:
-        raise NotImplementedError
+    def get_run_command_spec(
+        self, run_command_id: RunCommandIdentifier, flatten: bool = False
+    ) -> RunCommandSpec:
+        return self._request_spec_from_web_server(
+            "run_command", run_command_id, flatten
+        )
 
-    def get_registries(self) -> List:
+    def get_run_spec(
+        self, run_id: RunIdentifier, flatten: bool = False
+    ) -> RunSpec:
+        return self._request_spec_from_web_server("run", run_id, flatten)
+
+    def _request_spec_from_web_server(
+        self, spec_type: str, identifier: str, flatten: bool
+    ):
+        assert spec_type in ["run", "run_command", "repo", "component"]
+        req_url = f"{self.root_api_url}/{spec_type}s/{identifier}"
+        run_response = requests.get(req_url)
+        spec = json.loads(run_response.content)
+        return flatten_spec(spec) if flatten else spec
+
+    def get_registries(self) -> Sequence:
         raise NotImplementedError
 
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        raise NotImplementedError
+        url = f"{self.root_api_url}/repos/"
+        print("Sending HTTP POST with data:")
+        print(flatten_spec(repo_spec))
+        response = requests.post(url, data=flatten_spec(repo_spec))
+        self._check_response(response)
+        result = json.loads(response.content)
+        print("\nadd_repo_spec http response results:")
+        pprint.pprint(result)
+        print()
 
     def to_dict(self) -> Dict:
         raise Exception("to_dict() is not supported on WebRegistry.")
@@ -292,106 +441,52 @@ class WebRegistry(Registry):
         Register a Component Spec. Component spec must be frozen.
         :param component_spec: A frozen component spec.
         """
-        url = f"{self.root_url}/components/ingest_spec/"
-        data = {"components.yaml": yaml.dump(component_spec)}
-        response = requests.post(url, data=data)
+        url = f"{self.root_api_url}/components/"
+        response = requests.post(url, data=flatten_spec(component_spec))
         self._check_response(response)
         result = json.loads(response.content)
-        print("\nResults:")
+        print("\nadd_component_spec http response results:")
         pprint.pprint(result)
-        print()
-        return result
 
-    def push_run_data(self, run_data: Dict) -> List:
-        url = f"{self.root_url}/runs/"
+    def add_run_spec(self, run_data: RunSpec) -> Sequence:
+        url = f"{self.root_api_url}/runs/"
         data = {"run_data": yaml.dump(run_data)}
         response = requests.post(url, data=data)
         self._check_response(response)
         result = json.loads(response.content)
-        return result
+        print("\nadd_run_spec http response results:")
+        pprint.pprint(result)
 
-    def push_run_artifacts(self, run_id: int, run_artifacts: List) -> List:
+    def add_run_artifacts(
+        self, run_id: int, run_artifact_paths: Sequence[str]
+    ) -> Sequence:
         try:
             tmp_dir_path = Path(tempfile.mkdtemp())
             tar_gz_path = tmp_dir_path / f"run_{run_id}_artifacts.tar.gz"
             with tarfile.open(tar_gz_path, "w:gz") as tar:
-                for artifact_path in run_artifacts:
+                for artifact_path in run_artifact_paths:
                     tar.add(artifact_path, arcname=artifact_path.name)
             files = {"tarball": open(tar_gz_path, "rb")}
-            url = f"{self.root_url}/runs/{run_id}/upload_artifact/"
+            url = f"{self.root_api_url}/runs/{run_id}/upload_artifact/"
             response = requests.post(url, files=files)
             result = json.loads(response.content)
             return result
         finally:
             shutil.rmtree(tmp_dir_path)
 
-    def get_run(run_id: int) -> None:
-        from agentos.run_manager import AgentRunManager
+    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
+        """
+        Register a RunCommandSpec.
+        :param run_command_spec: A :py:func:agentos.specs.RunCommandSpec``.
+        """
+        url = f"{self.root_api_url}/run_commands/"
+        response = requests.post(url, data=flatten_spec(run_command_spec))
+        self._check_response(response)
+        result = json.loads(response.content)
+        print("\nadd_run_commmand_spec http response results:")
+        pprint.pprint(result)
+
+    def get_run(self, run_id: str) -> "Run":
         from agentos.run import Run
 
-        run_url = f"{AOS_WEB_API_ROOT}/runs/{run_id}"
-        run_response = requests.get(run_url)
-        run_data = json.loads(run_response.content)
-        with open("parameter_set.yaml", "w") as param_file:
-            param_file.write(yaml.safe_dump(run_data["parameter_set"]))
-
-        root_response = requests.get(run_data["root_link"])
-        root_data = json.loads(root_response.content)
-
-        rerun_cmd = (
-            f'agentos run {root_data["name"]}=={root_data["version"]} '
-            f'--entry-point {run_data["entry_point"]} '
-            f"--param-file parameter_set.yaml"
-        )
-        with open("README.md", "w") as readme_file:
-            readme_file.write("## Rerun this agent\n\n```\n")
-            readme_file.write(rerun_cmd)
-            readme_file.write("\n```")
-        spec_url = f"{run_url}/root_spec"
-        spec_response = requests.get(spec_url)
-        spec_dict = json.loads(spec_response.content)
-        with open("components.yaml", "w") as file_out:
-            file_out.write(yaml.safe_dump(spec_dict))
-        try:
-            tar_url = f"{run_url}/download_artifact"
-            tmp_dir_path = Path(tempfile.mkdtemp())
-            requests.get(tar_url)
-            tarball_response = requests.get(tar_url)
-            tarball_name = "artifacts.tar.gz"
-            tarball_path = tmp_dir_path / tarball_name
-            with open(tarball_path, "wb") as f:
-                f.write(tarball_response.content)
-            tar = tarfile.open(tarball_path)
-            tar.extractall(path=tmp_dir_path)
-            mlflow.start_run(experiment_id=Run.MLFLOW_EXPERIMENT_ID)
-            mlflow.set_tag(
-                AgentRunManager.RUN_TYPE_TAG, AgentRunManager.LEARN_KEY
-            )
-            mlflow.log_metric(
-                "episode_count",
-                run_data["mlflow_metrics"]["training_episode_count"],
-            )
-            mlflow.log_metric(
-                "step_count", run_data["mlflow_metrics"]["training_step_count"]
-            )
-            mlflow.end_run()
-            mlflow.start_run(experiment_id=Run.MLFLOW_EXPERIMENT_ID)
-            mlflow.set_tag(
-                AgentRunManager.RUN_TYPE_TAG, AgentRunManager.RESTORE_KEY
-            )
-            for file_name in os.listdir(tmp_dir_path):
-                if file_name == tarball_name:
-                    continue
-                file_path = tmp_dir_path / file_name
-                mlflow.log_artifact(file_path)
-            for name, value in run_data["mlflow_metrics"].items():
-                mlflow.log_metric(name, value)
-            mlflow.end_run()
-            print("\nRerun agent as follows:")
-            print(rerun_cmd)
-            print()
-        finally:
-            shutil.rmtree(tmp_dir_path)
-
-
-web_registry = WebRegistry(AOS_WEB_API_ROOT)
+        return Run.from_registry(self, run_id)

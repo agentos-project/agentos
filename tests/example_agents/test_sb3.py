@@ -2,7 +2,7 @@ from tests.utils import run_test_command
 from tests.utils import SB3_AGENT_DIR
 from agentos.cli import run
 
-test_args = ["agent"]
+test_args = ["sb3_agent"]
 test_kwargs = {"--registry-file": str(SB3_AGENT_DIR / "components.yaml")}
 
 

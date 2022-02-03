@@ -14,18 +14,21 @@ RUN_CREATE_DATA = {
                 },
                 "file_path": "example_agents/sb3_agent/agent.py",
                 "repo": "sb3_agent_dir",
+                "instantiate": True,
             },
             "environment==73fbfe92028aec1a259935b5d809f1a7ee1e4336": {
                 "class_name": "CartPole",
                 "dependencies": {},
                 "file_path": "example_agents/sb3_agent/environment.py",
                 "repo": "sb3_agent_dir",
+                "instantiate": True,
             },
             "run_manager==73fbfe92028aec1a259935b5d809f1a7ee1e4336": {
                 "class_name": "SB3RunManager",
                 "dependencies": {},
                 "file_path": "example_agents/sb3_agent/run_manager.py",
                 "repo": "sb3_agent_dir",
+                "instantiate": True,
             },
         },
         "repos": {

@@ -13,8 +13,7 @@ components:
             policy: policy
             dataset: dataset
             trainer: trainer
-            run_manager: run_manager
-    
+
     environment:
         repo: local_dir
         file_path: ./environment.py
@@ -36,8 +35,3 @@ components:
         repo: local_dir
         file_path: ./trainer.py
         class_name: BasicTrainer
-    
-    run_manager:
-        repo: local_dir
-        file_path: ./run_manager.py
-        class_name: BasicRunManager

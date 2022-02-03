@@ -1,6 +1,7 @@
 .env
 env/
 .aos/
+.pcs_local_repo/
 
 .cache
 *.swp

@@ -1,18 +1,18 @@
 repos:
-    local_dir:
+    local_repo:
         type: local
         path: .
 
 
 components:
     chatbot:
-        repo: local_dir
+        repo: local_repo
         class_name: ChatBot
         file_path: ./main.py
         dependencies: 
             env_class: env_class
     
     env_class:
-        repo: local_dir
+        repo: local_repo
         class_name: MultiChatEnv
         file_path: ./env.py

@@ -8,33 +8,39 @@ components:
       run_manager: run_manager==1176dfa06d097c9e8ca64c99337278e4981575fc
       trainer: trainer==1176dfa06d097c9e8ca64c99337278e4981575fc
     file_path: test_gen/agent.py
+    instantiate: True
     repo: local_dir
   dataset==1176dfa06d097c9e8ca64c99337278e4981575fc:
     class_name: BasicDataset
     dependencies: {}
     file_path: test_gen/dataset.py
     repo: local_dir
+    instantiate: True
   environment==1176dfa06d097c9e8ca64c99337278e4981575fc:
     class_name: Corridor
     dependencies: {}
     file_path: test_gen/environment.py
     repo: local_dir
+    instantiate: True
   policy==1176dfa06d097c9e8ca64c99337278e4981575fc:
     class_name: RandomPolicy
     dependencies:
       environment: environment==1176dfa06d097c9e8ca64c99337278e4981575fc
     file_path: test_gen/policy.py
     repo: local_dir
+    instantiate: True
   run_manager==1176dfa06d097c9e8ca64c99337278e4981575fc:
     class_name: BasicRunManager
     dependencies: {}
     file_path: test_gen/run_manager.py
     repo: local_dir
+    instantiate: True
   trainer==1176dfa06d097c9e8ca64c99337278e4981575fc:
     class_name: BasicTrainer
     dependencies: {}
     file_path: test_gen/trainer.py
     repo: local_dir
+    instantiate: True
 repos:
   local_dir:
     type: github

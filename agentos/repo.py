@@ -2,34 +2,29 @@ import os
 import sys
 import abc
 from enum import Enum
-from typing import TypeVar, Dict
+from typing import TypeVar, Dict, Tuple, Union
 from pathlib import Path
 from dulwich import porcelain
 from dulwich.repo import Repo as PorcelainRepo
 from dulwich.objectspec import parse_ref
 from dulwich.objectspec import parse_commit
 from dulwich.errors import NotGitRepository
+
+from agentos.exceptions import (
+    BadGitStateException,
+    PythonComponentSystemException,
+)
 from agentos.utils import AOS_CACHE_DIR
-from agentos import component
-from agentos.specs import RepoSpec
+from agentos.component import ComponentIdentifier
+from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
 
 
-class BadGitStateException(Exception):
-    pass
-
-
-class NoLocalPathException(Exception):
-    pass
-
-
 class RepoType(Enum):
     LOCAL = "local"
     GITHUB = "github"
-    IN_MEMORY = "in_memory"
-    UNKNOWN = "unknown"
 
 
 class Repo(abc.ABC):
@@ -38,39 +33,62 @@ class Repo(abc.ABC):
     is located.
     """
 
-    @staticmethod
-    def from_spec(name: str, spec: RepoSpec, base_dir: Path = None) -> "Repo":
-        if spec["type"] == RepoType.LOCAL.value:
-            assert base_dir, "The `base_dir` arg is required for local repos."
-            path = Path(base_dir) / spec["path"]
-            return LocalRepo(name=name, file_path=path)
-        elif spec["type"] == RepoType.GITHUB.value:
-            return GitHubRepo(name=name, url=spec["url"])
-        elif spec["type"] == RepoType.IN_MEMORY.value:
-            return InMemoryRepo()
-        elif spec["type"] == RepoType.UNKNOWN.value:
-            return UnknownRepo()
-        else:
-            raise Exception(f"Unknown repo spec type: {spec}")
+    def __init__(self, identifier: str):
+        self.identifier = identifier
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Repo):
             return self.to_spec() == other.to_spec()
         return self == other
 
-    @abc.abstractmethod
-    def to_spec(self) -> Dict:
-        return NotImplementedError
+    @staticmethod
+    def from_spec(spec: NestedRepoSpec, base_dir: Path = None) -> "Repo":
+        assert len(spec) == 1
+        for identifier, inner_spec in spec.items():
+            repo_type = inner_spec["type"]
+            if repo_type == RepoType.LOCAL.value:
+                assert (
+                    base_dir
+                ), "The `base_dir` arg is required for local repos."
+                path = Path(base_dir) / inner_spec["path"]
+                return LocalRepo(identifier=identifier, local_dir=path)
+            elif repo_type == RepoType.GITHUB.value:
+                return GitHubRepo(identifier=identifier, url=inner_spec["url"])
+        raise PythonComponentSystemException(
+            f"Unknown repo spec type '{repo_type} in repo {identifier}"
+        )
 
-    def get_local_repo_path(self, version: str) -> Path:
+    @abc.abstractmethod
+    def to_spec(self, flatten: bool = False) -> RepoSpec:
+        return NotImplementedError  # type: ignore
+
+    def optionally_flatten_spec(self, inner: dict, flatten: bool):
+        """
+        Helper function for optionally flattening a spec.
+        :param inner: the inner dict to flatten or not.
+        :param flatten: the flag for whether to flatten this spec.
+        :return: a spec that is either flattened or not.
+        """
+        if flatten:
+            inner.update({RepoSpecKeys.IDENTIFIER: self.identifier})
+            return inner
+        else:
+            return {self.identifier: inner}
+
+    @abc.abstractmethod
+    def get_local_repo_dir(self, version: str) -> Path:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_local_file_path(self, version: str, file_path: str) -> Path:
         raise NotImplementedError()
 
     def get_version_from_git(
         self,
-        identifier: "component.Component.Identifier",
+        component_identifier: ComponentIdentifier,
         file_path: str,
         force: bool = False,
-    ) -> (str, str):
+    ) -> Tuple[str, str]:
         """
         Given a path to a Component, this returns a git hash and GitHub repo
         URL where the current version of the Component is publicly accessible.
@@ -85,7 +103,9 @@ class Repo(abc.ABC):
 
         If ''force'' is True, checks 2, 3, and 4 above are ignored.
         """
-        full_path = self.get_local_file_path(identifier, file_path)
+        full_path = self.get_local_file_path(
+            component_identifier.version, file_path
+        )
         assert full_path.exists(), f"Path {full_path} does not exist"
         try:
             self.porcelain_repo = PorcelainRepo.discover(full_path)
@@ -188,7 +208,7 @@ class Repo(abc.ABC):
                 raise BadGitStateException(error_msg)
 
     def get_prefixed_path_from_repo_root(
-        self, identifier: "component.Component.Identifier", file_path: str
+        self, identifier: ComponentIdentifier, file_path: str
     ) -> Path:
         """
         Finds the 'component_path' relative to the repo containing the
@@ -210,7 +230,7 @@ class Repo(abc.ABC):
         baz/my_component.py
         ```
         """
-        full_path = self.get_local_file_path(identifier, file_path)
+        full_path = self.get_local_file_path(identifier.version, file_path)
         name = full_path.name
         curr_path = full_path.parent
         path_prefix = Path()
@@ -224,27 +244,13 @@ class Repo(abc.ABC):
         raise BadGitStateException(f"Unable to find repo: {full_path}")
 
 
-class UnknownRepo(Repo):
-    """
-    A fallback; a Component with an UnknownRepo doesn't have a known
-    public source.
-    """
-
-    def __init__(self, name=None):
-        self.name = name if name else "unknown_repo"
-        self.type = RepoType.UNKNOWN
-
-    def to_spec(self) -> Dict:
-        return {self.name: {"type": self.type}}
-
-
 class GitHubRepo(Repo):
     """
     A Component with an GitHubRepo can be found on GitHub.
     """
 
-    def __init__(self, name: str, url: str):
-        self.name = name
+    def __init__(self, identifier: str, url: str):
+        super().__init__(identifier)
         self.type = RepoType.GITHUB
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
@@ -252,16 +258,24 @@ class GitHubRepo(Repo):
         self.local_repo_path = None
         self.porcelain_repo = None
 
-    def to_spec(self) -> Dict:
-        return {self.name: {"type": self.type.value, "url": self.url}}
+    def to_spec(self, flatten: bool = False) -> Dict:
+        inner = {
+            RepoSpecKeys.TYPE: self.type.value,
+            RepoSpecKeys.URL: self.url,
+        }
+        return self.optionally_flatten_spec(inner, flatten)
 
-    def get_local_repo_path(self, version: str) -> str:
+    def get_local_repo_dir(self, version: str) -> Path:
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
         return local_repo_path
 
-    def _clone_repo(self, version: str) -> str:
+    def get_local_file_path(self, version: str, file_path: str) -> Path:
+        local_repo_path = self.get_local_repo_dir(version)
+        return (local_repo_path / file_path).absolute()
+
+    def _clone_repo(self, version: str) -> Path:
         org_name, proj_name = self.url.split("/")[-2:]
         clone_destination = AOS_CACHE_DIR / org_name / proj_name / version
         if not clone_destination.exists():
@@ -272,7 +286,7 @@ class GitHubRepo(Repo):
         assert clone_destination.exists(), f"Unable to clone {self.url}"
         return clone_destination
 
-    def _checkout_version(self, local_repo_path: str, version: str) -> None:
+    def _checkout_version(self, local_repo_path: Path, version: str) -> None:
         to_checkout = version if version else "master"
         curr_dir = os.getcwd()
         os.chdir(local_repo_path)
@@ -291,49 +305,61 @@ class GitHubRepo(Repo):
         porcelain.reset(repo=repo, mode="hard", treeish=treeish)
         os.chdir(curr_dir)
 
-    def get_local_file_path(
-        self, identifier: "component.Component.Identifier", file_path: str
-    ) -> Path:
-        local_repo_path = self.get_local_repo_path(identifier.version)
-        return (local_repo_path / file_path).absolute()
 
-
+# TODO: Convert LocalRepo to GitRepo and make GitHubRepo a subclass of it
+#       So that under the hood all local repos are seamlessly versioned
+#       and publishing any component can be super seamless by easily
+#       converting a GitRepo to some default GitHubRepo where anything that
+#       a user wants to share can be pushed, perhaps something like
+#       github.com/my_username/pcs_repo.
 class LocalRepo(Repo):
     """
     A Component with a LocalRepo can be found on your local drive.
     """
 
-    def __init__(self, name: str, file_path: str):
-        self.name = name
+    def __init__(self, identifier: str, local_dir: Union[Path, str] = None):
+        super().__init__(identifier)
+        if not local_dir:
+            # TODO: check for a global .pcsconfig that defines a default
+            #      location for a local repo, which will be used to
+            #      write source files created by Component.from_class with
+            #      classes that are defined in the REPL.
+            # NOTE: We do not use utils.AOS_CACHE_DIR here since this
+            #       is not a cache of a remote git repo, rather it is a local
+            #       repo that may be the only copy in existence.
+            local_dir = "./.pcs_local_repo"
         self.type = RepoType.LOCAL
-        self.file_path = Path(file_path).absolute()
+        self.local_dir = Path(local_dir).absolute()
+        if self.local_dir.exists():
+            assert self.local_dir.is_dir()
+            print(
+                f"Confirmed local_dir {self.local_dir} for "
+                f"LocalRepo {self.identifier} exists and is a dir."
+            )
+        else:
+            self.local_dir.mkdir(parents=True, exist_ok=True)
+            print(
+                f"Created local_dir {self.local_dir} for "
+                f"LocalRepo {self.identifier}."
+            )
 
-    def to_spec(self) -> Dict:
-        return {
-            self.name: {"type": self.type.value, "path": str(self.file_path)}
+    def to_spec(self, flatten: bool = False) -> RepoSpec:
+        inner = {
+            RepoSpecKeys.TYPE: self.type.value,
+            RepoSpecKeys.PATH: str(self.local_dir),
         }
+        return self.optionally_flatten_spec(inner, flatten)
 
-    def get_local_repo_path(self, version: str) -> Path:
-        return self.file_path
+    def get_local_repo_dir(self, version: str = None) -> Path:
+        assert version is None, "LocalRepos don't support versioning."
+        return self.local_dir
 
-    def get_local_file_path(
-        self, identifier: "component.Component.Identifier", file_path: str
-    ) -> Path:
-        return self.file_path / file_path
-
-
-class InMemoryRepo(Repo):
-    """
-    A Component with a InMemoryRepo was created from a class that was
-    already loaded into Python.
-    """
-
-    def __init__(self, name: str = None):
-        self.name = name if name else "in_memory"
-        self.type = RepoType.IN_MEMORY
-
-    def get_local_file_path(self, *args, **kwargs):
-        raise NoLocalPathException()
-
-    def to_spec(self) -> Dict:
-        return {self.name: {"type": self.type.value}}
+    def get_local_file_path(self, version: str, relative_path: str) -> Path:
+        if version is not None:
+            print(
+                "WARNING: version was passed into get_local_path() "
+                "on a LocalRepo, which means it is being ignored. "
+                "If this is actually a versioned repo, use GithubRepo "
+                "or another versioned Repo type."
+            )
+        return self.local_dir / relative_path

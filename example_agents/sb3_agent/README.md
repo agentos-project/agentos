@@ -5,7 +5,7 @@
 Train the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point learn
+agentos run sb3_agent --entry-point learn
 ```
 
 Optional command-line arguments:
@@ -18,7 +18,7 @@ Optional command-line arguments:
 Evaluate the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point evaluate
+agentos run sb3_agent --entry-point evaluate
 ```
 
 Optional command-line arguments:
@@ -32,7 +32,7 @@ Reset agent (including the backing model) by running the following from the
 command-line:
 
 ```bash
-agentos run agent --entry-point reset
+agentos run sb3_agent --entry-point reset
 ```
 
 ### Publish a run

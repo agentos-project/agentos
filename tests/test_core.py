@@ -18,7 +18,6 @@ def test_cli_init(tmpdir):
             "policy.py",
             "dataset.py",
             "trainer.py",
-            "run_manager.py",
             "components.yaml",
         ]
         for expected_file_name in expected_file_names:
@@ -30,8 +29,6 @@ def test_cli_init(tmpdir):
         run_test_command(run, cli_args=run_args, cli_kwargs=run_1_kwargs)
         run_2_kwargs = {"--entry-point": "learn"}
         run_test_command(run, cli_args=run_args, cli_kwargs=run_2_kwargs)
-        run_3_kwargs = {"--entry-point": "reset"}
-        run_test_command(run, cli_args=run_args, cli_kwargs=run_3_kwargs)
 
 
 def test_cli_run():
@@ -46,6 +43,6 @@ def test_cli_status(tmpdir):
 
 
 def test_cli_freeze(tmpdir):
-    run_args = ["agent", "-f"]
+    run_args = ["sb3_agent", "-f"]
     run_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
     run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)

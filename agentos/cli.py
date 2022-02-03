@@ -11,7 +11,7 @@ from pathlib import Path
 from agentos import Component
 from agentos import ParameterSet
 from agentos.run import Run
-from agentos.registry import web_registry
+from agentos.registry import Registry
 
 
 @click.group()
@@ -159,8 +159,10 @@ def run(
     entry_point = entry_point or component.get_default_entry_point()
     parameters.update(component_name, entry_point, param_dict)
     run = component.run(entry_point, parameters)
-    print(f"Run {run.id} recorded.  Execute the following for details:")
-    print(f"\n  agentos status {run.id}\n")
+    print(
+        f"Run {run.identifier} recorded.  Execute the following for details:"
+    )
+    print(f"\n  agentos status {run.identifier}\n")
 
 
 @agentos_cmd.command()
@@ -170,31 +172,29 @@ def status(entity_id, registry_file):
     """
     ENTITY_ID can be a Component name or a Run ID.
     """
-    if Run.run_exists(entity_id):
-        Run.get_by_id(run_id=entity_id).print_status(detailed=True)
-    else:
+    print(f"entity_id is {entity_id}")
+    if not entity_id:
         Run.print_all_status()
-        if entity_id:
+    elif Run.run_exists(entity_id):
+        Run.from_existing_run_id(entity_id).print_status(detailed=True)
+    else:  # assume entity_id is a ComponentIdentifier
+        try:
             component = Component.from_registry_file(registry_file, entity_id)
             component.print_status_tree()
+        except LookupError:
+            print(f"No Run or component found with Identifier {entity_id}.")
 
 
 @agentos_cmd.command()
 @_arg_optional_entity_id
 def publish_run(entity_id):
-    if Run.run_exists(entity_id):
-        run = Run.get_by_id(run_id=entity_id)
-    else:
-        run = Run.get_latest_publishable_run()
-        if run is None:
-            raise Exception("No publishable runs found")
-    run.publish()
+    Run.from_existing_run_id(run_id=entity_id).publish()
 
 
 @agentos_cmd.command()
 @_arg_run_id
-def get_run(run_id):
-    web_registry.get_run(run_id)
+def rerun(run_id):
+    Run.from_registry(Registry.get_default(), run_id).rerun()
 
 
 @agentos_cmd.command()
@@ -216,8 +216,8 @@ def freeze(component_name, registry_file, force):
         * There are no uncommitted changes in the local repo
     """
     component = Component.from_registry_file(registry_file, component_name)
-    frozen_spec = component.to_frozen_registry(force=force).to_dict()
-    print(yaml.dump(frozen_spec))
+    frozen_reg = component.to_frozen_registry(force=force)
+    print(yaml.dump(frozen_reg.to_dict()))
 
 
 @agentos_cmd.command()
@@ -231,8 +231,8 @@ def publish(component_name: str, registry_file: str, force: bool):
     Component in the dependency tree cannot be frozen.
     """
     component = Component.from_registry_file(registry_file, component_name)
-    frozen_spec = component.to_frozen_registry(force=force).to_dict()
-    web_registry.add_component_spec(frozen_spec)
+    frozen_spec = component.to_frozen_registry(force=force).to_spec()
+    Registry.get_default().add_component_spec(frozen_spec)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501
@@ -287,7 +287,6 @@ _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
-_RUN_MANAGER_DEF_FILE = Path("./templates/run_manager.py")
 _AGENT_YAML_FILE = Path("./templates/components.yaml")
 
 
@@ -297,7 +296,6 @@ _INIT_FILES = [
     _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
     _TRAINER_DEF_FILE,
-    _RUN_MANAGER_DEF_FILE,
     _AGENT_YAML_FILE,
 ]
 

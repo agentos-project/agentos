@@ -2,7 +2,7 @@ import sonnet as snt
 
 
 class AcmeDQNNetwork:
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.net = snt.Sequential(
             [
                 snt.Flatten(),
@@ -14,7 +14,7 @@ class AcmeDQNNetwork:
         self.restore()
 
     def restore(self):
-        self.run_manager.restore_tensorflow("network", self.net)
+        self.AcmeRun.restore_tensorflow("network", self.net)
 
     def save(self):
-        self.run_manager.save_tensorflow("network", self.net)
+        self.AcmeRun.save_tensorflow("network", self.net)

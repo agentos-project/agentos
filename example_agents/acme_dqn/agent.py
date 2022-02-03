@@ -1,6 +1,7 @@
 import acme
 from acme.agents.tf import dqn
 import numpy as np
+from agentos import active_component_run
 
 
 class AcmeDQNAgent:
@@ -18,27 +19,22 @@ class AcmeDQNAgent:
         )
 
     def evaluate(self, num_episodes):
-        with self.run_manager.evaluate_run():
+
+        with self.AcmeRun("evaluate", active_component_run(self)) as run:
             num_episodes = int(num_episodes)
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self.agent,
                 should_update=False,
-                logger=self.run_manager,
+                logger=run,
             )
             loop.run(num_episodes=num_episodes)
 
     def learn(self, num_episodes):
-        with self.run_manager.learn_run():
+        with self.AcmeRun("learn", active_component_run(self)) as run:
             num_episodes = int(num_episodes)
             loop = acme.EnvironmentLoop(
-                self.environment,
-                self.agent,
-                should_update=True,
-                logger=self.run_manager,
+                self.environment, self.agent, should_update=True, logger=run
             )
             loop.run(num_episodes=num_episodes)
             self.network.save()
-
-    def reset(self):
-        self.run_manager.reset()

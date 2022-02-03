@@ -6,6 +6,7 @@ components:
     class_name: ADifferentClassName
     file_path: example_agents/test/test.py
     repo: gh_test
+    instantiate: True
     dependencies: {}
 repos:
   gh_test:

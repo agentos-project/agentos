@@ -1,10 +1,11 @@
-shared: &shared
-    discount: 0.99
-    sequence_length: 13
-    store_lstm_state: true
-    replay_period: 40
-    batch_size: 32
-    max_replay_size: 500
+dummy:
+    shared: &shared
+        discount: 0.99
+        sequence_length: 13
+        store_lstm_state: true
+        replay_period: 40
+        batch_size: 32
+        max_replay_size: 500
 
 agent:
     evaluate:
