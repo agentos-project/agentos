@@ -14,6 +14,8 @@ GH_SB3_AGENT_DIR = EXAMPLE_AGENT_DIR / "gh_sb3_agent"
 RLLIB_AGENT_DIR = EXAMPLE_AGENT_DIR / "rllib_agent"
 SB3_AGENT_DIR = EXAMPLE_AGENT_DIR / "sb3_agent"
 
+TESTING_BRANCH_NAME = "test_prod"
+
 
 def run_test_command(cmd, cli_args=None, cli_kwargs=None):
     call_list = [a for a in (cli_args or [])]
