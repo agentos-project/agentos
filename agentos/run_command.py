@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from agentos.registry import Registry
 from agentos.specs import RunCommandSpec, RunCommandSpecKeys
 from agentos.identifiers import RunIdentifier, RunCommandIdentifier
+from agentos.run import Run
 
 # Avoids circular imports
 if TYPE_CHECKING:
@@ -19,7 +20,7 @@ class RunCommand:
 
     You can think of a RunCommand as a glorified dictionary containing the
     pointers to params, and versions of code necessary to reproduce the setting
-    up of a component (including its dependency dag) and the exeuction of
+    up of a component (including its dependency dag) and the execution of
     one of its entry points with a specific parameter set. Whereas a Run itself
     (which may contain a RunCommand) is more like a client to a backing store
     used various types of outputs of the code being executed.
@@ -90,8 +91,6 @@ class RunCommand:
         return self._parameter_set
 
     def new_run(self, experiment_id: str = None):
-        from agentos.run import Run
-
         return Run.from_run_command(self, experiment_id=experiment_id)
 
     @classmethod

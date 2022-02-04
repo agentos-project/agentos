@@ -3,10 +3,6 @@ from rest_framework.exceptions import ValidationError
 from typing import Dict, List
 from agentos.component import Component as CLI_Component
 
-from rest_framework import serializers
-
-serializers.Serializer
-
 
 class TimeStampedModel(models.Model):
     created = models.DateTimeField(auto_now_add=True, editable=False)
