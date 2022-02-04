@@ -9,7 +9,6 @@ from agentos.run import Run
 if TYPE_CHECKING:
     from agentos.component import Component
     from agentos.parameter_set import ParameterSet
-    from agentos.run import Run
 
 
 class RunCommand:

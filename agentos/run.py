@@ -1,7 +1,7 @@
 import pprint
 from functools import partial
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 from urllib.parse import urlparse
 from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
@@ -99,7 +99,6 @@ class Run:
             new_run = self._mlflow_client.create_run(exp_id)
             self._mlflow_run_id = new_run.info.run_id
             self.set_tag(self.PCS_RUN_TAG, "True")
-
 
     @classmethod
     def run_exists(cls, run_id) -> bool:
