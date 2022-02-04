@@ -3,7 +3,7 @@
 
 class BasicDataset:
     def __init__(self):
-        self.transitions = []
+        self.episodes = []
 
-    def add(self, old_obs, action, new_obs, reward, done):
-        self.transitions.append((old_obs, action, new_obs, reward, done))
+    def add(self, episode_transitions):
+        self.episodes.append(episode_transitions)

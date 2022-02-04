@@ -39,8 +39,3 @@ components:
         dependencies:
             dataset: dataset
             policy: policy
-    
-    run_manager:
-        repo: local_dir
-        file_path: ./run_manager.py
-        class_name: BasicRunManager

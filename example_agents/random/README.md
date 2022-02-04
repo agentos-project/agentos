@@ -1,8 +1,18 @@
 ## Random Agent
 
-This agent is intended for testing purposes.  It randomly walks down a 1D
-corridor, has no backing data, and only dependencies on the Python standard
-library.
+This agent is intended for testing purposes.  It is the default agent generated
+by `agentos init`. This agent randomly walks down a 1D corridor, has no backing
+data, and only dependencies on the Python standard library.
+
+### Regenerate This Agent
+
+To regenerate this agent and update it to the latest default agent, run the
+following in the agent directory:
+
+```bash
+rm -rf *.py *.yaml __pycache__ *.txt mlruns/
+agentos init .
+```
 
 ### Agent Training
 
