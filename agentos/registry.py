@@ -331,12 +331,19 @@ class WebRegistry(Registry):
 
     @staticmethod
     def _check_response(response):
+        print("encoding:")
+        print(response.encoding)
         if not response.ok:
-            print("failed response: ")
-            print(response.content)
-            content = json.loads(response.content)
-            if type(content) == list:
-                content = content[0]
+            content = response.content
+            try:
+                content = json.loads(response.content)
+                if type(content) == list:
+                    content = content[0]
+            except json.decoder.JSONDecodeError:
+                try:
+                    content = content.decode()
+                except:
+                    pass
             raise Exception(content)
 
     def get_component_specs(
@@ -479,8 +486,14 @@ class WebRegistry(Registry):
         Register a RunCommandSpec.
         :param run_command_spec: A :py:func:agentos.specs.RunCommandSpec``.
         """
-        url = f"{self.root_api_url}/run_commands/"
-        response = requests.post(url, data=flatten_spec(run_command_spec))
+        print("hanlding run_command_spec:")
+        print(run_command_spec)
+        url = f"{self.root_api_url}/runcommands/"
+        flat_spec = flatten_spec(run_command_spec)
+        flat_spec["parameter_set"] = json.encoder.JSONEncoder().encode(
+            flat_spec["parameter_set"]
+        )
+        response = requests.post(url, data=flat_spec)
         self._check_response(response)
         result = json.loads(response.content)
         print("\nadd_run_commmand_spec http response results:")

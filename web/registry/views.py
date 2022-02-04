@@ -11,9 +11,11 @@ from rest_framework.exceptions import ValidationError
 from .models import Run
 from .models import Repo
 from .models import Component
+from .models import RunCommand
 from .serializers import RunSerializer
 from .serializers import RepoSerializer
 from .serializers import ComponentSerializer
+from .serializers import RunCommandSerializer
 
 
 class ComponentViewSet(viewsets.ModelViewSet):
@@ -129,3 +131,9 @@ class RepoViewSet(viewsets.ModelViewSet):
         if identifier:
             queryset = queryset.filter(identifier=identifier)
         return queryset
+
+
+class RunCommandViewSet(viewsets.ModelViewSet):
+    queryset = RunCommand.objects.all().order_by("-created")
+    serializer_class = RunCommandSerializer
+    permission_classes = [AllowAny]

@@ -55,6 +55,7 @@ class ComponentDependency(TimeStampedModel):
 
 
 class Component(TimeStampedModel):
+    identifier = models.CharField(max_length=200, unique=True)
     name = models.CharField(max_length=200)
     version = models.CharField(max_length=200)
     repo = models.ForeignKey(
@@ -264,4 +265,20 @@ class Run(TimeStampedModel):
             f"Environment: {self.environment.name}, "
             f"Total Training Transitions: {self.training_step_count_metric}, "
             f"Mean Reward: {self.mean_reward_metric}"
+        )
+
+
+class RunCommand(TimeStampedModel):
+    identifier = models.CharField(max_length=200, unique=True, primary_key=True)
+    entry_point = models.CharField(max_length=200)
+    parameter_set = models.JSONField(default=dict)
+    component = models.ForeignKey(
+        Component, on_delete=models.CASCADE, to_field="identifier"
+    )
+
+    def __str__(self):
+        return (
+            f"<RunCommand {self.pk} with Component {self.component}, "
+            f"entry point {self.entry_point}, and parameter_set "
+            f"{self.param_set}>"
         )

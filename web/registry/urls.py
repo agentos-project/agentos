@@ -2,6 +2,7 @@ from django.urls import path, include
 from .views import RunViewSet
 from .views import RepoViewSet
 from .views import ComponentViewSet
+from .views import RunCommandViewSet
 from rest_framework.routers import DefaultRouter
 
 
@@ -9,6 +10,7 @@ router = DefaultRouter()
 router.register(r"components", ComponentViewSet, basename="component")
 router.register(r"runs", RunViewSet)
 router.register(r"repos", RepoViewSet, basename="repo")
+router.register(r"runcommands", RunCommandViewSet, basename="runcommand")
 
 router.get_api_root_view().cls.__name__ = "Root"
 router.get_api_root_view().cls.__doc__ = "AgentOS Registry API views"

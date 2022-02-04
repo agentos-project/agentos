@@ -235,7 +235,7 @@ class Component:
         publish_to: Registry = None,
         log_return_value: bool = True,
         return_value_log_format: str = "yaml",
-    ) -> Run:
+    ) -> ComponentRun:
         """
         Run the specified entry point a new instance of this Component's
         managed object given the specified params, log the results

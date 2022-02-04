@@ -3,6 +3,7 @@ from rest_framework.reverse import reverse
 from .models import Run
 from .models import Repo
 from .models import Component
+from .models import RunCommand
 
 
 def _get_link_from_id(serializer, view_name, obj_id):
@@ -21,6 +22,7 @@ class ComponentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "id_link",
+            "identifier",
             "name",
             "version",
             "repo",
@@ -109,3 +111,20 @@ class RepoSerializer(serializers.ModelSerializer):
 
     def get_id_link(self, obj):
         return _get_link_from_id(self, "repo-detail", obj.id)
+
+
+class RunCommandSerializer(serializers.ModelSerializer):
+    identifier_link = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RunCommand
+        fields = [
+            "identifier",
+            "identifier_link",
+            "component",
+            "entry_point",
+            "parameter_set",
+        ]
+
+    def get_identifier_link(self, obj):
+        return _get_link_from_id(self, "runcommand-detail", obj.identifier)
