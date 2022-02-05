@@ -4,7 +4,7 @@ import shutil
 import tensorflow as tf
 from pathlib import Path
 from agentos.agent_run import AgentRun
-from agentos.run import Run
+from component_run import active_component_run
 
 
 # Adheres to Acme Logger interface
@@ -21,12 +21,12 @@ class AcmeRun(AgentRun):
     def close(self):
         pass
 
-    @staticmethod
-    def save_tensorflow(name: str, network: tf.Module):
+    @classmethod
+    def save_tensorflow(cls, name: str, network: tf.Module):
         dir_path = Path(tempfile.mkdtemp())
         checkpoint = tf.train.Checkpoint(module=network)
         checkpoint.save(dir_path / name / name)
-        mlflow.log_artifact(dir_path / name)
+        active_component_run(cls).log_artifact(dir_path / name)
         shutil.rmtree(dir_path)
 
     @classmethod
