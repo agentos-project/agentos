@@ -31,7 +31,7 @@ class AcmeDQNNetwork:
         runs = Run.get_all_runs()
         for run in runs:
             try:
-                save_path = run.download_artifacts(self.save_as_name)
+                save_path = Path(run.download_artifacts(self.save_as_name))
                 if save_path.is_dir():
                     checkpoint = tf.train.Checkpoint(module=self.net)
                     latest = tf.train.latest_checkpoint(save_path)
@@ -42,8 +42,8 @@ class AcmeDQNNetwork:
                             f"{self.save_as_name}."
                         )
                         return
-            except:
-                pass
+            except IOError as e:
+                print(f"failed to download artifacts: {e}")
         print(
             f"AcmeRunManager: No saved Tensorflow model "
             f"{self.save_as_name} found."
