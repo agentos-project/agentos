@@ -30,19 +30,20 @@ class AcmeDQNNetwork:
     def restore(self):
         runs = Run.get_all_runs()
         for run in runs:
-            save_path = run.download_artifacts(self.save_as_name)
-            if save_path.is_dir():
-                checkpoint = tf.train.Checkpoint(module=self.net)
-                latest = tf.train.latest_checkpoint(save_path)
-                if latest is not None:
-                    checkpoint.restore(latest)
-                    self.save_tensorflow()
-                    print(
-                        f"AcmeRunManager: Restored Tensorflow model "
-                        f"{self.save_as_name}."
-                    )
-                    return
-        self.save_tensorflow()
+            try:
+                save_path = run.download_artifacts(self.save_as_name)
+                if save_path.is_dir():
+                    checkpoint = tf.train.Checkpoint(module=self.net)
+                    latest = tf.train.latest_checkpoint(save_path)
+                    if latest is not None:
+                        checkpoint.restore(latest)
+                        print(
+                            f"AcmeRunManager: Restored Tensorflow model "
+                            f"{self.save_as_name}."
+                        )
+                        return
+            except:
+                pass
         print(
             f"AcmeRunManager: No saved Tensorflow model "
             f"{self.save_as_name} found."
