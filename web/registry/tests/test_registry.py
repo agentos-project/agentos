@@ -26,7 +26,6 @@ class RegistryTestCases(TestCase):
             file_path="/foo/bar/baz",
             class_name="TestComponentH42",
             instantiate=True,
-
         )
         self.run = Run.objects.create(
             id="sklldfjiekls",
