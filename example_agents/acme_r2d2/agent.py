@@ -27,7 +27,7 @@ class AcmeR2D2Agent:
                 logger=run,
             )
             loop.run(num_episodes=int(num_episodes))
-            self.network.save()
+            self.network.save(run=run)
 
     # Acme agent API
     def observe_first(self, timestep):
