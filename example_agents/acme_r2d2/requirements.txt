@@ -27,7 +27,7 @@ distlib==0.3.3
 distro==1.4.0
 dm-acme==0.2.1
 dm-env==1.5
-dm-reverb[tensorflow]
+dm-reverb[tensorflow]==0.6.1
 dm-sonnet==2.0.0
 dm-tree==0.1.6
 docker==5.0.0
