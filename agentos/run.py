@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
+from mlflow.tracking.context import registry as context_registry
 from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
 from agentos.specs import RunSpec
@@ -99,6 +100,9 @@ class Run:
             new_run = self._mlflow_client.create_run(exp_id)
             self._mlflow_run_id = new_run.info.run_id
             self.set_tag(self.PCS_RUN_TAG, "True")
+            resolved_tags = context_registry.resolve_tags()
+            for tag_k, tag_v in resolved_tags.items():
+                self.set_tag(tag_k, tag_v)
 
     @classmethod
     def run_exists(cls, run_id) -> bool:
