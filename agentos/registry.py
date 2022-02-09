@@ -18,6 +18,7 @@ from agentos.identifiers import (
 )
 from agentos.specs import (
     flatten_spec,
+    unflatten_spec,
     RepoSpec,
     ComponentSpec,
     NestedComponentSpec,
@@ -409,7 +410,7 @@ class WebRegistry(Registry):
         self, run_command_id: RunCommandIdentifier, flatten: bool = False
     ) -> RunCommandSpec:
         return self._request_spec_from_web_server(
-            "run_command", run_command_id, flatten
+            "runcommand", run_command_id, flatten
         )
 
     def get_run_spec(
@@ -420,11 +421,14 @@ class WebRegistry(Registry):
     def _request_spec_from_web_server(
         self, spec_type: str, identifier: str, flatten: bool
     ):
-        assert spec_type in ["run", "run_command", "repo", "component"]
+        assert spec_type in ["run", "runcommand", "repo", "component"]
         req_url = f"{self.root_api_url}/{spec_type}s/{identifier}"
-        run_response = requests.get(req_url)
-        spec = json.loads(run_response.content)
-        return flatten_spec(spec) if flatten else spec
+        response = requests.get(req_url)
+        self._check_response(response)
+        flat_spec = json.loads(response.content)
+        print("spec returned was:")
+        print(flat_spec)
+        return unflatten_spec(flat_spec) if not flatten else flat_spec
 
     def get_registries(self) -> Sequence:
         raise NotImplementedError
