@@ -153,7 +153,8 @@ change during development without disrupting other PRs, the test code uses
 global variables defined in ``agentos/utils.py`` to decide which github
 repo to use when testing.
 
-When that is necessary, the process is as follows:
+If you make changes to code that is fetched from github for use by tests, then
+please follow this process for your PR:
 1. While doing development, change the ``TESTING_GITHUB_REPO`` and/or
    ``TESTING_BRANCH_NAME`` global variables in ``agentos/utils.py``
    to point to a version of your PR branch that you've pushed to
