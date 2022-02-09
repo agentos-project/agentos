@@ -6,7 +6,6 @@ from dill.source import getsource as dill_getsource
 from typing import Union, TypeVar, Dict, Type, Any, Sequence
 from rich import print as rich_print
 from rich.tree import Tree
-from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.component_run import ComponentRun
 from agentos.identifiers import ComponentIdentifier

@@ -269,7 +269,9 @@ class Run(TimeStampedModel):
 
 
 class RunCommand(TimeStampedModel):
-    identifier = models.CharField(max_length=200, unique=True, primary_key=True)
+    identifier = models.CharField(
+        max_length=200, unique=True, primary_key=True
+    )
     entry_point = models.CharField(max_length=200)
     parameter_set = models.JSONField(default=dict)
     component = models.ForeignKey(

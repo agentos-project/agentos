@@ -343,7 +343,7 @@ class WebRegistry(Registry):
             except json.decoder.JSONDecodeError:
                 try:
                     content = content.decode()
-                except:
+                except Exception:
                     pass
             raise Exception(content)
 

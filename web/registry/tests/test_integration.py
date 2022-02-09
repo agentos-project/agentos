@@ -84,7 +84,8 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         )
         full_id = f"SimpleComponent=={TESTING_BRANCH_NAME}"
         self.assertEqual(
-            flat_comp_spec[full_id]["class_name"], "SimpleComponent",
+            flat_comp_spec[full_id]["class_name"],
+            "SimpleComponent",
         )
         self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 
@@ -102,9 +103,8 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         print(run_command_spec)
         self.assertEqual(
             run_command_spec[run_cmd.identifier]["entry_point"],
-            "add_to_init_member"
+            "add_to_init_member",
         )
-
 
     # TODO: add a test that publishes a ComponentRun or Component from the CLI.
     # def test_web_registry_integration_from_cli():

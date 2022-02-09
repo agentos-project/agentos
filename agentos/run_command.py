@@ -181,14 +181,10 @@ class RunCommand:
         return self.component.run(self.entry_point, self.parameter_set)
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
-        spec = {
-            self.identifier: {
-                RunCommandSpecKeys.COMPONENT_ID:
-                    self._component.identifier.full,
-                RunCommandSpecKeys.ENTRY_POINT:
-                    self._entry_point,
-                RunCommandSpecKeys.PARAMETER_SET:
-                    self._parameter_set.to_spec(),
-            }
+        inner_spec = {
+            RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
+            RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
+            RunCommandSpecKeys.PARAMETER_SET: self._parameter_set.to_spec(),
         }
+        spec = {self.identifier: inner_spec}
         return flatten_spec(spec) if flatten else spec
