@@ -78,6 +78,7 @@ def _handle_acme_r2d2(version_string):
         "dataset": f"acme_r2d2_dataset=={version_string}",
         "environment": f"acme_cartpole=={version_string}",
         "network": f"acme_r2d2_network=={version_string}",
+        "TFModelSaver": f"TFModelSaver=={version_string}",
         "policy": f"acme_r2d2_policy=={version_string}",
         "AcmeRun": f"AcmeRun=={version_string}",
         "trainer": f"acme_r2d2_trainer=={version_string}",

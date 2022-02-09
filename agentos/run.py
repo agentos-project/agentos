@@ -1,14 +1,15 @@
 import pprint
-from urllib.parse import urlparse
+from functools import partial
 from pathlib import Path
-from typing import Any, Sequence
-from mlflow.exceptions import MlflowException
+from typing import Sequence
+from urllib.parse import urlparse
 from mlflow.entities import RunStatus
+from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
-from agentos.registry import Registry
-from agentos.exceptions import PythonComponentSystemException
-from agentos.specs import RunSpec
+from mlflow.tracking.context import registry as context_registry
 from agentos.identifiers import RunIdentifier
+from agentos.registry import Registry
+from agentos.specs import RunSpec
 
 
 class Run:
@@ -16,24 +17,25 @@ class Run:
     Conceptually, a Run represents code execution. More specifically, a Run has
     two distinct uses. First, a Run is used to document an instance of code
     execution and record output associated with it (similar to a logger).
-    Second is reproducibility, and for this a Run can optionally hold a
-    RunCommand, which, if it exists, can be used to recreate this run, i.e., to
-    perform a re-run.
+    Second, a Run allows for reproducibility. For this a Run can optionally
+    hold a RunCommand that can be used to recreate this run, i.e., to
+    perform a "re-run".
 
-    Structurally, a Run is similar to a logger but provides a bit more
-    structure than loggers traditionally do. For example, instead of just a log
-    level free text, a Run allows recording of a tag, parameter, and a metric.
-    These each have their own semantics and each is represented as a key-value
-    pair. Currently, an AgentOS Run is a wrapper around an MLflow Run.
+    A Run is similar to a logger but provides a bit more structure than loggers
+    traditionally do. For example, instead of just a log-level and some free
+    text, which is the typical interface for a logger, a Run allows recording
+    of tags, parameters, and metrics. These each have their own semantics and
+    each is represented as a key-value pair. Currently, an AgentOS Run is a
+    wrapper around an MLflow Run.
 
     An MLflow Run is a thin container that holds an RunData and RunInfo object.
     RunInfo contains the run metadata (id, user, timestamp, etc.)
     RunData contains metrics, params, and tags; each of which is a dict.
 
     AgentOS Run related abstractions are encoded into an MLflowRun as follows:
-    - Component Registry incl. root, dependencies, repos -> artifact yaml file
+    - Component Registry -> MLflow artifact file
     - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
-    - ParameterSet -> artifact yaml file.
+    - ParameterSet -> MLflow artifact file
     """
 
     _mlflow_client = MlflowClient()
@@ -59,8 +61,16 @@ class Run:
         existing_run_id: str = None,
     ) -> None:
         """
-        Consider using class factory methods instead of directly using
-        __init__. For example: Run.from_run_command(),
+        Run initialization can either create a new underlying MLflowRun
+        or be be based on an existing underlying MLflowRun.
+
+        If Python gracefully supported overloading constructors, it would
+        make this code a lot more easy to comprehend, but as it is
+        __init__() handles both cases by inspecting which arguments are
+        provided.
+
+        Because of this, we recommend using class factory methods instead
+        of directly using __init__(). For example: Run.from_run_command(),
         Run.from_existing_run_id().
 
         :param experiment_id: Optional Experiment ID.
@@ -90,9 +100,9 @@ class Run:
             new_run = self._mlflow_client.create_run(exp_id)
             self._mlflow_run_id = new_run.info.run_id
             self.set_tag(self.PCS_RUN_TAG, "True")
-
-    def __del__(self):
-        self._mlflow_client.set_terminated(self._mlflow_run_id)
+            resolved_tags = context_registry.resolve_tags()
+            for tag_k, tag_v in resolved_tags.items():
+                self.set_tag(tag_k, tag_v)
 
     @classmethod
     def run_exists(cls, run_id) -> bool:
@@ -123,44 +133,6 @@ class Run:
     def from_tracking_store(cls, run_id: RunIdentifier):
         return cls.from_existing_run_id(run_id)
 
-    @staticmethod
-    def active_run(caller: Any, fail_if_no_active_run: bool = False) -> "Run":
-        """
-        A helper function.
-        """
-        from agentos.component import Component
-
-        if isinstance(caller, Component):
-            component = caller
-        else:
-            try:
-                component = caller.__component__
-            except AttributeError:
-                raise PythonComponentSystemException(
-                    "active_run() was called on an object that is not "
-                    "managed by a Component. Specifically, the object passed "
-                    "to active_run() must have a ``__component__`` attribute."
-                )
-        if not component.active_run:
-            if fail_if_no_active_run:
-                raise PythonComponentSystemException(
-                    "active_run() was passed an object managed by a Component "
-                    "with no active_run, and fail_if_no_active_run flag was "
-                    "True."
-                )
-            else:
-                run = Run()
-                if isinstance(caller, Component):
-                    print(
-                        "Warning: the object passed to active_run() is "
-                        "managed by a Component that has no active_run. "
-                        f"Returning a new run (id: {run.identifier} that is "
-                        "not associated with any Run object."
-                    )
-            return run
-        else:
-            return component.active_run
-
     @property
     def _mlflow_run(self):
         return self._mlflow_client.get_run(self._mlflow_run_id)
@@ -183,8 +155,6 @@ class Run:
         ]
         if any(prefix_matches):
             try:
-                from functools import partial
-
                 mlflow_client_fn = getattr(self._mlflow_client, attr_name)
                 return partial(mlflow_client_fn, self._mlflow_run_id)
             except AttributeError as e:

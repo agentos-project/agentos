@@ -1,8 +1,9 @@
 """Core AgentOS classes."""
-from collections import namedtuple
-from agentos.agent_run import AgentRun
 import time
+from collections import namedtuple
 from threading import Thread
+from typing import Sequence, Optional
+from agentos.agent_run import AgentRun
 
 
 class MemberInitializer:
@@ -32,14 +33,14 @@ class Agent(MemberInitializer):
                             learn.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-        self._active_agent_run_stack = []
+        self._active_agent_run_stack: Sequence[AgentRun] = []
 
     @property
-    def active_agent_run(self):
+    def active_agent_run(self) -> AgentRun:
         if self._active_agent_run_stack:
             return self._active_agent_run_stack[-1]
         else:
@@ -53,7 +54,7 @@ class Agent(MemberInitializer):
         backup_dst=None,
         print_stats=True,
         parent_run=None,
-    ):
+    ) -> None:
         """Runs an agent specified by a given [agent_file]
 
         :param num_episodes: number of episodes to run the agent through
@@ -79,13 +80,12 @@ class Agent(MemberInitializer):
             )
             all_steps.append(steps)
         print(f"print_stats is {print_stats}")
-        if (
+        print_results = (
             print_stats != "False"
             and print_stats != "false"
             and print_stats != "f"
-        ):
-            self.active_agent_run.print_results()
-        self.end_agent_run()
+        )
+        self.end_agent_run(print_results=print_results)
 
     def learn(
         self,
@@ -93,7 +93,7 @@ class Agent(MemberInitializer):
         test_every,
         test_num_episodes,
         max_transitions=None,
-    ):
+    ) -> None:
         """Trains an agent by calling its learn() method in a loop."""
         num_episodes = int(num_episodes)
         test_num_episodes = int(test_num_episodes)
@@ -143,12 +143,12 @@ class Agent(MemberInitializer):
             AgentRun(run_type, parent_run=parent)
         )
 
-    def end_agent_run(self):
+    def end_agent_run(self, print_results: bool = False) -> None:
         assert self._active_agent_run_stack, "No active AgentRun to end."
         run = self._active_agent_run_stack.pop()
-        run.end()
+        run.end(print_results=print_results)
 
-    def advance(self):
+    def advance(self) -> None:
         """Takes one action within the Environment as dictated by the Policy"""
         if self._should_reset:
             self.curr_obs = self.environment.reset()
@@ -162,7 +162,7 @@ class Agent(MemberInitializer):
             self._should_reset = True
         return prev_obs, action, self.curr_obs, reward, done, info
 
-    def rollout(self, should_learn, max_transitions=None):
+    def rollout(self, should_learn, max_transitions=None) -> int:
         """Generates one episode of transitions and allows the Agent to
         learn from its experience.
 
@@ -289,7 +289,7 @@ EnvironmentSpec = namedtuple(
 
 
 class Runnable:
-    def run(self, hz=40, max_iters=None, as_thread=False):
+    def run(self, hz=40, max_iters=None, as_thread=False) -> Optional[Thread]:
         """Run an agent, optionally in a new thread.
         If as_thread is True, agent is run in a thread, and the
         thread object is returned to the caller. The caller may

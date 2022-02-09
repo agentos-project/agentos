@@ -37,4 +37,4 @@ class AcmeDQNAgent:
                 self.environment, self.agent, should_update=True, logger=run
             )
             loop.run(num_episodes=num_episodes)
-            self.network.save()
+            self.network.save(run)

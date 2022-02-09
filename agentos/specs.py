@@ -1,6 +1,6 @@
 """
-The Specs Types in this file specify which types of objects that can be added
-to a Registry. They are literally types, and used in type annotions on core
+The spec types in this file specify which types of objects can be added to a
+Registry. They are literally types, and used in type annotations on core
 abstractions.
 
 Though this isn't currently enforced by the types, objects that are Specs
@@ -21,48 +21,6 @@ from typing import Mapping, Union, Any
 import copy
 
 
-def flatten_spec(nested_spec: dict) -> dict:
-    assert len(nested_spec.keys()) == 1
-    flat_spec = {}
-    for identifier, inner_spec in nested_spec.items():
-        assert type(identifier) == str
-        flat_spec.update(copy.deepcopy(inner_spec))
-        assert "identifier" not in flat_spec
-        flat_spec["identifier"] = identifier
-        assert "name" not in flat_spec, (
-            "'name' is a reserved key: it cannot be set by a developer "
-            "since PCS sets it automatically when flattening specs."
-        )
-        assert "version" not in flat_spec, (
-            "'version' is a reserved key: it cannot be set by a developer "
-            "since PCS sets it automatically when flattening specs."
-        )
-        identifier_parts = identifier.split("==")
-        assert 0 < len(identifier_parts) <= 2, "invalid identifier"
-        flat_spec["name"] = identifier_parts[0]
-        if len(identifier_parts) == 2:
-            flat_spec["version"] = identifier_parts[1]
-        else:
-            flat_spec["version"] = None
-    return flat_spec
-
-
-def unflatten_spec(flat_spec: dict) -> dict:
-    assert "identifier" in flat_spec
-    if "==" in flat_spec["identifier"]:
-        parts = flat_spec["identifier"].split("==")
-        assert len(parts) == 2
-        assert (
-            "name" in flat_spec
-        ), "'name' must be a key in a flat spec with a versioned identifier"
-        assert "version" in flat_spec, (
-            "'version' must be a key in a flat spec that has a versioned "
-            "identifier (i.e., that has an '==' in its identifier."
-        )
-    dup_spec = copy.deepcopy(flat_spec)
-    return {dup_spec.pop("identifier"): dup_spec}
-
-
 FlatSpec = Mapping[str, str]
 
 
@@ -70,8 +28,17 @@ NestedComponentSpec = Mapping[str, Mapping[str, str]]
 ComponentSpec = Union[NestedComponentSpec, FlatSpec]
 
 
+class VersionedSpec:
+    SEPARATOR = "=="
+
+
 class ComponentSpecKeys:
     IDENTIFIER = "identifier"
+    NAME = "name"
+    VERSION = "version"
+    CLASS_NAME = "class_name"
+    FILE_PATH = "file_path"
+    DEPENDENCIES = "dependencies"
 
 
 # Repo is serialized to a YAML dictionary with the following (unflatted) form:
@@ -119,3 +86,46 @@ RunSpec = Mapping
 
 class RunSpecKeys:
     IDENTIFIER = "identifier"
+
+
+def flatten_spec(nested_spec: dict) -> dict:
+    assert len(nested_spec.keys()) == 1
+    flat_spec = {}
+    for identifier, inner_spec in nested_spec.items():
+        assert type(identifier) == str
+        flat_spec.update(copy.deepcopy(inner_spec))
+        for key_check in [
+            ComponentSpecKeys.IDENTIFIER,
+            ComponentSpecKeys.NAME,
+            ComponentSpecKeys.VERSION,
+        ]:
+            assert key_check not in flat_spec, (
+                f"'{key_check}' is a reserved key: it cannot be "
+                "set by a developer since PCS sets it automatically when "
+                "flattening specs."
+            )
+        flat_spec[ComponentSpecKeys.IDENTIFIER] = identifier
+        id_parts = identifier.split(VersionedSpec.SEPARATOR)
+        assert 0 < len(id_parts) <= 2, f"invalid identifier {identifier}"
+        flat_spec[ComponentSpecKeys.NAME] = id_parts[0]
+        if len(id_parts) == 2:
+            flat_spec[ComponentSpecKeys.VERSION] = id_parts[1]
+        else:
+            flat_spec[ComponentSpecKeys.VERSION] = None
+    return flat_spec
+
+
+def unflatten_spec(flat_spec: object) -> object:
+    assert ComponentSpecKeys.IDENTIFIER in flat_spec
+    if VersionedSpec.SEPARATOR in flat_spec[ComponentSpecKeys.IDENTIFIER]:
+        identifier = flat_spec[ComponentSpecKeys.IDENTIFIER]
+        parts = identifier.split(VersionedSpec.SEPARATOR)
+        assert len(parts) == 2
+        for check_key in [ComponentSpecKeys.NAME, ComponentSpecKeys.VERSION]:
+            assert check_key in flat_spec, (
+                f"'{check_key} must be a key in a flat spec that "
+                "has a versioned identifier (i.e., that has an '==' in its "
+                "identifier."
+            )
+    dup_spec = copy.deepcopy(flat_spec)
+    return {dup_spec.pop(ComponentSpecKeys.IDENTIFIER): dup_spec}

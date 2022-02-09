@@ -192,11 +192,14 @@ class AgentRun(Run):
         )
 
     def end(
-        self, status: str = RunStatus.to_string(RunStatus.FINISHED)
+        self,
+        status: str = RunStatus.to_string(RunStatus.FINISHED),
+        print_results: bool = True,
     ) -> None:
         super().end(status)
         self.log_run_metrics()
-        self.print_results()
+        if print_results:
+            self.print_results()
 
     def __enter__(self) -> "AgentRun":
         return self

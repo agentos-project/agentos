@@ -6,11 +6,13 @@ class R2D2Network:
     def __init__(self):
         self.rnn = BasicRNN(self.environment)
 
-    def restore(self):
-        self.AcmeRun.restore_tensorflow("rnn", self.rnn)
+    def save(self, run=None):
+        # This attribute is set up by AgentOS
+        self.TFModelSaver.save("rnn", self.rnn, run=run)
 
-    def save(self):
-        self.AcmeRun.save_tensorflow("rnn", self.rnn)
+    def restore(self):
+        # This attribute is set up by AgentOS
+        self.TFModelSaver.restore("rnn", self.rnn)
 
 
 # BasicRNN, taken from r2d2 test
