@@ -2,11 +2,12 @@ from django.test import LiveServerTestCase
 from agentos.registry import WebRegistry
 from agentos.component import Component
 from agentos.repo import Repo
+from tests.utils import TESTING_GITHUB_REPO, TESTING_BRANCH_NAME
 
 agentos_repo_spec = {
     "AgentOSRepo": {
         "type": "github",
-        "url": "https://github.com/agentos-project/agentos.git",
+        "url": TESTING_GITHUB_REPO,
     }
 }
 agentos_component_spec = {
@@ -49,7 +50,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(flat_repo_spec["type"], "github")
         self.assertEqual(
             flat_repo_spec["url"],
-            "https://github.com/agentos-project/agentos.git",
+            TESTING_GITHUB_REPO,
         )
 
         # Test fetching a unflattened (i.e., nested) repo_spec.
@@ -61,7 +62,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         # Test adding a component that we generate from the repo.
         simple_component = Component.from_repo(
             repo,
-            identifier="SimpleComponent==test_staging",
+            identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
             class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
         )
@@ -70,24 +71,22 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         web_registry.add_component_spec(simple_component.to_spec())
 
         # Test getting a flattened component (i.e., the one we just added)
-        comp = web_registry.get_component_spec(
-            name="SimpleComponent", version="test_staging", flatten=True
+        flat_comp_spec = web_registry.get_component_spec(
+            name="SimpleComponent", version=TESTING_BRANCH_NAME, flatten=True
         )
-        self.assertEqual(comp["name"], "SimpleComponent")
-        self.assertEqual(comp["version"], "test_staging")
-        self.assertEqual(comp["repo"], "AgentOSRepo")
+        self.assertEqual(flat_comp_spec["name"], "SimpleComponent")
+        self.assertEqual(flat_comp_spec["version"], TESTING_BRANCH_NAME)
+        self.assertEqual(flat_comp_spec["repo"], "AgentOSRepo")
 
         # Test getting an unflattened component (i.e., the one we just added)
-        comp = web_registry.get_component_spec(
-            name="SimpleComponent", version="test_staging", flatten=False
+        flat_comp_spec = web_registry.get_component_spec(
+            name="SimpleComponent", version=TESTING_BRANCH_NAME, flatten=False
         )
+        full_id = f"SimpleComponent=={TESTING_BRANCH_NAME}"
         self.assertEqual(
-            comp["SimpleComponent==test_staging"]["class_name"],
-            "SimpleComponent",
+            flat_comp_spec[full_id]["class_name"], "SimpleComponent",
         )
-        self.assertEqual(
-            comp["SimpleComponent==test_staging"]["repo"], "AgentOSRepo"
-        )
+        self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 
         # TODO - FIXME
         # Test adding a ComponentRun
