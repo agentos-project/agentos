@@ -2,12 +2,12 @@ from django.test import LiveServerTestCase
 from agentos.registry import WebRegistry
 from agentos.component import Component
 from agentos.repo import Repo
-from tests.utils import TESTING_BRANCH_NAME
+from tests.utils import TESTING_GITHUB_REPO, TESTING_BRANCH_NAME
 
 agentos_repo_spec = {
     "AgentOSRepo": {
         "type": "github",
-        "url": "https://github.com/agentos-project/agentos.git",
+        "url": TESTING_GITHUB_REPO,
     }
 }
 agentos_component_spec = {
@@ -50,7 +50,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(flat_repo_spec["type"], "github")
         self.assertEqual(
             flat_repo_spec["url"],
-            "https://github.com/agentos-project/agentos.git",
+            TESTING_GITHUB_REPO,
         )
 
         # Test fetching a unflattened (i.e., nested) repo_spec.
@@ -86,9 +86,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(
             flat_comp_spec[full_id]["class_name"], "SimpleComponent",
         )
-        self.assertEqual(
-            flat_comp_spec[full_id]["repo"], "AgentOSRepo"
-        )
+        self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 
         # Test adding a RunCommand
         param_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
