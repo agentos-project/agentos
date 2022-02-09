@@ -31,7 +31,7 @@ def test_flatten_spec():
 def test_flatten_versioned_spec():
     reg = Registry.from_yaml(GH_SB3_AGENT_DIR / "components.yaml")
     rand_comp_spec = reg.get_component_spec("agent", "test_staging")
-    full_comp_id = f"agent==test_staging"
+    full_comp_id = "agent==test_staging"
     assert full_comp_id in rand_comp_spec.keys()
     assert rand_comp_spec[full_comp_id]["repo"] == "aos_github"
 
