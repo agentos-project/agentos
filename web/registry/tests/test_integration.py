@@ -86,9 +86,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(
             flat_comp_spec[full_id]["class_name"], "SimpleComponent",
         )
-        self.assertEqual(
-            comp["SimpleComponent==test_staging"]["repo"], "AgentOSRepo"
-        )
+        self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 
         # TODO - FIXME
         # Test adding a ComponentRun
