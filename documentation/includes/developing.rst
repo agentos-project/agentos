@@ -81,6 +81,27 @@ To run website tests::
   cd web # the web directory contained in project root
   python manage.py test
 
+Note that some tests (e.g., see ``web/registry/tests/test_integration.py``)
+test functionality for interacting with github repositories by fetching code
+from https://github.com/agentos-project/agentos. Where possible, in order to
+make it easy to have those tests run against code in a github repo that you can
+change during development without disrupting other PRs, the test code uses
+global variables defined in ``agentos/utils.py`` to decide which github
+repo to use when testing.
+
+When that is necessary, the process is as follows:
+1. While doing development, change the ``TESTING_GITHUB_REPO`` and/or
+   ``TESTING_BRANCH_NAME`` global variables in ``agentos/utils.py``
+   to point to a version of your PR branch that you've pushed to
+   github. We recommend commenting out the default "prod" values of these
+   variables so that you can uncomment them in the next step when the PR
+   is approved for merge.
+2. After your PR is approved and right before it is merged, push the branch
+   you used during testing to the ``test_prod`` branch of the agentos-project
+   account ``https://github.com/agentos-project/agentos.git``. And then update
+   the variables in ``agentos/utils.py`` (you should be able to just uncomment
+   the lines you commented out in step 1 above, and delete the lines you added).
+
 
 Building Docs
 =============

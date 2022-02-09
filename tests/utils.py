@@ -14,6 +14,7 @@ GH_SB3_AGENT_DIR = EXAMPLE_AGENT_DIR / "gh_sb3_agent"
 RLLIB_AGENT_DIR = EXAMPLE_AGENT_DIR / "rllib_agent"
 SB3_AGENT_DIR = EXAMPLE_AGENT_DIR / "sb3_agent"
 
+TESTING_GITHUB_REPO = "https://github.com/agentos-project/agentos.git"
 TESTING_BRANCH_NAME = "test_prod"
 
 
