@@ -5,6 +5,7 @@ from typing import Dict
 
 
 AOS_CACHE_DIR = Path.home() / ".agentos_cache"
+AOS_REQS_DIR = AOS_CACHE_DIR / "requirements"
 
 
 def generate_dummy_dev_registry(
@@ -36,6 +37,10 @@ def _handle_agent(path_prefix, rename_map):
     renamed = {}
     for component_name, spec in registry.get("components").items():
         spec["file_path"] = str(path_prefix / Path(spec["file_path"]))
+        if "requirements_path" in spec:
+            spec["requirements_path"] = str(
+                path_prefix / Path(spec["requirements_path"])
+            )
         renamed[rename_map[component_name]] = spec
         renamed_dependencies = {}
         for attr_name, dep_name in spec.get("dependencies", {}).items():

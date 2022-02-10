@@ -49,6 +49,15 @@ _option_registry_file = click.option(
     help="Path to registry file (components.yaml).",
 )
 
+_option_use_venv = click.option(
+    "--use-venv/--no-venv",
+    default=True,
+    help=(
+        "If passed, will not create a new virtualenv for the Components, "
+        "instead running it in the existing outer Python environment."
+    ),
+)
+
 
 _option_agent_name = click.option(
     "--agent-name",
@@ -146,14 +155,17 @@ def init(dir_names, agent_name, agentos_dir):
     "specified params, via a **kwargs style keyword argument "
     "https://docs.python.org/3/glossary.html#term-argument",
 )
+@_option_use_venv
 def run(
     component_name,
     registry_file,
     entry_point,
     param_list,
     param_file,
+    use_venv,
 ):
     param_dict = _user_args_to_dict(param_list)
+    Component.set_environment_handling(use_venv)
     component = Component.from_registry_file(registry_file, component_name)
     parameters = ParameterSet.from_yaml(param_file)
     entry_point = entry_point or component.get_default_entry_point()
@@ -168,7 +180,8 @@ def run(
 @agentos_cmd.command()
 @_arg_optional_entity_id
 @_option_registry_file
-def status(entity_id, registry_file):
+@_option_use_venv
+def status(entity_id, registry_file, use_venv):
     """
     ENTITY_ID can be a Component name or a Run ID.
     """
@@ -179,6 +192,7 @@ def status(entity_id, registry_file):
         Run.from_existing_run_id(entity_id).print_status(detailed=True)
     else:  # assume entity_id is a ComponentIdentifier
         try:
+            Component.set_environment_handling(use_venv)
             component = Component.from_registry_file(registry_file, entity_id)
             component.print_status_tree()
         except LookupError:
@@ -201,7 +215,8 @@ def rerun(run_id):
 @_arg_component_name
 @_option_registry_file
 @_option_force
-def freeze(component_name, registry_file, force):
+@_option_use_venv
+def freeze(component_name, registry_file, force, use_venv):
     """
     Creates a version of ``registry_file`` for Component
     ``component_name`` where all Components in the dependency tree are
@@ -215,6 +230,7 @@ def freeze(component_name, registry_file, force):
           the same commit
         * There are no uncommitted changes in the local repo
     """
+    Component.set_environment_handling(use_venv)
     component = Component.from_registry_file(registry_file, component_name)
     frozen_reg = component.to_frozen_registry(force=force)
     print(yaml.dump(frozen_reg.to_dict()))
@@ -224,15 +240,25 @@ def freeze(component_name, registry_file, force):
 @_arg_component_name
 @_option_registry_file
 @_option_force
-def publish(component_name: str, registry_file: str, force: bool):
+@_option_use_venv
+def publish(
+    component_name: str, registry_file: str, force: bool, use_venv: bool
+):
     """
     This command pushes the spec for component ``component_name`` (and all its
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
+    Component.set_environment_handling(use_venv)
     component = Component.from_registry_file(registry_file, component_name)
     frozen_spec = component.to_frozen_registry(force=force).to_spec()
     Registry.get_default().add_component_spec(frozen_spec)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_env_cache(assume_yes):
+    Component.clear_env_cache(assume_yes)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501

@@ -68,6 +68,7 @@ def test_registry_integration(venv):
         },
     }
     registry = Registry.from_dict(generate_dummy_dev_registry())
+    Component.set_environment_handling(use_venv=False)
     component = Component.from_registry(registry, "acme_r2d2_agent")
     param_set = ParameterSet(params)
     component.run("evaluate", param_set)
