@@ -1,3 +1,4 @@
+import pprint
 from django.test import LiveServerTestCase
 from agentos.registry import WebRegistry
 from agentos.component import Component
@@ -32,20 +33,17 @@ class SimpleComponent:
 
 class WebRegistryIntegrationTestCases(LiveServerTestCase):
     def setUp(self):
-        pass
+        self.maxDiff = None
 
     def test_web_registry_integration(self):
         web_registry = WebRegistry(f"{self.live_server_url}/api/v1")
-
         # Test adding a repo_spec.
         web_registry.add_repo_spec(agentos_repo_spec)
-
         # Test fetching a flattened repo_spec.
         flat_repo_spec = web_registry.get_repo_spec(
             "AgentOSRepo", flatten=True
         )
         self.assertEqual(len(flat_repo_spec), 3)
-        print(flat_repo_spec)
         self.assertEqual(flat_repo_spec["identifier"], "AgentOSRepo")
         self.assertEqual(flat_repo_spec["type"], "github")
         self.assertEqual(
@@ -93,6 +91,8 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         param_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run("add_to_init_member", param_set)
         run_cmd = comp_run.run_command
+        print("trying to add run_command_spec to web_registry:")
+        pprint.pprint(run_cmd.to_spec())
         web_registry.add_run_command_spec(run_cmd.to_spec())
 
         # Test getting a RunCommand (i.e., the one we just added)
@@ -105,6 +105,14 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             run_command_spec[run_cmd.identifier]["entry_point"],
             "add_to_init_member",
         )
+
+        # Test adding a Run
+        run_spec = comp_run.to_spec()
+        web_registry.add_run_spec(run_spec)
+
+        # Test getting a Run (i.e., the one we just added)
+        fetched_run_spec = web_registry.get_run_spec(comp_run.identifier)
+        self.assertEqual(fetched_run_spec, run_spec)
 
     # TODO: add a test that publishes a ComponentRun or Component from the CLI.
     # def test_web_registry_integration_from_cli():

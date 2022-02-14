@@ -6,7 +6,7 @@ from agentos.exceptions import PythonComponentSystemException
 from agentos.registry import Registry
 from agentos.run import Run
 from agentos.run_command import RunCommand
-from agentos.specs import RunSpec
+from agentos.specs import RunSpec, unflatten_spec
 
 
 def active_component_run(
@@ -220,11 +220,9 @@ class ComponentRun(Run):
             return False
 
     def to_spec(self, flatten: bool = False) -> RunSpec:
-        inner_spec = super().to_spec()
-        run_cmd = self.run_command.to_spec() if self.run_command else None
-        inner_spec["run_command"] = run_cmd
-        if flatten:
-            inner_spec.update({RunSpec.identifier_key: self.identifier})
-            return inner_spec
-        else:
-            return {self.identifier: inner_spec}
+        flat_spec = super().to_spec(flatten=True)
+        assert (
+            self.run_command
+        ), "Every ComponentRun instance must have a run_command."
+        flat_spec["run_command"] = self.run_command.identifier
+        return flat_spec if flatten else unflatten_spec(flat_spec)

@@ -7,6 +7,7 @@ import shutil
 import tarfile
 import tempfile
 import requests
+import regex
 from pathlib import Path
 from typing import Dict, Sequence, Union, TYPE_CHECKING
 from dotenv import load_dotenv
@@ -19,6 +20,8 @@ from agentos.identifiers import (
 from agentos.specs import (
     flatten_spec,
     unflatten_spec,
+    is_flat,
+    json_encode_flat_spec_field,
     RepoSpec,
     ComponentSpec,
     NestedComponentSpec,
@@ -332,8 +335,7 @@ class WebRegistry(Registry):
 
     @staticmethod
     def _check_response(response):
-        print("encoding:")
-        print(response.encoding)
+        print(f"Checking response with encoding: {response.encoding}")
         if not response.ok:
             content = response.content
             try:
@@ -346,6 +348,11 @@ class WebRegistry(Registry):
                 except Exception:
                     pass
             raise Exception(content)
+
+    def get_repo_spec(
+        self, repo_id: RepoIdentifier, flatten: bool = False
+    ) -> "RepoSpec":
+        return self._request_spec_from_web_server("repo", repo_id, flatten)
 
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
@@ -379,33 +386,6 @@ class WebRegistry(Registry):
     def get_default_component(self, name: str):
         raise NotImplementedError
 
-    def get_repo_spec(
-        self, repo_id: RepoIdentifier, flatten: bool = False
-    ) -> "RepoSpec":
-        repo_url = f"{self.root_api_url}/repos?identifier={repo_id}"
-        print(f"trying {repo_url}")
-        repo_response = requests.get(repo_url)
-        assert repo_response.status_code == 200
-        json_results = json.loads(repo_response.content)
-        assert len(json_results["results"]) <= 1, (
-            f"{len(json_results['results'])} repos with identifier {repo_id} "
-            f"were returned by {repo_url} but only 0 or 1 should have been."
-        )
-        repo_spec = {}
-        for r_dict in json_results["results"]:
-            inner = {
-                "identifier": r_dict["identifier"],
-                "type": r_dict["type"],
-            }
-            if r_dict["type"] == "github":
-                inner["url"] = r_dict["url"]
-            if flatten:
-                repo_spec["identifier"] = r_dict["identifier"]
-                repo_spec.update(inner)
-            else:
-                repo_spec[r_dict["identifier"]] = inner
-        return repo_spec
-
     def get_run_command_spec(
         self, run_command_id: RunCommandIdentifier, flatten: bool = False
     ) -> RunCommandSpec:
@@ -418,55 +398,27 @@ class WebRegistry(Registry):
     ) -> RunSpec:
         return self._request_spec_from_web_server("run", run_id, flatten)
 
-    def _request_spec_from_web_server(
-        self, spec_type: str, identifier: str, flatten: bool
-    ):
-        assert spec_type in ["run", "runcommand", "repo", "component"]
-        req_url = f"{self.root_api_url}/{spec_type}s/{identifier}"
-        response = requests.get(req_url)
-        self._check_response(response)
-        flat_spec = json.loads(response.content)
-        print("spec returned was:")
-        print(flat_spec)
-        return unflatten_spec(flat_spec) if not flatten else flat_spec
-
     def get_registries(self) -> Sequence:
         raise NotImplementedError
 
     def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        url = f"{self.root_api_url}/repos/"
-        print("Sending HTTP POST with data:")
-        print(flatten_spec(repo_spec))
-        response = requests.post(url, data=flatten_spec(repo_spec))
-        self._check_response(response)
-        result = json.loads(response.content)
-        print("\nadd_repo_spec http response results:")
-        pprint.pprint(result)
-        print()
-
-    def to_dict(self) -> Dict:
-        raise Exception("to_dict() is not supported on WebRegistry.")
+        self._post_spec_to_web_server("repo", repo_spec)
 
     def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        """
-        Register a Component Spec. Component spec must be frozen.
-        :param component_spec: A frozen component spec.
-        """
-        url = f"{self.root_api_url}/components/"
-        response = requests.post(url, data=flatten_spec(component_spec))
-        self._check_response(response)
-        result = json.loads(response.content)
-        print("\nadd_component_spec http response results:")
-        pprint.pprint(result)
+        self._post_spec_to_web_server("component", component_spec)
 
-    def add_run_spec(self, run_data: RunSpec) -> Sequence:
-        url = f"{self.root_api_url}/runs/"
-        data = {"run_data": yaml.dump(run_data)}
-        response = requests.post(url, data=data)
-        self._check_response(response)
-        result = json.loads(response.content)
-        print("\nadd_run_spec http response results:")
-        pprint.pprint(result)
+    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
+        flat_spec = flatten_spec(run_command_spec)
+        flat_spec = json_encode_flat_spec_field(flat_spec, "parameter_set")
+        self._post_spec_to_web_server("runcommand", unflatten_spec(flat_spec))
+
+    def add_run_spec(self, run_spec: RunSpec) -> Sequence:
+        run_spec = flatten_spec(run_spec)
+        run_spec = json_encode_flat_spec_field(run_spec, "info")
+        run_spec = json_encode_flat_spec_field(run_spec, "data")
+        if "artifact_tarball" not in run_spec:
+            run_spec["artifact_tarball"] = None
+        self._post_spec_to_web_server("run", run_spec)
 
     def add_run_artifacts(
         self, run_id: int, run_artifact_paths: Sequence[str]
@@ -485,25 +437,47 @@ class WebRegistry(Registry):
         finally:
             shutil.rmtree(tmp_dir_path)
 
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
-        """
-        Register a RunCommandSpec.
-        :param run_command_spec: A :py:func:agentos.specs.RunCommandSpec``.
-        """
-        print("hanlding run_command_spec:")
-        print(run_command_spec)
-        url = f"{self.root_api_url}/runcommands/"
-        flat_spec = flatten_spec(run_command_spec)
-        flat_spec["parameter_set"] = json.encoder.JSONEncoder().encode(
-            flat_spec["parameter_set"]
-        )
-        response = requests.post(url, data=flat_spec)
-        self._check_response(response)
-        result = json.loads(response.content)
-        print("\nadd_run_commmand_spec http response results:")
-        pprint.pprint(result)
-
     def get_run(self, run_id: str) -> "Run":
         from agentos.run import Run
 
         return Run.from_registry(self, run_id)
+
+    def _request_spec_from_web_server(
+        self, spec_type: str, identifier: str, flatten: bool
+    ):
+        assert spec_type in ["run", "runcommand", "repo", "component"]
+        req_url = f"{self.root_api_url}/{spec_type}s/{identifier}/"
+        response = requests.get(req_url)
+        self._check_response(response)
+        flat_spec = json.loads(response.content)
+        print("spec returned was:")
+        print(flat_spec)
+        for spec_key, spec_val in [
+            (k, v)
+            for k, v in flat_spec.items()
+            if regex.match(r".+_link", k) or not v
+        ]:
+            print(
+                f"Dropping field '{spec_key}: {spec_val}' from spec "
+                "returned by web server."
+            )
+            flat_spec.pop(spec_key)
+        return unflatten_spec(flat_spec) if not flatten else flat_spec
+
+    def _post_spec_to_web_server(self, spec_type: str, spec: dict) -> None:
+        """
+        Handles HTTP request to backing webserver to upload a spec.
+        Handles both nested and flat specs.
+        """
+        assert spec_type in ["run", "runcommand", "repo", "component"]
+        req_url = f"{self.root_api_url}/{spec_type}s/"
+        data = spec if is_flat(spec) else flatten_spec(spec)
+        response = requests.post(req_url, data=data)
+        self._check_response(response)
+        result = json.loads(response.content)
+        print(f"\npost {spec_type} spec http response results:")
+        pprint.pprint(result)
+        print()
+
+    def to_dict(self) -> Dict:
+        raise Exception("to_dict() is not supported on WebRegistry.")

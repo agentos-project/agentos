@@ -1,7 +1,7 @@
 from hashlib import sha1
 from typing import TYPE_CHECKING
 from agentos.registry import Registry
-from agentos.specs import RunCommandSpec, RunCommandSpecKeys, flatten_spec
+from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 from agentos.identifiers import RunIdentifier, RunCommandIdentifier
 from agentos.run import Run
 
@@ -181,10 +181,10 @@ class RunCommand:
         return self.component.run(self.entry_point, self.parameter_set)
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
-        inner_spec = {
+        flat_spec = {
+            RunCommandSpecKeys.IDENTIFIER: self.identifier,
             RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
             RunCommandSpecKeys.PARAMETER_SET: self._parameter_set.to_spec(),
         }
-        spec = {self.identifier: inner_spec}
-        return flatten_spec(spec) if flatten else spec
+        return flat_spec if flatten else unflatten_spec(flat_spec)

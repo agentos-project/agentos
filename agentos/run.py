@@ -10,6 +10,7 @@ from mlflow.tracking.context import registry as context_registry
 from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
 from agentos.specs import RunSpec
+from agentos.specs import unflatten_spec
 
 
 class Run:
@@ -20,6 +21,10 @@ class Run:
     Second, a Run allows for reproducibility. For this a Run can optionally
     hold a RunCommand that can be used to recreate this run, i.e., to
     perform a "re-run".
+
+    We implement a Run that records its RunCommand as a special type of Run
+    called a :py.func.agentos.run_command.ComponentRun: which is a subclass
+    of ``Run``.
 
     A Run is similar to a logger but provides a bit more structure than loggers
     traditionally do. For example, instead of just a log-level and some free
@@ -36,7 +41,18 @@ class Run:
     - Component Registry -> MLflow artifact file
     - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
     - ParameterSet -> MLflow artifact file
+
+    A Run can also contain a [pointer to a] RunCommand.
+
+    A Run can also have pointers to other runs. These pointers can have
+    different semantic meanings. They could have an "inner-outer" relationship,
+    i.e., an outer run is already active when it's "inner" run starts and ends.
+    Alternatively, two runs could have an "output-input dependency-depender"
+    relationship, in which the depender uses the some part of dependency run's
+    output as input. In this case, the relationship is causal.
     """
+
+    # TODO: Decide if pointers to other runs should be special some how.
 
     _mlflow_client = MlflowClient()
 
@@ -239,7 +255,10 @@ class Run:
         return registry
 
     def to_spec(self, flatten: bool = False) -> RunSpec:
-        return self._mlflow_run.to_dictionary()
+        mlflow_dict = self._mlflow_run.to_dictionary()
+        assert "identifier" not in mlflow_dict
+        mlflow_dict["identifier"] = self.identifier
+        return unflatten_spec(mlflow_dict) if not flatten else mlflow_dict
 
     def __enter__(self) -> "Run":
         return self
