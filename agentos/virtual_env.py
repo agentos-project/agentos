@@ -13,28 +13,52 @@ from agentos.identifiers import ComponentIdentifier
 from agentos.specs import unflatten_spec
 
 
-class VirtualEnvManager:
+class VirtualEnv:
     """
-    This class manages the Python environment in which a DAG of Components
-    runs. The manager provides methods to setup, enable, and disable a virtual
-    environment as well as utility methods such as one to clear the whole
-    virtual environment cache.
-
-    Due to limitations of the current implementation, a single
-    VirtualEnvManager is created per Python runtime (when Component is
-    imported).  Thus, environment management may unexpectedly fail if you're
-    working with multiple Component DAGs on, say, the REPL.
+    This class manages a Python virtual environment. It provides methods to
+    setup, enable, and disable virtual environments as well as utility methods
+    such as one to clear the whole virtual environment cache.
     """
 
-    def __init__(self):
-        self._save_default_env_info()
-        self.use_venv = True
-        self.venv_path = None
+    def __init__(self, use_venv: bool = True, venv_path: Path = None):
+        self.use_venv = use_venv
+        self.venv_path = venv_path
         self._saved_venv_sys_path = None
-
         self._venv_is_active = False
         self.set_env_cache_path(AOS_REQS_DIR)
         self._py_version = f"python{sysconfig.get_python_version()}"
+
+    def __enter__(self):
+        """
+        Activates the virtual environment on context entry. Use as follows:
+
+        ```
+        venv = VirtualEnv()
+        with venv:
+            # do something
+        ```
+        """
+        self.activate()
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        """Deactivates the virtual environment on context exit."""
+        self.deactivate()
+
+    @classmethod
+    def from_registry_file(
+        cls, yaml_file: str, name: str, version: str = None
+    ) -> "VirtualEnv":
+        """
+        Given a path to a yaml registry file, a Component name, and optionally
+        a Component versions, this will instantiate and return a virtual
+        environment that satisfies all requirements specified in the
+        requirements_path keys of all Components in the DAG.
+        """
+        registry = Registry.from_yaml(yaml_file)
+        identifier = ComponentIdentifier(name, version)
+        venv = cls()
+        venv.build_venv_for_component(registry, identifier)
+        return venv
 
     def set_environment_handling(self, use_venv: bool) -> None:
         """
@@ -50,21 +74,25 @@ class VirtualEnvManager:
         """
         self._env_cache_path = env_cache_path
 
-    def clear_env_cache(self, assume_yes: bool = False) -> None:
+    @staticmethod
+    def clear_env_cache(
+        env_cache_path: Path = None, assume_yes: bool = False
+    ) -> None:
         """
         Completely removes all the virtual environments that have been created
         for Components.  Pass True to ``assume_yes`` to run non-interactively.
         """
+        env_cache_path = env_cache_path or AOS_REQS_DIR
         answer = None
         if assume_yes:
             answer = "y"
         else:
             answer = input(
-                f"This will remove everything under {self._env_cache_path}.  "
+                f"This will remove everything under {env_cache_path}.  "
                 "Continue? [Y/N] "
             )
         if assume_yes or answer.lower() in ["y", "yes"]:
-            shutil.rmtree(self._env_cache_path)
+            shutil.rmtree(env_cache_path)
             print("Cache cleared...")
             return
         print("Aborting...")
@@ -77,20 +105,21 @@ class VirtualEnvManager:
         self._default_os_path = os.environ.get("PATH")
         self._default_os_underscore = os.environ.get("_")
 
-    def activate_venv(self) -> None:
+    def activate(self) -> None:
         """
         Activates the virtual environment currently being managed. When
         activated, an import statement (e.g. run by a Component) will execute
         within the virtual environment.
         """
         if not self.venv_path or not self.use_venv:
-            print("VirtualEnvManager: Running in outer Python environment")
+            print("VirtualEnv: Running in outer Python environment")
             return
+        self._save_default_env_info()
         self._set_venv_sys_path()
         self._set_venv_sys_attributes()
         self._set_venv_sys_environment()
         self._venv_is_active = True
-        print(f"VirtualEnvManager: Running in Python venv at {self.venv_path}")
+        print(f"VirtualEnv: Running in Python venv at {self.venv_path}")
 
     def _set_venv_sys_path(self):
         sys_path_copy = [p for p in sys.path]
@@ -120,7 +149,7 @@ class VirtualEnvManager:
         os.environ["PATH"] = f'{str(venv_bin_path)}:{os.environ.get("PATH")}'
         os.environ["_"] = f"{str(self.venv_path)}/bin/python"
 
-    def deactivate_venv(self) -> None:
+    def deactivate(self) -> None:
         """
         Deactivates the virtual environment (i.e. re-activates the default
         environment under which AgentOS was executed).
@@ -150,7 +179,7 @@ class VirtualEnvManager:
         if self._default_os_underscore:
             os.environ["_"] = self._default_os_underscore
 
-    def create_venv(
+    def build_venv_for_component(
         self, registry: Registry, identifier: "ComponentIdentifier"
     ) -> Path:
         """
@@ -203,6 +232,62 @@ class VirtualEnvManager:
             req_paths.add(full_req_path)
         return req_paths
 
+    def create_virtual_env(self) -> None:
+        """
+        Creates the directory and objects that back the virtual environment.
+        """
+        assert self.venv_path is not None
+        assert not self.venv_path.exists(), f"{self.venv_path} exists already!"
+        subprocess.run(["virtualenv", "-p", sys.executable, self.venv_path])
+
+    def install_requirements_file(
+        self, req_path: Path, pip_flags: dict = None
+    ) -> None:
+        """
+        Installs the requirements_file pointed at by `req_path` into the
+        virtual environment. ``pip_flags`` is a dictionary of command-line
+        flags to path to pip during the installation, for example:
+
+        ```
+        {'-F': 'https://example.com/foo/bar'}
+        ```
+
+        results in pip being run with the following command-line flags:
+
+        ```
+        pip install .. -F https://example.com/foo/bar
+        ```
+        """
+        pip_flags = pip_flags or {}
+        python_path = self.venv_path / "bin" / "python"
+        if sys.platform in ["win32", "win64"]:
+            python_path = self.venv_path / "Scripts" / "python.exe"
+        cmd = [
+            str(python_path),
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            str(req_path),
+        ]
+        embedded_pip_flags = self._get_embedded_pip_flags(req_path)
+        for flag, value in embedded_pip_flags.items():
+            cmd.append(flag)
+            cmd.append(value)
+
+        for flag, value in pip_flags.items():
+            cmd.append(flag)
+            cmd.append(value)
+        bin_path = self.venv_path / "bin"
+        if sys.platform in ["win32", "win64"]:
+            bin_path = self.venv_path / "Scripts"
+        component_env = {
+            "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),  # win32
+            "VIRTUAL_ENV": str(self.venv_path),
+            "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
+        }
+        subprocess.run(cmd, env=component_env)
+
     def _create_virtual_env(self, req_paths: set):
         sorted_req_paths = sorted(p for p in req_paths)
         to_hash = hashlib.sha256()
@@ -215,38 +300,12 @@ class VirtualEnvManager:
         self.venv_path = self._env_cache_path / self._py_version / hashed
 
         if not self.venv_path.exists():
-            subprocess.run(
-                ["virtualenv", "-p", sys.executable, self.venv_path]
-            )
+            self.create_virtual_env()
 
-            python_path = self.venv_path / "bin" / "python"
-            if sys.platform in ["win32", "win64"]:
-                python_path = self.venv_path / "Scripts" / "python.exe"
             for req_path in sorted_req_paths:
-                cmd = [
-                    str(python_path),
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    str(req_path),
-                ]
-                pip_cli_flags = self._get_pip_cli_flags(req_path)
-                for flag, value in pip_cli_flags.items():
-                    cmd.append(flag)
-                    cmd.append(value)
+                self.install_requirements_file(req_path)
 
-                bin_path = self.venv_path / "bin"
-                if sys.platform in ["win32", "win64"]:
-                    bin_path = self.venv_path / "Scripts"
-                component_env = {
-                    "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),  # win32
-                    "VIRTUAL_ENV": str(self.venv_path),
-                    "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
-                }
-                subprocess.run(cmd, env=component_env)
-
-    def _get_pip_cli_flags(self, req_path: Path) -> dict:
+    def _get_embedded_pip_flags(self, req_path: Path) -> dict:
         """
         Sometimes virtual environments must be created with special flag passed
         to PIP.  This parses a requirement file and finds these flags. Flags

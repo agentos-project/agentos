@@ -8,7 +8,6 @@ from rich import print as rich_print
 from rich.tree import Tree
 from agentos.run import Run
 from agentos.run_command import RunCommand
-from agentos.virtual_env_manager import VirtualEnvManager
 from agentos.component_run import ComponentRun
 from agentos.identifiers import ComponentIdentifier
 from agentos.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
@@ -32,7 +31,6 @@ class Component:
     """
 
     Identifier = ComponentIdentifier
-    _venv_manager = VirtualEnvManager()
 
     def __init__(
         self,
@@ -92,7 +90,6 @@ class Component:
         If no Registry is provided, use the default registry.
         """
         identifier = Component.Identifier(name, version)
-        cls._venv_manager.create_venv(registry, identifier)
         component_specs, repo_specs = registry.get_specs_transitively_by_id(
             identifier, flatten=True
         )
@@ -209,7 +206,6 @@ class Component:
         identifier = ComponentIdentifier.from_str(str(identifier))
         full_path = repo.get_local_file_path(identifier.version, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
-        cls._venv_manager.activate_venv()
         sys.path.append(str(full_path.parent))
         spec = importlib.util.spec_from_file_location(
             f"AOS_MODULE_{class_name.upper()}", str(full_path)
@@ -218,7 +214,6 @@ class Component:
         spec.loader.exec_module(module)
         managed_cls = getattr(module, class_name)
         sys.path.pop()
-        cls._venv_manager.deactivate_venv()
         return cls(
             managed_cls=managed_cls,
             repo=repo,
@@ -229,18 +224,6 @@ class Component:
             instantiate=instantiate,
             dunder_name=dunder_name,
         )
-
-    @classmethod
-    def set_environment_handling(cls, use_venv):
-        cls._venv_manager.set_environment_handling(use_venv)
-
-    @classmethod
-    def clear_env_cache(cls, assume_yes: bool):
-        cls._venv_manager.clear_env_cache(assume_yes)
-
-    @classmethod
-    def set_env_cache_path(cls, env_cache_path: Path):
-        cls._venv_manager.set_env_cache_path(env_cache_path)
 
     @property
     def name(self) -> str:
@@ -318,9 +301,7 @@ class Component:
         assert fn is not None, f"{instance} has no attr {function_name}"
         fn_params = param_set.get_function_params(self.name, function_name)
         print(f"Calling {self.name}.{function_name}(**{fn_params})")
-        self._venv_manager.activate_venv()
         result = fn(**fn_params)
-        self._venv_manager.deactivate_venv()
         return result
 
     def add_dependency(
