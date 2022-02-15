@@ -1,6 +1,6 @@
 # Note: Reverb (the DeepMind experience database) is only available on linux,
-# as a result, this agent will only run on linux. 
-
+# as a result, this agent will only run on linux.
+git+https://github.com/agentos-project/agentos
 absl-py==0.13.0
 alembic==1.4.1
 appdirs==1.4.3
