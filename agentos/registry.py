@@ -7,7 +7,6 @@ import shutil
 import tarfile
 import tempfile
 import requests
-import regex
 from pathlib import Path
 from typing import Dict, Sequence, Union, TYPE_CHECKING
 from dotenv import load_dotenv
@@ -455,7 +454,7 @@ class WebRegistry(Registry):
         for spec_key, spec_val in [
             (k, v)
             for k, v in flat_spec.items()
-            if regex.match(r".+_link", k) or not v
+            if k.endswith("_link") or not v
         ]:
             print(
                 f"Dropping field '{spec_key}: {spec_val}' from spec "
