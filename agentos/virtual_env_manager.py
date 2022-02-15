@@ -5,15 +5,11 @@ import shutil
 import hashlib
 import sysconfig
 import subprocess
-from typing import TYPE_CHECKING
 from pathlib import Path
 
 from agentos.registry import Registry
 from agentos.utils import AOS_REQS_DIR
-
-# Avoids circular imports
-if TYPE_CHECKING:
-    from agentos.component import Component
+from agentos.identifiers import ComponentIdentifier
 
 
 class VirtualEnvManager:
@@ -80,11 +76,11 @@ class VirtualEnvManager:
         self._default_os_path = os.environ.get("PATH")
         self._default_os_underscore = os.environ.get("_")
 
-    def enable_venv(self) -> None:
+    def activate_venv(self) -> None:
         """
-        Enables the virtual environment currently being managed. When enabled,
-        an import state (e.g. run by a Component) will execute within the
-        virtual environment.
+        Activates the virtual environment currently being managed. When
+        activated, an import statement (e.g. run by a Component) will execute
+        within the virtual environment.
         """
         if not self.venv_path or not self.use_venv:
             print("VirtualEnvManager: Running in outer Python environment")
@@ -123,9 +119,10 @@ class VirtualEnvManager:
         os.environ["PATH"] = f'{str(venv_bin_path)}:{os.environ.get("PATH")}'
         os.environ["_"] = f"{str(self.venv_path)}/bin/python"
 
-    def enable_default_env(self) -> None:
+    def deactivate_venv(self) -> None:
         """
-        Enables the default environment under which AgentOS was executed.
+        Deactivates the virtual environment (i.e. re-activates the default
+        environment under which AgentOS was executed).
         """
         if not self._venv_is_active:
             return
@@ -153,13 +150,17 @@ class VirtualEnvManager:
             os.environ["_"] = self._default_os_underscore
 
     def create_venv(
-        self, registry: Registry, identifier: "Component.Identifier"
+        self, registry: Registry, identifier: "ComponentIdentifier"
     ) -> Path:
         """
         Creates a new virtual environment based on the requirements specified
-        by the Component DAG rooted by Component ``identifier``.  If no
-        Components in the DAG specify requirements, then no virtual environment
-        is created.  Virtual environments are created in the environment cache.
+        by the Component DAG rooted by Component ``identifier``.  Every
+        ``requirements_path`` specified by a Component in the DAG will be pip
+        installed by AgentOS during the creation of the virtual environment.
+        If no Component in the DAG specifies a ``requirements_path``, then no
+        virtual environment is created and the Component DAG will be run in the
+        outer Python environment.  Virtual environments are created in the
+        environment cache.
         """
         if not self.use_venv:
             return None
@@ -169,7 +170,7 @@ class VirtualEnvManager:
         return self._create_virtual_env(req_paths)
 
     def _get_requirement_file_paths(
-        self, registry: Registry, identifier: "Component.Identifier"
+        self, registry: Registry, identifier: "ComponentIdentifier"
     ) -> set:
         # Prevent circular import
         from agentos.repo import Repo

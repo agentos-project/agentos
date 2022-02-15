@@ -206,7 +206,7 @@ class Component:
         identifier = ComponentIdentifier.from_str(str(identifier))
         full_path = repo.get_local_file_path(identifier.version, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
-        cls._venv_manager.enable_venv()
+        cls._venv_manager.activate_venv()
         sys.path.append(str(full_path.parent))
         spec = importlib.util.spec_from_file_location(
             f"AOS_MODULE_{class_name.upper()}", str(full_path)
@@ -215,7 +215,7 @@ class Component:
         spec.loader.exec_module(module)
         managed_cls = getattr(module, class_name)
         sys.path.pop()
-        cls._venv_manager.enable_default_env()
+        cls._venv_manager.deactivate_venv()
         return cls(
             managed_cls=managed_cls,
             repo=repo,
@@ -315,9 +315,9 @@ class Component:
         assert fn is not None, f"{instance} has no attr {function_name}"
         fn_params = param_set.get_function_params(self.name, function_name)
         print(f"Calling {self.name}.{function_name}(**{fn_params})")
-        self._venv_manager.enable_venv()
+        self._venv_manager.activate_venv()
         result = fn(**fn_params)
-        self._venv_manager.enable_default_env()
+        self._venv_manager.deactivate_venv()
         return result
 
     def add_dependency(
