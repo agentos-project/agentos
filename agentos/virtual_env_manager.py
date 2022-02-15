@@ -10,6 +10,7 @@ from pathlib import Path
 from agentos.registry import Registry
 from agentos.utils import AOS_REQS_DIR
 from agentos.identifiers import ComponentIdentifier
+from agentos.specs import unflatten_spec
 
 
 class VirtualEnvManager:
@@ -175,29 +176,31 @@ class VirtualEnvManager:
         # Prevent circular import
         from agentos.repo import Repo
 
+        component_specs, repo_specs = registry.get_specs_transitively_by_id(
+            identifier, flatten=True
+        )
+        repos = {
+            repo_spec["identifier"]: Repo.from_spec(
+                unflatten_spec(repo_spec), registry.base_dir
+            )
+            for repo_spec in repo_specs
+        }
+
         req_paths = set()
-        component_identifiers = [identifier]
-        while component_identifiers:
-            c_id = component_identifiers.pop()
-            c_spec = registry.get_component_spec_by_id(c_id, flatten=True)
+        for c_spec in component_specs:
             if "requirements_path" not in c_spec:
                 continue
-            r_spec = registry.get_repo_spec(c_spec["repo"])
-            repo = Repo.from_spec(r_spec, registry.base_dir)
+            repo = repos[c_spec["repo"]]
             full_req_path = repo.get_local_file_path(
-                c_id.version, c_spec["requirements_path"]
+                c_spec["version"], c_spec["requirements_path"]
             ).absolute()
             if not full_req_path.exists():
                 error_msg = (
                     f"Requirement path {full_req_path} specified by "
-                    f"Component {c_id} does not exist."
+                    f"Component {c_spec} does not exist."
                 )
                 raise Exception(error_msg)
             req_paths.add(full_req_path)
-            for d_id in c_spec.get("dependencies", {}).values():
-                component_identifiers.append(
-                    identifier.__class__.from_str(d_id)
-                )
         return req_paths
 
     def _create_virtual_env(self, req_paths: set):

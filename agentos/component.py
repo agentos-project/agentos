@@ -11,7 +11,7 @@ from agentos.run_command import RunCommand
 from agentos.virtual_env_manager import VirtualEnvManager
 from agentos.component_run import ComponentRun
 from agentos.identifiers import ComponentIdentifier
-from agentos.specs import ComponentSpec, ComponentSpecKeys
+from agentos.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
 from agentos.registry import (
     Registry,
     InMemoryRegistry,
@@ -93,25 +93,24 @@ class Component:
         """
         identifier = Component.Identifier(name, version)
         cls._venv_manager.create_venv(registry, identifier)
-        component_identifiers = [identifier]
-        repos = {}
+        component_specs, repo_specs = registry.get_specs_transitively_by_id(
+            identifier, flatten=True
+        )
+        repos = {
+            repo_spec["identifier"]: Repo.from_spec(
+                unflatten_spec(repo_spec), registry.base_dir
+            )
+            for repo_spec in repo_specs
+        }
         components = {}
         dependencies = {}
-        while component_identifiers:
-            component_id = component_identifiers.pop()
-            component_spec = registry.get_component_spec_by_id(
-                component_id, flatten=True
-            )
-            component_id_from_spec = ComponentIdentifier(
+        for component_spec in component_specs:
+            component_id = ComponentIdentifier(
                 component_spec["name"], component_spec["version"]
             )
-            repo_id = component_spec["repo"]
-            if repo_id not in repos.keys():
-                repo_spec = registry.get_repo_spec(repo_id)
-                repos[repo_id] = Repo.from_spec(repo_spec, registry.base_dir)
             from_repo_args = {
-                "repo": repos[repo_id],
-                "identifier": component_id_from_spec,
+                "repo": repos[component_spec["repo"]],
+                "identifier": component_id,
                 "class_name": component_spec["class_name"],
                 "file_path": component_spec["file_path"],
             }
@@ -124,10 +123,6 @@ class Component:
             component = cls.from_repo(**from_repo_args)
             components[component_id] = component
             dependencies[component_id] = component_spec.get("dependencies", {})
-            for d_id in dependencies[component_id].values():
-                component_identifiers.append(
-                    Component.Identifier.from_str(d_id)
-                )
 
         # Wire up the dependency graph
         for c_name, component in components.items():
@@ -135,7 +130,15 @@ class Component:
                 dependency = components[dependency_name]
                 component.add_dependency(dependency, attribute_name=attr_name)
 
-        return components[identifier]
+        try:
+            return components[identifier]
+        except KeyError:
+            # Try name without the version
+            unversioned_components = {
+                ComponentIdentifier.from_str(c_id.name): c_obj
+                for c_id, c_obj in components.items()
+            }
+            return unversioned_components[identifier]
 
     @classmethod
     def from_registry_file(
