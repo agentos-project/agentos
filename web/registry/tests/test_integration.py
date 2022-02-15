@@ -84,7 +84,8 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         )
         full_id = f"SimpleComponent=={TESTING_BRANCH_NAME}"
         self.assertEqual(
-            flat_comp_spec[full_id]["class_name"], "SimpleComponent",
+            flat_comp_spec[full_id]["class_name"],
+            "SimpleComponent",
         )
         self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 

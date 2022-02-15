@@ -64,15 +64,16 @@ def install_requirements():
     else:  # if pip is not installed, try again with pip3 before failing
         pip3_installed = True
         try:
-            subprocess.check_call(["pip3", "--version"],
-                                  stdout=subprocess.DEVNULL)
+            subprocess.check_call(
+                ["pip3", "--version"], stdout=subprocess.DEVNULL
+            )
         except (FileNotFoundError, subprocess.CalledProcessError):
             pip3_installed = False
 
         if pip3_installed:  # if pip3 exists
             install_with_pip("pip3")
 
-    if not(pip_installed) and not(pip3_installed):
+    if not (pip_installed) and not (pip3_installed):
         print("No valid pip or pip3 found, aborting...")
 
 
