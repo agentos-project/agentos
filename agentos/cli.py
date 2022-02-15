@@ -12,6 +12,7 @@ from agentos import Component
 from agentos import ParameterSet
 from agentos.run import Run
 from agentos.registry import Registry
+from agentos.virtual_env import VirtualEnv
 
 
 @click.group()
@@ -47,6 +48,19 @@ _option_registry_file = click.option(
     type=click.Path(exists=True),
     default="./components.yaml",
     help="Path to registry file (components.yaml).",
+)
+
+_option_use_venv = click.option(
+    "--use-auto-env/--use-outer-env",
+    "use_venv",
+    default=True,
+    help=(
+        "If --use-auto-venv is passed, then AgentOS will automatically "
+        "create a virtual environment under which the Component DAG "
+        "will be run. If --use-outer-env is passed, AgentOS will not "
+        "create a new virtual environment for the Component DAG, instead "
+        "running it in the existing outer Python environment."
+    ),
 )
 
 
@@ -146,29 +160,34 @@ def init(dir_names, agent_name, agentos_dir):
     "specified params, via a **kwargs style keyword argument "
     "https://docs.python.org/3/glossary.html#term-argument",
 )
+@_option_use_venv
 def run(
     component_name,
     registry_file,
     entry_point,
     param_list,
     param_file,
+    use_venv,
 ):
-    param_dict = _user_args_to_dict(param_list)
-    component = Component.from_registry_file(registry_file, component_name)
-    parameters = ParameterSet.from_yaml(param_file)
-    entry_point = entry_point or component.get_default_entry_point()
-    parameters.update(component_name, entry_point, param_dict)
-    run = component.run(entry_point, parameters)
-    print(
-        f"Run {run.identifier} recorded.  Execute the following for details:"
-    )
-    print(f"\n  agentos status {run.identifier}\n")
+    venv = VirtualEnv.from_registry_file(registry_file, component_name)
+    venv.set_environment_handling(use_venv)
+    with venv:
+        param_dict = _user_args_to_dict(param_list)
+        component = Component.from_registry_file(registry_file, component_name)
+        parameters = ParameterSet.from_yaml(param_file)
+        entry_point = entry_point or component.get_default_entry_point()
+        parameters.update(component_name, entry_point, param_dict)
+        run = component.run(entry_point, parameters)
+        print(f"Run {run.identifier} recorded.", end=" ")
+        print("Execute the following for details:")
+        print(f"\n  agentos status {run.identifier}\n")
 
 
 @agentos_cmd.command()
 @_arg_optional_entity_id
 @_option_registry_file
-def status(entity_id, registry_file):
+@_option_use_venv
+def status(entity_id, registry_file, use_venv):
     """
     ENTITY_ID can be a Component name or a Run ID.
     """
@@ -179,8 +198,11 @@ def status(entity_id, registry_file):
         Run.from_existing_run_id(entity_id).print_status(detailed=True)
     else:  # assume entity_id is a ComponentIdentifier
         try:
-            component = Component.from_registry_file(registry_file, entity_id)
-            component.print_status_tree()
+            venv = VirtualEnv.from_registry_file(registry_file, entity_id)
+            venv.set_environment_handling(use_venv)
+            with venv:
+                c = Component.from_registry_file(registry_file, entity_id)
+                c.print_status_tree()
         except LookupError:
             print(f"No Run or component found with Identifier {entity_id}.")
 
@@ -201,7 +223,8 @@ def rerun(run_id):
 @_arg_component_name
 @_option_registry_file
 @_option_force
-def freeze(component_name, registry_file, force):
+@_option_use_venv
+def freeze(component_name, registry_file, force, use_venv):
     """
     Creates a version of ``registry_file`` for Component
     ``component_name`` where all Components in the dependency tree are
@@ -215,24 +238,39 @@ def freeze(component_name, registry_file, force):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    component = Component.from_registry_file(registry_file, component_name)
-    frozen_reg = component.to_frozen_registry(force=force)
-    print(yaml.dump(frozen_reg.to_dict()))
+    venv = VirtualEnv.from_registry_file(registry_file, component_name)
+    venv.set_environment_handling(use_venv)
+    with venv:
+        component = Component.from_registry_file(registry_file, component_name)
+        frozen_reg = component.to_frozen_registry(force=force)
+        print(yaml.dump(frozen_reg.to_dict()))
 
 
 @agentos_cmd.command()
 @_arg_component_name
 @_option_registry_file
 @_option_force
-def publish(component_name: str, registry_file: str, force: bool):
+@_option_use_venv
+def publish(
+    component_name: str, registry_file: str, force: bool, use_venv: bool
+):
     """
     This command pushes the spec for component ``component_name`` (and all its
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
-    component = Component.from_registry_file(registry_file, component_name)
-    frozen_spec = component.to_frozen_registry(force=force).to_spec()
-    Registry.get_default().add_component_spec(frozen_spec)
+    venv = VirtualEnv.from_registry_file(registry_file, component_name)
+    venv.set_environment_handling(use_venv)
+    with venv:
+        component = Component.from_registry_file(registry_file, component_name)
+        frozen_spec = component.to_frozen_registry(force=force).to_spec()
+        Registry.get_default().add_component_spec(frozen_spec)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_env_cache(assume_yes):
+    VirtualEnv.clear_env_cache(assume_yes=assume_yes)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501

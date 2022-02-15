@@ -9,7 +9,7 @@ from rich.tree import Tree
 from agentos.run_command import RunCommand
 from agentos.component_run import ComponentRun
 from agentos.identifiers import ComponentIdentifier
-from agentos.specs import ComponentSpec, ComponentSpecKeys
+from agentos.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
 from agentos.registry import (
     Registry,
     InMemoryRegistry,
@@ -38,6 +38,7 @@ class Component:
         identifier: "Component.Identifier",
         class_name: str,
         file_path: str,
+        requirements_path: str = None,
         instantiate: bool = True,
         dependencies: Dict = None,
         dunder_name: str = None,
@@ -49,6 +50,7 @@ class Component:
         :param class_name: The name of the class that is being managed.
         :param file_path: The python module file where the managed class is
             defined.
+        :param requirements_path: Optional path to a pip installable file.
         :param instantiate: Optional. If True, then get_object() return an
             instance of the managed class; if False, it returns a class object.
         :param dependencies: List of other components that self depends on.
@@ -60,6 +62,7 @@ class Component:
         self.identifier = identifier
         self.class_name = class_name
         self.file_path = file_path
+        self.requirements_path = requirements_path
         if not class_name:
             assert (
                 not instantiate
@@ -86,37 +89,36 @@ class Component:
         If no Registry is provided, use the default registry.
         """
         identifier = Component.Identifier(name, version)
-        component_identifiers = [identifier]
-        repos = {}
+        component_specs, repo_specs = registry.get_specs_transitively_by_id(
+            identifier, flatten=True
+        )
+        repos = {
+            repo_spec["identifier"]: Repo.from_spec(
+                unflatten_spec(repo_spec), registry.base_dir
+            )
+            for repo_spec in repo_specs
+        }
         components = {}
         dependencies = {}
-        while component_identifiers:
-            component_id = component_identifiers.pop()
-            component_spec = registry.get_component_spec_by_id(
-                component_id, flatten=True
-            )
-            component_id_from_spec = ComponentIdentifier(
+        for component_spec in component_specs:
+            component_id = ComponentIdentifier(
                 component_spec["name"], component_spec["version"]
             )
-            repo_id = component_spec["repo"]
-            if repo_id not in repos.keys():
-                repo_spec = registry.get_repo_spec(repo_id)
-                repos[repo_id] = Repo.from_spec(repo_spec, registry.base_dir)
             from_repo_args = {
-                "repo": repos[repo_id],
-                "identifier": component_id_from_spec,
+                "repo": repos[component_spec["repo"]],
+                "identifier": component_id,
                 "class_name": component_spec["class_name"],
                 "file_path": component_spec["file_path"],
             }
+            if "requirements_path" in component_spec:
+                from_repo_args["requirements_path"] = component_spec[
+                    "requirements_path"
+                ]
             if "instantiate" in component_spec.keys():
                 from_repo_args["instantiate"] = component_spec["instantiate"]
             component = cls.from_repo(**from_repo_args)
             components[component_id] = component
             dependencies[component_id] = component_spec.get("dependencies", {})
-            for d_id in dependencies[component_id].values():
-                component_identifiers.append(
-                    Component.Identifier.from_str(d_id)
-                )
 
         # Wire up the dependency graph
         for c_name, component in components.items():
@@ -124,7 +126,15 @@ class Component:
                 dependency = components[dependency_name]
                 component.add_dependency(dependency, attribute_name=attr_name)
 
-        return components[identifier]
+        try:
+            return components[identifier]
+        except KeyError:
+            # Try name without the version
+            unversioned_components = {
+                ComponentIdentifier.from_str(c_id.name): c_obj
+                for c_id, c_obj in components.items()
+            }
+            return unversioned_components[identifier]
 
     @classmethod
     def from_registry_file(
@@ -187,6 +197,7 @@ class Component:
         identifier: Union[str, "Component.Identifier"],
         class_name: str,
         file_path: str,
+        requirements_path: str = None,
         instantiate: bool = True,
         dunder_name: str = None,
     ) -> "Component":
@@ -208,6 +219,7 @@ class Component:
             identifier=identifier,
             class_name=class_name,
             file_path=file_path,
+            requirements_path=requirements_path,
             instantiate=instantiate,
             dunder_name=dunder_name,
         )
@@ -288,7 +300,8 @@ class Component:
         assert fn is not None, f"{instance} has no attr {function_name}"
         fn_params = param_set.get_function_params(self.name, function_name)
         print(f"Calling {self.name}.{function_name}(**{fn_params})")
-        return fn(**fn_params)
+        result = fn(**fn_params)
+        return result
 
     def add_dependency(
         self, component: "Component", attribute_name: str = None
@@ -349,12 +362,18 @@ class Component:
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
             new_identifier, self.file_path
         )
+        prefixed_reqs_path = None
+        if self.requirements_path:
+            prefixed_reqs_path = self.repo.get_prefixed_path_from_repo_root(
+                new_identifier, self.requirements_path
+            )
         clone = Component(
             managed_cls=self._managed_cls,
             repo=GitHubRepo(identifier=self.repo.identifier, url=repo_url),
             identifier=new_identifier,
             class_name=self.class_name,
             file_path=prefixed_file_path,
+            requirements_path=prefixed_reqs_path,
             instantiate=self.instantiate,
             dunder_name=self._dunder_name,
         )
@@ -375,6 +394,10 @@ class Component:
             "class_name": self.class_name,
             "dependencies": dependencies,
         }
+        if self.requirements_path:
+            component_spec_content["requirements_path"] = str(
+                self.requirements_path
+            )
         if flatten:
             component_spec_content.update(
                 {ComponentSpecKeys.IDENTIFIER: str(self.identifier)}

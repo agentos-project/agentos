@@ -182,6 +182,29 @@ class Registry(abc.ABC):
             identifier.name, identifier.version, flatten=flatten
         )
 
+    def get_specs_transitively_by_id(
+        self,
+        identifier: Union[ComponentIdentifier, str],
+        flatten: bool = True,
+    ) -> (Sequence[ComponentSpec], Sequence[RepoSpec]):
+        identifier = ComponentIdentifier.from_str(str(identifier))
+        component_identifiers = [identifier]
+        repo_specs = {}
+        component_specs = {}
+        while component_identifiers:
+            c_id = component_identifiers.pop()
+            c_spec = self.get_component_spec_by_id(c_id, flatten=flatten)
+            inner_spec = c_spec if flatten else c_spec[c_id]
+            component_specs[c_id] = c_spec
+            repo_id = inner_spec["repo"]
+            repo_spec = self.get_repo_spec(repo_id, flatten=flatten)
+            repo_specs[repo_id] = repo_spec
+            for d_id in inner_spec.get("dependencies", {}).values():
+                component_identifiers.append(
+                    ComponentIdentifier.from_str(d_id)
+                )
+        return list(component_specs.values()), list(repo_specs.values())
+
     @abc.abstractmethod
     def get_repo_spec(
         self, repo_id: RepoIdentifier, flatten: bool = False
