@@ -2,7 +2,7 @@ from tests.utils import run_test_command
 from tests.utils import RLLIB_AGENT_DIR
 from agentos.cli import run
 
-test_args = ["agent", "--no-venv"]
+test_args = ["agent", "--use-outer-env"]
 test_kwargs = {"--registry-file": str(RLLIB_AGENT_DIR / "components.yaml")}
 
 

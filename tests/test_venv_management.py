@@ -29,7 +29,7 @@ def test_venv_management(tmpdir):
         import bottle  # noqa: F401
 
     # Should fail because of --no_venv
-    no_venv_test_args = ["test_venv_agent", "--no-venv"]
+    no_venv_test_args = ["test_venv_agent", "--use-outer-env"]
     test_kwargs = {
         "--registry-file": str(TEST_VENV_AGENT_DIR / "components.yaml")
     }

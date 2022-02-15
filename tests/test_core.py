@@ -34,11 +34,11 @@ def test_cli_init(tmpdir):
 def test_cli_status():
     with run_in_dir(SB3_AGENT_DIR):
         run_test_command(status)
-        run_args = ["sb3_agent", "--no-venv"]
+        run_args = ["sb3_agent", "--use-outer-env"]
         run_test_command(status, cli_args=run_args)
 
 
 def test_cli_freeze(tmpdir):
-    run_args = ["sb3_agent", "-f", "--no-venv"]
+    run_args = ["sb3_agent", "-f", "--use-outer-env"]
     run_kwargs = {"--registry-file": SB3_AGENT_DIR / "components.yaml"}
     run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)

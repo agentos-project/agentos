@@ -50,11 +50,15 @@ _option_registry_file = click.option(
 )
 
 _option_use_venv = click.option(
-    "--use-venv/--no-venv",
+    "--use-auto-env/--use-outer-env",
+    "use_venv",
     default=True,
     help=(
-        "If passed, will not create a new virtualenv for the Components, "
-        "instead running it in the existing outer Python environment."
+        "If --use-auto-venv is passed, then AgentOS will automatically "
+        "create a virtual environment under which the Component DAG "
+        "will be run. If --use-outer-env is passed, AgentOS will not "
+        "create a new virtual environment for the Component DAG, instead "
+        "running it in the existing outer Python environment."
     ),
 )
 
