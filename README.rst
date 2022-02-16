@@ -141,6 +141,7 @@ If you want to the CLI to interact with a local development server, define the
 environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
 
 To run website tests::
+
   python install_requirements.py
   cd web # the web directory contained in project root
   python manage.py test
