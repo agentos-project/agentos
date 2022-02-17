@@ -114,6 +114,27 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         fetched_run_spec = web_registry.get_run_spec(comp_run.identifier)
         self.assertEqual(fetched_run_spec, run_spec)
 
+        # Test Registry.contains_x_spec() functions.
+        self.assertTrue(
+            web_registry.get_repo_spec("AgentOSRepo", error_if_not_found=False)
+        )
+        self.assertTrue(
+            web_registry.get_component_spec(
+                "SimpleComponent", error_if_not_found=False
+            )
+        )
+        self.assertTrue(
+            web_registry.get_run_command_spec(
+                comp_run.run_command.identifier, error_if_not_found=False
+            )
+        )
+        self.assertTrue(
+            web_registry.get_run_spec(
+                comp_run.identifier,
+                error_if_not_found=False
+            )
+        )
+
     # TODO: add a test that publishes a ComponentRun or Component from the CLI.
     # def test_web_registry_integration_from_cli():
     #     from tests.utils import run_test_command

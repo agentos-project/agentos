@@ -111,11 +111,21 @@ class ComponentRun(Run):
         force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
-        super().to_registry(registry)
+        spec = registry.get_run_spec(
+            self.identifier, error_if_not_found=False
+        )
+        if spec and not force:
+            assert spec == self.to_spec(), (
+                f"A component run spec with identifier '{self.identifier}' "
+                f"already exists in registry '{registry}' and differs from "
+                "the one being added. Use force=True to overwrite the "
+                "existing one."
+            )
         if recurse:
             self.run_command.to_registry(
                 registry, recurse=recurse, force=force
             )
+        super().to_registry(registry, force=force)
 
     def _fetch_run_command(self) -> RunCommand:
         try:

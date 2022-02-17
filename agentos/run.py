@@ -236,11 +236,20 @@ class Run:
         self,
         registry: Registry = None,
         include_artifacts: bool = False,
+        force: bool = False,
     ) -> Registry:
         if not registry:
             from agentos.registry import InMemoryRegistry
 
             registry = InMemoryRegistry()
+        spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
+        if spec and not force:
+            assert spec == self.to_spec(), (
+                f"A run spec with identifier '{self.identifier}' already "
+                f"exists in registry '{registry}' and differs from the one "
+                "being added. Use force=True to overwrite the existing one."
+            )
+
         registry.add_run_spec(self.to_spec())
         # If we are writing to a WebRegistry, have local artifacts, and
         # include_artifacts is True, try uploading the artifact files to the

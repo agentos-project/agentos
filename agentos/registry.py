@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 import requests
 from pathlib import Path
-from typing import Dict, Sequence, Union, TYPE_CHECKING
+from typing import Dict, Sequence, Union, Optional, TYPE_CHECKING
 from dotenv import load_dotenv
 from agentos.identifiers import (
     ComponentIdentifier,
@@ -74,6 +74,15 @@ class Registry(abc.ABC):
             yaml.dump(self.to_dict(), file)
 
     @abc.abstractmethod
+    def get_repo_spec(
+        self,
+        repo_id: RepoIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RepoSpec]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
     ) -> NestedComponentSpec:
@@ -112,7 +121,7 @@ class Registry(abc.ABC):
         version: str = None,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> ComponentSpec:
+    ) -> Optional[ComponentSpec]:
         """
         Returns the component spec with ``name`` and ``version``, if it exists,
         or raise an Error if it does not. A component's name and version are
@@ -176,7 +185,7 @@ class Registry(abc.ABC):
         self,
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = False,
-    ) -> ComponentSpec:
+    ) -> Optional[ComponentSpec]:
         identifier = ComponentIdentifier.from_str(str(identifier))
         return self.get_component_spec(
             identifier.name, identifier.version, flatten=flatten
@@ -205,21 +214,21 @@ class Registry(abc.ABC):
                 )
         return list(component_specs.values()), list(repo_specs.values())
 
-    @abc.abstractmethod
-    def get_repo_spec(
-        self, repo_id: RepoIdentifier, flatten: bool = False
-    ) -> RepoSpec:
+    def get_run_command_spec(
+        self,
+        run_command_id: RunCommandIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RunCommandSpec]:
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_run_spec(
-        self, run_id: RunIdentifier, flatten: bool = False
-    ) -> RunSpec:
-        raise NotImplementedError
-
-    def get_run_command_spec(
-        self, run_command_id: RunCommandIdentifier, flatten: bool = False
-    ) -> RunCommandSpec:
+        self,
+        run_id: RunIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RunSpec]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -227,13 +236,17 @@ class Registry(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
         """
         Adds a component spec to this registry. *This does not add any
-        Registry Objects* to this registry. Those must be handled explicitely.
+        Registry Objects* to this registry.
 
-        Typically, to register a component, it's easier to use the higher
-        level function Component.register(registry).
+        To register a component, use the higher the level function
+        Component.register(registry) or Registry.add_component().
 
         :param component_spec: The ``ComponentSpec`` to register.
         """
@@ -245,15 +258,11 @@ class Registry(abc.ABC):
         component.to_registry(self, recurse=recurse, force=force)
 
     @abc.abstractmethod
-    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
+    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
         raise NotImplementedError
 
     @abc.abstractmethod
     def add_run_spec(self, run_spec: RunSpec) -> None:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
         raise NotImplementedError
 
 
@@ -275,6 +284,14 @@ class InMemoryRegistry(Registry):
             self._registry["run_commands"] = {}
         if "registries" not in self._registry.keys():
             self._registry["registries"] = []
+
+    def get_repo_spec(
+        self,
+        repo_id: RepoIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RepoSpec]:
+        return self._get_spec(repo_id, "repos", flatten, error_if_not_found)
 
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
@@ -299,22 +316,34 @@ class InMemoryRegistry(Registry):
                 return {}
         return self._registry["components"]
 
-    def get_repo_spec(
-        self, repo_id: RepoIdentifier, flatten: bool = False
-    ) -> "RepoSpec":
-        return self._get_spec(repo_id, "repos", flatten)
+    def get_run_command_spec(
+        self,
+        run_command_id: RunCommandIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RunCommandSpec]:
+        return self._get_spec(
+            run_command_id,
+            "run_commands",
+            flatten,
+            error_if_not_found
+        )
 
     def get_run_spec(
-        self, run_id: RunIdentifier, flatten: bool = False
-    ) -> RunSpec:
-        return self._get_spec(run_id, "runs", flatten)
+        self,
+        run_id: RunIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RunSpec]:
+        return self._get_spec(run_id, "runs", flatten, error_if_not_found)
 
-    def get_run_command_spec(
-        self, run_command_id: RunCommandIdentifier, flatten: bool = False
-    ) -> RunCommandSpec:
-        return self._get_spec(run_command_id, "run_commands", flatten)
-
-    def _get_spec(self, identifier: str, spec_type: str, flatten: bool):
+    def _get_spec(
+        self,
+        identifier: str,
+        spec_type: str,
+        flatten: bool,
+        error_if_not_found: bool = True,
+    ) -> Optional[Dict]:
         """
         Factor out common functionality for fetching specs from the
         internal represention of them. Because Components are special,
@@ -322,6 +351,14 @@ class InMemoryRegistry(Registry):
         differently.
         """
         assert spec_type in ["repos", "runs", "run_commands"]
+        if identifier not in self._registry[spec_type]:
+            if error_if_not_found:
+                raise LookupError(
+                    f"{self.__class__}l spec with identifier "
+                    f"'{identifier}' not found."
+                )
+            else:
+                return None
         spec = {identifier: self._registry[spec_type][identifier]}
         return flatten_spec(spec) if flatten else spec
 
@@ -356,9 +393,13 @@ class WebRegistry(Registry):
         )  # Used for file-backed Registry types.
 
     @staticmethod
-    def _check_response(response):
+    def _is_response_ok(
+        response: requests.Response, error_if_not_found: bool = True
+    ) -> bool:
         print(f"Checking response with encoding: {response.encoding}")
-        if not response.ok:
+        if response.ok:
+            return True
+        else:
             content = response.content
             try:
                 content = json.loads(response.content)
@@ -369,12 +410,20 @@ class WebRegistry(Registry):
                     content = content.decode()
                 except Exception:
                     pass
-            raise Exception(content)
+            if error_if_not_found:
+                raise Exception(content)
+            else:
+                return False
 
     def get_repo_spec(
-        self, repo_id: RepoIdentifier, flatten: bool = False
-    ) -> "RepoSpec":
-        return self._request_spec_from_web_server("repo", repo_id, flatten)
+        self,
+        repo_id: RepoIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
+    ) -> Optional[RepoSpec]:
+        return self._request_spec_from_web_server(
+            "repo", repo_id, flatten, error_if_not_found
+        )
 
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
@@ -409,16 +458,23 @@ class WebRegistry(Registry):
         raise NotImplementedError
 
     def get_run_command_spec(
-        self, run_command_id: RunCommandIdentifier, flatten: bool = False
+        self,
+        run_command_id: RunCommandIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
     ) -> RunCommandSpec:
         return self._request_spec_from_web_server(
-            "runcommand", run_command_id, flatten
+            "runcommand", run_command_id, flatten, error_if_not_found
         )
 
     def get_run_spec(
-        self, run_id: RunIdentifier, flatten: bool = False
+        self, run_id: RunIdentifier,
+        flatten: bool = False,
+        error_if_not_found: bool = True,
     ) -> RunSpec:
-        return self._request_spec_from_web_server("run", run_id, flatten)
+        return self._request_spec_from_web_server(
+            "run", run_id, flatten, error_if_not_found
+        )
 
     def get_registries(self) -> Sequence:
         raise NotImplementedError
@@ -465,12 +521,17 @@ class WebRegistry(Registry):
         return Run.from_registry(self, run_id)
 
     def _request_spec_from_web_server(
-        self, spec_type: str, identifier: str, flatten: bool
-    ):
+        self,
+        spec_type: str,
+        identifier: str,
+        flatten: bool,
+        error_if_not_found: bool = True,
+    ) -> Optional[Dict]:
         assert spec_type in ["run", "runcommand", "repo", "component"]
         req_url = f"{self.root_api_url}/{spec_type}s/{identifier}/"
         response = requests.get(req_url)
-        self._check_response(response)
+        if not self._is_response_ok(response, error_if_not_found):
+            return None
         flat_spec = json.loads(response.content)
         print("spec returned was:")
         print(flat_spec)
@@ -495,7 +556,7 @@ class WebRegistry(Registry):
         req_url = f"{self.root_api_url}/{spec_type}s/"
         data = spec if is_flat(spec) else flatten_spec(spec)
         response = requests.post(req_url, data=data)
-        self._check_response(response)
+        self._is_response_ok(response)
         result = json.loads(response.content)
         print(f"\npost {spec_type} spec http response results:")
         pprint.pprint(result)

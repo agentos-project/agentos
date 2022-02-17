@@ -446,7 +446,6 @@ class Component:
                         f"{c.to_spec()}\n\n"
                         f"To overwrite, specify force=true."
                     )
-            registry.add_component_spec(c.to_spec())
             try:
                 repo_spec = registry.get_repo_spec(c.repo.identifier)
                 if repo_spec != c.repo.to_spec():
@@ -458,8 +457,9 @@ class Component:
                         f"Existing repo spec:\n{c.repo.to_spec()}"
                     )
             except LookupError:
-                # Repo not yet registered, so so add it to this registry.
+                # Repo not yet added to registry, so so add it.
                 registry.add_repo_spec(c.repo.to_spec())
+            registry.add_component_spec(c.to_spec())
             if not recurse:
                 break
         return registry
