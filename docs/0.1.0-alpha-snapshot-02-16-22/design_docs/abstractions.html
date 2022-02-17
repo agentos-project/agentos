@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgentOS Core Abstractions &mdash; AgentOS 0.1.0-alpha documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.0-alpha
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>AgentOS Core Abstractions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/design_docs/abstractions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="agentos-core-abstractions">
+<h1>AgentOS Core Abstractions<a class="headerlink" href="#agentos-core-abstractions" title="Permalink to this headline"></a></h1>
+<p>Current Version: v4</p>
+<p>See <a class="reference internal" href="#revision-history">Revision History</a> for additional discussion.</p>
+<div class="section" id="abstract">
+<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this headline"></a></h2>
+<p>This document proposes the core abstractions of the AgentOS system.  These
+abstractions are:</p>
+<ul class="simple">
+<li><p><strong>Environment</strong> - A representation of the world in which the agent operates.
+An agent takes actions within an environment, and these actions can
+potentially affect the environment’s state (and thus the agent’s
+observation).</p></li>
+<li><p><strong>Policy</strong> - Encapsulates the agent’s decision making process.  The policy
+chooses an action given a set of observations.  It also provides facilities
+for improving itself as the agent gains experience.</p></li>
+<li><p><strong>Agent</strong> - The agent contains a policy.  It performs actions based on its
+policy within the environment so that it can learn how to maximize reward.</p></li>
+</ul>
+</div>
+<div class="section" id="rationale">
+<h2>Rationale<a class="headerlink" href="#rationale" title="Permalink to this headline"></a></h2>
+<p>AgentOS aims to define a clean set of abstractions that will be familiar to a
+researcher in the reinforcement learning (RL) space while also being
+approachable to a technically educated generalist like a software engineer.
+The proposed set of abstractions hew closely to the standard academic
+presentation of RL while allowing for composition and reuse at the software
+level.</p>
+</div>
+<div class="section" id="user-stories">
+<h2>User Stories<a class="headerlink" href="#user-stories" title="Permalink to this headline"></a></h2>
+<div class="section" id="rl-newbie-trying-to-learn">
+<h3>RL newbie trying to learn<a class="headerlink" href="#rl-newbie-trying-to-learn" title="Permalink to this headline"></a></h3>
+<p>As a software programmer and newbie to RL/AI, I want learn RL by looking at
+documentation and code examples and I want to start making my own agents by
+composing existing algorithms, environments, etc. I am interested in using both
+the AgentOS CLI and the Python API as I learn.</p>
+</div>
+<div class="section" id="agent-developer-using-python">
+<h3>Agent developer using Python<a class="headerlink" href="#agent-developer-using-python" title="Permalink to this headline"></a></h3>
+<p>As an agent developer, I want to write my own agents, policies, environments,
+and other components from scratch in Python and manipulate them entirely via
+the command line.</p>
+</div>
+<div class="section" id="agent-user-running-somebody-elses-agent">
+<h3>Agent user running somebody elses agent<a class="headerlink" href="#agent-user-running-somebody-elses-agent" title="Permalink to this headline"></a></h3>
+<p>As a researcher on a conference program committee reviewing RL papers, I want
+to clone my own copy of an agent from a paper, run it, and inspect its parts.
+Ideally I would like it to conform to known APIs so that I can a priori have
+some idea of what different parts do.</p>
+</div>
+<div class="section" id="agent-developer-incorporating-rl-into-their-tech-stack">
+<h3>Agent developer incorporating RL into their tech stack<a class="headerlink" href="#agent-developer-incorporating-rl-into-their-tech-stack" title="Permalink to this headline"></a></h3>
+<p>As a developer incorporating RL into my tech stack, I need to run experiments
+with different agent configurations to determine what flavor of RL is best
+suited to the business problem my work is addressing. Being able to
+programmatically interact with agents allows me to run these experiments as
+well as train and deploy my agent in a reproducible way.</p>
+</div>
+</div>
+<div class="section" id="core-abstractions">
+<h2>Core Abstractions<a class="headerlink" href="#core-abstractions" title="Permalink to this headline"></a></h2>
+<p>This section will present sample code for each of the core abstractions as
+well as discuss implications and future directions.</p>
+<div class="section" id="environment">
+<h3>Environment<a class="headerlink" href="#environment" title="Permalink to this headline"></a></h3>
+<p>An environment will conform to <a class="reference external" href="https://gym.openai.com/">OpenAI’s gym</a> API.
+Core methods are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">step(action)</span> <span class="pre">-&gt;</span> <span class="pre">(observation,</span> <span class="pre">done,</span> <span class="pre">reward,</span> <span class="pre">info)</span></code>: This takes one action
+within the environment and transitions to a new state.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reset()</span> <span class="pre">-&gt;</span> <span class="pre">observation</span></code>: This resets the environment to an initial state.</p></li>
+</ul>
+<p>Here is an example environment that represents a 1-dimensional corridor that
+the agent must learn to walk down:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gym</span>
+
+<span class="k">class</span> <span class="nc">Corridor</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observation_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">action</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="policy">
+<h3>Policy<a class="headerlink" href="#policy" title="Permalink to this headline"></a></h3>
+<p>A policy encapsulates an agent’s decision making process.  A policy will often
+be backed by some sort of stateful storage (e.g. a table or a serialized
+neural net).  Eventually, AgentOS will provide ability to easily share
+policies (including their state) between agents.</p>
+<p>A policy must provide the following three methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">decide(self,</span> <span class="pre">obs)</span> <span class="pre">-&gt;</span> <span class="pre">action</span></code>: Takes the agent’s current observation and
+returns the next action the agent should take.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">improve(self,</span> <span class="pre">**kwargs)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>: Updates the agent’s policy based upon
+experience (e.g. training the DQN backing the policy via gradient descent).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reset(self)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>: Dumps any stateful part of the policy so that the
+agent can restart learning from scratch.</p></li>
+</ul>
+<p>An example policy class might look like the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">agentos</span>
+
+<span class="k">class</span> <span class="nc">DeepQNetwork</span><span class="p">(</span><span class="n">agentos</span><span class="o">.</span><span class="n">Policy</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">):</span>
+        <span class="n">action_probabilites</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">weighted_choose</span><span class="p">(</span><span class="n">action_probabilities</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">improve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environment_class</span><span class="p">):</span>
+        <span class="n">rollouts</span> <span class="o">=</span> <span class="n">agentos</span><span class="o">.</span><span class="n">do_rollouts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environment_class</span><span class="p">)</span>
+        <span class="n">advantaged_rollouts</span> <span class="o">=</span> <span class="n">calculate_advantage</span><span class="p">(</span><span class="n">rollouts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">advantaged_rollouts</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">create_new_neural_net</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="agent">
+<h3>Agent<a class="headerlink" href="#agent" title="Permalink to this headline"></a></h3>
+<p>An agent is the entity that performs actions within the environment based on
+its policy.  An agent provides the following methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">learn()</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>: This is called to improve the agent’s policy via
+practice within the environment.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">advance()</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>: This is called to cause the agent to act within its
+environment based on its current policy.</p></li>
+</ul>
+<p>The base agent class is defined as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Agent</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">policy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">environment</span> <span class="o">=</span> <span class="n">environment</span>
+
+    <span class="k">def</span> <span class="nf">learn</span><span class="p">():</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</pre></div>
+</div>
+<p>An example agent class might look like the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">agentos</span>
+
+<span class="k">class</span> <span class="nc">MyAgent</span><span class="p">(</span><span class="n">agentos</span><span class="o">.</span><span class="n">Agent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">learn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">improve</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">next_action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">decide</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">info</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">next_action</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">learn()</span></code> will be a no-op for some agents as the their learning
+might take place while the agent is advancing through its environment.  To
+this end, we propose two common subclasses of the agent:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OnlineAgent</span></code>: This agent learns while it advances through its
+environment.  Thus <code class="docutils literal notranslate"><span class="pre">learn()</span></code> will often be a no-op as the policy will be
+trained each time <code class="docutils literal notranslate"><span class="pre">advance()</span></code> gets called.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BatchAgent</span></code>: This agent learns in an “offline” manner.  It will either
+record its various trajectories through the environment or practice in an
+isolated instantiation of its environment.  This agent’s policy will only be
+trained when <code class="docutils literal notranslate"><span class="pre">train()</span></code> is called.</p></li>
+</ul>
+</div>
+<div class="section" id="agent-definition-file">
+<h3>Agent Definition File<a class="headerlink" href="#agent-definition-file" title="Permalink to this headline"></a></h3>
+<p>Every agent will define an <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file that describes the specific
+components of the agent.  A standard agent directory structure might look
+something like the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">my_agent</span><span class="o">/</span>
+  <span class="o">-</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>
+  <span class="o">-</span> <span class="n">environment</span><span class="o">.</span><span class="n">py</span>
+  <span class="o">-</span> <span class="n">policy</span><span class="o">.</span><span class="n">py</span>
+  <span class="o">-</span> <span class="n">policy</span><span class="o">/</span>
+    <span class="o">-</span> <span class="n">serialized_nn</span><span class="o">.</span><span class="n">out</span>
+  <span class="o">-</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span>
+</pre></div>
+</div>
+<p>Combining our example code from above, our agent’s <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file will
+look like the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Agent</span><span class="p">]</span>
+<span class="n">file_path</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">py</span>
+<span class="n">class_name</span> <span class="o">=</span> <span class="n">MyAgent</span>
+<span class="n">python_path</span> <span class="o">=</span> <span class="o">./</span>
+
+<span class="p">[</span><span class="n">Policy</span><span class="p">]</span>
+<span class="n">file_path</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">py</span>
+<span class="n">class_name</span> <span class="o">=</span> <span class="n">DeepQNetwork</span>
+<span class="n">python_path</span> <span class="o">=</span> <span class="o">./</span>
+<span class="n">architecture</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">]</span>
+<span class="n">buffer_size</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">storage</span> <span class="o">=</span> <span class="o">./</span><span class="n">policy</span><span class="o">/</span>
+
+<span class="p">[</span><span class="n">Environment</span><span class="p">]</span>
+<span class="n">file_path</span> <span class="o">=</span> <span class="n">environment</span><span class="o">.</span><span class="n">py</span>
+<span class="n">class_name</span> <span class="o">=</span> <span class="n">Corridor</span>
+<span class="n">python_path</span> <span class="o">=</span> <span class="o">./</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> contains both the location of the primary
+components of the agent as well as various configuration variables and
+hyperparameters.  This file will be managed by the AgentOS Component Registry
+(ACR) to allow for easy composition and reuse of AgentOS components.  It is
+also human readable and editable, if the developer wants to directly modify
+it.</p>
+<p>The policy and environment will be accessible within the agent class as
+<code class="docutils literal notranslate"><span class="pre">self.policy</span></code> and <code class="docutils literal notranslate"><span class="pre">self.environment</span></code> respectively.</p>
+</div>
+</div>
+<div class="section" id="demo">
+<h2>Demo<a class="headerlink" href="#demo" title="Permalink to this headline"></a></h2>
+<p>AgentOS will provide both command line and programmatic access to agents.</p>
+<p>A common use case will be using the command-line to train and run an agent as
+follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">train</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span> <span class="mi">1000</span>   <span class="c1"># Train the agent&#39;s policy over 1000 rollouts</span>
+<span class="n">agentos</span> <span class="n">run</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span>          <span class="c1"># Run our agent to measure performance</span>
+<span class="n">agentos</span> <span class="n">train</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span> <span class="mi">1000</span>   <span class="c1"># Train our agent on another 1000 rollouts</span>
+<span class="n">agentos</span> <span class="n">run</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span>          <span class="c1"># Measure performance again</span>
+<span class="n">agentos</span> <span class="n">reset</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span>        <span class="c1"># Resets the agent&#39;s policy; forget all learning</span>
+</pre></div>
+</div>
+<p>The AgentOS CLI provides several ways to run an agent.  You can run using the
+components specified in the <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> in the current directory as
+follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">run</span>
+</pre></div>
+</div>
+<p>Alternatively, you can specify the <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file to use as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">run</span> <span class="o">-</span><span class="n">f</span> <span class="o">../../</span><span class="n">agent</span><span class="o">.</span><span class="n">ini</span>
+</pre></div>
+</div>
+<p>Finally, you can specify all the components of an agent individually as
+follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">run</span> <span class="o">-</span><span class="n">e</span> <span class="n">myenv</span><span class="o">.</span><span class="n">Env</span> <span class="o">-</span><span class="n">p</span> <span class="n">mypolicy</span><span class="o">.</span><span class="n">Policy</span> <span class="o">-</span><span class="n">a</span> <span class="n">main</span><span class="o">.</span><span class="n">MyAgent</span>
+</pre></div>
+</div>
+<p>Additionally, AgentOS provides methods for running agents programmatically
+either using an <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span><span class="o">.</span><span class="n">run_agent_file</span><span class="p">(</span><span class="s1">&#39;path/to/file/agent.ini&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or by specifying each component as a keyword argument:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span><span class="o">.</span><span class="n">run_agent</span><span class="p">(</span>
+    <span class="n">agent</span><span class="o">=</span><span class="n">MyAgent</span><span class="p">,</span>
+    <span class="n">environment</span><span class="o">=</span><span class="n">MyEnv</span><span class="p">,</span>
+    <span class="n">policy</span><span class="o">=</span><span class="n">MyPolicy</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="long-term-plans">
+<h2>Long Term Plans<a class="headerlink" href="#long-term-plans" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Mark core classes and methods as abstract as appropriate.  See <a class="reference external" href="https://docs.python.org/3/library/abc.html">Abstract
+Base Classes (ABCs)</a> and <a class="reference external" href="https://www.python.org/dev/peps/pep-3119/">the
+ABC PEP</a>.</p></li>
+<li><p>Separate out a Reward abstraction from the Environment abstraction.</p></li>
+</ul>
+</div>
+<div class="section" id="revision-history">
+<h2>Revision History<a class="headerlink" href="#revision-history" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Discussion Thread:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/discussions/5">Design of Core Abstractions</a></p></li>
+</ul>
+</li>
+<li><p>Pull requests:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/pull/3">design_docs #3: AgentOS Core Abstractions</a></p></li>
+</ul>
+</li>
+<li><p>Document version history:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/f94af06f8fc66f867ca07bf7273d39d185489251/abstractions.rst">v1</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/8ea7544c9edc47c1dedd992ba95e9dafeed33b36/abstractions.rst">v2</a></p>
+<ul>
+<li><p>Added code for Agent base class</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">policy()</span></code> function signature to return <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+<li><p>Minor rework of description of core abstractions</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/640f71509c7551b335e6312822392069b6e8c8e9/abstractions.rst">v3</a></p>
+<ul>
+<li><p>Drop Trainer abstraction in favor of <cite>Policy.improve()</cite></p></li>
+<li><p>Rename <cite>agent.train</cite> to <cite>agent.learn</cite></p></li>
+<li><p>Default implementation of <cite>Agent.learn</cite> is no-op</p></li>
+<li><p>Default implementation of <cite>Agent.advance</cite> is NotImplementedError</p></li>
+<li><p>Added long-term plans section</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/271b7450c0d1c50540f170857d9a6357acbd8fd7/abstractions.rst">v4</a></p>
+<ul>
+<li><p>Added user stories</p></li>
+<li><p>Updated <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> example</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

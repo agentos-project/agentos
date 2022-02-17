@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Directories &mdash; AgentOS 0.1.0-alpha documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Programming Agents" href="programming_agents.html" />
+    <link rel="prev" title="Architecture and Design" href="architecture_and_design.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.0-alpha
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Agent Directories</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dependency-management">Dependency Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multiple-agent-directories">Multiple Agent Directories</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Agent Directories</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/agent_directories.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="agent-directories">
+<h1>Agent Directories<a class="headerlink" href="#agent-directories" title="Permalink to this headline"></a></h1>
+<p>It is natural to expect agents to become complex and have sophisticated build
+systems, elaborate documentation, and many diverse dependencies.</p>
+<p>For more than simple learning examples such as many of those contained in the
+<code class="docutils literal notranslate"><span class="pre">example_agent</span></code> source directory, we recommend using <strong>agent directories</strong>.
+An agent directory contains everything about an agent.</p>
+<p>To try out the agent directory approach to creating a new agent, just create a
+new directory and run <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">init</span></code> inside it.</p>
+<div class="section" id="dependency-management">
+<h2>Dependency Management<a class="headerlink" href="#dependency-management" title="Permalink to this headline"></a></h2>
+<p>Much like agent composition itself, ad hoc management of an agent’s
+dependencies can become cumbersome, so AgentOS integrates the use of conda for
+dependency tracking and MLflow for reproducibly running an agent and
+automatically generating and re-using (when possible) conda environments.</p>
+<p>Specifically, the <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">init</span></code> command creates <code class="docutils literal notranslate"><span class="pre">conda_env.yaml</span></code> and
+<code class="docutils literal notranslate"><span class="pre">MLProject</span></code> files that can be edited during agent development as necessary.
+The <code class="docutils literal notranslate"><span class="pre">MLProject</span></code> file is used when the agent directory is run via the CLI
+command <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">run</span></code> (or you can call <code class="docutils literal notranslate"><span class="pre">mlflow</span> <span class="pre">run</span></code> directly). Learn more
+about MLflow projects <a class="reference external" href="https://mlflow.org/docs/latest/projects.html">here</a>.</p>
+<p>Another, and perhaps more important, advantage MLflow provides over pure conda
+is the smart automatic creation and re-use of conda environments for a given
+conda environment file. A secondary advantage is allowing an agent directory to
+be easily shared and run by another person since MLflow projects provide this
+functionality.</p>
+</div>
+<div class="section" id="multiple-agent-directories">
+<h2>Multiple Agent Directories<a class="headerlink" href="#multiple-agent-directories" title="Permalink to this headline"></a></h2>
+<p>You can have as many agent directories as you want, one per agent. Each one is
+independent from others.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">agentos</span></code> CLI is modeled after the <code class="docutils literal notranslate"><span class="pre">git</span></code> and <code class="docutils literal notranslate"><span class="pre">mlflow</span></code> CLIs, so it
+can’t list or manipulate all of the agents that exist on a machine (the way,
+e.g., that conda can with conda envs). It will undoubtedly become useful to be
+able to list/organize all running agents. In the future we could provide a
+pluggable AgentOS server or agent-store service that could, e.g., centralize
+the agent meta-data. Eventually we could even provide a hosted service for
+centrally managing agents akin to github.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="architecture_and_design.html" class="btn btn-neutral float-left" title="Architecture and Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="programming_agents.html" class="btn btn-neutral float-right" title="Programming Agents" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

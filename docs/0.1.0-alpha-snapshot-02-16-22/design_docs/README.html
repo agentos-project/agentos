@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgentOS Design Docs &mdash; AgentOS 0.1.0-alpha documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.0-alpha
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>AgentOS Design Docs</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/design_docs/README.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="agentos-design-docs">
+<h1>AgentOS Design Docs<a class="headerlink" href="#agentos-design-docs" title="Permalink to this headline"></a></h1>
+<p>This folder holds design documents and proposals for AgentOS internals.</p>
+</div>
+<div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline"></a></h1>
+<p>If you’d like to contribute a design document or proposal, please:</p>
+<ul class="simple">
+<li><p>Start a new
+<a class="reference external" href="https://github.com/agentos-project/agentos/discussions">Discussion</a>
+under the “Ideas” category.</p></li>
+<li><p>Iterate on the idea with community members via comments in that Discussion.</p></li>
+<li><p>When you have support by the committers, the discussion is migrated from the
+“Ideas” category to the “Designs” category by changing the category in the
+original discussion (or, if it makes more sense a new discussion can be
+created that references the original), and…</p>
+<ul>
+<li><p>For smaller features, the body text of the discussion thread acts as the
+design doc, reviews happen via comments in the discussion thread and
+feedback is merged into the “doc” by editing the original discussion text
+(in this scenario, version history will not be captured).</p></li>
+<li><p>For large designs, a document written in <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html">reStructuredText</a>
+may be created in this (the <cite>design_docs</cite>) folder. If it is owned by a
+committer, then they may edit it at will without using a fork or PRs. This
+keeps the design process lightweight while capturing revision history of the
+document. You might also find the <a class="reference external" href="https://docutils.sourceforge.io/docs/user/rst/quickref.html">reStructuredText Quick Reference</a> useful.</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="recommended-format">
+<h1>Recommended Format<a class="headerlink" href="#recommended-format" title="Permalink to this headline"></a></h1>
+<p>Please include the following sections and items in your design document:</p>
+<ul class="simple">
+<li><p><strong>Abstract</strong> - A brief paragraph summary of the design</p></li>
+<li><p><strong>Rationale</strong> - The reason why this feature is important or useful</p></li>
+<li><p><strong>Demo</strong> - A “demo” of what the feature will look like after implementation.
+This can contain pseudocode or command line examples.</p></li>
+<li><p><strong>Work items</strong> - This is a set of items required to accomplish the proposed
+design.</p></li>
+<li><p><strong>FAQ</strong> - Frequently asked questions.  Especially useful to address questions
+from your reviewer.</p></li>
+<li><p><strong>Open Questions</strong> - A section to record things that should be investigated or
+may change as the design gets implemented.</p></li>
+<li><p>Links to any pull requests related to the document so comment history and
+debate can be discovered.</p></li>
+</ul>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

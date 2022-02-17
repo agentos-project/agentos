@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registry for Environments, Policies, and Agents &mdash; AgentOS 0.1.0-alpha documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.0-alpha
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Registry for Environments, Policies, and Agents</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/design_docs/registry.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="registry-for-environments-policies-and-agents">
+<h1>Registry for Environments, Policies, and Agents<a class="headerlink" href="#registry-for-environments-policies-and-agents" title="Permalink to this headline"></a></h1>
+<p>Current Version: v7</p>
+<p>See <a class="reference internal" href="#revision-history">Revision History</a> for additional discussion.</p>
+<div class="section" id="abstract">
+<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this headline"></a></h2>
+<p>An AgentOS agent is composed of <strong>components</strong>.  A component is a shareable,
+swappable package that adheres to a specific API which an agent can incorporate
+into itself.  Currently, components correspond to the core AgentOS abstractions
+(i.e. Environments and Policies).  See the <a class="reference external" href="https://github.com/agentos-project/design_docs/blob/main/abstractions.rst">Core Abstractions Design Doc</a>
+for more info.</p>
+<p>This document proposes the <strong>AgentOS component registry (ACR)</strong>.  ACR allows
+for easy composition and reuse of AgentOS components much like <code class="docutils literal notranslate"><span class="pre">pip</span></code> does for
+Python and <code class="docutils literal notranslate"><span class="pre">APT</span></code> does for Debian Linux.</p>
+<p>The ACR is integrated with the AgentOS command-line interface (CLI) and a
+centralized registry that provides information for discovering and installing
+components.  It is also a part of the AgentOS runtime which exposes installed
+components within your Agent code.</p>
+</div>
+<div class="section" id="rationale">
+<h2>Rationale<a class="headerlink" href="#rationale" title="Permalink to this headline"></a></h2>
+<p>A primary goal of AgentOS is to provide a clean set of abstractions that will
+accelerate the research and development of agent systems.  These abstractions
+provide a straightforward way to swap in existing components to create new
+agents with different behaviors and learning strategies; as long as each
+component respects its interface, the specifics of its implementation should
+not matter for composition.</p>
+<p>The ACR enables this vision by:</p>
+<ul class="simple">
+<li><p>Maintaining a centralized registry of agent components including policies and
+environments.</p></li>
+<li><p>Providing a versioning system for these components</p></li>
+<li><p>Providing a command-line interface to install these components</p></li>
+<li><p>Providing a module for composing components within agents</p></li>
+</ul>
+</div>
+<div class="section" id="demo">
+<h2>Demo<a class="headerlink" href="#demo" title="Permalink to this headline"></a></h2>
+<p>This section illustrates the usage of ACR by way of example commands and code.</p>
+<div class="section" id="interaction-with-the-registry">
+<h3>Interaction with the registry<a class="headerlink" href="#interaction-with-the-registry" title="Permalink to this headline"></a></h3>
+<p>First, ensure AgentOS is installed in your environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">agentos</span>
+</pre></div>
+</div>
+<p>Then create a new agent:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="n">demo_agent</span>
+<span class="n">cd</span> <span class="n">demo_agent</span>
+<span class="n">agentos</span> <span class="n">init</span> <span class="o">.</span> <span class="o">-</span><span class="n">n</span> <span class="n">DemoAgent</span>
+</pre></div>
+</div>
+<p>This generates a minimal agent in your <code class="docutils literal notranslate"><span class="pre">demo_agent</span></code> directory.  The minimal
+agent is not particularly interesting though, so let’s flesh it out.</p>
+<p>Let’s take a look at the environments available to our agent in the ACR:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">search</span> <span class="n">environment</span>
+</pre></div>
+</div>
+<p>The above command returns the listings for all components of type
+<code class="docutils literal notranslate"><span class="pre">environment</span></code>.  Now, let’s install the <code class="docutils literal notranslate"><span class="pre">2048</span></code> environment that models
+the in-browser game <a class="reference external" href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">install</span> <span class="n">environment</span> <span class="mi">2048</span>
+</pre></div>
+</div>
+<p>The above command not only installs the 2048 environment into your agent
+directory, but it also updates our agent directory’s <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file to
+record the specifics of the components we’ve installed. Details about the
+<code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file can be found <a class="reference external" href="https://github.com/agentos-project/design_docs/blob/main/abstractions.rst#agent-definition-file">here</a>.</p>
+<p>Our agent will now run against the 2048 game environment.  Now, let’s install a
+policy that our agent can use to determine which action to take when given a
+set of observations:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">install</span> <span class="n">policy</span> <span class="n">q_table</span>
+</pre></div>
+</div>
+<p>We’ll use a Q table to track the quality of the actions available to our agent
+in a given state. Policies generally come with an <cite>improve()</cite> method which gets
+called when the agent wants to update its policy based upon experience.
+Policies are also often backed by state (in this case, a data structure
+representing the Q table).</p>
+<p>We can now tell our agent to learn so that it becomes better at playing 2048 as
+follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">learn</span> <span class="o">-</span><span class="n">f</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span> <span class="mi">1000</span>
+</pre></div>
+</div>
+<p>And we can run our agent as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">run</span> <span class="o">-</span><span class="n">f</span> <span class="n">agent</span><span class="o">.</span><span class="n">ini</span>
+</pre></div>
+</div>
+<p>As you let your agent run, you’ll get periodic updates on its performance
+improvement as it gains more experience playing 2048 and learns via the Q-table
+algorithm.</p>
+<p>Some agents will only learn when called via <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">learn</span></code> and will have
+their policy frozen during <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">run</span></code>.  Other agents will learn whenever
+they are run via either method.  This is design decision is up to the agent
+developer and the algorithm they are implementing.</p>
+<p>Now suppose we become convinced that a <a class="reference external" href="https://en.wikipedia.org/wiki/Q-learning">Deep Q-Learning network</a> would be more amenable to learning
+2048.  Switching our policy is as easy as running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">agentos</span> <span class="n">install</span> <span class="n">policy</span> <span class="n">dqn</span>
+</pre></div>
+</div>
+<p>Because you are installing a second policy, ACR will ask you which you’d like
+to make default.  All installed components are always programmatically
+accessible as members in the agent (e.g. <code class="docutils literal notranslate"><span class="pre">self.environments.2048</span></code>), but ACR
+initializes the members <code class="docutils literal notranslate"><span class="pre">Agent.environment</span></code> and <code class="docutils literal notranslate"><span class="pre">Agent.policy</span></code> with the
+default policy and environment respectively.</p>
+<p>Go ahead and set <code class="docutils literal notranslate"><span class="pre">dqn</span></code> as the default policy.  Again, <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> will be
+updated to reflect that we are now using a DQN-based learning algorithm instead
+of a Q-table based learning algorithm.</p>
+<p>Now when you tell your agent to learn again (<code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">learn</span></code>) your agent will
+be using Q-learning with a deep Q network to learn 2048.</p>
+</div>
+<div class="section" id="using-components-within-code">
+<h3>Using components within code<a class="headerlink" href="#using-components-within-code" title="Permalink to this headline"></a></h3>
+<p>Let’s dig into our minimal agent to see how we access our components
+programmatically:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">agentos</span> <span class="kn">import</span> <span class="n">Agent</span>
+
+<span class="k">class</span> <span class="nc">DemoAgent</span><span class="p">(</span><span class="n">Agent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">learn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">improve</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">next_action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">decide</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">info</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">next_action</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>ACR automatically loads default components into class members of the agent such
+as <code class="docutils literal notranslate"><span class="pre">self.policy</span></code> and <code class="docutils literal notranslate"><span class="pre">self.environment</span></code>.  If you have more than one
+component installed for a particular role (e.g. two complementary environments)
+then you can access each component within the agent via their name:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">environments</span><span class="o">.</span><span class="mf">2048.</span><span class="n">step</span><span class="p">()</span>
+<span class="o">...</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">environments</span><span class="o">.</span><span class="n">cartpole</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="mvp">
+<h2>MVP<a class="headerlink" href="#mvp" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>ACR will be able to access a centralized registry of policies and
+environments</p>
+<ul class="simple">
+<li><p>V0 target: the list will be a yaml file stored in the AgentOS repository</p></li>
+</ul>
+</li>
+<li><p>Each registry entry will be structured as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">component_name</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="p">[</span><span class="n">policy</span> <span class="o">|</span> <span class="n">environment</span><span class="p">]</span>
+  <span class="n">agent_os_versions</span><span class="p">:</span>
+    <span class="o">-</span> <span class="p">[</span><span class="n">compatible</span> <span class="k">with</span> <span class="n">this</span> <span class="n">AgentOS</span> <span class="n">version</span><span class="p">]</span>
+    <span class="o">-</span> <span class="p">[</span><span class="n">compatible</span> <span class="k">with</span> <span class="n">this</span> <span class="n">AgentOS</span> <span class="n">version</span><span class="p">]</span>
+  <span class="n">description</span><span class="p">:</span> <span class="p">[</span><span class="n">component</span> <span class="n">description</span><span class="p">]</span>
+  <span class="n">releases</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="p">[</span><span class="n">version_1_name</span><span class="p">]</span>
+      <span class="nb">hash</span><span class="p">:</span> <span class="p">[</span><span class="n">version_1_hash</span><span class="p">]</span>
+      <span class="n">github_url</span><span class="p">:</span> <span class="p">[</span><span class="n">url</span> <span class="n">of</span> <span class="n">version</span> <span class="mi">1</span> <span class="n">repo</span><span class="p">]</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="p">[</span><span class="n">path</span> <span class="n">to</span> <span class="n">py</span> <span class="n">file</span> <span class="n">containing</span> <span class="k">class</span> <span class="nc">to</span> <span class="n">import</span><span class="p">]</span>
+      <span class="n">class_name</span><span class="p">:</span> <span class="p">[</span><span class="n">fully</span> <span class="n">qualified</span> <span class="k">class</span> <span class="nc">name</span> <span class="n">of</span> <span class="n">version</span> <span class="mi">1</span><span class="p">]</span>
+      <span class="n">requirements_path</span><span class="p">:</span> <span class="p">[</span><span class="n">path</span> <span class="n">to</span> <span class="n">version</span> <span class="mi">1</span> <span class="n">requirements</span> <span class="n">file</span><span class="p">]</span>
+
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="p">[</span><span class="n">version_2_name</span><span class="p">]</span>
+      <span class="nb">hash</span><span class="p">:</span> <span class="p">[</span><span class="n">version_2_hash</span><span class="p">]</span>
+      <span class="n">github_url</span><span class="p">:</span> <span class="p">[</span><span class="n">url</span> <span class="n">of</span> <span class="n">version</span> <span class="mi">2</span> <span class="n">repo</span><span class="p">]</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="p">[</span><span class="n">path</span> <span class="n">to</span> <span class="n">py</span> <span class="n">file</span> <span class="n">containing</span> <span class="k">class</span> <span class="nc">to</span> <span class="n">import</span><span class="p">]</span>
+      <span class="n">class_name</span><span class="p">:</span> <span class="p">[</span><span class="n">fully</span> <span class="n">qualified</span> <span class="k">class</span> <span class="nc">name</span> <span class="n">of</span> <span class="n">version</span> <span class="mi">1</span><span class="p">]</span>
+      <span class="n">requirements_path</span><span class="p">:</span> <span class="p">[</span><span class="n">path</span> <span class="n">to</span> <span class="n">version</span> <span class="mi">2</span> <span class="n">requirements</span> <span class="n">file</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2048</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">environment</span>
+  <span class="n">agent_os_versions</span><span class="p">:</span>
+    <span class="o">-</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
+    <span class="o">-</span> <span class="mf">1.1</span><span class="o">.</span><span class="mi">0</span>
+  <span class="n">description</span><span class="p">:</span> <span class="s2">&quot;An environment that simulates the 2048 game&quot;</span>
+  <span class="n">releases</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
+      <span class="nb">hash</span><span class="p">:</span> <span class="n">aeb938f</span>
+      <span class="n">github_url</span><span class="p">:</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">example</span><span class="o">-</span><span class="n">proj</span><span class="o">/</span><span class="n">example</span><span class="o">-</span><span class="n">repo</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="n">environment</span><span class="o">.</span><span class="n">py</span>
+      <span class="n">class_name</span><span class="p">:</span> <span class="mi">2048</span>
+      <span class="n">requirements_path</span><span class="p">:</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="mf">1.1</span><span class="o">.</span><span class="mi">0</span>
+      <span class="nb">hash</span><span class="p">:</span> <span class="mi">3939</span><span class="n">aa1</span>
+      <span class="n">github_url</span><span class="p">:</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">example</span><span class="o">-</span><span class="n">proj</span><span class="o">/</span><span class="n">example</span><span class="o">-</span><span class="n">repo</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="n">environment</span><span class="o">.</span><span class="n">py</span>
+      <span class="n">class_name</span><span class="p">:</span> <span class="mi">2048</span>
+      <span class="n">requirements_path</span><span class="p">:</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+</li>
+<li><p>Each component will be a (v0: Python) project stored in a Github repo.</p></li>
+<li><p>ACR will have an <code class="docutils literal notranslate"><span class="pre">search</span></code> method that will list all components in the
+registry matching the search query.</p></li>
+<li><p>ACR will have an <code class="docutils literal notranslate"><span class="pre">install</span></code> method that will:</p>
+<ul class="simple">
+<li><p>Find the components location based on its registry entry</p></li>
+<li><p>Ask if you’d like to install the component as the default in cases where
+there are multiple installed components of the same type.</p></li>
+<li><p>Clone the component’s Github repo</p></li>
+<li><p>Update the agent directory’s <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> to include the component in
+its default configuration</p></li>
+<li><p>Register the component locally so that it is accessible via the <code class="docutils literal notranslate"><span class="pre">acr</span></code>
+module</p></li>
+<li><p>Add a line to the agent directory’s requirements file that links to the
+component’s requirements file (e.g. a line of the form
+<cite>-r component/repo/path/requirements.txt</cite>.).</p></li>
+</ul>
+</li>
+<li><p>ACR will have an <code class="docutils literal notranslate"><span class="pre">uninstall</span></code> method that will remove the component from the
+agent directory (including any links to the component’s requirements).</p></li>
+<li><p>Components can be programmatically accessed from the <code class="docutils literal notranslate"><span class="pre">acr</span></code> module</p></li>
+<li><p>Developers have an easy way to register their local custom components with
+<code class="docutils literal notranslate"><span class="pre">acr</span></code> so it can be accessed via the <code class="docutils literal notranslate"><span class="pre">acr</span></code> module in other parts of their
+agent.</p></li>
+<li><p>The minimal agent (<code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">init</span></code>) will be ACR aware and incorporate
+basic components with minimal required edits</p></li>
+</ul>
+</div>
+<div class="section" id="long-term-plans">
+<h2>Long Term Plans<a class="headerlink" href="#long-term-plans" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>A simple way for component authors to submit components to the registry via
+command-line and web interface.</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>For example, this might be two commands:</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">package</span> <span class="pre">...</span></code> - packages up the component</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">register</span> <span class="pre">...</span></code> - pushes the component listing to the
+centralized registry</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>A way for agent developers to detect and resolve requirement conflicts
+between already-installed and soon-to-be-installed components.</p></li>
+<li><p>Agents are not components, but it still seems like it’d be useful to share
+agents.  Long term, we will extend the registry system to encompass agents as
+well.</p></li>
+<li><p>Break ACR into two components:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>Package management functionality:</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">install</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">search</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">uninstall</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">status</span></code> - new command to show what’s available in your
+agent</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Git-like mapping tools</dt><dd><ul>
+<li><p>commands to map particular versions of installed components to
+particular members available in the Agent class.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Expose the state backing a particular policy as a separate, shareable
+component.</p></li>
+</ul>
+</div>
+<div class="section" id="faq">
+<h2>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline"></a></h2>
+<p><strong>Q:</strong> My [complex component] has a number of hyperparameters that need to be
+tuned based on the particulars of the environment and the agent.  How do I do
+this?</p>
+<p><strong>A:</strong> Each component exposes a configuration in its <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> entry. This
+allows for both manual tweaking of hyperparameters as well as programmatic
+exploration and tuning (with e.g. <a class="reference external" href="https://scikit-learn.org/stable/modules/grid_search.html">sk-learn grid search</a>).  See also the
+example <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file <a class="reference external" href="https://github.com/agentos-project/design_docs/blob/main/abstractions.rst#agent-definition-file">here</a>.</p>
+<p><strong>Q:</strong> How can I reuse a policy from a previous run?</p>
+<p><strong>A:</strong> Policies are top-level components and are often backed by some sort of
+state.  <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">run</span></code> has tooling that allows you to dynamically specify when
+and how to reuse existing models.</p>
+<p><strong>Q:</strong> Can only 1 component of each type be installed in an agent at a time?</p>
+<p><strong>A:</strong> ACR allows multiple components of a single type. The <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code>
+configuration file defines the default for each component type and that default
+is accessible programmatically via shortcuts within the agent like
+<code class="docutils literal notranslate"><span class="pre">self.policy</span></code> and <code class="docutils literal notranslate"><span class="pre">self.environment</span></code>.</p>
+<p>In an agent where you have, for example, two policies installed (e.g.
+<code class="docutils literal notranslate"><span class="pre">random</span></code> and <code class="docutils literal notranslate"><span class="pre">dqn</span></code>) the default (as determined by <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code>) will be
+accessible within the agent as <code class="docutils literal notranslate"><span class="pre">self.policy</span></code>, but both will always be
+accessible at <code class="docutils literal notranslate"><span class="pre">acr.policies.random</span></code> and <code class="docutils literal notranslate"><span class="pre">acr.policies.dqn</span></code> respectively.</p>
+<p><strong>Q:</strong> How does AgentOS locate the main code of the component within the Github
+repo? Must all components have a well known entry point (e.g., a file called
+main.py)?</p>
+<p><strong>A:</strong> The ACR registry entry for each version of a component contains
+sufficient information to discover the entry point of the component and its
+requirements.</p>
+<p>We may eventually:</p>
+<ul class="simple">
+<li><p>Require a component’s repo to store additional metadata (perhaps in a
+top level <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file) that ACR tooling can ingest to alleviate
+concerns about mismatches between registry info and repo info (e.g. a
+component’s version is different in the registry and in the repo).</p></li>
+<li><p>Require all components to be proper Python packages so we can reuse Python’s
+<code class="docutils literal notranslate"><span class="pre">setup.py</span></code> tooling.</p></li>
+</ul>
+<p><strong>Q:</strong> Will we update the code generated by <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">init</span></code> so that it will
+use the ACR module?</p>
+<p><strong>A:</strong> Yes, the default agent uses some very basic components that are included
+out-of-the-box in AgentOS (e.g. random action policy, a basic corridor
+environment).  The <code class="docutils literal notranslate"><span class="pre">agentos</span> <span class="pre">init</span></code> command creates the <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code> file that
+specifies these defaults.</p>
+<p><strong>Q:</strong> Do we want to design the API so that using a component from the registry
+looks exactly (or nearly) the same as using a hand-built component.  Basically,
+should we recommend using the same sort of composition for both composing an
+agent from an environment, policy, and algorithm built from scratch and
+composing an agent entirely from pre-built components in the registry?</p>
+<p><strong>A:</strong>  Yes, I think nudging users toward consistency would be good.  I think
+that means component specifications and APIs that are well documented and
+tooling that makes it valuable to build to those specs.</p>
+<p>Ultimately, if someone wants to give their custom environment a nonstandard
+<code class="docutils literal notranslate"><span class="pre">proceed_one_step_in_time()</span></code> function instead of a <code class="docutils literal notranslate"><span class="pre">step()</span></code> function, we
+shouldn’t try to stop them.  But we should instead strive to make it high-value
+to standardize because you can use a bunch of great tools out-of-the-box on
+your component programmed to the spec.</p>
+<p>Diving down closer to the code, I think we need to provide an easy way to, for
+example, register your custom environment so that you can access it via
+<code class="docutils literal notranslate"><span class="pre">self.environment</span></code> within your agent, and encourage exposing and interacting
+with your custom components in this way.</p>
+<p><strong>Q:</strong> How does this relate to OpenAI’s <code class="docutils literal notranslate"><span class="pre">gym.envs.registry</span></code>, if at all?</p>
+<p><strong>A:</strong> The idea of having an <code class="docutils literal notranslate"><span class="pre">acr</span></code> module that you can import in your Python
+code is inspired by the <code class="docutils literal notranslate"><span class="pre">gym.envs.registry</span></code>.  The <code class="docutils literal notranslate"><span class="pre">acr</span></code> module dynamically
+loads in the available components much like gym’s registry.</p>
+<p>One rationale I found for OpenAI’s environment registry is
+[here](<a class="reference external" href="https://github.com/openai/gym/blob/master/gym/envs/registration.py#L76">https://github.com/openai/gym/blob/master/gym/envs/registration.py#L76</a>)
+and essentially amounts to versioning an environment.  We solve this problem by
+requiring a git hash for every “released” version of a component.</p>
+<p><strong>Q:</strong> How does this relate to how AgentOS uses MLflow for Agent Directories.
+Should we merge the two concepts? Or at least unify them? Maybe get rid of the
+dependency on MLflow?</p>
+<p><strong>A:</strong>  I think MLflow will be useful and should remain a dependency; one will
+still have to perform various runs with an agent (e.g. to tune hyperparameters)
+and MLflow’s tracking and visualization should be useful for that.</p>
+<p>In fact, one could think of the components themselves as hyperparameters to the
+agent, and some sort of deeper integration with MLflow would probably be
+valuable (“On the first run I used a Deep Q Network component with 128 nodes to
+represent my Q function, while on my second run I used a table component with
+512K entries”).</p>
+</div>
+<div class="section" id="todo-and-open-questions">
+<h2>TODO and open questions<a class="headerlink" href="#todo-and-open-questions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>How to handle component dependencies (Both package and component-level)?</p>
+<ul>
+<li><p><a class="reference external" href="https://stackoverflow.com/a/29222444">StackOverflow on conditional requirements</a></p></li>
+<li><p>How to fail gracefully if there are incompatible requirements</p></li>
+<li><p>Perhaps use separate processes to isolate run environments</p></li>
+<li><p>Can we just use the Python package system and pip directly?</p></li>
+</ul>
+</li>
+<li><p>What are the key components that we want to expose in our registry?
+Candidates: Agents, Policies, Environments, Policy-state</p></li>
+</ul>
+</div>
+<div class="section" id="revision-history">
+<h2>Revision History<a class="headerlink" href="#revision-history" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Discussion Thread:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/discussions/7">AgentOS Component Registry</a></p></li>
+</ul>
+</li>
+<li><p>Important pull requests:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/pull/1">design_docs #1: AgentOS registry</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/pull/2">design_docs #2: Avoid merging requirements on component install</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/pull/10">design_docs #10: Design doc updates: Abstractions and Registry</a></p></li>
+</ul>
+</li>
+<li><p>Document version history:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/36791f4ef1cf408c19cf13042bb7cc6b72cb6030/registry.rst">v1</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/020a70a5e538b58e5e0ff269f44a7f206a7b132e/registry.rst">v2</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/e32ff7a96eab3486a3c8bb65c1ca1df280e20434/registry.rst">v3</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/507bfb96a1b40bef8338603a3e661681d0d622c7/registry.rst">v4</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/886f5a0eb960c398cc57d7cd5ec97956c528cca4/registry.rst">v5</a></p></li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/2ec8b7f231330119d153a24725537a7c4e71084d/registry.rst">v6</a></p>
+<ul>
+<li><p>Rename AgentOS Component System (ACS) to AgentOS Component Registry (ACR)</p></li>
+<li><p>Rename <code class="docutils literal notranslate"><span class="pre">components.ini</span></code> to <code class="docutils literal notranslate"><span class="pre">agent.ini</span></code></p></li>
+<li><p>Update demo to reflect core abstractions and new CLI</p></li>
+<li><p>Update FAQ to reflect recent discussions on core abstractions</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/agentos-project/design_docs/blob/271b7450c0d1c50540f170857d9a6357acbd8fd7/registry.rst">v7</a></p>
+<ul>
+<li><p>Address discussion feedback <a class="reference external" href="https://github.com/agentos-project/design_docs/discussions/7#discussioncomment-361544">here</a>.</p></li>
+<li><p>Address meeting feedback <a class="reference external" href="https://github.com/agentos-project/design_docs/discussions/7#discussioncomment-364414">here</a>.</p></li>
+<li><p>Rewrote abstract to better define terms</p></li>
+<li><p>Removed Trainer abstraction</p></li>
+<li><p>Reworked demo (no Trainer, updates to CLI interface)</p></li>
+<li><p>Update registry entry spec</p></li>
+<li><p>Added more long term plans</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/agentos-project/agentos/issues/68">AgentOS Issue 68: Registery for Envs, Policies, and Agents</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org/dev/peps/pep-0301/">PEP 301 – Package Index and Metadata for Distutils</a></p></li>
+<li><p><a class="reference external" href="https://www.python.org/dev/peps/pep-0243/">PEP 243 – Module Repository Upload Mechanism</a></p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

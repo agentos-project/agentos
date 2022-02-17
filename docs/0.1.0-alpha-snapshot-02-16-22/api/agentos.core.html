@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>agentos.core &mdash; AgentOS 0.1.0-alpha documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="agentos.cli" href="agentos.cli.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.0-alpha
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_agents.html">Programming Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agentos_development.html">AgentOS Development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="agentos.cli.html">agentos.cli</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">agentos.core</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">API Documentation</a> &raquo;</li>
+      <li>agentos.core</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/agentos.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-agentos.core">
+<span id="agentos-core"></span><h1>agentos.core<a class="headerlink" href="#module-agentos.core" title="Permalink to this headline"></a></h1>
+<p>Core AgentOS classes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.Agent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">Agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Agent" title="Permalink to this definition"></a></dt>
+<dd><p>An Agent observes and takes actions in its Environment.</p>
+<p>The primary methods on an Agent are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>Agent.advance() - Takes on action within the Environment as</dt><dd><p>determined by the Agent’s policy.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Agent.rollout() - Advances the Agent through one episode within its</dt><dd><p>Environment allowing it to gather experience and
+learn.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#agentos.core.Agent.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Sets all the kwargs as members on the class</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="agentos.core.Agent.active_agent_run">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">active_agent_run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">agentos.agent_run.AgentRun</span></em><a class="headerlink" href="#agentos.core.Agent.active_agent_run" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.advance">
+<span class="sig-name descname"><span class="pre">advance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#agentos.core.Agent.advance" title="Permalink to this definition"></a></dt>
+<dd><p>Takes one action within the Environment as dictated by the Policy</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.end_agent_run">
+<span class="sig-name descname"><span class="pre">end_agent_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">print_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#agentos.core.Agent.end_agent_run" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_episodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">should_learn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backup_dst</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_stats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#agentos.core.Agent.evaluate" title="Permalink to this definition"></a></dt>
+<dd><p>Runs an agent specified by a given [agent_file]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_episodes</strong> – number of episodes to run the agent through</p></li>
+<li><p><strong>should_learn</strong> – boolean, if True we will call policy.improve</p></li>
+<li><p><strong>max_transitions</strong> – If not None, max transitions performed before
+truncating an episode.</p></li>
+<li><p><strong>backup_dst</strong> – if specified, will print backup path to stdout</p></li>
+<li><p><strong>print_stats</strong> – if True, will print run stats to stdout</p></li>
+<li><p><strong>parent_run</strong> – If set, then the AgentRun created by this function
+will set this as their parent. Else, it will try to set the
+currently active component run, else it won’t set a parent.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.learn">
+<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_episodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_num_episodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#agentos.core.Agent.learn" title="Permalink to this definition"></a></dt>
+<dd><p>Trains an agent by calling its learn() method in a loop.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">should_learn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#agentos.core.Agent.rollout" title="Permalink to this definition"></a></dt>
+<dd><p>Generates one episode of transitions and allows the Agent to
+learn from its experience.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>should_learn</strong> – if True, then Trainer.improve() will be called
+every time the Agent advances one step through the
+environment and the core training metrics
+(step_count and episode_count) will be
+updated after the rollout.</p></li>
+<li><p><strong>max_transitions</strong> – If not None, the episode and rollout will be
+truncated after the specified number of
+transitions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of transitions experienced in this episode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Agent.start_agent_run">
+<span class="sig-name descname"><span class="pre">start_agent_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">agentos.agent_run.AgentRun</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#agentos.core.Agent.start_agent_run" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.Dataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">Dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Dataset" title="Permalink to this definition"></a></dt>
+<dd><p>The Dataset is responsible for recording the experience of the Agent so
+that it can be used later for training.</p>
+<dl class="simple">
+<dt>The primary methods on Dataset are:</dt><dd><ul class="simple">
+<li><p>add() - Adds a transition into the Dataset.</p></li>
+<li><p>next() - Pulls a set of transitions from the Dataset for learning.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Dataset.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prev_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">done</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Dataset.add" title="Permalink to this definition"></a></dt>
+<dd><p>Adds a transition into the Dataset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Dataset.next">
+<span class="sig-name descname"><span class="pre">next</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Dataset.next" title="Permalink to this definition"></a></dt>
+<dd><p>Pulls a set of transitions from the Dataset for learning</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.Environment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">Environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment" title="Permalink to this definition"></a></dt>
+<dd><p>An Env inspired by OpenAI’s gym.Env and DM_Env
+<a class="reference external" href="https://github.com/openai/gym/blob/master/gym/core.py">https://github.com/openai/gym/blob/master/gym/core.py</a>
+<a class="reference external" href="https://github.com/deepmind/dm_env/blob/master/docs/index.md">https://github.com/deepmind/dm_env/blob/master/docs/index.md</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Sets all the kwargs as members on the class</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.close" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.get_spec">
+<span class="sig-name descname"><span class="pre">get_spec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.get_spec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.render" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.reset" title="Permalink to this definition"></a></dt>
+<dd><p>Resets the environment to an initial state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.seed" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Environment.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Environment.step" title="Permalink to this definition"></a></dt>
+<dd><p>Perform the action in the environment.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.EnvironmentSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">EnvironmentSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewards</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discounts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.EnvironmentSpec" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="agentos.core.EnvironmentSpec.actions">
+<span class="sig-name descname"><span class="pre">actions</span></span><a class="headerlink" href="#agentos.core.EnvironmentSpec.actions" title="Permalink to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agentos.core.EnvironmentSpec.discounts">
+<span class="sig-name descname"><span class="pre">discounts</span></span><a class="headerlink" href="#agentos.core.EnvironmentSpec.discounts" title="Permalink to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agentos.core.EnvironmentSpec.observations">
+<span class="sig-name descname"><span class="pre">observations</span></span><a class="headerlink" href="#agentos.core.EnvironmentSpec.observations" title="Permalink to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agentos.core.EnvironmentSpec.rewards">
+<span class="sig-name descname"><span class="pre">rewards</span></span><a class="headerlink" href="#agentos.core.EnvironmentSpec.rewards" title="Permalink to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.MemberInitializer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">MemberInitializer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.MemberInitializer" title="Permalink to this definition"></a></dt>
+<dd><p>Takes all constructor kwargs and sets them as class members.</p>
+<p>For example, if MyClass is a MemberInitializer:</p>
+<p>a = MyClass(foo=’bar’)
+assert a.foo == ‘bar’</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.MemberInitializer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.MemberInitializer.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Sets all the kwargs as members on the class</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.Policy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Policy" title="Permalink to this definition"></a></dt>
+<dd><p>Pick next action based on last observation from environment.</p>
+<p>Policies are used by Agents to encapsulate any state or logic necessary
+to decide on a next action given the last observation from an env.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Policy.decide">
+<span class="sig-name descname"><span class="pre">decide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Policy.decide" title="Permalink to this definition"></a></dt>
+<dd><p>Takes an observation and valid actions and returns next action to
+take.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observation</strong> – should be in the <cite>observation_space</cite> of the
+environments that this policy is compatible with.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>action to take, should be in <cite>action_space</cite> of the
+environments that this policy is compatible with.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.Runnable">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">Runnable</span></span><a class="headerlink" href="#agentos.core.Runnable" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Runnable.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">threading.Thread</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#agentos.core.Runnable.run" title="Permalink to this definition"></a></dt>
+<dd><p>Run an agent, optionally in a new thread.
+If as_thread is True, agent is run in a thread, and the
+thread object is returned to the caller. The caller may
+need to call join on that that thread depending on their
+use case for this agent_run.
+:param agent: The agent object you want to run
+:param hz: Rate at which to call agent’s <cite>advance</cite> function. If None,</p>
+<blockquote>
+<div><p>call <cite>advance</cite> repeatedly in a tight loop (i.e., as fast as
+possible).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_iters</strong> – Maximum times to call agent’s <cite>advance</cite> function,
+defaults to None.</p></li>
+<li><p><strong>as_thread</strong> – Set to True to run this agent in a new thread,
+defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Either a running thread (if as_thread=True) or None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="agentos.core.Trainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">agentos.core.</span></span><span class="sig-name descname"><span class="pre">Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Trainer" title="Permalink to this definition"></a></dt>
+<dd><p>The Trainer is responsible for improving the Policy of the Agent as
+experience is collected.</p>
+<p>The primary method on the Trainer is the improve() method which gets
+called for every step taken within the episode.  It is up to the
+particular implementation to decide if this tempo is appropriate for
+training.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="agentos.core.Trainer.improve">
+<span class="sig-name descname"><span class="pre">improve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#agentos.core.Trainer.improve" title="Permalink to this definition"></a></dt>
+<dd><p>This method updates the policy based on the experience in the
+dataset</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="agentos.cli.html" class="btn btn-neutral float-left" title="agentos.cli" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
