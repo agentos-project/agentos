@@ -42,7 +42,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Python Component System Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture_and_design.html">Architecture and Design</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agent_directories.html">Agent Directories</a></li>
@@ -153,12 +153,12 @@ Python requirements into the currently active virtual environment):</p>
 and pull request (see the <a class="reference external" href="https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml">test workflow</a>)</p>
 <p>If you want to the CLI to interact with a local development server, define the
 environment variable (or create a <cite>.env</cite> file) <cite>USE_LOCAL_SERVER=True</cite>.</p>
-<dl class="simple">
-<dt>To run website tests::</dt><dd><p>python install_requirements.py
-cd web # the web directory contained in project root
-python manage.py test</p>
-</dd>
-</dl>
+<p>To run website tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">install_requirements</span><span class="o">.</span><span class="n">py</span>
+<span class="n">cd</span> <span class="n">web</span> <span class="c1"># the web directory contained in project root</span>
+<span class="n">python</span> <span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">test</span>
+</pre></div>
+</div>
 <p>Note that some tests (e.g., see <code class="docutils literal notranslate"><span class="pre">web/registry/tests/test_integration.py</span></code>)
 test functionality for interacting with github repositories by fetching code
 from <a class="reference external" href="https://github.com/agentos-project/agentos">https://github.com/agentos-project/agentos</a>. Where possible, in order to

@@ -42,7 +42,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Python Component System Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture and Design</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#background-from-reinforcement-learning">Background from Reinforcement Learning</a></li>
@@ -87,7 +87,7 @@
 <div class="section" id="background-from-reinforcement-learning">
 <h2>Background from Reinforcement Learning<a class="headerlink" href="#background-from-reinforcement-learning" title="Permalink to this headline"></a></h2>
 <p>In Reinforcement Learning (RL), the basic control loop is between agent and
-environment, as shown in <a class="reference internal" href="#fig-trad-rl-arch"><span class="std std-numref">Fig. 2</span></a>. An environment (or env) is
+environment, as shown in <a class="reference internal" href="#fig-trad-rl-arch"><span class="std std-numref">Fig. 5</span></a>. An environment (or env) is
 a stateful object analogous to a simplified version of the world we live in. In
 a programming language, an Env (e.g., OpenAI’s gym.Env) is often an object with
 a <code class="docutils literal notranslate"><span class="pre">step()</span></code> function that takes an action and returns an observation (or
@@ -97,7 +97,7 @@ agent usually contains a policy which is a function that takes an (observation,
 reward) pair and returns an action.</p>
 <div class="figure align-center" id="id1">
 <span id="fig-trad-rl-arch"></span><a class="reference internal image-reference" href="_images/traditional_rl_agent_arch.png"><img alt="_images/traditional_rl_agent_arch.png" src="_images/traditional_rl_agent_arch.png" style="width: 80%;" /></a>
-<p class="caption"><span class="caption-number">Fig. 2 </span><span class="caption-text">The traditional RL view of the loop between Agent (green) and Environment
+<p class="caption"><span class="caption-number">Fig. 5 </span><span class="caption-text">The traditional RL view of the loop between Agent (green) and Environment
 (blue). The information that passes between them at a given time step t
 includes: action A<sub>t</sub>, state (a.k.a, observation)
 S<sub>t</sub>, and reward R<sub>t</sub>.  Image modified from <a class="reference external" href="http://incompleteideas.net/book/the-book-2nd.html">Sutton &amp;
@@ -115,7 +115,7 @@ Finally, the agent has an <code class="docutils literal notranslate"><span class
 step around the core RL loop between the agent’s policy and its environment.</p>
 <div class="figure align-center" id="id2">
 <span id="fig-agentos-agent-arch"></span><a class="reference internal image-reference" href="_images/agentos_agent_arch.png"><img alt="_images/agentos_agent_arch.png" src="_images/agentos_agent_arch.png" style="width: 80%;" /></a>
-<p class="caption"><span class="caption-number">Fig. 3 </span><span class="caption-text">The concepts are very similar in AgentOS, though AgentOS also differentiates
+<p class="caption"><span class="caption-number">Fig. 6 </span><span class="caption-text">The concepts are very similar in AgentOS, though AgentOS also differentiates
 between an agent and a policy, and formalizes the relationship between agent,
 policy, and environment: an agent has a policy and an environment connected
 in a message passing loop. Calling <code class="docutils literal notranslate"><span class="pre">agent.advance()</span></code> causes a single
@@ -166,10 +166,10 @@ create or run an agent using MLflow. Also known as agent project.</p>
 </div>
 <div class="section" id="architecture">
 <h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline"></a></h2>
-<p><a class="reference internal" href="#fig-architecture"><span class="std std-numref">Fig. 4</span></a> shows the main AgentOS architectural components.</p>
+<p><a class="reference internal" href="#fig-architecture"><span class="std std-numref">Fig. 7</span></a> shows the main AgentOS architectural components.</p>
 <div class="figure align-center" id="id3">
 <span id="fig-architecture"></span><img alt="AgentOS architecture" src="_images/architecture.png" />
-<p class="caption"><span class="caption-number">Fig. 4 </span><span class="caption-text">The basic architecture of AgentOS.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+<p class="caption"><span class="caption-number">Fig. 7 </span><span class="caption-text">The basic architecture of AgentOS.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
 </div>
 </div>
 <div class="section" id="modes-of-interacting-with-agentos">

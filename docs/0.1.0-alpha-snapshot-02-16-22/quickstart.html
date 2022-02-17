@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quick Start &mdash; AgentOS 0.1.0-alpha documentation</title>
+  <title>Python Component System Quick Start &mdash; AgentOS 0.1.0-alpha documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/main.css" type="text/css" />
@@ -19,7 +19,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Motivation" href="motivation.html" />
-    <link rel="prev" title="AgentOS: a learning agent platform" href="index.html" /> 
+    <link rel="prev" title="The Python Component System" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,7 +42,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python Component System Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture_and_design.html">Architecture and Design</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agent_directories.html">Agent Directories</a></li>
@@ -66,7 +66,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Quick Start</li>
+      <li>Python Component System Quick Start</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -76,143 +76,77 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="quick-start">
-<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline"></a></h1>
-<p>AgentOS is a <strong>command line interface and Python developer API</strong> for building,
-running, and sharing flexible learning agents.</p>
-<p>AgentOS proposes a standard minimal architecture for a learning agent, and
-includes an API and example agent implementations for developers. The benefits
-of standard agent-related abstractions include:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>It is easier and faster to build agents since creators can focus on what is
-important to them without having to rewrite the parts that are less
-interesting but necessary in all agents (e.g., code to manage long running
-processes, parallelism, etc.).</p></li>
-<li><p>A simple open standard makes it easier to talk about agents, share agent
-code, and quickly understand agents created by others. These benefits are
-similar to those of the OpenAI Gym standard API for agent environments
-(<a class="reference external" href="https://github.com/openai/gym/blob/master/gym/core.py">gym.Env</a>).</p></li>
-</ul>
-</div></blockquote>
-<p>The best way to understand AgentOS is to use it, so let’s install agentos and
-write a simple agent in Python that behaves randomly. Installation is easy:</p>
+  <div class="section" id="python-component-system-quick-start">
+<h1>Python Component System Quick Start<a class="headerlink" href="#python-component-system-quick-start" title="Permalink to this headline"></a></h1>
+<p>The Python Component System (PCS) is a <strong>command line interface and Python
+developer API</strong> for building, running, and sharing Python programs.</p>
+<p>The best way to understand PCS is to use it, so let’s install it and
+write a simple program in the Python REPL. Installation is easy:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install agentos
 </pre></div>
 </div>
-<p>Writing a trivial agent is also easy:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Save this code in ./simple_agent.py</span>
-<span class="kn">import</span> <span class="nn">agentos</span>
-
-<span class="k">class</span> <span class="nc">SimpleAgent</span><span class="p">(</span><span class="n">agentos</span><span class="o">.</span><span class="n">Agent</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">sample</span><span class="p">())</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Took a random step, done = </span><span class="si">{</span><span class="n">done</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">done</span>
-</pre></div>
-</div>
-<p>That’s it. Only one function is required to create an agent: <code class="docutils literal notranslate"><span class="pre">advance()</span></code>. It
-takes no arguments, has access to the agent’s environment, and returns a
-boolean indicating if the agent is done.</p>
-<p>Next let’s open a Python shell:</p>
+<p>Writing a trivial program that takes advantage of PCS is also easy.  First,
+open the Python REPL:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python
 </pre></div>
 </div>
-<p>… and then make an instance of our agent, pass its constructor an environment
-(or env) class that the agent will interact with, and have the agent advance
-(i.e., take one step of action) in that environment:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">simple_agent</span> <span class="kn">import</span> <span class="n">SimpleAgent</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gym.envs.classic_control</span> <span class="kn">import</span> <span class="n">CartPoleEnv</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">SimpleAgent</span><span class="p">(</span><span class="n">CartPoleEnv</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">False</span>
+<p>Now we’ll define a very basic class and then we’ll use PCS to track the
+execution of a method on this class and share the results:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
+<span class="gp">... </span>  <span class="k">def</span> <span class="nf">add_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">...</span>
 </pre></div>
 </div>
-<p>The return value of <code class="docutils literal notranslate"><span class="pre">False</span></code> indicates that the agent is not yet “done”.
-Notice that in this code we are using an OpenAI gym environment (more about
-that below).</p>
-<p>Let’s continue running our agent using a while loop until it is done:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="n">done</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">…</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">Took a random step, done = True.</span>
+<p>Now let’s import one of the core PCS abstractions: <strong>Component</strong>.  A Component
+wraps a Python class and provides facilities for tracking and sharing.  Let’s
+wrap our <code class="docutils literal notranslate"><span class="pre">Adder</span></code> class in a Component now:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">agentos</span> <span class="kn">import</span> <span class="n">Component</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adder_component</span> <span class="o">=</span> <span class="n">Component</span><span class="o">.</span><span class="n">from_class</span><span class="p">(</span><span class="n">Adder</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The number of steps that the agent takes before being done is random since its
-behavior is random (also the environment has randomness in it).</p>
-<p>Now, instead of writing our own while loop, let’s run the agent in a Python
-Thread using a convenience function that AgentOS provides which serves as an
-Agent Runner:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">agentos</span> <span class="kn">import</span> <span class="n">run_agent</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">run_agent</span><span class="p">(</span><span class="n">SimpleAgent</span><span class="p">,</span> <span class="n">CartPoleEnv</span><span class="p">)</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">…</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">Took a random step, done = True.</span>
+<p>Now we’ll run our <code class="docutils literal notranslate"><span class="pre">Adder.add_one()</span></code> function in a reproducible and shareable
+way with PCS:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">adder_component</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;add_one&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;Adder&#39;</span><span class="p">:{</span><span class="s1">&#39;add_one&#39;</span><span class="p">:{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">}}})</span>
 </pre></div>
 </div>
-<p>Or we can run the agent via the AgentOS CLI:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ agentos run simple_agent.py gym.envs.classic_control.CartPoleEnv
-Took a random step, done = False.
-…
-Took a random step, done = False.
-Took a random step, done = True.
+<p>That’s it!  Using the <code class="docutils literal notranslate"><span class="pre">run</span></code> method on our Component automatically instruments
+our call to <code class="docutils literal notranslate"><span class="pre">Adder.add_one</span></code> and tracks it’s inputs and outputs so we can
+easily share and reproduce this program execution.</p>
+<p>Let’s take a look at what we’ve recorded about our program execution.  Exit the Python REPL and then run the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;</span> <span class="n">mlflow</span> <span class="n">ui</span>
 </pre></div>
 </div>
-<p>As an alternative to using our custom agent above, let’s go back into the
-Python shell we opened above and use AgentOS’s RandomAgent:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">agentos.agents</span> <span class="kn">import</span> <span class="n">RandomAgent</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">agentos</span> <span class="kn">import</span> <span class="n">run_agent</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gym.envs.classic_control</span> <span class="kn">import</span> <span class="n">CartPoleEnv</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">run_agent</span><span class="p">(</span><span class="n">RandomAgent</span><span class="p">,</span> <span class="n">CartPoleEnv</span><span class="p">)</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">…</span>
-<span class="go">Took a random step, done = False.</span>
-<span class="go">Took a random step, done = True.</span>
-</pre></div>
+<p>Now navigate to <a class="reference external" href="http://127.0.0.1:5000">http://127.0.0.1:5000</a> to see the
+results of our program execution.  First you’ll land on your local <a class="reference external" href="https://mlflow.org">MLflow</a> experiment tracking page (PCS uses MLflow under the hood
+for experiment tracking):</p>
+<div class="figure align-center" id="id1">
+<span id="fig-pcs-ui-1"></span><a class="reference internal image-reference" href="_images/pcs-ui-1.png"><img alt="_images/pcs-ui-1.png" src="_images/pcs-ui-1.png" style="width: 80%;" /></a>
+<p class="caption"><span class="caption-number">Fig. 1 </span><span class="caption-text">The MLflow experiment tracking page.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
 </div>
-<p>So far, we created and ran an agent, but what is an agent? Colloquially
-speaking, it is an entity that can do things in its environment. In our
-examples above, the agent is interacting with an instance of a simple physics
-simulator provided by OpenAI Gym called <a class="reference external" href="https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py">CartPole</a>
-(if you’re not familiar with gym, learn more about it <a class="reference external" href="https://gym.openai.com/">here</a>). In this environment, or world, the agent is
-trying to balance a pole on a cart by nudging the cart to the left or right.
-Because we made her a <code class="docutils literal notranslate"><span class="pre">RandomAgent</span></code>, she is flipping a fair coin at each
-timestep to decide which way to nudge the cart.</p>
-<p>We have essentially created a simplistic being with some virtual sensors and
-motors, and given her the ability to use them to interact with her world,
-making observations and taking random actions in it. That’s a start, but note
-that she’s not learning anything as she goes, nor behaving intelligently.
-Still, you can start to get a sense of how to compose an agent with AgentOS.</p>
-<p>In this simple example, you have interacted with some of AgentOS’s core
-abstractions:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p><strong>Environment</strong> - A stateful model of the world with a simple API. Used by
-an agent to make observations and take actions.</p></li>
-<li><p><strong>Agent</strong> - Encapsulates a decision-making process (and memory) that uses
-observations to decide what actions to take, which obviously can impact
-what observations will come next. An agent is also responsible for
-learning, i.e., improving itself over time through experience, e.g.,
-through RL algorithms.</p></li>
-<li><p><strong>Agent Runner</strong> - an abstraction responsible for running an agent with a
-given environment.</p></li>
-</ul>
-</div></blockquote>
-<p>If you’re familiar with reinforcement learning (RL), both the environment and
-agent concepts in AgentOS are derived from RL (more on this in
-<a class="reference internal" href="architecture_and_design.html"><span class="doc">Architecture and Design</span></a>).</p>
+<p>As you can see, we’ve recorded one run (our call to <code class="docutils literal notranslate"><span class="pre">Adder.add_one()</span></code>).
+Click the link into the run and you’ll see that we’ve recorded information
+about the inputs and command we ran:</p>
+<div class="figure align-center" id="id2">
+<span id="fig-pcs-ui-2"></span><a class="reference internal image-reference" href="_images/pcs-ui-2.png"><img alt="_images/pcs-ui-2.png" src="_images/pcs-ui-2.png" style="width: 80%;" /></a>
+<p class="caption"><span class="caption-number">Fig. 2 </span><span class="caption-text">The command we ran to execute our program.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</div>
+<p>As well as the results from our execution:</p>
+<div class="figure align-center" id="id3">
+<span id="fig-pcs-ui-3"></span><a class="reference internal image-reference" href="_images/pcs-ui-3.png"><img alt="_images/pcs-ui-3.png" src="_images/pcs-ui-3.png" style="width: 80%;" /></a>
+<p class="caption"><span class="caption-number">Fig. 3 </span><span class="caption-text">The results of our program execution.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</div>
+<p>While our <code class="docutils literal notranslate"><span class="pre">Adder.add_one()</span></code> example was very simple, tracking commands and
+parameters can get complex as your program grows.  PCS is designed to manage
+this complexity in a straightforward and consistent way.</p>
+<p># TODO: sharing</p>
 </div>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="AgentOS: a learning agent platform" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="The Python Component System" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="motivation.html" class="btn btn-neutral float-right" title="Motivation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

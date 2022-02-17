@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgentOS: a learning agent platform &mdash; AgentOS 0.1.0-alpha documentation</title>
+  <title>The Python Component System &mdash; AgentOS 0.1.0-alpha documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/main.css" type="text/css" />
@@ -40,7 +40,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Python Component System Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../motivation.html">Motivation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../architecture_and_design.html">Architecture and Design</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../agent_directories.html">Agent Directories</a></li>
@@ -64,7 +64,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>AgentOS: a learning agent platform</li>
+      <li>The Python Component System</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/includes/intro.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -74,26 +74,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="agentos-a-learning-agent-platform">
-<h1>AgentOS: a learning agent platform<a class="headerlink" href="#agentos-a-learning-agent-platform" title="Permalink to this headline"></a></h1>
-<p>AgentOS is an open source <strong>Python API, command line interface, and public web
-registry</strong> for building, running, and sharing learning agents. AgentOS is built
-on the Python Component System, which implements a new programming model (the
-Component Programming Model) that makes it easier to manage and share Python
-code. AgentOS is licensed under the Apache License, Version 2.0.</p>
-<dl class="simple">
-<dt>Key features of the Python Component System:</dt><dd><ul class="simple">
-<li><p>Transparent management of virtual environments (developers no longer
-have to think about virtual environments at all).</p></li>
-<li><p>Decentralized Python dependency management</p></li>
-<li><p>First-class programmatic access to all functionality (unlike PIP)</p></li>
+  <div class="section" id="the-python-component-system">
+<h1>The Python Component System<a class="headerlink" href="#the-python-component-system" title="Permalink to this headline"></a></h1>
+<p>The Python Component System (PCS) is an open source <strong>Python API, command line
+interface, and public web registry</strong> for building, running, and sharing Python
+programs.  The Python Component System is designed to:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Make program execution reproducible.</p></li>
+<li><p>Transparently manage Python virtual environments and dependencies.</p></li>
+<li><p>Simplify experiment tracking and code sharing.</p></li>
 </ul>
-</dd>
+</div></blockquote>
+<p>The Python Component System is licensed under the Apache License, Version 2.0.</p>
+</div>
+<div class="section" id="agentos">
+<h1>AgentOS<a class="headerlink" href="#agentos" title="Permalink to this headline"></a></h1>
+<p>AgentOS is a set of libraries built on top of the Python Component System that
+makes it easy to build, run, and share agents that use Reinforcement Learning
+(RL) to solve tasks.</p>
+<dl class="simple">
 <dt>Key features of AgentOS:</dt><dd><ul class="simple">
 <li><p>Easy to use Agent API for developing and running new agents.</p></li>
-<li><p>A public repository of popular RL environments and agents, and
-runs of those agents in those environments that can be reproduced
-with a single line of code.</p></li>
+<li><p>A <a class="reference external" href="https://aos-web.herokuapp.com/#TODO">public repository</a> of popular RL
+environments and agents, and runs of those agents in those environments
+that can be reproduced with a single line of code.</p></li>
 <li><p>Example learning agents from different disciplines and research areas are
 available in the
 <a class="reference external" href="https://github.com/agentos-project/agentos/tree/master/example_agents">example_agents</a>
@@ -103,7 +108,8 @@ directory of the project source code.</p></li>
 </dl>
 <a class="reference external image-reference" href="https://github.com/agentos-project/agentos/actions"><img alt="Test Status Indicator" src="https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg" /></a>
 <p>AgentOS is beta software, APIs and overall architecture are likely to change
-significantly over time.</p>
+significantly over time.  AgentOS is licensed under the Apache License, Version
+2.0.</p>
 </div>
 
 

@@ -1,6 +1,6 @@
 .. include:: includes/intro.rst
 
-Find the `AgentOS sourcecode on Github <https://github.com/agentos-project/agentos>`_.
+Find the `AgentOS source code on Github <https://github.com/agentos-project/agentos>`_.
 
 .. include:: includes/install_and_try.rst
 
