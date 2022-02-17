@@ -12,6 +12,29 @@ ACME_R2D2_REQS_PATH = EXAMPLE_AGENT_PATH / "acme_r2d2" / "requirements.txt"
 WEB_REQS_PATH = REPO_ROOT / "web" / "requirements.txt"
 
 
+def install_with_pip(pip):  # install with given pip
+    subprocess.run([pip, "install", "-r", DEV_REQS_PATH])
+    if sys.platform == "linux":
+        # Get CPU-only version of torch in case CUDA is not proper configured
+        subprocess.run(
+            [
+                pip,
+                "install",
+                "-r",
+                RLLIB_REQS_PATH,
+                "-f",
+                "https://download.pytorch.org/whl/torch_stable.html",
+            ]
+        )
+        subprocess.run([pip, "install", "-r", ACME_DQN_REQS_PATH])
+        subprocess.run([pip, "install", "-r", ACME_R2D2_REQS_PATH])
+    else:
+        subprocess.run([pip, "install", "-r", RLLIB_REQS_PATH])
+    subprocess.run([pip, "install", "-r", SB3_REQS_PATH])
+    subprocess.run([pip, "install", "-r", WEB_REQS_PATH])
+    subprocess.run([pip, "install", "-e", REPO_ROOT])
+
+
 def install_requirements():
     answer = "n"
     if len(sys.argv) > 1 and sys.argv[1] == "-y":
@@ -29,26 +52,29 @@ def install_requirements():
         print("Aborting...")
         sys.exit(0)
 
-    subprocess.run(["pip", "install", "-r", DEV_REQS_PATH])
-    if sys.platform == "linux":
-        # Get CPU-only version of torch in case CUDA is not proper configured
-        subprocess.run(
-            [
-                "pip",
-                "install",
-                "-r",
-                RLLIB_REQS_PATH,
-                "-f",
-                "https://download.pytorch.org/whl/torch_stable.html",
-            ]
-        )
-        subprocess.run(["pip", "install", "-r", ACME_DQN_REQS_PATH])
-        subprocess.run(["pip", "install", "-r", ACME_R2D2_REQS_PATH])
-    else:
-        subprocess.run(["pip", "install", "-r", RLLIB_REQS_PATH])
-    subprocess.run(["pip", "install", "-r", SB3_REQS_PATH])
-    subprocess.run(["pip", "install", "-r", WEB_REQS_PATH])
-    subprocess.run(["pip", "install", "-e", REPO_ROOT])
+    # check if pip is installed and valid
+    pip_installed = True
+    try:
+        subprocess.check_call(["pip", "--version"], stdout=subprocess.DEVNULL)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pip_installed = False
+
+    if pip_installed:
+        install_with_pip("pip")
+    else:  # if pip is not installed, try again with pip3 before failing
+        pip3_installed = True
+        try:
+            subprocess.check_call(
+                ["pip3", "--version"], stdout=subprocess.DEVNULL
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            pip3_installed = False
+
+        if pip3_installed:  # if pip3 exists
+            install_with_pip("pip3")
+
+    if not (pip_installed) and not (pip3_installed):
+        print("No valid pip or pip3 found, aborting...")
 
 
 if __name__ == "__main__":
