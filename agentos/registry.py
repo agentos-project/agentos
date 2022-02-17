@@ -323,10 +323,7 @@ class InMemoryRegistry(Registry):
         error_if_not_found: bool = True,
     ) -> Optional[RunCommandSpec]:
         return self._get_spec(
-            run_command_id,
-            "run_commands",
-            flatten,
-            error_if_not_found
+            run_command_id, "run_commands", flatten, error_if_not_found
         )
 
     def get_run_spec(
@@ -468,7 +465,8 @@ class WebRegistry(Registry):
         )
 
     def get_run_spec(
-        self, run_id: RunIdentifier,
+        self,
+        run_id: RunIdentifier,
         flatten: bool = False,
         error_if_not_found: bool = True,
     ) -> RunSpec:

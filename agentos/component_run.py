@@ -111,9 +111,7 @@ class ComponentRun(Run):
         force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
-        spec = registry.get_run_spec(
-            self.identifier, error_if_not_found=False
-        )
+        spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
         if spec and not force:
             assert spec == self.to_spec(), (
                 f"A component run spec with identifier '{self.identifier}' "

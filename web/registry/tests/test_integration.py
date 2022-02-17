@@ -130,8 +130,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         )
         self.assertTrue(
             web_registry.get_run_spec(
-                comp_run.identifier,
-                error_if_not_found=False
+                comp_run.identifier, error_if_not_found=False
             )
         )
 
