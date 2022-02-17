@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -euo pipefail
+
+echo "This script will drop your aos_web database and aos_web_user\
+ in Postgres and recreate them.  Press ctrl+c to abort..."
+
+read dummy
+
+sudo -u postgres psql -c "drop database aos_web;" || true
+sudo -u postgres psql -c "drop user aos_web_user;" || true
+sudo -u postgres psql -c "create database aos_web;" || true
+
+user_cmd="create user aos_web_user with encrypted password 'aabbccdd';"
+sudo -u postgres psql -c "$user_cmd" || true
+grant_cmd="grant all privileges on database aos_web to aos_web_user;"
+sudo -u postgres psql -c "$grant_cmd" || true
+
+python manage.py collectstatic --noinput
+python manage.py migrate
+python manage.py create_default_admin

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block head_title %}
+  AgentOS Leaderboard
+{% endblock head_title %}
+
+{% block container %}
+  <div class='title'>AgentOS Environment Leaderboard</div>
+{% endblock container %}
+
+{% block content %}
+
+  <div class="content">
+
+    {% if environments %}
+      {% for environment in environments %}
+        <h4>
+          <a href="{% url 'component-detail' environment.id %}">
+            {{ environment.name }}=={{ environment.short_version }}
+          </a>
+          {% if environment.description %}
+              - {{environment.description}}
+          {% endif %}
+        </h4>
+        <h5>
+          Leaders:
+        </h5>
+          <ul>
+            {% for run in environment.top_five_runs %}
+              <li>
+                <a href="{% url 'run-detail' run.id %}">
+                  Run {{run.id}}
+                </a>
+                : {{run.mlflow_metrics.mean_reward}} mean reward
+                over {{run.mlflow_metrics.episode_count }} episodes
+              </li>
+            {% endfor %}
+          </ul>
+      {% endfor %}
+    {% else %}
+      <p>No Environments are available.</p>
+    {% endif %}
+  </div>
+{% endblock content %}

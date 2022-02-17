@@ -1,3 +1,8 @@
+.env
+env/
+.aos/
+.pcs_local_repo/
+
 .cache
 *.swp
 mlruns
@@ -5,7 +10,9 @@ mlruns
 .idea
 *.egg-info
 
-build
+build/
 dist
 documentation/_build
 website/_site
+web/static
+web/uploaded_media

@@ -1,0 +1,71 @@
+repos:
+    local_dir:
+        type: local
+        path: .
+
+
+components:
+    agent:
+        repo: local_dir
+        file_path: ./agent.py
+        class_name: AcmeR2D2Agent
+        requirements_path: ./requirements.txt
+        dependencies: 
+            environment: environment
+            policy: policy
+            dataset: dataset
+            trainer: trainer
+            AcmeRun: AcmeRun
+            network: network
+    
+    environment:
+        repo: local_dir
+        file_path: ../acme_dqn/environment.py
+        class_name: CartPole
+    
+    policy:
+        repo: local_dir
+        file_path: ./policy.py
+        class_name: R2D2Policy
+        dependencies: 
+            environment: environment
+            network: network
+            dataset: dataset
+    
+    network:
+        repo: local_dir
+        file_path: ./network.py
+        class_name: R2D2Network
+        dependencies: 
+            environment: environment
+            AcmeRun: AcmeRun
+            TFModelSaver: TFModelSaver
+
+    TFModelSaver:
+        repo: local_dir
+        file_path: ../acme_dqn/network.py
+        class_name: TFModelSaver
+        instantiate: False
+
+    dataset:
+        repo: local_dir
+        file_path: ./dataset.py
+        class_name: ReverbDataset
+        dependencies: 
+            environment: environment
+            network: network
+    
+    trainer:
+        repo: local_dir
+        file_path: ./trainer.py
+        class_name: R2D2Trainer
+        dependencies: 
+            environment: environment
+            network: network
+            dataset: dataset
+    
+    AcmeRun:
+        repo: local_dir
+        file_path: ../acme_dqn/run.py
+        class_name: AcmeRun
+        instantiate: False

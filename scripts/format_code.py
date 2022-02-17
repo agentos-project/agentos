@@ -12,6 +12,7 @@ To use::
 
 import os
 import sys
+from pathlib import Path
 from subprocess import run
 from subprocess import PIPE
 from subprocess import STDOUT
@@ -20,6 +21,10 @@ from shared import root_dir
 from shared import traverse_tracked_files
 
 returncode = 0
+
+IGNORED_FILES = [
+    "agentos/templates/agent.py",
+]
 
 
 def format_file(path):
@@ -39,5 +44,10 @@ def format_file(path):
         print()
 
 
-traverse_tracked_files(root_dir, format_file)
+if len(sys.argv) > 1:
+    for arg in sys.argv[1:]:
+        path = Path(arg).absolute()
+        format_file(path)
+else:
+    traverse_tracked_files(root_dir, format_file, IGNORED_FILES)
 sys.exit(returncode)

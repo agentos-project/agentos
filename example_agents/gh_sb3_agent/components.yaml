@@ -1,0 +1,34 @@
+repos:
+    aos_github:
+        type: github
+        url: https://github.com/agentos-project/agentos.git
+
+
+components:
+    agent==test_staging:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/agent.py
+        class_name: SB3PPOAgent
+        dependencies: 
+            environment: environment==test_staging
+            SB3AgentRun: SB3AgentRun==test_staging
+            blah: agent==test_staging
+
+    agent==test_staging:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/agent.py
+        class_name: SB3PPOAgent
+        dependencies: 
+            environment: environment==test_staging
+            SB3AgentRun: SB3AgentRun==test_staging
+
+    environment==test_staging:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/environment.py
+        class_name: CartPole
+    
+    SB3AgentRun==test_staging:
+        repo: aos_github
+        file_path: example_agents/sb3_agent/sb3_run.py
+        class_name: SB3Run
+        instantiate: False

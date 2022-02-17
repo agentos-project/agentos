@@ -31,19 +31,18 @@ To contribute to AgentOS, the general workflow is as follows:
 Proposing Features
 ==================
 
-For new features and other big chunks of work, AgentOS maintains a `repo of
-design documents <https://github.com/agentos-project/design_docs>`_.  The goal
-of these design documents is to:
+For new features and other big chunks of work, AgentOS uses a design process
+centered around design proposals, discussions, and design docs. The goal of the
+process is to:
 
 * Allow developers to think through a design, and
 * Allow stakeholders to give feedback
 
-before development begins.
+...before development begins.
 
 If you'd like to propose a feature, please follow the procedure found in the
-`design_docs README
-<https://github.com/agentos-project/design_docs/blob/main/README.rst>`_.  You
-can also browse other design docs in the repo to get a feel for the general
+`design_docs README <documentation/design_docs/README.rst>`_.  You can also
+browse existing design docs in the folder to get a feel for the general
 content and style.
 
 
@@ -59,15 +58,51 @@ following::
 
 Testing
 =======
-To run tests::
+
+To run tests, first install the requirements (note, this script installs the
+Python requirements into the currently active virtual environment)::
 
   cd agentos # the project root, not the nested agentos/agentos dir
-  pip install -r dev-requirements.txt
-  pytest test_all.py
+  python install_requirements.py
 
-Also, we use Github Actions to run ``test_all.py`` with every commit and pull
-request (see the `test workflow
+Then run the tests::
+
+  pytest
+
+Also, we use Github Actions to run tests with every commit
+and pull request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
+
+If you want to the CLI to interact with a local development server, define the
+environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
+
+To run website tests::
+  python install_requirements.py
+  cd web # the web directory contained in project root
+  python manage.py test
+
+Note that some tests (e.g., see ``web/registry/tests/test_integration.py``)
+test functionality for interacting with github repositories by fetching code
+from https://github.com/agentos-project/agentos. Where possible, in order to
+make it easy to have those tests run against code in a github repo that you can
+change during development without disrupting other PRs, the test code uses
+global variables defined in ``agentos/utils.py`` to decide which github
+repo to use when testing.
+
+If you make changes to code that is fetched from github for use by tests, then
+please follow this process for your PR:
+
+1. While doing development, change the ``TESTING_GITHUB_REPO`` and/or
+   ``TESTING_BRANCH_NAME`` global variables in ``agentos/utils.py``
+   to point to a version of your PR branch that you've pushed to
+   github. We recommend commenting out the default "prod" values of these
+   variables so that you can uncomment them in the next step when the PR
+   is approved for merge.
+2. After your PR is approved and right before it is merged, push the branch
+   you used during testing to the ``test_prod`` branch of the agentos-project
+   account ``https://github.com/agentos-project/agentos.git``. And then update
+   the variables in ``agentos/utils.py`` (you should be able to just uncomment
+   the lines you commented out in step 1 above, and delete the lines you added).
 
 
 Building Docs
@@ -76,9 +111,10 @@ Building Docs
 The documentation source is in the ``documentation`` directory and written in
 `ReStructuredText <https://docutils.sourceforge.io/rst.html>`_.  The docs are
 built using `Sphinx <https://www.sphinx-doc.org>`_.  To build the docs, first
-install the dev requirements::
+install the dev requirements (note, this script will install requirements into
+the currently active Python virtual environment)::
 
-  pip install -r dev-requirements.txt
+  python install_requirements.py
 
 Then use the build script::
 
@@ -140,6 +176,16 @@ Releasing
 
 Here are the steps for releasing AgentOS:
 
+#. Build and check the distribution artifacts for the release by running::
+
+   python install_requirements.py
+   python setup.py sdist --formats=gztar,zip bdist_wheel
+   twine check dist/*
+
+   This will create a `wheel file <https://wheel.readthedocs.io/en/stable/>`_
+   as well as tar.gz and zip source distribution files, and catch any blockers
+   that PyPI would raise at upload time. Fix any errors before proceeding.
+
 #. Create a release pull request (PR) that:
 
    * Removes "-alpha" suffix from the version number in ``agentos/version.py``.
@@ -160,10 +206,9 @@ Here are the steps for releasing AgentOS:
 #. Push the release to PyPI (see `Pushing Releases to PyPI`_).
 
 #. Create a `github release
-   <https://github.com/agentos-project/agentos/releases>`_ that includes zips
-   and tarzips of `wheel files <https://wheel.readthedocs.io/en/stable/>`_
-   and source code (which you can generate using ``python setup.py sdist
-   --formats=gztar,zip bdist_wheel`` and then manually upload to the release).
+   <https://github.com/agentos-project/agentos/releases>`_ and upload the
+   tar.gz and zip source code distribution files. This will create a git tag.
+   For the tag name, use "vX.Y.Z" (e.g. v0.1.0).
 
 
 Pushing Releases to PyPI
@@ -174,6 +219,8 @@ push a release to PyPI, you can approximately follow `these python.org
 instructions <https://packaging.python.org/tutorials/packaging-projects/>`_,
 which will probably look something like::
 
-  pip install setuptools wheel twine
-  python setup.py sdist --formats=gztar,zip bdist_wheel
+  python install_requirements.py
+  rm -rf dist
+  python setup.py sdist --formats=gztar bdist_wheel
+  twine check dist/*
   twine upload dist/*

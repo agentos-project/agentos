@@ -1,0 +1,12 @@
+repos:
+    local_dir:
+        type: local
+        path: .
+
+components:
+    test_venv_agent:
+        repo: local_dir
+        file_path: ./agent.py
+        class_name: BasicAgent
+        requirements_path: ./requirements.txt
+

@@ -2,85 +2,17 @@
 
 The CLI allows creation of a simple template agent.
 """
-import agentos
+import os
+import sys
+import yaml
 import click
 from datetime import datetime
-import gym
-import mlflow.projects
-import importlib.util
 from pathlib import Path
-
-
-CONDA_ENV_FILE = Path("./conda_env.yaml")
-CONDA_ENV_CONTENT = """{file_header}
-
-name: {name}
-
-dependencies:
-    - pip
-    - pip:
-      - gym
-      - agentos
-      # Or, if you want to use your local copy of agentos, then
-      # update the line below and replace the line above with it.
-      #- -e path/to/agentos/git/repo
-"""
-MLFLOW_PROJECT_FILE = Path("./MLProject")
-MLFLOW_PROJECT_CONTENT = """{file_header}
-
-name: {name}
-
-conda_env: {conda_env}
-
-entry_points:
-  main:
-    command: "python main.py"
-"""
-AGENT_DEF_FILE = Path("./agent.py")  # Default location of agent code.
-AGENT_MAIN_FILE = Path("./main.py")
-AGENT_MAIN = """{file_header}
-import agentos
-import random
-import gym
-
-# TODO: REPLACE THE EXAMPLE CODE BELOW WITH YOUR OWN!
-
-# A minimal 1D hallway env class.
-class MyEnv(gym.Env):
-    def __init__(self):
-        super().__init__()
-        self.l_r_pos = 0  # left is neg, right is pos.
-
-    def reset(self):
-        self.l_r_pos = 0
-        return 0
-
-    def step(self, action):
-        self.l_r_pos += action
-        return self.l_r_pos, abs(self.l_r_pos), False, dict()
-
-
-# A minimal example agent class.
-class MyAgent(agentos.Agent):
-    def __init__(self, env_class):
-        super().__init__(env_class)
-        self.step_count = 0
-
-    def advance(self):
-        print("Taking step " + str(self.step_count))
-        pos_in_env, _, _, _ = self.env.step(random.choice([-1,1]))
-        print("Position in env is now: " + str(pos_in_env))
-        self.step_count += 1
-
-
-if __name__ == "__main__":
-    agentos.run_agent(MyAgent, MyEnv, max_iters=5)
-"""
-INIT_FILES = {
-    CONDA_ENV_FILE: CONDA_ENV_CONTENT,
-    MLFLOW_PROJECT_FILE: MLFLOW_PROJECT_CONTENT,
-    AGENT_MAIN_FILE: AGENT_MAIN,
-}
+from agentos import Component
+from agentos import ParameterSet
+from agentos.run import Run
+from agentos.registry import Registry
+from agentos.virtual_env import VirtualEnv
 
 
 @click.group()
@@ -89,25 +21,89 @@ def agentos_cmd():
     pass
 
 
-def validate_agent_name(ctx, param, value):
+def _validate_agent_name(ctx, param, value):
     if " " in value or ":" in value or "/" in value:
         raise click.BadParameter("name may not contain ' ', ':', or '/'.")
     return value
 
 
-@agentos_cmd.command()
-@click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
-@click.option(
-    "--name",
+_arg_component_name = click.argument(
+    "component_name", metavar="COMPONENT_NAME"
+)
+
+_arg_optional_entity_id = click.argument(
+    "entity_id",
+    metavar="ENTITY_ID",
+    required=False,
+)
+
+_arg_run_id = click.argument("run_id", type=str, metavar="RUN_ID")
+
+_arg_dir_names = click.argument("dir_names", nargs=-1, metavar="DIR_NAMES")
+
+
+_option_registry_file = click.option(
+    "--registry-file",
+    "-r",
+    type=click.Path(exists=True),
+    default="./components.yaml",
+    help="Path to registry file (components.yaml).",
+)
+
+_option_use_venv = click.option(
+    "--use-auto-env/--use-outer-env",
+    "use_venv",
+    default=True,
+    help=(
+        "If --use-auto-venv is passed, then AgentOS will automatically "
+        "create a virtual environment under which the Component DAG "
+        "will be run. If --use-outer-env is passed, AgentOS will not "
+        "create a new virtual environment for the Component DAG, instead "
+        "running it in the existing outer Python environment."
+    ),
+)
+
+
+_option_agent_name = click.option(
+    "--agent-name",
     "-n",
     metavar="AGENT_NAME",
-    default="new_agent",
-    callback=validate_agent_name,
+    default="BasicAgent",
+    callback=_validate_agent_name,
     help="This is used as the name of the MLflow Project and "
     "Conda env for all *Directory Agents* being created. "
     "AGENT_NAME may not contain ' ', ':', or '/'.",
 )
-def init(dir_names, name):
+
+_option_agentos_dir = click.option(
+    "--agentos-dir",
+    "-d",
+    metavar="AGENTOS_DIR",
+    type=click.Path(),
+    default="./.aos",
+    help="Directory path AgentOS components and data",
+)
+
+_option_assume_yes = click.option(
+    "--assume-yes",
+    "-y",
+    is_flag=True,
+    help="Automatically answers 'yes' to all user prompts.",
+)
+_option_force = click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Force freeze even if repo is in a bad state.",
+)
+
+
+@agentos_cmd.command()
+@_arg_dir_names
+@_option_agent_name
+@_option_agentos_dir
+def init(dir_names, agent_name, agentos_dir):
     """Initialize current (or specified) directory as an AgentOS agent.
 
     \b
@@ -123,179 +119,223 @@ def init(dir_names, name):
     dirs = [Path(".")]
     if dir_names:
         dirs = [Path(d) for d in dir_names]
+
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-        for file_path, content in INIT_FILES.items():
-            f = open(d / file_path, "w")
-            now = datetime.now().strftime("%b %d, %Y %H:%M:%S")
-            header = (
-                f"# This file was auto-generated by `agentos init` on {now}."
-            )
-            f.write(
-                content.format(
-                    name=name,
-                    conda_env=CONDA_ENV_FILE.name,
-                    file_header=header,
-                )
-            )
-            f.flush()
-
+        os.makedirs(agentos_dir, exist_ok=True)
+        _instantiate_template_files(d, agent_name)
         d = "current working directory" if d == Path(".") else d
-        click.echo(f"Finished initializing AgentOS agent '{name}' in {d}.")
-
-
-def _get_subclass_from_file(filename, parent_class):
-    """Return first subclass of `parent_class` found in filename, else None."""
-    path = Path(filename)
-    assert path.is_file(), f"Make {path} is a valid file."
-    assert path.suffix == ".py", "Filename must end in .py"
-
-    spec = importlib.util.spec_from_file_location(path.stem, path.absolute())
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    for elt in module.__dict__.values():
-        if type(elt) is type and issubclass(elt, parent_class):
-            print(f"Found first subclass class {elt}; returning it.")
-            return elt
+        click.echo(
+            f"Finished initializing AgentOS agent '{agent_name}' in {d}."
+        )
 
 
 @agentos_cmd.command()
-@click.argument("run_args", nargs=-1, metavar="RUN_ARGS")
+@_arg_component_name
+@_option_registry_file
 @click.option(
-    "--hz",
-    "-h",
-    metavar="HZ",
-    default=40,
-    type=int,
-    help="Frequency to call agent.advance().",
-)
-@click.option(
-    "--max-iters",
-    "-m",
-    metavar="MAX_STEPS",
-    type=int,
+    "--entry-point",
+    metavar="ENTRY_POINT",
+    type=str,
     default=None,
-    help="Stop running agent after this many calls to advance().",
+    help="A function of the component that AgentOS Runtime will call with "
+    "the specified params.",
 )
-def run(run_args, hz, max_iters):
-    """Run an AgentOS agent (agentos.Agent) with an environment (gym.Env).
+# Copied from https://github.com/mlflow/mlflow/blob/
+# ... 3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L54
+@click.option(
+    "--param-list",
+    "-P",
+    metavar="NAME=VALUE",
+    multiple=True,
+    help="A parameter for the run, of the form -P name=value. All parameters "
+    "will be passed to the entry_point function using a **kwargs style "
+    "keyword argument https://docs.python.org/3/glossary.html#term-argument",
+)
+@click.option(
+    "--param-file",
+    metavar="PARAM_FILE",
+    help="A YAML file containing parameters for the entry point being run. "
+    "Will be passed to the entry_point function, along with individually "
+    "specified params, via a **kwargs style keyword argument "
+    "https://docs.python.org/3/glossary.html#term-argument",
+)
+@_option_use_venv
+def run(
+    component_name,
+    registry_file,
+    entry_point,
+    param_list,
+    param_file,
+    use_venv,
+):
+    venv = VirtualEnv.from_registry_file(registry_file, component_name)
+    venv.set_environment_handling(use_venv)
+    with venv:
+        param_dict = _user_args_to_dict(param_list)
+        component = Component.from_registry_file(registry_file, component_name)
+        parameters = ParameterSet.from_yaml(param_file)
+        entry_point = entry_point or component.get_default_entry_point()
+        parameters.update(component_name, entry_point, param_dict)
+        run = component.run(entry_point, parameters)
+        print(f"Run {run.identifier} recorded.", end=" ")
+        print("Execute the following for details:")
+        print(f"\n  agentos status {run.identifier}\n")
 
-    \b
-    Arguments:
-        RUN_ARGS: 0, 1, or 2 space delimited arguments, parsed as follows:
 
-    \b
-    If no args are specified, look for default files defining agent:
-        - look for file named `MLProject` or `main.py` in the current working
-          directory and if found, run this directory as an MLflow project.
-              - Try to use MLProject file first, using whatever it defines
-                as main entry point, and if that doesn't exist
-                then run using MLflow without MLProject passing main.py
-                as the entry point (note that this will ignore a conda
-                environment file if one exists and MLflow will create
-                a new essentially empty conda env).
-        - else, look for file named `agent.py` in current working
-          directory and, if found, then behave in the same was as if 1
-          argument (i.e., `agent.py`) was provided, as described below.
-    Else, if 1 arg is specified, interpret it as `agent_filename`:
-        - if it is a directory name, assume it is an AgentOS agent dir,
-          and behavior is equivalent of navigating into that directory
-          and running `agentos run` (without arguments) in it (see above).
-        - if it is a file name, the file must contain an agent class and env
-          class definition. AgentOS searches that file for the first subclass
-          of agentos.Agent, as well as first subclass of gym.Env and calls
-          agentos.run_agent() passing in the agent and env classes found.
-    Else, if 2 args specified, interpret as either filenames or py classes.
-         - assume the first arg specifies the agent and second specifies
-           the Env. The following parsing rules are applied independently
-           to each of the two args (e.g., filenames and classes can be mixed):
-             - if the arg is a filename:
-                  Look for the first instance of the appropriate subclass
-                  (either agentos.Agent or gym.env) in the file and use that
-                  as the argument to agentos.run_agent.
-              - else:
-                  Assume the arg is in the form [package.][module.]classname
-                  and that it is available in this python environments path.
-
+@agentos_cmd.command()
+@_arg_optional_entity_id
+@_option_registry_file
+@_option_use_venv
+def status(entity_id, registry_file, use_venv):
     """
+    ENTITY_ID can be a Component name or a Run ID.
+    """
+    print(f"entity_id is {entity_id}")
+    if not entity_id:
+        Run.print_all_status()
+    elif Run.run_exists(entity_id):
+        Run.from_existing_run_id(entity_id).print_status(detailed=True)
+    else:  # assume entity_id is a ComponentIdentifier
+        try:
+            venv = VirtualEnv.from_registry_file(registry_file, entity_id)
+            venv.set_environment_handling(use_venv)
+            with venv:
+                c = Component.from_registry_file(registry_file, entity_id)
+                c.print_status_tree()
+        except LookupError:
+            print(f"No Run or component found with Identifier {entity_id}.")
 
-    def _handle_no_run_args(dirname=None):
-        if dirname:
-            agent_dir = Path(dirname)
-            assert agent_dir.is_dir()
+
+@agentos_cmd.command()
+@_arg_optional_entity_id
+def publish_run(entity_id):
+    Run.from_existing_run_id(run_id=entity_id).publish()
+
+
+@agentos_cmd.command()
+@_arg_run_id
+def rerun(run_id):
+    Run.from_registry(Registry.get_default(), run_id).rerun()
+
+
+@agentos_cmd.command()
+@_arg_component_name
+@_option_registry_file
+@_option_force
+@_option_use_venv
+def freeze(component_name, registry_file, force, use_venv):
+    """
+    Creates a version of ``registry_file`` for Component
+    ``component_name`` where all Components in the dependency tree are
+    associated with a specific git commit.  The resulting
+    ``registry_file`` can be run on any machine with AgentOS installed.
+
+    The requirements for pinning a Component spec are as follows:
+        * All Components in the dependency tree must be in git repos
+        * Those git repos must have GitHub as their origin
+        * The current local branch and its counterpart on origin are at
+          the same commit
+        * There are no uncommitted changes in the local repo
+    """
+    venv = VirtualEnv.from_registry_file(registry_file, component_name)
+    venv.set_environment_handling(use_venv)
+    with venv:
+        component = Component.from_registry_file(registry_file, component_name)
+        frozen_reg = component.to_frozen_registry(force=force)
+        print(yaml.dump(frozen_reg.to_dict()))
+
+
+@agentos_cmd.command()
+@_arg_component_name
+@_option_registry_file
+@_option_force
+@_option_use_venv
+def publish(
+    component_name: str, registry_file: str, force: bool, use_venv: bool
+):
+    """
+    This command pushes the spec for component ``component_name`` (and all its
+    sub-Components) to the AgentOS server.  This command will fail if any
+    Component in the dependency tree cannot be frozen.
+    """
+    venv = VirtualEnv.from_registry_file(registry_file, component_name)
+    venv.set_environment_handling(use_venv)
+    with venv:
+        component = Component.from_registry_file(registry_file, component_name)
+        frozen_spec = component.to_frozen_registry(force=force).to_spec()
+        Registry.get_default().add_component_spec(frozen_spec)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_env_cache(assume_yes):
+    VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+
+
+# Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501
+def _user_args_to_dict(arguments, argument_type="P"):
+    user_dict = {}
+    for arg in arguments:
+        split = arg.split("=", maxsplit=1)
+        # Docker arguments such as `t` don't require a value -> set to True if specified # noqa: E501
+        if len(split) == 1 and argument_type == "A":
+            name = split[0]
+            value = True
+        elif len(split) == 2:
+            name = split[0]
+            value = split[1]
         else:
-            agent_dir = Path("./")
-        if (agent_dir / MLFLOW_PROJECT_FILE).is_file():
-            print("Running agent in this dir via MLflow.")
-            mlflow.projects.run(str(agent_dir.absolute()))
-            return
-        elif (agent_dir / AGENT_MAIN_FILE).is_file():
             print(
-                f"Running agent in this dir via MLflow with "
-                f"entry point {AGENT_MAIN_FILE}."
+                "Invalid format for -%s parameter: '%s'. "
+                "Use -%s name=value." % (argument_type, arg, argument_type)
             )
-            mlflow.projects.run(
-                str(agent_dir.absolute()), entry_point=AGENT_MAIN_FILE.name
-            )
-        else:
-            if not (agent_dir / AGENT_DEF_FILE).is_file():
-                raise click.UsageError(
-                    "No args were passed to run, so one "
-                    f"of {MLFLOW_PROJECT_FILE}, "
-                    f"{AGENT_MAIN_FILE}, "
-                    f"{AGENT_DEF_FILE} must exist."
+            sys.exit(1)
+        if name in user_dict:
+            print("Repeated parameter: '%s'" % name)
+            sys.exit(1)
+        user_dict[name] = value
+    return user_dict
+
+
+def _instantiate_template_files(d, agent_name):
+    AOS_PATH = Path(__file__).parent
+    for file_path in _INIT_FILES:
+        with open(AOS_PATH / file_path, "r") as fin:
+            with open(d / file_path.name, "w") as fout:
+                print(file_path)
+                content = fin.read()
+                now = datetime.now().strftime("%b %d, %Y %H:%M:%S")
+                header = (
+                    "# This file was auto-generated by `agentos init` "
+                    f"on {now}."
                 )
-            _handle_single_run_arg(agent_dir / AGENT_DEF_FILE)
+                fout.write(
+                    content.format(
+                        agent_name=agent_name,
+                        file_header=header,
+                        abs_path=d.absolute(),
+                        os_sep=os.sep,
+                    )
+                )
 
-    def _handle_single_run_arg(filename):
-        """The file must contain:
-        - 1 or more agentos.Agent subclass
-        - 1 or more gym.Env subclass.
-        """
-        agent_cls = _get_subclass_from_file(filename, agentos.Agent)
-        env_cls = _get_subclass_from_file(filename, gym.Env)
-        assert agent_cls and env_cls, (
-            f" {filename} must contain >= 1 agentos.Agent subclass "
-            f"and >= 1 gym.Env subclass."
-        )
-        agentos.run_agent(agent_cls, env_cls, hz=hz, max_iters=max_iters)
 
-    if len(run_args) == 0:
-        _handle_no_run_args()
-    elif len(run_args) == 1:
-        if Path(run_args[0]).is_dir():
-            _handle_no_run_args(run_args[0])
-        if Path(run_args[0]).is_file():
-            _handle_single_run_arg(run_args[0])
-        else:
-            raise click.UsageError(
-                "1 argument was passed to run; it must be "
-                "a filename and it is not. (The file "
-                "should define your agent class.)"
-            )
-    elif len(run_args) == 2:
-        agent_arg, env_arg = run_args[0], run_args[1]
-        if Path(agent_arg).is_file():
-            agent_cls = _get_subclass_from_file(agent_arg, agentos.Agent)
-            assert (
-                agent_cls
-            ), f"{agent_arg} must contain a subclass of agentos.Agent"
-        else:
-            ag_mod_name = ".".join(agent_arg.split(".")[:-1])
-            ag_cls_name = agent_arg.split(".")[-1]
-            ag_mod = importlib.import_module(ag_mod_name)
-            agent_cls = getattr(ag_mod, ag_cls_name)
-        if Path(env_arg).is_file():
-            env_cls = _get_subclass_from_file(env_arg, gym.Env)
-            assert env_cls, f"{env_arg} must contain a subclass of gym.Env"
-        else:
-            env_mod_name = ".".join(env_arg.split(".")[:-1])
-            env_cls_name = env_arg.split(".")[-1]
-            env_mod = importlib.import_module(env_mod_name)
-            env_cls = getattr(env_mod, env_cls_name)
-        agentos.run_agent(agent_cls, env_cls, hz=hz, max_iters=max_iters)
-    else:
-        raise click.UsageError("run command can take 0, 1, or 2 arguments.")
+_AGENT_DEF_FILE = Path("./templates/agent.py")
+_ENV_DEF_FILE = Path("./templates/environment.py")
+_DATASET_DEF_FILE = Path("./templates/dataset.py")
+_TRAINER_DEF_FILE = Path("./templates/trainer.py")
+_POLICY_DEF_FILE = Path("./templates/policy.py")
+_AGENT_YAML_FILE = Path("./templates/components.yaml")
+
+
+_INIT_FILES = [
+    _AGENT_DEF_FILE,
+    _ENV_DEF_FILE,
+    _POLICY_DEF_FILE,
+    _DATASET_DEF_FILE,
+    _TRAINER_DEF_FILE,
+    _AGENT_YAML_FILE,
+]
 
 
 if __name__ == "__main__":

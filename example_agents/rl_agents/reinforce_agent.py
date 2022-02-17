@@ -4,7 +4,12 @@ See `Sutton & Barto <http://incompleteideas.net/book/RLbook2020.pdf>`_
 section 13.3, page 326.
 
 REINFORCE, also known as Monte Carlo policy gradient, is one of the
-classic Reinforcement Learing algorithms.
+classic Reinforcement Learning algorithms.
+
+NOTE that the current implementation hard codes the shape of the
+policy's underlying neural net so that it will only work with
+Environments that have the same observation and action space
+as Gym's CartPole env.
 
 TODO: Add max_steps_per_iter to agent init.
 """
@@ -15,7 +20,7 @@ from tensorflow import keras
 import tensorflow_probability as tfp
 
 
-class Policy:
+class TwoLayerTFPolicy(agentos.Policy):
     def __init__(self):
         self.nn = keras.Sequential(
             [
@@ -26,36 +31,38 @@ class Policy:
         self.optimizer = keras.optimizers.Adam()
         self.loss_fn = keras.losses.binary_crossentropy
 
-    def compute_action(self, obs):
+    def decide(self, obs):
         return int(round(self.nn(np.array(obs)[np.newaxis]).numpy()[0][0]))
 
 
-class ReinforceAgent(agentos.Agent):
+class ReinforceAgent(agentos.Runnable):
     def __init__(
         self,
-        env_class,
+        environment,
+        policy,
         rollouts_per_iter=1,
         max_steps_per_rollout=200,
         discount_rate=0.9,
     ):
-        super().__init__(env_class)
+        super().__init__()
+        self.environment = environment
+        self.policy = policy
         self.rollouts_per_iter = rollouts_per_iter
         self.max_steps_per_rollout = max_steps_per_rollout
         self.discount_rate = discount_rate
         self.ret_vals = []
-        self.policy = Policy()
 
     def advance(self):
-        self.train()
+        self.learn()
         res = agentos.rollout(
             self.policy,
-            self.env.__class__,
+            self.environment.__class__,
             max_steps=self.max_steps_per_rollout,
         )
         self.ret_vals.append(sum(res.rewards))
         print(f"{self.ret_vals[-1]} steps in rollout.")
 
-    def train(self):
+    def learn(self):
         grads = []
         rewards = []
 
@@ -74,11 +81,11 @@ class ReinforceAgent(agentos.Agent):
             )
             return action
 
-        for episode_num in range(self.max_steps_per_rollout):
+        for _ in range(self.max_steps_per_rollout):
             grads.append([])
             result = agentos.rollout(
                 self.policy,
-                self.env.__class__,
+                self.environment.__class__,
                 step_fn=rollout_step,
                 max_steps=self.max_steps_per_rollout,
             )
@@ -113,16 +120,6 @@ class ReinforceAgent(agentos.Agent):
             zip(avg_weighted_grads, self.policy.nn.trainable_variables)
         )
 
-    def __del__(self):
-        print("Agent done!")
-        if self.ret_vals:
-            print(
-                f"Num rollouts: {len(self.ret_vals)}\n"
-                f"Avg return: {np.mean(self.ret_vals)}\n"
-                f"Max return: {max(self.ret_vals)}\n"
-                f"Median return: {np.median(self.ret_vals)}\n"
-            )
-
 
 if __name__ == "__main__":
     import argparse
@@ -143,11 +140,22 @@ if __name__ == "__main__":
     parser.add_argument("--max_steps_per_rollout", type=int, default=200)
     parser.add_argument("--discount_rate", type=float, default=0.9)
     args = parser.parse_args()
-    agentos.run_agent(
-        ReinforceAgent,
-        CartPoleEnv,
-        max_iters=args.max_iters,
+    reinforce_agent = ReinforceAgent(
+        CartPoleEnv(),
+        TwoLayerTFPolicy(),
         rollouts_per_iter=args.rollouts_per_iter,
         max_steps_per_rollout=args.max_steps_per_rollout,
         discount_rate=args.discount_rate,
     )
+    agentos.run_component(
+        reinforce_agent,
+        max_iters=args.max_iters,
+    )
+    print("Agent done!")
+    if reinforce_agent.ret_vals:
+        print(
+            f"Num rollouts: {len(reinforce_agent.ret_vals)}\n"
+            f"Avg return: {np.mean(reinforce_agent.ret_vals)}\n"
+            f"Max return: {max(reinforce_agent.ret_vals)}\n"
+            f"Median return: {np.median(reinforce_agent.ret_vals)}\n"
+        )

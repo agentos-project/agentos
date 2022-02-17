@@ -121,7 +121,7 @@ class Mouse(agentos.Agent):
     """
 
     def __init__(self, env):
-        super().__init__(env)
+        super().__init__(environment=env)
         self.light_intensity_error_belief = Decimal(0)  # epsilon_u
         self.cookie_size_error_belief = Decimal(0)  # epsilon_p
         self.cookie_size_belief = Decimal(0)  # phi
@@ -136,8 +136,8 @@ class Mouse(agentos.Agent):
         self.step_count = 0
 
     def advance(self):
-        """ This agent will never stop on it's own"""
-        obs, reward, done, _ = self.env.step("")
+        """This agent will never stop on it's own"""
+        obs, reward, done, _ = self.environment.step("")
         self.update_world_model(obs)
         self.step_count += 1
         return False
@@ -202,7 +202,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(f"Running mouse agent  for {args.max_iters} steps...")
     print("------------------------------------------------")
-    agentos.run_agent(Mouse, CookieSensorEnv, max_iters=args.max_iters)
+    mouse = Mouse(CookieSensorEnv())
+    agentos.run_component(mouse, max_iters=args.max_iters)
     if args.plot_results:
         plt.figure(figsize=(15, 10))
         for k, v in mouse_stats.items():

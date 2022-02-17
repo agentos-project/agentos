@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -eu
+
+# https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+AGENTOS_ROOT_DIR="$SCRIPT_DIR/../../../"
+
+docker build \
+    --build-arg HOST_HOME="$HOME" \
+    --build-arg CONTAINER_HOME="/home/$USER" \
+    -t acme_r2d2 \
+    -f "$SCRIPT_DIR"/../Dockerfile \
+    "$AGENTOS_ROOT_DIR"

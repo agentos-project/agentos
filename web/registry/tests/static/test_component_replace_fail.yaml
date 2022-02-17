@@ -1,0 +1,12 @@
+# Assumes test-component-h42==1.0.1 is created by the test setUp()
+components:
+  test-component-h42==1.0.1:
+    class_name: ADifferentClassName
+    file_path: example_agents/test/test.py
+    repo: gh_test
+    instantiate: True
+    dependencies: {}
+repos:
+  gh_test:
+    type: github
+    url: https://github.com/nickjalbert/agentos.git

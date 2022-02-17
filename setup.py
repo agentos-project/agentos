@@ -20,9 +20,16 @@ setup(
     packages=find_packages(),
     install_requires=[
         "click>=7.0",
-        "mlflow==1.9.1",
         "gym==0.17.1",
-        "numpy==1.18.5",
+        "numpy>=1.18.5",
+        "dm-env>=1.5",
+        "pyyaml>=5.4.1",
+        "mlflow>=1.20.2",
+        "dulwich==0.20.28",
+        "requests>=2.21.0",
+        "python-dotenv>=0.19.1",
+        "rich>=10.15.2",
+        "dill>=0.3.4",
     ],
     entry_points="""
         [console_scripts]

@@ -1,0 +1,16 @@
+dummy:
+    shared: &shared
+        discount: .99
+agent:
+    __init__:
+        <<: *shared
+        batch_size: 10
+        samples_per_insert: 2
+        min_replay_size: 10
+    evaluate:
+        num_episodes: 100
+    learn:
+        num_episodes: 200
+environment:
+    __init__:
+        <<: *shared

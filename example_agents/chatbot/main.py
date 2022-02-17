@@ -1,17 +1,18 @@
 import agentos
 from collections import deque
-from env import MultiChatEnv
-from env_utils import CommandLineClient
+from example_agents.chatbot.env import MultiChatEnv
+from example_agents.chatbot.env_utils import CommandLineClient
 from numpy import random as np_random
 
 
-class ChatBot(agentos.Agent):
+class ChatBot(agentos.Runnable):
     """A simple chatbot that speaks by parroting back things it has heard."""
 
-    def __init__(self, env):
-        super().__init__(env)
+    def __init__(self):
+        super().__init__()
         self.memory = deque(maxlen=2048)
         self.reply_flag = False
+        self.env = self.env_class()
 
     def advance(self):
         msg = ""
@@ -26,7 +27,8 @@ class ChatBot(agentos.Agent):
 
 if __name__ == "__main__":
     env_generator = MultiChatEnv()
-    agentos.run_agent(ChatBot, env_generator, 1, as_thread=True)
+    chat_bot = ChatBot(env_generator)
+    chat_bot.run(1, as_thread=True)
 
     cmd_line = CommandLineClient(env_generator())
     cmd_line.start()

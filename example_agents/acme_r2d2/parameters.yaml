@@ -1,0 +1,40 @@
+dummy:
+    shared: &shared
+        discount: 0.99
+        sequence_length: 13
+        store_lstm_state: true
+        replay_period: 40
+        batch_size: 32
+        max_replay_size: 500
+
+agent:
+    evaluate:
+        num_episodes: 50
+    learn:
+        num_episodes: 100
+dataset:
+    __init__:
+        <<: *shared
+        priority_exponent: 0.6
+        max_priority_weight: 0.9
+policy:
+    __init__:
+        <<: *shared
+        epsilon: 0.01
+trainer:
+    __init__:
+        <<: *shared
+        learning_rate: 0.001
+        target_update_period: 20
+        adam_epsilon: 0.001
+        burn_in_length: 2
+        n_step: 5
+        min_replay_size: 50
+        importance_sampling_exponent: 0.2
+        clip_grad_norm: null
+        samples_per_insert: 32.0
+environment:
+    __init__:
+        <<: *shared
+
+
