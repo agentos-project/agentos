@@ -25,7 +25,7 @@ version = (
 # -- Project information -----------------------------------------------------
 
 project = "AgentOS"
-copyright = "2021, AgentOS"
+copyright = "2022, AgentOS"
 author = "Andy Konwinski"
 
 # The full version, including alpha/beta/rc tags

@@ -1,20 +1,29 @@
+=======================================
+The Python Component System and AgentOS
+=======================================
+
+This project consists of two major pieces: the Python Component System (PCS)
+and AgentOS.
+
+Python Component System (PCS)
 ==================================
-The Python Component System
-==================================
 
-The Python Component System (PCS) is an open source **Python API, command line
-interface, and public web registry** for building, running, and sharing Python
-programs.  The Python Component System is designed to:
-  * Make program execution reproducible.
+PCS is an open source **Python API, command line interface, and public web
+registry** for building, running, and sharing Python programs.  PCS:
 
-  * Transparently manage Python virtual environments and dependencies.
+* Makes program execution reproducible.
 
-  * Simplify experiment tracking and code sharing.
+* Transparently manages Python virtual environments while providing a Python
+  API for ``pip`` and ``virtualenv``.
 
-The Python Component System is licensed under the Apache License, Version 2.0.
+* Simplifies experiment tracking and code sharing.
 
+PCS does this by allowing you to explicitly specify dependencies and parameters
+for your program and then providing a thin runtime (currently based on `MLflow
+<https://mlflow.org>`_) to automatically instrument your program's execution.
+PCS is compatible with most frameworks that are used to build machine learning
+and reinforcement learning systems.
 
-==================================
 AgentOS
 ==================================
 
@@ -23,50 +32,52 @@ makes it easy to build, run, and share agents that use Reinforcement Learning
 (RL) to solve tasks.
 
 Key features of AgentOS:
-  * Easy to use Agent API for developing and running new agents.
 
-  * A `public repository <https://aos-web.herokuapp.com/#TODO>`_ of popular RL
-    environments and agents, and runs of those agents in those environments
-    that can be reproduced with a single line of code.
+* Easy to use Agent API for developing and running new agents.
 
-  * Example learning agents from different disciplines and research areas are
-    available in the
-    `example_agents
-    <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
-    directory of the project source code.
+* A `public repository <https://aos-web.herokuapp.com/#TODO>`_ of popular RL
+  environments and agents, and runs of those agents in those environments
+  that can be reproduced with a single line of code.
+
+* Example learning agents from different disciplines and research areas are
+  available in the
+  `example_agents
+  <https://github.com/agentos-project/agentos/tree/master/example_agents>`_
+  directory of the project source code.
+
+Connect
+================
+
+Ask questions or report bugs in PCS and AgentOS in
+`GitHub Issues <https://github.com/agentos-project/agentos/issues>`_
+or on the
+`dev Discord <https://discord.gg/hUSezsejp3>`_.
+
+Find the `AgentOS source code on Github <https://github.com/agentos-project/agentos>`_.
 
 .. image:: https://github.com/agentos-project/agentos/workflows/Tests%20on%20master/badge.svg
   :target: https://github.com/agentos-project/agentos/actions
   :alt: Test Status Indicator
 
-AgentOS is beta software, APIs and overall architecture are likely to change
-significantly over time.  AgentOS is licensed under the Apache License, Version
-2.0.
 
 
-The AgentOS docs are at `agentos.org <https://agentos.org>`_.
+The Python Component System and AgentOS are alpha software; APIs and overall
+architecture are likely to change significantly over time.  They are
+licensed under the Apache License, Version 2.0.
 
 
-Install and Explore
-===================
+Quickstart
+===========
 
-AgentOS requires Python 3.7 - 3.9. To get started, use pip to
-install agentos, and then run a simple agent::
+See the quickstarts at `agentos.org <https://agentos.org/latest/quickstart>`_.
 
-  # Make sure you're using Python 3.7 - 3.9
-  pip install agentos
 
-Then, create and run your first Agent::
 
-  mkdir my_agent
-  cd my_agent
-  agentos init
-  agentos run
 
-This type of agent is called an `Agent Directory <../agent_directories>`. To
-see more complex agents, look at example agents in the `example_agents
-<https://github.com/agentos-project/agentos/tree/master/example_agents>`_
-directory of the project source code.
+Documentation
+=============
+
+Detailed documentation can be found at `agentos.org <https://agentos.org/latest>`_.
 
 
 Development Process
@@ -250,9 +261,9 @@ Here are the steps for releasing AgentOS:
 
 #. Build and check the distribution artifacts for the release by running::
 
-   python install_requirements.py
-   python setup.py sdist --formats=gztar,zip bdist_wheel
-   twine check dist/*
+    python install_requirements.py
+    python setup.py sdist --formats=gztar,zip bdist_wheel
+    twine check dist/*
 
    This will create a `wheel file <https://wheel.readthedocs.io/en/stable/>`_
    as well as tar.gz and zip source distribution files, and catch any blockers

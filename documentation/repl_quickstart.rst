@@ -1,19 +1,20 @@
 ***********************************
-Python Component System Quick Start
+Python REPL Quick Start
 ***********************************
 
 The Python Component System (PCS) is a **command line interface and Python
 developer API** for building, running, and sharing Python programs.
 
-The best way to understand PCS is to use it, so let’s install it and
-write a simple program in the Python REPL. Installation is easy::
+In this quickstart, we'll introduce PCS by using it directly in the Python
+REPL, so let’s install it and write a simple program. Installation is easy,
+run the following in your shell::
 
-  $ pip install agentos
+  pip install agentos
 
 Writing a trivial program that takes advantage of PCS is also easy.  First,
-open the Python REPL::
+open the Python REPL by running the following in your shell::
 
-  $ python
+  python
 
 Now we'll define a very basic class and then we'll use PCS to track the
 execution of a method on this class and share the results::
@@ -40,9 +41,10 @@ That's it!  Using the ``run`` method on our Component automatically instruments
 our call to ``Adder.add_one`` and tracks it's inputs and outputs so we can
 easily share and reproduce this program execution.
 
-Let's take a look at what we've recorded about our program execution.  Exit the Python REPL and then run the following::
+Let's take a look at what we've recorded about our program execution.  Exit
+the Python REPL and then run the following::
 
-  >> mlflow ui
+  mlflow ui
 
 Now navigate to `http://127.0.0.1:5000 <http://127.0.0.1:5000>`_ to see the
 results of our program execution.  First you'll land on your local `MLflow
