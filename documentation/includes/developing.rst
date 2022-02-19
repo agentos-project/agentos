@@ -179,9 +179,9 @@ Here are the steps for releasing AgentOS:
 
 #. Build and check the distribution artifacts for the release by running::
 
-   python install_requirements.py
-   python setup.py sdist --formats=gztar,zip bdist_wheel
-   twine check dist/*
+    python install_requirements.py
+    python setup.py sdist --formats=gztar,zip bdist_wheel
+    twine check dist/*
 
    This will create a `wheel file <https://wheel.readthedocs.io/en/stable/>`_
    as well as tar.gz and zip source distribution files, and catch any blockers

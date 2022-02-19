@@ -1,6 +1,6 @@
-***********
+***********************************
 Python Component System Quick Start
-***********
+***********************************
 
 The Python Component System (PCS) is a **command line interface and Python
 developer API** for building, running, and sharing Python programs.

@@ -290,11 +290,14 @@ EnvironmentSpec = namedtuple(
 
 class Runnable:
     def run(self, hz=40, max_iters=None, as_thread=False) -> Optional[Thread]:
-        """Run an agent, optionally in a new thread.
+        """
+        Run an agent, optionally in a new thread.
+
         If as_thread is True, agent is run in a thread, and the
         thread object is returned to the caller. The caller may
         need to call join on that that thread depending on their
         use case for this agent_run.
+
         :param agent: The agent object you want to run
         :param hz: Rate at which to call agent's `advance` function. If None,
             call `advance` repeatedly in a tight loop (i.e., as fast as

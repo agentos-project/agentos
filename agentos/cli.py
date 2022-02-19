@@ -140,7 +140,7 @@ def init(dir_names, agent_name):
     metavar="NAME=VALUE",
     multiple=True,
     help="A parameter for the run, of the form -P name=value. All parameters "
-    "will be passed to the entry_point function using a **kwargs style "
+    "will be passed to the entry_point function using a Python kwargs-style "
     "keyword argument https://docs.python.org/3/glossary.html#term-argument",
 )
 @click.option(
@@ -148,7 +148,7 @@ def init(dir_names, agent_name):
     metavar="PARAM_FILE",
     help="A YAML file containing parameters for the entry point being run. "
     "Will be passed to the entry_point function, along with individually "
-    "specified params, via a **kwargs style keyword argument "
+    "specified params, via a Python kwargs-style keyword argument "
     "https://docs.python.org/3/glossary.html#term-argument",
 )
 @_option_use_venv

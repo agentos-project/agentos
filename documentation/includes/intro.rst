@@ -5,6 +5,7 @@ The Python Component System
 The Python Component System (PCS) is an open source **Python API, command line
 interface, and public web registry** for building, running, and sharing Python
 programs.  The Python Component System is designed to:
+
   * Make program execution reproducible.
 
   * Transparently manage Python virtual environments and dependencies.
