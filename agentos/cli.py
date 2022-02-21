@@ -75,15 +75,6 @@ _option_agent_name = click.option(
     "AGENT_NAME may not contain ' ', ':', or '/'.",
 )
 
-_option_agentos_dir = click.option(
-    "--agentos-dir",
-    "-d",
-    metavar="AGENTOS_DIR",
-    type=click.Path(),
-    default="./.aos",
-    help="Directory path AgentOS components and data",
-)
-
 _option_assume_yes = click.option(
     "--assume-yes",
     "-y",
@@ -102,8 +93,7 @@ _option_force = click.option(
 @agentos_cmd.command()
 @_arg_dir_names
 @_option_agent_name
-@_option_agentos_dir
-def init(dir_names, agent_name, agentos_dir):
+def init(dir_names, agent_name):
     """Initialize current (or specified) directory as an AgentOS agent.
 
     \b
@@ -122,12 +112,13 @@ def init(dir_names, agent_name, agentos_dir):
 
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-        os.makedirs(agentos_dir, exist_ok=True)
         _instantiate_template_files(d, agent_name)
         d = "current working directory" if d == Path(".") else d
         click.echo(
-            f"Finished initializing AgentOS agent '{agent_name}' in {d}."
+            f"\nFinished initializing AgentOS agent '{agent_name}' in {d}.\n"
         )
+        click.echo("To run agent:")
+        click.echo("\tagentos run agent\n")
 
 
 @agentos_cmd.command()
@@ -323,10 +314,10 @@ def _instantiate_template_files(d, agent_name):
 _AGENT_DEF_FILE = Path("./templates/agent.py")
 _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
-_TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
 _AGENT_YAML_FILE = Path("./templates/components.yaml")
 _REQUIREMENTS_FILE = Path("./templates/requirements.txt")
+_README_FILE = Path("./templates/README.md")
 
 
 _INIT_FILES = [
@@ -334,9 +325,9 @@ _INIT_FILES = [
     _ENV_DEF_FILE,
     _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
-    _TRAINER_DEF_FILE,
     _AGENT_YAML_FILE,
     _REQUIREMENTS_FILE,
+    _README_FILE,
 ]
 
 

@@ -3,17 +3,11 @@ from statistics import mean, median
 
 
 class {agent_name}:
-    DEFAULT_ENTRY_POINT = "evaluate"
+    DEFAULT_ENTRY_POINT = "run_episodes"
 
-    def evaluate(self, num_episodes=10):
+    def run_episodes(self, num_episodes=1):
         for i in range(int(num_episodes)):
             self.run_episode()
-        self.print_results()
-
-    def learn(self, num_episodes=10):
-        for i in range(int(num_episodes)):
-            self.run_episode()
-        self.trainer.train()
         self.print_results()
 
     def run_episode(self):

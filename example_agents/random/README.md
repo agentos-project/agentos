@@ -1,42 +1,54 @@
-## Random Agent
+## AgentOS Basic Agent
 
-This agent is intended for testing purposes.  It is the default agent generated
-by `agentos init`. This agent randomly walks down a 1D corridor, has no backing
-data, and only dependencies on the Python standard library.
+This directory contains a basic agent that was automatically created by running
+the `agentos init` command.
 
-### Regenerate This Agent
+### Overview
 
-To regenerate this agent and update it to the latest default agent, run the
-following in the agent directory:
+This agent attempts to walk down a 1D corridor (i.e. the agent can only walk
+left or right) consisting of five rooms.  The agent starts in the far left room
+of the corridor and successfully completes an episode when it enters the far
+right room.  At each timestep, the agent chooses randomly to move into the room
+to its left or right.
 
-```bash
-rm -rf *.py *.yaml __pycache__ *.txt mlruns/
-agentos init .
+### To Run
+
+To run this agent, execute the following command in the agent directory:
+
+```
+agentos run agent
 ```
 
-### Agent Training
+This command runs the default agent entry point (`run_episodes()`) and will
+print out information about the agent's performance.
 
-Note this agent does not actually learn anything from training (i.e. its policy
-is always random). Train the agent by running the following from the
-command-line:
+To adjust the number of episodes run by this agent, you can pass the
+`num_episodes` parameter like so:
 
-```bash
-agentos run agent --entry-point learn
+```
+agentos run agent -P num_episodes=10
 ```
 
-Optional command-line arguments:
+### Structure
 
-* `-P num_episodes=X` - Run the learning algorithm for X episodes.
+This agent is composed of a number of Components and supporting files that are
+used by the Python Component System and AgentOS to instantiate and run the
+agent:
 
+* `components.yaml` - A registry file that describes each Component in the
+  agent system and how they depend on each other.
 
-### Agent Evaluation
+* `agent.py` - A Component that contains the core agent implementation and
+  logic to rollout various episodes in the environment.
 
-Evaluate the agent by running the following from the command-line:
+* `dataset.py` - A Component that records each transition the agent makes in
+  the environment to enable analysis of the agent's performance.
 
-```bash
-agentos run agent --entry-point evaluate
-```
+* `environment.py` - The environment Component that simulates the 1D corridor.
 
-Optional command-line arguments:
+* `policy.py` - This Component contains the random policy that the agent uses
+  to decide what action to take in the environment at each timestep. 
 
-* `-P num_episodes=X` - Evaluate the agent over X episodes.
+* `requirements.txt` - A text file listing the external pip dependencies of
+  this agent.  In this case, the file is empty because no external dependencies
+  are required to run this agent.
