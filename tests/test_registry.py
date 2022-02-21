@@ -115,8 +115,8 @@ def test_registry_from_file():
         random_local_ag.dependencies["environment"].identifier == "environment"
     )
     random_local_ag.run(
-        "evaluate",
-        ParameterSet({"agent": {"evaluate": {"num_episodes": 5}}}),
+        "run_episodes",
+        ParameterSet({"agent": {"run_episodes": {"num_episodes": 5}}}),
     )
 
     # Test publishing a component to an InMemoryRegistry

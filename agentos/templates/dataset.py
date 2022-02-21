@@ -1,7 +1,9 @@
 {file_header}
-import agentos
 
 
-# A basic dataset
-class BasicDataset(agentos.Dataset):
-    pass
+class BasicDataset:
+    def __init__(self):
+        self.episodes = []
+
+    def add(self, episode_transitions):
+        self.episodes.append(episode_transitions)
