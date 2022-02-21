@@ -28,7 +28,7 @@ AgentOS
 ==================================
 
 AgentOS is a set of libraries built on top of the Python Component System that
-makes it easy to build, run, and share agents that use Reinforcement Learning
+make it easy to build, run, and share agents that use Reinforcement Learning
 (RL) to solve tasks.
 
 Key features of AgentOS:
