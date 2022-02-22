@@ -1,12 +1,13 @@
 import tempfile
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Mapping
 from agentos.exceptions import PythonComponentSystemException
+from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
 from agentos.run import Run
 from agentos.run_command import RunCommand
-from agentos.specs import RunSpec, unflatten_spec
+from agentos.specs import RunSpec, flatten_spec, unflatten_spec
 
 
 def active_component_run(
@@ -85,6 +86,7 @@ class ComponentRun(Run):
             f"PCS Component '{self.run_command.component.identifier.full}' "
             f"at Entry Point '{self.run_command.entry_point}'",
         )
+        self._return_value = None
 
     @property
     def run_command(self) -> "RunCommand":
@@ -123,7 +125,30 @@ class ComponentRun(Run):
             self.run_command.to_registry(
                 registry, recurse=recurse, force=force
             )
-        super().to_registry(registry, force=force)
+        super().to_registry(
+            registry, include_artifacts=include_artifacts, force=force
+        )
+
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, identifier: RunIdentifier
+    ) -> "ComponentRun":
+        spec = registry.get_run_spec(identifier)
+        return cls.from_spec(spec, registry)
+
+    @classmethod
+    def from_spec(cls, spec: Mapping, registry: Registry) -> "ComponentRun":
+        flat_spec = flatten_spec(spec)
+        run_command = RunCommand.from_registry(
+            registry, flat_spec["run_command"]
+        )
+        w_run_cmd_from_mlflow = cls(existing_run_id=flat_spec["identifier"])
+        assert w_run_cmd_from_mlflow.run_command == run_command, (
+            "The RunCommand object created from the MLflow Run "
+            f"'{flat_spec['identifier']}' is different from the one fetched"
+            f"from the registry provided '{registry}'."
+        )
+        return w_run_cmd_from_mlflow
 
     def _fetch_run_command(self) -> RunCommand:
         try:

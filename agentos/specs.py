@@ -94,7 +94,6 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
         len(nested_spec.keys()) == 1
     ), f"Only specs w/ one key can be flattened: {nested_spec}"
     flat_spec = {}
-    print(f"flattening spec:{nested_spec}")
     for identifier, inner_spec in nested_spec.items():
         assert type(identifier) == str
         flat_spec.update(copy.deepcopy(inner_spec))

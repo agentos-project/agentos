@@ -1,4 +1,5 @@
 import abc
+import logging
 import os
 import yaml
 import json
@@ -27,6 +28,8 @@ from agentos.specs import (
     RunSpec,
     RunCommandSpec,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from agentos.component import Component
@@ -393,7 +396,6 @@ class WebRegistry(Registry):
     def _is_response_ok(
         response: requests.Response, error_if_not_found: bool = True
     ) -> bool:
-        print(f"Checking response with encoding: {response.encoding}")
         if response.ok:
             return True
         else:
@@ -408,7 +410,7 @@ class WebRegistry(Registry):
                 except Exception:
                     pass
             if error_if_not_found:
-                raise Exception(content)
+                raise LookupError(response.text)
             else:
                 return False
 
@@ -435,19 +437,22 @@ class WebRegistry(Registry):
         if url_filter_str:
             url_filter_str = f"?{url_filter_str}"
         component_url = f"{self.root_api_url}/components{url_filter_str}"
-        print(f"trying {component_url}")
         component_response = requests.get(component_url)
         assert component_response.status_code == 200
         json_results = json.loads(component_response.content)
         component_specs = {}
         for c_dict in json_results["results"]:
             identifier = f"{c_dict['name']}=={c_dict['version']}"
+            dep_dict = {
+                d["attribute_name"]: d["dependee"]
+                for d in c_dict["depender_set"]
+            }
             component_specs[identifier] = {
                 "repo": c_dict["repo"],
                 "file_path": c_dict["file_path"],
                 "class_name": c_dict["class_name"],
                 "instantiate": c_dict["instantiate"],
-                "dependencies": c_dict["dependencies"],
+                "dependencies": dep_dict,
             }
         return component_specs
 
@@ -481,7 +486,9 @@ class WebRegistry(Registry):
         self._post_spec_to_web_server("repo", repo_spec)
 
     def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        self._post_spec_to_web_server("component", component_spec)
+        flat_spec = flatten_spec(component_spec)
+        flat_spec = json_encode_flat_spec_field(flat_spec, "dependencies")
+        self._post_spec_to_web_server("component", unflatten_spec(flat_spec))
 
     def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
         flat_spec = flatten_spec(run_command_spec)
@@ -489,12 +496,12 @@ class WebRegistry(Registry):
         self._post_spec_to_web_server("runcommand", unflatten_spec(flat_spec))
 
     def add_run_spec(self, run_spec: RunSpec) -> Sequence:
-        run_spec = flatten_spec(run_spec)
-        run_spec = json_encode_flat_spec_field(run_spec, "info")
-        run_spec = json_encode_flat_spec_field(run_spec, "data")
-        if "artifact_tarball" not in run_spec:
-            run_spec["artifact_tarball"] = None
-        self._post_spec_to_web_server("run", run_spec)
+        flat_spec = flatten_spec(run_spec)
+        flat_spec = json_encode_flat_spec_field(flat_spec, "info")
+        flat_spec = json_encode_flat_spec_field(flat_spec, "data")
+        if "artifact_tarball" not in flat_spec:
+            flat_spec["artifact_tarball"] = None
+        self._post_spec_to_web_server("run", flat_spec)
 
     def add_run_artifacts(
         self, run_id: int, run_artifact_paths: Sequence[str]
@@ -531,14 +538,12 @@ class WebRegistry(Registry):
         if not self._is_response_ok(response, error_if_not_found):
             return None
         flat_spec = json.loads(response.content)
-        print("spec returned was:")
-        print(flat_spec)
         for spec_key, spec_val in [
             (k, v)
             for k, v in flat_spec.items()
             if k.endswith("_link") or not v
         ]:
-            print(
+            logger.debug(
                 f"Dropping field '{spec_key}: {spec_val}' from spec "
                 "returned by web server."
             )
@@ -553,12 +558,12 @@ class WebRegistry(Registry):
         assert spec_type in ["run", "runcommand", "repo", "component"]
         req_url = f"{self.root_api_url}/{spec_type}s/"
         data = spec if is_flat(spec) else flatten_spec(spec)
+        logger.debug(f"\nabout to post {spec_type} spec http request: {data}")
         response = requests.post(req_url, data=data)
         self._is_response_ok(response)
         result = json.loads(response.content)
-        print(f"\npost {spec_type} spec http response results:")
-        pprint.pprint(result)
-        print()
+        logger.debug(f"\npost {spec_type} spec http response:")
+        logger.debug(pprint.pformat(result))
 
     def to_dict(self) -> Dict:
         raise Exception("to_dict() is not supported on WebRegistry.")

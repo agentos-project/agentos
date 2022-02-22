@@ -78,7 +78,7 @@ class Component(TimeStampedModel):
         unique_together = [("name", "version")]
 
     def __str__(self):
-        return f"<Component {self.pk}: {self.name}=={self.short_version}>"
+        return f"<Component {self.pk}>"
 
     @property
     def short_version(self):
@@ -124,40 +124,30 @@ class Component(TimeStampedModel):
         }
 
     @staticmethod
-    def create_from_dict(component_spec_dict: Dict) -> List:
-        components = []
-        for name, component_spec in component_spec_dict.items():
-            identifier = CLI_Component.Identifier.from_str(name)
-            default_kwargs = {
-                "repo": Repo.objects.get(identifier=component_spec["repo"]),
-                "file_path": component_spec["file_path"],
-                "class_name": component_spec["class_name"],
-                "instantiate": component_spec["instantiate"],
-            }
-            # TODO - When we have accounts, we need to check the the user
-            #        has permission to create a new version of this Component
-            #        (i.e. if the name already exists but not the version).
-            print(Component.objects.all())
-            print(
-                f"calling get_or_create(\nname={identifier.name}\n"
-                f"version={identifier.version}\n"
-                f"defaults={default_kwargs}\n)"
+    def create_from_flat_spec(flat_spec: Dict) -> List:
+        identifier = CLI_Component.Identifier.from_str(flat_spec["identifier"])
+        default_kwargs = {
+            "name": identifier.name,
+            "version": identifier.version,
+            "repo": Repo.objects.get(identifier=flat_spec["repo"]),
+            "file_path": flat_spec["file_path"],
+            "class_name": flat_spec["class_name"],
+            "instantiate": flat_spec.get("instantiate", False),
+        }
+        # TODO - When we have accounts, we need to check the the user
+        #        has permission to create a new version of this Component
+        #        (i.e. if the name already exists but not the version).
+        component, created = Component.objects.get_or_create(
+            identifier=identifier.full,
+            defaults=default_kwargs,
+        )
+        # If not created and not equal, prevent Component redefinition
+        if not created and not component._equals_spec(flat_spec):
+            raise ValidationError(
+                f"Component with id {identifier.full} already exists and "
+                "differs from uploaded spec. Try renaming your Component."
             )
-            component, created = Component.objects.get_or_create(
-                name=identifier.name,
-                version=identifier.version,
-                defaults=default_kwargs,
-            )
-            # If not created and not equal, prevent Component redefinition
-            if not created and not component._equals_spec(component_spec):
-                raise ValidationError(
-                    f"Component with name {name} and version "
-                    f"{component.version} (id: {component.id}) "
-                    f"already exists and differs from uploaded spec. "
-                    f"Try renaming your {name} Component."
-                )
-            components.append(component)
-        return components
+        return component
 
     # TODO - check versions in here once we have Component owners
     def _equals_spec(self, other_spec):
@@ -190,7 +180,7 @@ class Repo(TimeStampedModel):
     url = models.CharField(max_length=200)
 
     def __str__(self):
-        return f"<Repo '{self.identifier}' type {self.type} " f"at {self.url}>"
+        return f"<Repo '{self.identifier}' type {self.type} at {self.url}>"
 
     @staticmethod
     def create_from_dict(repo_spec_dict: Dict) -> List:

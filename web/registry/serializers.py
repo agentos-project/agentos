@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.reverse import reverse
-from .models import Repo, Component, RunCommand, Run
+from .models import Repo, ComponentDependency, Component, RunCommand, Run
 
 
 def _get_link_from_id(serializer, view_name, obj_id):
@@ -25,10 +25,20 @@ class RepoSerializer(serializers.ModelSerializer):
         return _get_link_from_id(self, "repo-detail", obj.identifier)
 
 
+class ComponentDependencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComponentDependency
+        fields = [
+            "dependee",
+            "attribute_name",
+        ]
+
+
 class ComponentSerializer(serializers.ModelSerializer):
     identifier_link = serializers.SerializerMethodField()
     repo_link = serializers.SerializerMethodField()
     github_source_link = serializers.SerializerMethodField()
+    depender_set = ComponentDependencySerializer(many=True, read_only=True)
 
     class Meta:
         model = Component
@@ -42,7 +52,7 @@ class ComponentSerializer(serializers.ModelSerializer):
             "file_path",
             "class_name",
             "instantiate",
-            "dependencies",
+            "depender_set",
             "github_source_link",
         ]
 

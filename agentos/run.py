@@ -145,10 +145,6 @@ class Run:
     def from_existing_run_id(cls, run_id: RunIdentifier) -> "Run":
         return cls(existing_run_id=run_id)
 
-    @classmethod
-    def from_tracking_store(cls, run_id: RunIdentifier):
-        return cls.from_existing_run_id(run_id)
-
     @property
     def _mlflow_run(self):
         return self._mlflow_client.get_run(self._mlflow_run_id)
@@ -227,16 +223,14 @@ class Run:
         registry: Registry,
         run_id: RunIdentifier,
     ) -> "Run":
-        # TODO figure out a way to deserialize an MLflowRun from the registry
-        #     and reconcile that with what is in the tracking store.
-        # run_spec = registry.get_run_spec(run_id)
-        raise NotImplementedError
+        run_spec = registry.get_run_spec(run_id)
+        return cls.from_existing_run_id(run_spec["identifier"])
 
     def to_registry(
         self,
         registry: Registry = None,
-        include_artifacts: bool = False,
         force: bool = False,
+        include_artifacts: bool = False,
     ) -> Registry:
         if not registry:
             from agentos.registry import InMemoryRegistry

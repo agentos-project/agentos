@@ -1,5 +1,6 @@
 import sys
 import uuid
+import logging
 import importlib
 from pathlib import Path
 from dill.source import getsource as dill_getsource
@@ -17,6 +18,8 @@ from agentos.registry import (
 from agentos.exceptions import RegistryException
 from agentos.repo import Repo, LocalRepo, GitHubRepo
 from agentos.parameter_set import ParameterSet
+
+logger = logging.getLogger(__name__)
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -88,7 +91,10 @@ class Component:
         its full dependency tree of other Component Objects.
         If no Registry is provided, use the default registry.
         """
-        identifier = Component.Identifier(name, version)
+        if version:
+            identifier = ComponentIdentifier(name, version)
+        else:
+            identifier = ComponentIdentifier.from_str(name)
         component_specs, repo_specs = registry.get_specs_transitively_by_id(
             identifier, flatten=True
         )
@@ -171,12 +177,12 @@ class Component:
                 "available as an attribute of their module."
             )
             src_file = Path(managed_cls_module.__file__)
-            print(
-                f"handling managed_cls {managed_cls.__name__} from existing "
+            logger.debug(
+                f"Handling managed_cls {managed_cls.__name__} from existing "
                 f"source file {src_file}. dir(managed_cls): \n"
             )
             repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
-            print(
+            logger.debug(
                 f"Created LocalRepo {repo.identifier} from existing source "
                 f"file {src_file}."
             )
@@ -423,7 +429,9 @@ class Component:
                          themselves components) to the specified registry.
         :param recurse: If True, check that all transitive dependencies
                         exist in the registry already, and if they don't, then
-                        add them. If they do, ensure that they are equal to
+                        add them. This includes dependencies on other
+                        Components as well as dependencies a repo.
+                        If they do, ensure that they are equal to
                         this component's dependencies (unless ``force`` is
                         specified).
         :param force: Optionally, if a component with the same identifier
@@ -432,36 +440,48 @@ class Component:
         """
         if not registry:
             registry = InMemoryRegistry()
-        for c in self.dependency_list():
-            existing_c_spec = registry.get_component_specs(
-                filter_by_name=c.name, filter_by_version=c.version
-            )
-            if existing_c_spec and not force:
-                if existing_c_spec != c.to_spec():
-                    raise RegistryException(
-                        f"Trying to register a component {c.identifier} that "
-                        f"already exists in a different form:\n"
-                        f"{existing_c_spec}\n"
-                        f"VS\n"
-                        f"{c.to_spec()}\n\n"
-                        f"To overwrite, specify force=true."
-                    )
-            try:
-                repo_spec = registry.get_repo_spec(c.repo.identifier)
-                if repo_spec != c.repo.to_spec():
-                    raise RegistryException(
-                        f"A Repo with identifier {c.repo.identifier} already "
-                        "exists in this registry that differs from the one "
-                        f"referred to by component {c.identifier}.\n"
-                        f"New repo spec:\n{repo_spec}\n\n"
-                        f"Existing repo spec:\n{c.repo.to_spec()}"
-                    )
-            except LookupError:
-                # Repo not yet added to registry, so so add it.
-                registry.add_repo_spec(c.repo.to_spec())
-            registry.add_component_spec(c.to_spec())
-            if not recurse:
-                break
+        # Make sure this identifier does not exist in registry yet.
+        existing_spec = registry.get_component_spec(
+            self.identifier, error_if_not_found=False
+        )
+        if existing_spec and not force:
+            if existing_spec != self.to_spec():
+                raise RegistryException(
+                    f"Component {self.identifier} already exists in registry "
+                    f"{registry} and differs from the one you're trying to "
+                    f"add. Specify force=True to overwrite it.\n"
+                    f"existing: {existing_spec}"
+                    "\nVS\n"
+                    f"new: {self.to_spec()}"
+                )
+        # handle dependencies on other components
+        if recurse:
+            for c in self.dependency_list(include_root=False):
+                existing_c_spec = registry.get_component_spec(
+                    name=c.name,
+                    version=c.version,
+                    error_if_not_found=False,
+                )
+                if existing_c_spec and not force:
+                    if existing_c_spec != c.to_spec():
+                        raise RegistryException(
+                            f"Trying to register a component {c.identifier} "
+                            f"that already exists in a different form:\n"
+                            f"{existing_c_spec}\n"
+                            f"VS\n"
+                            f"{c.to_spec()}\n\n"
+                            f"To overwrite, specify force=true."
+                        )
+                # Either component dependency not in registry already or we are
+                # force adding it.
+                logger.debug(
+                    f"recursively adding dependent component '{c.name}'"
+                )
+                c.to_registry(registry, recurse=recurse, force=force)
+
+            # Either repo not in registry already or we are force adding it.
+            self.repo.to_registry(registry, recurse=recurse, force=force)
+        registry.add_component_spec(self.to_spec())
         return registry
 
     def to_frozen_registry(self, force: bool = False) -> Registry:
@@ -481,10 +501,11 @@ class Component:
                  of this component (optionally  including the root component).
         """
         component_queue = [self]
-        ret_val = set([self]) if include_root else set()
+        ret_val = set()
         while component_queue:
             component = component_queue.pop()
-            ret_val.add(component)
+            if include_root or component is not self:
+                ret_val.add(component)
             for dependency in component.dependencies.values():
                 component_queue.append(dependency)
         return list(ret_val)
