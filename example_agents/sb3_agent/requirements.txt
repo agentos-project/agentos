@@ -2,7 +2,7 @@
 #   linux:
 #       "-f": "https://download.pytorch.org/whl/torch_stable.html"
 
-stable_baselines3==1.2.0
+stable_baselines3==1.4.0
 dm-env==1.5
 mlflow==1.20.2
 torch==1.9.1+cpu; sys_platform == 'linux'
