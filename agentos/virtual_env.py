@@ -55,6 +55,18 @@ class VirtualEnv:
         requirements_path keys of all Components in the DAG.
         """
         registry = Registry.from_yaml(yaml_file)
+        return cls.from_registry(registry, name, version)
+
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, name: str, version: str = None
+    ) -> "VirtualEnv":
+        """
+        Given a Registry, a Component name, and optionally
+        a Component versions, this will instantiate and return a virtual
+        environment that satisfies all requirements specified in the
+        requirements_path keys of all Components in the DAG.
+        """
         identifier = ComponentIdentifier(name, version)
         venv = cls()
         venv.build_venv_for_component(registry, identifier)

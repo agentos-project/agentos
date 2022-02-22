@@ -14,7 +14,7 @@ from agentos.exceptions import (
     BadGitStateException,
     PythonComponentSystemException,
 )
-from agentos.utils import AOS_CACHE_DIR
+from agentos.utils import AOS_REPOS_DIR
 from agentos.component import ComponentIdentifier
 from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys
 
@@ -53,7 +53,12 @@ class Repo(abc.ABC):
                 path = Path(base_dir) / inner_spec["path"]
                 return LocalRepo(identifier=identifier, local_dir=path)
             elif repo_type == RepoType.GITHUB.value:
-                return GitHubRepo(identifier=identifier, url=inner_spec["url"])
+                return GitHubRepo(
+                    identifier=identifier,
+                    url=inner_spec["url"],
+                    branch_name=inner_spec.get("branch_name"),
+                    relative_path=inner_spec.get("relative_path"),
+                )
         raise PythonComponentSystemException(
             f"Unknown repo spec type '{repo_type} in repo {identifier}"
         )
@@ -249,12 +254,20 @@ class GitHubRepo(Repo):
     A Component with an GitHubRepo can be found on GitHub.
     """
 
-    def __init__(self, identifier: str, url: str):
+    def __init__(
+        self,
+        identifier: str,
+        url: str,
+        branch_name: str = None,
+        relative_path=None,
+    ):
         super().__init__(identifier)
         self.type = RepoType.GITHUB
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
+        self.branch_name = branch_name
+        self.relative_path = relative_path
         self.local_repo_path = None
         self.porcelain_repo = None
 
@@ -263,9 +276,15 @@ class GitHubRepo(Repo):
             RepoSpecKeys.TYPE: self.type.value,
             RepoSpecKeys.URL: self.url,
         }
+        if self.branch_name:
+            inner["branch_name"] = self.branch_name
+        if self.relative_path:
+            inner["relative_path"] = self.relative_path
+
         return self.optionally_flatten_spec(inner, flatten)
 
     def get_local_repo_dir(self, version: str) -> Path:
+        version = version or self.branch_name
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
@@ -273,11 +292,13 @@ class GitHubRepo(Repo):
 
     def get_local_file_path(self, version: str, file_path: str) -> Path:
         local_repo_path = self.get_local_repo_dir(version)
+        if self.relative_path:
+            local_repo_path = local_repo_path / self.relative_path
         return (local_repo_path / file_path).absolute()
 
     def _clone_repo(self, version: str) -> Path:
         org_name, proj_name = self.url.split("/")[-2:]
-        clone_destination = AOS_CACHE_DIR / org_name / proj_name / version
+        clone_destination = AOS_REPOS_DIR / org_name / proj_name / version
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             porcelain.clone(

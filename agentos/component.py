@@ -75,6 +75,22 @@ class Component:
         self.active_run = None
 
     @classmethod
+    def from_github_registry(
+        cls,
+        github_url: str,
+        name: str,
+        version: str = None,
+        use_venv: bool = False,
+    ) -> "Component":
+        from agentos.virtual_env import VirtualEnv
+
+        registry = Registry.from_github(github_url)
+        if use_venv:
+            venv = VirtualEnv.from_registry(registry, name, version)
+            venv.activate()
+        return cls.from_registry(registry, name, version)
+
+    @classmethod
     def from_default_registry(
         cls, name: str, version: str = None
     ) -> "Component":

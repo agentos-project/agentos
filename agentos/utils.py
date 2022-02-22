@@ -5,7 +5,8 @@ from typing import Dict
 
 
 AOS_CACHE_DIR = Path.home() / ".agentos_cache"
-AOS_REQS_DIR = AOS_CACHE_DIR / "requirements"
+AOS_REQS_DIR = AOS_CACHE_DIR / "requirements_cache"
+AOS_REPOS_DIR = AOS_CACHE_DIR / "repos_cache"
 
 
 def generate_dummy_dev_registry(

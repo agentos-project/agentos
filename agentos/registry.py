@@ -47,6 +47,37 @@ class Registry(abc.ABC):
         )  # Used for file-backed Registry types.
 
     @staticmethod
+    def from_github(github_url: str) -> "Registry":
+        from agentos.repo import GitHubRepo
+
+        assert "raw" in github_url or "blob" in github_url
+        response = requests.get(github_url.replace("blob", "raw"))
+        assert response.status_code == 200
+        registry = Registry.from_dict(yaml.safe_load(response.content))
+        new_repos = {}
+        for repo_id, repo_spec in registry._registry["repos"].items():
+            if repo_spec["type"] == "local":
+                repo_url, repo_path = github_url.split("blob/")
+                repo_url = repo_url.rstrip("/")
+                # first var from split is branch_name
+                branch_name, repo_path = repo_path.split("/", 1)
+                split_url = repo_url.split("/")
+                split_url = [el.replace("-", "_") for el in split_url]
+                relative_path = "/".join(repo_path.split("/")[:-1])
+                repo = GitHubRepo(
+                    identifier=repo_id,
+                    url=repo_url,
+                    branch_name=branch_name,
+                    relative_path=relative_path,
+                )
+                repo_spec = repo.to_spec()
+                new_repos.update(repo_spec)
+            else:
+                new_repos[repo_id] = repo_spec
+        registry._registry["repos"] = new_repos
+        return registry
+
+    @staticmethod
     def from_dict(input_dict: Dict) -> "Registry":
         return InMemoryRegistry(input_dict)
 
