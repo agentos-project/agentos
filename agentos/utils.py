@@ -5,7 +5,36 @@ from typing import Dict
 
 
 AOS_CACHE_DIR = Path.home() / ".agentos_cache"
-AOS_REQS_DIR = AOS_CACHE_DIR / "requirements"
+AOS_REQS_DIR = AOS_CACHE_DIR / "requirements_cache"
+AOS_REPOS_DIR = AOS_CACHE_DIR / "repos_cache"
+
+
+def parse_github_web_ui_url(github_url: str) -> (str, str, str):
+    """
+    Parses a GitHub web UI URL of form::
+
+        https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
+
+    and returns a 3-tuple of
+
+    1. The repo URL (i.e. the https URL the repo can be cloned from)
+    2. The branch_name or commit hash contained in the URL
+    3. The path of the file contained in the suffix of the URL
+    """
+    URL_STARTS_WITH = "https://github.com"
+    error_msg = f'URL must start "{URL_STARTS_WITH}", not "{github_url}"'
+    assert github_url.startswith(URL_STARTS_WITH), error_msg
+    stripped_url = github_url.lstrip(URL_STARTS_WITH)
+    split_url = stripped_url.split("/")
+    # Split should look like
+    # [<project>, <repo>, {blob/raw}, <branch>, <path_1>, <path_2>, ...]
+    assert len(split_url) >= 5, f"Can't find required paths in: {github_url}"
+    project_name = split_url[0]
+    repo_name = split_url[1]
+    repo_url = "/".join((URL_STARTS_WITH, project_name, repo_name))
+    branch_name = split_url[3]
+    repo_path = "/".join(split_url[4:])
+    return repo_url, branch_name, repo_path
 
 
 def generate_dummy_dev_registry(

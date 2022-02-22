@@ -15,7 +15,7 @@ from agentos.exceptions import (
     BadGitStateException,
     PythonComponentSystemException,
 )
-from agentos.utils import AOS_CACHE_DIR
+from agentos.utils import AOS_REPOS_DIR
 from agentos.identifiers import ComponentIdentifier, RepoIdentifier
 from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys, flatten_spec
 from agentos.registry import Registry, InMemoryRegistry
@@ -230,23 +230,17 @@ class Repo(abc.ABC):
     ) -> Path:
         """
         Finds the 'component_path' relative to the repo containing the
-        Component.  For example, if ``component_path`` is:
+        Component.  For example, if ``component_path`` is::
 
-        ```
-        /foo/bar/baz/my_component.py
-        ```
+            /foo/bar/baz/my_component.py
 
-        and a git repo lives in:
+        and a git repo lives in::
 
-        ```
-        /foo/bar/.git/
-        ```
+            /foo/bar/.git/
 
-        then this would return:
+        then this would return::
 
-        ```
-        baz/my_component.py
-        ```
+            baz/my_component.py
         """
         full_path = self.get_local_file_path(identifier.version, file_path)
         name = full_path.name
@@ -297,7 +291,7 @@ class GitHubRepo(Repo):
 
     def _clone_repo(self, version: str) -> Path:
         org_name, proj_name = self.url.split("/")[-2:]
-        clone_destination = AOS_CACHE_DIR / org_name / proj_name / version
+        clone_destination = AOS_REPOS_DIR / org_name / proj_name / version
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             porcelain.clone(
@@ -344,7 +338,7 @@ class LocalRepo(Repo):
             #      location for a local repo, which will be used to
             #      write source files created by Component.from_class with
             #      classes that are defined in the REPL.
-            # NOTE: We do not use utils.AOS_CACHE_DIR here since this
+            # NOTE: We do not use utils.AOS_REPOS_DIR here since this
             #       is not a cache of a remote git repo, rather it is a local
             #       repo that may be the only copy in existence.
             local_dir = "./.pcs_local_repo"

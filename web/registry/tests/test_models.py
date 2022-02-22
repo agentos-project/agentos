@@ -19,7 +19,7 @@ class ModelTests(LiveServerTestCase):
             repo=r,
             class_name="X",
             file_path=".",
-            instantiate=False
+            instantiate=False,
         )
         component_two = Component.objects.create(
             identifier="y",
@@ -28,12 +28,10 @@ class ModelTests(LiveServerTestCase):
             repo=r,
             class_name="X",
             file_path=".",
-            instantiate=False
+            instantiate=False,
         )
         cd = ComponentDependency(
-            depender=component,
-            dependee=component_two,
-            attribute_name="x"
+            depender=component, dependee=component_two, attribute_name="x"
         )
         self.assertIsNotNone(component_two.dependencies.all())
         cd.save()
