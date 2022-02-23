@@ -25,7 +25,7 @@ version = (
 # -- Project information -----------------------------------------------------
 
 project = "AgentOS"
-copyright = "2021, AgentOS"
+copyright = "2022, AgentOS"
 author = "Andy Konwinski"
 
 # The full version, including alpha/beta/rc tags
@@ -49,12 +49,12 @@ todo_include_todos = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
-html_extra_path = ["CNAME", ".nojekyll"]
+html_extra_path = []
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**design_docs/*.rst"]
 
 numfig = True
 

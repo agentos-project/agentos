@@ -113,8 +113,8 @@ class Registry(abc.ABC):
                already included via the ComponentIdentifier Dict key.
 
         :returns: A dictionary of components in this registry, optionally
-        filtered by name, version, or both. If no matching components are
-        found, an empty dictionary is returned.
+                  filtered by name, version, or both. If no matching
+                  components are found, an empty dictionary is returned.
         """
         raise NotImplementedError
 
@@ -158,8 +158,10 @@ class Registry(abc.ABC):
             dependencies, etc.
         :param error_if_not_found: Set to False to return an empty dict in
             the case that a matching component is not found in this registry.
+
         :returns: a ComponentSpec (i.e. a dict) matching the filter criteria
             provided, else throw an error.
+
         """
         components = self.get_component_specs(name, version)
         if len(components) == 0:
