@@ -16,6 +16,23 @@ their code. The component programming model provides a **standard, reproducible
 way** to setup, run, capture the outputs and results of a Python program, and
 then share these outputs and results with collaborators.
 
+Key Features
+------------
+
+The key features provided by PCS, our implementation of the component programming model, are:
+
+* A standard reproducible way to run Python code.
+* Transparent handling of dependency and environment management.
+* An API to ``pip`` and ``virtualenv``.
+* Support for easy, decentralized sharing of code and run history.
+* Full code lifecycle handling from setup to running to capturing run results.
+* All functionality available from within Python and on the command-line.
+* Integrates with the existing Python ecosystem.
+* Ability to incrementally adopt PCS functionality as your project requirements
+  become better defined.
+
+
+
 Key Concepts
 ------------
 
@@ -77,21 +94,3 @@ To aid in sharing, PCS also provides a **Registry** interface.  A Registry
 provides a way to store and retrieve specs.  PCS includes several
 implementations of Registries, including one backed by the local filesystem and
 one backed by a web server.
-
-
-Key Features
-------------
-
-The key features provided by PCS, our implementation of the component programming model, are:
-
-* A standard reproducible way to run Python code.
-* Transparent handling of dependency and environment management.
-* An API to ``pip`` and ``virtualenv``.
-* Support for easy, decentralized sharing of code and run history.
-* Full code lifecycle handling from setup to running to capturing run results.
-* All functionality available from within Python and on the command-line.
-* Integrates with the existing Python ecosystem.
-* Ability to incrementally adopt PCS functionality as your project requirements
-  become better defined.
-
-

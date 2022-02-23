@@ -110,15 +110,22 @@ def init(dir_names, agent_name):
     if dir_names:
         dirs = [Path(d) for d in dir_names]
 
+    CWD_STR = "current working directory"
+
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
         _instantiate_template_files(d, agent_name)
-        d = "current working directory" if d == Path(".") else d
+        d = CWD_STR if d == Path(".") else d
         click.echo(
             f"\nFinished initializing AgentOS agent '{agent_name}' in {d}.\n"
         )
         click.echo("To run agent:")
-        click.echo("\tagentos run agent\n")
+
+        registry_path = ""
+        if d != CWD_STR:
+            registry_path = f"-r {d}/components.yaml"
+        run_cmd = f"\tagentos run agent {registry_path}\n"
+        click.echo(run_cmd)
 
 
 @agentos_cmd.command()

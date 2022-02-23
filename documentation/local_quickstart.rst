@@ -14,9 +14,8 @@ shell::
 Now, let's create a new directory for our project and initialize it.  Run the
 following in your shell::
 
-    mkdir quickstart
+    agentos init quickstart
     cd quickstart
-    agentos init .
 
 The ``agentos init .`` command creates (in the current directory) a default
 project that illustrates the usage of PCS in a local development context.  You
@@ -28,7 +27,7 @@ the different Python classes (found in the newly created Python files) that
 this project uses.  These classes are referred to as **Components** in PCS and
 they provide the foundation of any project built to execute in the PCS runtime.
 
-The default project creates a agent that walks down a 1-dimensional corridor by
+The default project creates an agent that walks down a 1-dimensional corridor by
 randomly choosing to step left or right.  Let's try to run our default
 project::
 

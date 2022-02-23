@@ -9,14 +9,15 @@ Python Component System (PCS)
 ==================================
 
 PCS is an open source **Python API, command line interface, and public web
-registry** for building, running, and sharing Python programs.  PCS:
+registry** for building, running, and sharing Python programs.  The goals of
+PCS are to:
 
-* Makes program execution reproducible.
+* Make Python program execution reproducible.
 
-* Transparently manages Python virtual environments while providing a Python
-  API for ``pip`` and ``virtualenv``.
+* Transparently manage Python virtual environments while providing a Python API
+  for ``pip`` and ``virtualenv``.
 
-* Simplifies experiment tracking and code sharing.
+* Simplify experiment tracking and code sharing.
 
 PCS does this by allowing you to explicitly specify dependencies and parameters
 for your program and then providing a thin runtime (currently based on `MLflow
