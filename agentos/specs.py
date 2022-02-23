@@ -17,9 +17,10 @@ For developer convenience many functions support flattened specs, which have
 the spec identifier at the same level as the rest of the spec properties.
 """
 
-from typing import Mapping, Union, Any
 import copy
-
+import json
+from typing import Mapping, Union, Any
+from agentos.identifiers import ComponentIdentifier
 
 FlatSpec = Mapping[str, str]
 
@@ -76,7 +77,7 @@ RunCommandSpec = Mapping
 
 class RunCommandSpecKeys:
     IDENTIFIER = "identifier"  # for flattened RunCommandSpec
-    COMPONENT_ID = "component_id"
+    COMPONENT_ID = "component"
     ENTRY_POINT = "entry_point"
     PARAMETER_SET = "parameter_set"
 
@@ -88,22 +89,30 @@ class RunSpecKeys:
     IDENTIFIER = "identifier"
 
 
-def flatten_spec(nested_spec: dict) -> dict:
-    assert len(nested_spec.keys()) == 1
+def flatten_spec(nested_spec: Mapping) -> Mapping:
+    assert (
+        len(nested_spec.keys()) == 1
+    ), f"Only specs w/ one key can be flattened: {nested_spec}"
     flat_spec = {}
     for identifier, inner_spec in nested_spec.items():
         assert type(identifier) == str
         flat_spec.update(copy.deepcopy(inner_spec))
-        for key_check in [
-            ComponentSpecKeys.IDENTIFIER,
-            ComponentSpecKeys.NAME,
-            ComponentSpecKeys.VERSION,
-        ]:
-            assert key_check not in flat_spec, (
-                f"'{key_check}' is a reserved key: it cannot be "
-                "set by a developer since PCS sets it automatically when "
-                "flattening specs."
+
+        def err(attr):
+            return (
+                f"'{attr}' is a reserved spec key: if it exists inside a "
+                "nested spec, its value must match the spec's identifier."
             )
+
+        if ComponentSpecKeys.IDENTIFIER in flat_spec:
+            flat_spec_id = flat_spec[ComponentSpecKeys.IDENTIFIER]
+            assert flat_spec_id == identifier, err("identifier")
+        if ComponentSpecKeys.NAME in flat_spec:
+            name = ComponentIdentifier(identifier).name
+            assert flat_spec[ComponentSpecKeys.NAME] == name, err("name")
+        if ComponentSpecKeys.VERSION in flat_spec:
+            ver = ComponentIdentifier(identifier).version
+            assert flat_spec[ComponentSpecKeys.version] == ver, err("version")
         flat_spec[ComponentSpecKeys.IDENTIFIER] = identifier
         id_parts = identifier.split(VersionedSpec.SEPARATOR)
         assert 0 < len(id_parts) <= 2, f"invalid identifier {identifier}"
@@ -115,10 +124,25 @@ def flatten_spec(nested_spec: dict) -> dict:
     return flat_spec
 
 
-def unflatten_spec(flat_spec: object) -> object:
+def unflatten_spec(
+    flat_spec: Mapping, preserve_inner_identifier: bool = False
+) -> Mapping:
+    """
+    Takes a flat spec, and returns a nested spec. A nested spec is a map
+    from the spec's identifier to a map of the specs other key->value
+    attributes. A flat spec moves the identifier into the inner map,
+    essentially flattening the outer two dictionaries into a single dictionary.
+
+    :param flat_spec: a flat spec to unflatten.
+    :param preserve_inner_identifier: if true, do not delete 'identiifer',
+        'name', or 'version' keys (and their associated values) from the inner
+        part of the nested spec that is returned. Else, do remove them, i.e.,
+        normalize the spec.
+    :return: Nested version of ``flat_spec``.
+    """
     assert ComponentSpecKeys.IDENTIFIER in flat_spec
-    if VersionedSpec.SEPARATOR in flat_spec[ComponentSpecKeys.IDENTIFIER]:
-        identifier = flat_spec[ComponentSpecKeys.IDENTIFIER]
+    identifier = flat_spec[ComponentSpecKeys.IDENTIFIER]
+    if VersionedSpec.SEPARATOR in identifier:
         parts = identifier.split(VersionedSpec.SEPARATOR)
         assert len(parts) == 2
         for check_key in [ComponentSpecKeys.NAME, ComponentSpecKeys.VERSION]:
@@ -128,4 +152,28 @@ def unflatten_spec(flat_spec: object) -> object:
                 "identifier."
             )
     dup_spec = copy.deepcopy(flat_spec)
-    return {dup_spec.pop(ComponentSpecKeys.IDENTIFIER): dup_spec}
+    if not preserve_inner_identifier:
+        if ComponentSpecKeys.NAME in dup_spec:
+            dup_spec.pop(ComponentSpecKeys.NAME)
+        if ComponentSpecKeys.VERSION in dup_spec:
+            dup_spec.pop(ComponentSpecKeys.VERSION)
+        if ComponentSpecKeys.IDENTIFIER in dup_spec:
+            dup_spec.pop(ComponentSpecKeys.IDENTIFIER)
+    return {identifier: dup_spec}
+
+
+def is_flat(spec: Mapping) -> bool:
+    assert len(spec) > 0  # specs must have at least one key-value pair.
+    # Nested specs have exactly one outer-most key, i.e., their identifier.
+    # Flat specs have more than one (the identifier and something else).
+    return not len(spec) == 1
+
+
+def json_encode_flat_spec_field(spec: Mapping, field_name: str) -> Mapping:
+    assert is_flat(spec)
+    assert field_name in spec, f"no key '{field_name}' in spec '{spec}'."
+    spec_copy = copy.deepcopy(spec)
+    spec_copy[field_name] = json.encoder.JSONEncoder().encode(
+        spec_copy[field_name]
+    )
+    return spec_copy

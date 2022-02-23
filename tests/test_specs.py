@@ -21,11 +21,32 @@ def test_flatten_spec():
     assert "local_dir" in nested.keys()
     assert nested["local_dir"]["type"] == "local"
     assert nested["local_dir"]["path"] == "."
+    assert "identifier" not in nested["local_dir"]
+    assert "name" not in nested["local_dir"]
+    assert "version" not in nested["local_dir"]
 
-    # make sure we used deepcopy
-    flattened["path"] = "updated_path"
+    # Test preserve identifier & parts when unflattening
+    preserved_inner_id = unflatten_spec(
+        flattened, preserve_inner_identifier=True
+    )
+    assert "local_dir" in preserved_inner_id.keys()
+    assert preserved_inner_id["local_dir"]["type"] == "local"
+    assert preserved_inner_id["local_dir"]["path"] == "."
+    assert preserved_inner_id["local_dir"]["identifier"] == "local_dir"
+    assert preserved_inner_id["local_dir"]["name"] == "local_dir"
+    assert preserved_inner_id["local_dir"]["version"] is None
+
+    # make sure we can go back and forth.
+    re_flattened = flatten_spec(nested)
+    assert re_flattened["type"] == "local"
+    assert re_flattened["path"] == "."
+
+    # make sure we used deepcopy for flatten and unflatten
+    nested["local_dir"]["path"] = "new_path_val"
+    assert flattened["path"] == "."
+    flattened["path"] = "even_newer_path"
+    assert nested["local_dir"]["path"] == "new_path_val"
     assert rand_repo_spec["local_dir"]["path"] == "."
-    assert nested["local_dir"]["path"] == "."
 
 
 def test_flatten_versioned_spec():

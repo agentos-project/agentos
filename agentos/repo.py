@@ -1,6 +1,7 @@
 import os
 import sys
 import abc
+import logging
 from enum import Enum
 from typing import TypeVar, Dict, Tuple, Union
 from pathlib import Path
@@ -15,8 +16,11 @@ from agentos.exceptions import (
     PythonComponentSystemException,
 )
 from agentos.utils import AOS_CACHE_DIR
-from agentos.component import ComponentIdentifier
-from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys
+from agentos.identifiers import ComponentIdentifier, RepoIdentifier
+from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys, flatten_spec
+from agentos.registry import Registry, InMemoryRegistry
+
+logger = logging.getLogger(__name__)
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -62,18 +66,32 @@ class Repo(abc.ABC):
     def to_spec(self, flatten: bool = False) -> RepoSpec:
         return NotImplementedError  # type: ignore
 
-    def optionally_flatten_spec(self, inner: dict, flatten: bool):
-        """
-        Helper function for optionally flattening a spec.
-        :param inner: the inner dict to flatten or not.
-        :param flatten: the flag for whether to flatten this spec.
-        :return: a spec that is either flattened or not.
-        """
-        if flatten:
-            inner.update({RepoSpecKeys.IDENTIFIER: self.identifier})
-            return inner
-        else:
-            return {self.identifier: inner}
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,  # Leave for compatibility w/ future unified spec
+        force: bool = False,
+    ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
+        repo_spec = registry.get_repo_spec(
+            self.identifier, error_if_not_found=False
+        )
+        if repo_spec and not force:
+            assert repo_spec == self.to_spec(), (
+                f"A Repo with identifier '{self.identifier}' "
+                f"already exists in registry '{registry}' that differs "
+                f"from the one provided."
+                f"New repo spec:\n{self.to_spec()}\n\n"
+                f"Existing repo spec:\n{repo_spec}"
+            )
+        registry.add_repo_spec(self.to_spec())
+
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, identifier: RepoIdentifier
+    ) -> "Repo":
+        return cls.from_spec(registry.get_repo_spec(identifier))
 
     @abc.abstractmethod
     def get_local_repo_dir(self, version: str) -> Path:
@@ -259,11 +277,13 @@ class GitHubRepo(Repo):
         self.porcelain_repo = None
 
     def to_spec(self, flatten: bool = False) -> Dict:
-        inner = {
-            RepoSpecKeys.TYPE: self.type.value,
-            RepoSpecKeys.URL: self.url,
+        spec = {
+            self.identifier: {
+                RepoSpecKeys.TYPE: self.type.value,
+                RepoSpecKeys.URL: self.url,
+            }
         }
-        return self.optionally_flatten_spec(inner, flatten)
+        return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str) -> Path:
         local_repo_path = self._clone_repo(version)
@@ -332,23 +352,25 @@ class LocalRepo(Repo):
         self.local_dir = Path(local_dir).absolute()
         if self.local_dir.exists():
             assert self.local_dir.is_dir()
-            print(
+            logger.debug(
                 f"Confirmed local_dir {self.local_dir} for "
                 f"LocalRepo {self.identifier} exists and is a dir."
             )
         else:
             self.local_dir.mkdir(parents=True, exist_ok=True)
-            print(
+            logger.debug(
                 f"Created local_dir {self.local_dir} for "
                 f"LocalRepo {self.identifier}."
             )
 
     def to_spec(self, flatten: bool = False) -> RepoSpec:
-        inner = {
-            RepoSpecKeys.TYPE: self.type.value,
-            RepoSpecKeys.PATH: str(self.local_dir),
+        spec = {
+            self.identifier: {
+                RepoSpecKeys.TYPE: self.type.value,
+                RepoSpecKeys.PATH: str(self.local_dir),
+            }
         }
-        return self.optionally_flatten_spec(inner, flatten)
+        return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str = None) -> Path:
         assert version is None, "LocalRepos don't support versioning."

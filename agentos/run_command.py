@@ -1,7 +1,7 @@
 from hashlib import sha1
 from typing import TYPE_CHECKING
 from agentos.registry import Registry
-from agentos.specs import RunCommandSpec, RunCommandSpecKeys
+from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 from agentos.identifiers import RunIdentifier, RunCommandIdentifier
 from agentos.run import Run
 
@@ -166,9 +166,20 @@ class RunCommand:
             from agentos.registry import InMemoryRegistry
 
             registry = InMemoryRegistry()
-        registry.add_run_command_spec(self.to_spec())
+
+        spec = registry.get_run_command_spec(
+            self.identifier, error_if_not_found=False
+        )
+        if spec and not force:
+            assert spec == self.to_spec(), (
+                f"A run command spec with identifier '{self.identifier}' "
+                f"already exists in registry '{registry}' and differs from "
+                "the one being added. Use force=True to overwrite the "
+                "existing one."
+            )
         if recurse:
-            registry.add_component(self._component, recurse, force)
+            self._component.to_registry(registry, recurse, force)
+        registry.add_run_command_spec(self.to_spec())
         return registry
 
     def run(self) -> "Run":
@@ -181,13 +192,10 @@ class RunCommand:
         return self.component.run(self.entry_point, self.parameter_set)
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
-        inner = {
+        flat_spec = {
+            RunCommandSpecKeys.IDENTIFIER: self.identifier,
             RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
             RunCommandSpecKeys.PARAMETER_SET: self._parameter_set.to_spec(),
         }
-        if flatten:
-            inner.update({RunCommandSpecKeys.IDENTIFIER: self.identifier})
-            return inner
-        else:
-            return {self.identifier: inner}
+        return flat_spec if flatten else unflatten_spec(flat_spec)
