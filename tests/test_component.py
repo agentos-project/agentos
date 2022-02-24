@@ -90,7 +90,7 @@ def test_component_freezing(tmpdir):
             get_prefixed_path_from_repo_root=DEFAULT,
         ) as mocks:
             mocks["get_version_from_git"].return_value = (
-                "https://example.com",
+                "https://github.com/agentos-project/agentos",
                 "test_freezing_version",
             )
             mocks[

@@ -9,7 +9,7 @@ from pathlib import Path
 from contextlib import contextmanager
 
 from agentos.registry import Registry
-from agentos.utils import AOS_REQS_DIR
+from agentos.utils import AOS_GLOBAL_REQS_DIR
 from agentos.identifiers import ComponentIdentifier
 from agentos.specs import unflatten_spec
 
@@ -26,7 +26,7 @@ class VirtualEnv:
         self.venv_path = venv_path
         self._saved_venv_sys_path = None
         self._venv_is_active = False
-        self.set_env_cache_path(AOS_REQS_DIR)
+        self.set_env_cache_path(AOS_GLOBAL_REQS_DIR)
         self._py_version = f"python{sysconfig.get_python_version()}"
 
     def __enter__(self):
@@ -95,7 +95,7 @@ class VirtualEnv:
         Completely removes all the virtual environments that have been created
         for Components.  Pass True to ``assume_yes`` to run non-interactively.
         """
-        env_cache_path = env_cache_path or AOS_REQS_DIR
+        env_cache_path = env_cache_path or AOS_GLOBAL_REQS_DIR
         answer = None
         if assume_yes:
             answer = "y"
