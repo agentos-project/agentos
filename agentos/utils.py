@@ -1,11 +1,64 @@
 import pprint
 import yaml
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 
-AOS_CACHE_DIR = Path.home() / ".agentos_cache"
-AOS_REQS_DIR = AOS_CACHE_DIR / "requirements"
+AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
+AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
+AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
+AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
+
+AOS_RELATIVE_CONFIG_DIR = Path.cwd() / ".agentos"
+
+
+def parse_github_web_ui_url(
+    github_url: str,
+) -> (str, Optional[str], Optional[str]):
+    """
+    Parses a GitHub web UI URL pointing to a project root, of form::
+
+        https://github.com/<project>/<repo>/
+
+    or pointing to a specific file in a project, of form::
+
+        https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
+
+    This will replace an SSH URL (i.e. one that starts with
+    ``git@github.com:``) into a URL that starts with ``https://github.com/``.
+
+    This returns a 3-tuple of:
+
+    1. The repo URL (i.e. the https URL the repo can be cloned from)
+
+    2. The branch_name or commit hash contained in the URL (``None`` if URL is
+       of the project root form)
+
+    3. The path of the file contained in the suffix of the URL (``None`` if
+       URL is of the project root form)
+    """
+    URL_STARTS_WITH = "https://github.com"
+    # https repo link allows for cloning without unlocking your GitHub keys
+    github_url = github_url.replace("git@github.com:", f"{URL_STARTS_WITH}/")
+    error_msg = f'URL must start "{URL_STARTS_WITH}", not "{github_url}"'
+    assert github_url.startswith(URL_STARTS_WITH), error_msg
+    stripped_url = github_url.lstrip(URL_STARTS_WITH)
+    split_url = stripped_url.split("/")
+    assert len(split_url) >= 2, f" No project or repo in url: {github_url}"
+    project_name = split_url[0]
+    repo_name = split_url[1]
+    repo_url = "/".join((URL_STARTS_WITH, project_name, repo_name))
+
+    # Check if URL is just a link to a GitHub project root
+    if len(split_url) == 2:
+        return repo_url, None, None
+
+    # If split is not *just* a project root, then it should look like
+    # [<project>, <repo>, {blob/raw}, <branch>, <path_1>, <path_2>, ...]
+    assert len(split_url) >= 5, f"Can't find required paths in: {github_url}"
+    branch_name = split_url[3]
+    repo_path = "/".join(split_url[4:])
+    return repo_url, branch_name, repo_path
 
 
 def generate_dummy_dev_registry(

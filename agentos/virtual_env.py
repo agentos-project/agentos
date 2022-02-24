@@ -6,9 +6,10 @@ import hashlib
 import sysconfig
 import subprocess
 from pathlib import Path
+from contextlib import contextmanager
 
 from agentos.registry import Registry
-from agentos.utils import AOS_REQS_DIR
+from agentos.utils import AOS_GLOBAL_REQS_DIR
 from agentos.identifiers import ComponentIdentifier
 from agentos.specs import unflatten_spec
 
@@ -25,7 +26,7 @@ class VirtualEnv:
         self.venv_path = venv_path
         self._saved_venv_sys_path = None
         self._venv_is_active = False
-        self.set_env_cache_path(AOS_REQS_DIR)
+        self.set_env_cache_path(AOS_GLOBAL_REQS_DIR)
         self._py_version = f"python{sysconfig.get_python_version()}"
 
     def __enter__(self):
@@ -49,12 +50,24 @@ class VirtualEnv:
         cls, yaml_file: str, name: str, version: str = None
     ) -> "VirtualEnv":
         """
-        Given a path to a yaml registry file, a Component name, and optionally
-        a Component versions, this will instantiate and return a virtual
-        environment that satisfies all requirements specified in the
-        requirements_path keys of all Components in the DAG.
+        Given a path to a yaml registry file, a Component name, and
+        (optionally) a Component version, this function instantiates and
+        returns a virtual environment that satisfies all requirements specified
+        in the requirements_path keys of all Components in the DAG.
         """
         registry = Registry.from_yaml(yaml_file)
+        return cls.from_registry(registry, name, version)
+
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, name: str, version: str = None
+    ) -> "VirtualEnv":
+        """
+        Given a Registry object, a Component name, and (optionally) a Component
+        version, this function instantiates and returns a virtual environment
+        that satisfies all requirements specified in the requirements_path keys
+        of all Components in the DAG.
+        """
         identifier = ComponentIdentifier(name, version)
         venv = cls()
         venv.build_venv_for_component(registry, identifier)
@@ -82,7 +95,7 @@ class VirtualEnv:
         Completely removes all the virtual environments that have been created
         for Components.  Pass True to ``assume_yes`` to run non-interactively.
         """
-        env_cache_path = env_cache_path or AOS_REQS_DIR
+        env_cache_path = env_cache_path or AOS_GLOBAL_REQS_DIR
         answer = None
         if assume_yes:
             answer = "y"
@@ -352,3 +365,27 @@ class VirtualEnv:
             if found_flags:
                 flag_lines.append(line)
         return flag_dict
+
+
+@contextmanager
+def auto_revert_venv():
+    """
+    Use this context manager when you need to revert the Python environment to
+    whatever was in place before the managed block.  Useful in tests when an
+    exception might leave the environment in an unexpected state and cause
+    spurious test failures.
+
+    Usage example::
+
+
+        with auto_revert_venv():
+            # Do something here that may fail, leaving the env in a bad state
+        # Env guaranteed to be reset to its pre-managed-block state here
+    """
+    venv = VirtualEnv()
+    venv._save_default_env_info()
+    venv._venv_is_active = True
+    try:
+        yield
+    finally:
+        venv.deactivate()

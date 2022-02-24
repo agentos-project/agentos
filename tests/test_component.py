@@ -4,6 +4,7 @@ from unittest.mock import patch
 from unittest.mock import DEFAULT
 from agentos.component import Component
 from agentos.component_run import ComponentRun
+from agentos.virtual_env import auto_revert_venv
 from agentos.run_command import RunCommand
 from utils import run_test_command, run_in_dir
 from agentos.cli import init
@@ -89,7 +90,7 @@ def test_component_freezing(tmpdir):
             get_prefixed_path_from_repo_root=DEFAULT,
         ) as mocks:
             mocks["get_version_from_git"].return_value = (
-                "https://example.com",
+                "https://github.com/agentos-project/agentos",
                 "test_freezing_version",
             )
             mocks[
@@ -99,3 +100,28 @@ def test_component_freezing(tmpdir):
             agent_spec = reg.get_component_spec("agent", flatten=True)
             assert agent_spec["repo"] == "local_dir"
             assert agent_spec["version"] == "test_freezing_version"
+
+
+def test_component_from_github_with_venv():
+    with auto_revert_venv():
+        random_url = (
+            "https://github.com/agentos-project/agentos/"
+            "blob/439b705c15f499f0017b49ffea4d33afa0f7a7a5/"
+            "example_agents/random/components.yaml"
+        )
+        random_component = Component.from_github_registry(
+            random_url, "agent", use_venv=True
+        )
+        random_component.run("run_episodes")
+
+
+def test_component_from_github_no_venv():
+    with auto_revert_venv():
+        sb3_url = (
+            "https://github.com/agentos-project/agentos/"
+            "blob/master/example_agents/sb3_agent/components.yaml"
+        )
+        random_component = Component.from_github_registry(
+            sb3_url, "sb3_agent", use_venv=False
+        )
+        random_component.run("evaluate")
