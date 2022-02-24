@@ -74,7 +74,7 @@ class Repo(abc.ABC):
     ) -> "GitHubRepo":
         if not identifier:
             identifier = f"{github_account}/{repo_name}"
-        url = f"https://github.com/{identifier}"
+        url = f"https://github.com/{github_account}/{repo_name}"
         return GitHubRepo(identifier, url)
 
     @abc.abstractmethod
