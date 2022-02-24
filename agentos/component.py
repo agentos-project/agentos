@@ -2,6 +2,7 @@ import sys
 import uuid
 import logging
 import importlib
+from hashlib import sha1
 from pathlib import Path
 from dill.source import getsource as dill_getsource
 from typing import Union, TypeVar, Dict, Type, Any, Sequence
@@ -192,15 +193,16 @@ class Component:
         if (
             managed_cls.__module__ == "__main__"
         ):  # handle classes defined in REPL.
+            file_contents = dill_getsource(managed_cls)
             repo = LocalRepo(name)
-            src_file = repo.get_local_repo_dir() / f"{name}.py"
-            assert not src_file.exists(), (
-                f"Trying to create a source file from class {name} at"
-                f"{src_file} but that file already exists."
-            )
-            with open(src_file, "x") as f:
-                f.write(dill_getsource(managed_cls))
-            print(f"Wrote new source file {src_file}.")
+            sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
+            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
+            if src_file.exists():
+                print(f"Re-using existing source file {src_file}.")
+            else:
+                with open(src_file, "x") as f:
+                    f.write(file_contents)
+                print(f"Wrote new source file {src_file}.")
         else:
             managed_cls_module = sys.modules[managed_cls.__module__]
             assert hasattr(managed_cls_module, managed_cls.__name__), (

@@ -64,6 +64,21 @@ class Repo(abc.ABC):
             f"Unknown repo spec type '{repo_type} in repo {identifier}"
         )
 
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, identifier: RepoIdentifier
+    ) -> "Repo":
+        return cls.from_spec(registry.get_repo_spec(identifier))
+
+    @classmethod
+    def from_github(
+        cls, github_account: str, repo_name: str, identifier: str = None
+    ) -> "GitHubRepo":
+        if not identifier:
+            identifier = f"{github_account}/{repo_name}"
+        url = f"https://github.com/{github_account}/{repo_name}"
+        return GitHubRepo(identifier, url)
+
     @abc.abstractmethod
     def to_spec(self, flatten: bool = False) -> RepoSpec:
         return NotImplementedError  # type: ignore
@@ -88,12 +103,6 @@ class Repo(abc.ABC):
                 f"Existing repo spec:\n{repo_spec}"
             )
         registry.add_repo_spec(self.to_spec())
-
-    @classmethod
-    def from_registry(
-        cls, registry: Registry, identifier: RepoIdentifier
-    ) -> "Repo":
-        return cls.from_spec(registry.get_repo_spec(identifier))
 
     @abc.abstractmethod
     def get_local_repo_dir(self, version: str) -> Path:
