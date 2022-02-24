@@ -18,6 +18,8 @@ from agentos.registry import (
 from agentos.exceptions import RegistryException
 from agentos.repo import Repo, LocalRepo, GitHubRepo
 from agentos.parameter_set import ParameterSet
+from agentos.virtual_env import VirtualEnv
+from agentos.utils import parse_github_web_ui_url
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,35 @@ class Component:
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
         self.active_run = None
+
+    @classmethod
+    def from_github_registry(
+        cls,
+        github_url: str,
+        name: str,
+        version: str = None,
+        use_venv: bool = True,
+    ) -> "Component":
+        """
+        This method gets a Component from a registry file found on GitHub.  If
+        the registry file contains a LocalRepo, this method automatically
+        translates that LocalRepo into a GitHubRepo.  Pass ``use_venv=False``
+        if you want to import and run the Component in your existing Python
+        environment.
+
+        The ``github_url`` parameter can be found by navigating to the
+        registry file on the GitHub web UI.  It should look like the
+        following::
+
+            https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
+        """
+        repo_url, branch_name, repo_path = parse_github_web_ui_url(github_url)
+        version = version or branch_name
+        registry = Registry.from_github(repo_url, version, repo_path)
+        if use_venv:
+            venv = VirtualEnv.from_registry(registry, name, version)
+            venv.activate()
+        return cls.from_registry(registry, name, version)
 
     @classmethod
     def from_default_registry(
