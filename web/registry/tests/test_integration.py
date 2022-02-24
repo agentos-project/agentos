@@ -10,12 +10,12 @@ from agentos.component_run import ComponentRun
 from agentos.run_command import RunCommand
 from agentos.component import Component
 from agentos.repo import Repo
-from tests.utils import TESTING_GITHUB_REPO, TESTING_BRANCH_NAME
+from tests.utils import TESTING_GITHUB_REPO_URL, TESTING_BRANCH_NAME
 
 agentos_repo_spec = {
     "AgentOSRepo": {
         "type": "github",
-        "url": TESTING_GITHUB_REPO,
+        "url": TESTING_GITHUB_REPO_URL,
     }
 }
 agentos_repo = Repo.from_spec(agentos_repo_spec)
@@ -81,7 +81,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(flat_repo_spec["type"], "github")
         self.assertEqual(
             flat_repo_spec["url"],
-            TESTING_GITHUB_REPO,
+            TESTING_GITHUB_REPO_URL,
         )
 
         # Test fetching a unflattened (i.e., nested) repo_spec.
