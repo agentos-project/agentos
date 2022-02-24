@@ -72,8 +72,8 @@ def test_component_repl_demo():
     assert type(r.run_command) == RunCommand
     assert r.run_command.component == agent_comp
     assert r.run_command.entry_point == "reset_env"
-    for params in r.run_command.parameter_set.to_spec().values():
-        assert params == {}
+    for args in r.run_command.argument_set.to_spec().values():
+        assert args == {}
 
     copy = ComponentRun(existing_run_id=r.identifier)
     assert copy.run_command == r.run_command

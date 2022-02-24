@@ -210,15 +210,15 @@ class Repo(TimeStampedModel):
 class RunCommand(TimeStampedModel):
     identifier = models.CharField(max_length=200, primary_key=True)
     entry_point = models.CharField(max_length=200)
-    parameter_set = models.JSONField(default=dict)
+    argument_set = models.JSONField(default=dict)
     component = models.ForeignKey(
         Component, on_delete=models.CASCADE, to_field="identifier"
     )
 
     def __str__(self):
         return (
-            f"entry point {self.entry_point}, and parameter_set "
-            f"{self.param_set}>"
+            f"entry point {self.entry_point}, and argument_set "
+            f"{self.argument_set}>"
         )
 
 

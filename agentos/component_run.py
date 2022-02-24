@@ -169,7 +169,7 @@ class ComponentRun(Run):
     def set_and_log_run_command(self, run_command: RunCommand) -> None:
         """
         Log a Registry YAML file for the RunCommand of this run, including
-        the ParameterSet, entry_point (i.e., function name), component ID,
+        the ArgumentSet, entry_point (i.e., function name), component ID,
         as well as the root component being run and its full
         transitive dependency graph of other components as part of this Run.
         This registry file will contain the component spec and repo spec for
@@ -177,7 +177,7 @@ class ComponentRun(Run):
         Run object contains a component object and thus the root component's
         full dependency graph of other components, and as such does not depend
         on a Registry to provide reproducibility. Like a Component, a Run
-        (including its entry point, parameter_set, root component, and the root
+        (including its entry point, argument_set, root component, and the root
         component's full dependency graph) can be dumped into a Registry for
         sharing purposes, which essentially normalizes the Run's root
         component's dependency graph into flat component specs.

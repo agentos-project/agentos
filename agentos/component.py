@@ -18,7 +18,7 @@ from agentos.registry import (
 )
 from agentos.exceptions import RegistryException
 from agentos.repo import Repo, LocalRepo, GitHubRepo
-from agentos.parameter_set import ParameterSet
+from agentos.argument_set import ArgumentSet
 from agentos.virtual_env import VirtualEnv
 from agentos.utils import parse_github_web_ui_url
 
@@ -281,20 +281,20 @@ class Component:
     def run(
         self,
         entry_point: str,
-        params: Union[ParameterSet, Dict] = None,
+        args: Union[ArgumentSet, Dict] = None,
         publish_to: Registry = None,
         log_return_value: bool = True,
         return_value_log_format: str = "yaml",
     ) -> ComponentRun:
         """
         Run the specified entry point a new instance of this Component's
-        managed object given the specified params, log the results
+        managed object given the specified args, log the results
         and return the Run object.
 
         :param entry_point: Name of a function to be called on a new
             instance of this component's managed object.
-        :param params: A :py:func:agentos.parameter_set.ParameterSet: or
-            ParameterSet-like dict containing the entry-point parameters and/or
+        :param args: A :py:func:agentos.argument_set.ArgumentSet: or
+            ArgumentSet-like dict containing the entry-point parameters and/or
             parameters to be passed to the __init__() functions of this
             component's dependents during managed object initialization.
         :param publish_to: Optionally, publish the resulting Run object
@@ -309,20 +309,20 @@ class Component:
             f"Component {self.identifier} already has an active_run, so a "
             "new run is not allowed."
         )
-        if params:
-            if not isinstance(params, ParameterSet):
-                params = ParameterSet(params)
+        if args:
+            if not isinstance(args, ArgumentSet):
+                args = ArgumentSet(args)
         else:
-            params = ParameterSet()
-        run_command = RunCommand(self, entry_point, params)
+            args = ArgumentSet()
+        run_command = RunCommand(self, entry_point, args)
         with ComponentRun.from_run_command(run_command) as run:
             for c in self.dependency_list():
                 c.active_run = run
             # Note: get_object() adds the dunder component attribute before
             # calling __init__ on the instance.
-            instance = self.get_object(params=params)
-            res = self.call_function_with_param_set(
-                instance, entry_point, params
+            instance = self.get_object(arg_set=args)
+            res = self.call_function_with_arg_set(
+                instance, entry_point, args
             )
             if log_return_value:
                 run.log_return_value(res, return_value_log_format)
@@ -332,14 +332,14 @@ class Component:
                 run.to_registry(publish_to)
             return run
 
-    def call_function_with_param_set(
-        self, instance: Any, function_name: str, param_set: ParameterSet
+    def call_function_with_arg_set(
+        self, instance: Any, function_name: str, arg_set: ArgumentSet
     ) -> Any:
         fn = getattr(instance, function_name)
         assert fn is not None, f"{instance} has no attr {function_name}"
-        fn_params = param_set.get_function_params(self.name, function_name)
-        print(f"Calling {self.name}.{function_name}(**{fn_params})")
-        result = fn(**fn_params)
+        fn_args = arg_set.get_function_args(self.name, function_name)
+        print(f"Calling {self.name}.{function_name}(**{fn_args})")
+        result = fn(**fn_args)
         return result
 
     def add_dependency(
@@ -355,12 +355,12 @@ class Component:
         )
         self.dependencies[attribute_name] = component
 
-    def get_object(self, params: ParameterSet = None) -> T:
+    def get_object(self, arg_set: ArgumentSet = None) -> T:
         collected = {}
-        params = params if params else ParameterSet({})
-        return self._get_object(params, collected)
+        arg_set = arg_set if arg_set else ArgumentSet({})
+        return self._get_object(arg_set, collected)
 
-    def _get_object(self, params: ParameterSet, collected: dict) -> T:
+    def _get_object(self, arg_set: ArgumentSet, collected: dict) -> T:
         if self.name in collected:
             return collected[self.name]
         if self.instantiate:
@@ -373,13 +373,13 @@ class Component:
         for dep_attr_name, dep_component in self.dependencies.items():
             print(f"Adding {dep_attr_name} to {self.name}")
             dep_obj = dep_component._get_object(
-                params=params, collected=collected
+                arg_set=arg_set, collected=collected
             )
             setattr(obj, dep_attr_name, dep_obj)
         setattr(obj, self._dunder_name, self)
         if self.instantiate:
             self._managed_cls.__init__ = save_init
-            self.call_function_with_param_set(obj, "__init__", params)
+            self.call_function_with_arg_set(obj, "__init__", arg_set)
         collected[self.name] = obj
         return obj
 

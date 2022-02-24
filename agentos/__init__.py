@@ -15,7 +15,7 @@ from agentos.registry import Registry
 from agentos.component import Component
 from agentos.component_run import ComponentRun, active_component_run
 from agentos.repo import Repo, GitHubRepo
-from agentos.parameter_set import ParameterSet
+from agentos.argument_set import ArgumentSet
 from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.specs import (
@@ -41,7 +41,7 @@ __all__ = [
     "Repo",
     "GitHubRepo",
     "Component",
-    "ParameterSet",
+    "ArgumentSet",
     "RunCommand",
     "Run",
     "ComponentRun",

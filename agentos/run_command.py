@@ -8,7 +8,7 @@ from agentos.run import Run
 # Avoids circular imports
 if TYPE_CHECKING:
     from agentos.component import Component
-    from agentos.parameter_set import ParameterSet
+    from agentos.argument_set import ArgumentSet
 
 
 class RunCommand:
@@ -42,11 +42,11 @@ class RunCommand:
         self,
         component: "Component",
         entry_point: str,
-        parameter_set: "ParameterSet",
+        argument_set: "ArgumentSet",
     ):
         self._component = component
         self._entry_point = entry_point
-        self._parameter_set = parameter_set
+        self._argument_set = argument_set
 
     def __repr__(self) -> str:
         return f"<agentos.run_command.RunCommand: {self}>"
@@ -60,7 +60,7 @@ class RunCommand:
         hash_str = (
             self._component.identifier.full
             + self._entry_point
-            + self._parameter_set.identifier
+            + self._argument_set.identifier
         )
         return sha1(hash_str.encode("utf-8")).hexdigest()
 
@@ -86,8 +86,8 @@ class RunCommand:
         return self._entry_point
 
     @property
-    def parameter_set(self):
-        return self._parameter_set
+    def argument_set(self):
+        return self._argument_set
 
     def new_run(self, experiment_id: str = None):
         return Run.from_run_command(self, experiment_id=experiment_id)
@@ -116,16 +116,16 @@ class RunCommand:
             inner_spec = value
         component_id = inner_spec[RunCommandSpecKeys.COMPONENT_ID]
         from agentos.component import Component
-        from agentos.parameter_set import ParameterSet
+        from agentos.argument_set import ArgumentSet
 
         component = Component.from_registry(registry, component_id)
-        param_set = ParameterSet.from_spec(
+        arg_set = ArgumentSet.from_spec(
             inner_spec[RunCommandSpecKeys.PARAMETER_SET]
         )
         new_run_cmd = cls(
             component=component,
             entry_point=inner_spec[RunCommandSpecKeys.ENTRY_POINT],
-            parameter_set=param_set,
+            argument_set=arg_set,
         )
         assert new_run_cmd.identifier == spec_identifier, (
             f"Identifier of new run_command {new_run_cmd.identifier} "
@@ -189,13 +189,13 @@ class RunCommand:
 
         :return: a new RunCommand object representing the rerun.
         """
-        return self.component.run(self.entry_point, self.parameter_set)
+        return self.component.run(self.entry_point, self.argument_set)
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
         flat_spec = {
             RunCommandSpecKeys.IDENTIFIER: self.identifier,
             RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
-            RunCommandSpecKeys.PARAMETER_SET: self._parameter_set.to_spec(),
+            RunCommandSpecKeys.PARAMETER_SET: self._argument_set.to_spec(),
         }
         return flat_spec if flatten else unflatten_spec(flat_spec)

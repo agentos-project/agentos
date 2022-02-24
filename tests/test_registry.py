@@ -4,12 +4,12 @@ from tests.utils import is_linux, RANDOM_AGENT_DIR, CHATBOT_AGENT_DIR
 from agentos.registry import Registry
 from agentos.component import Component
 from agentos.utils import generate_dummy_dev_registry
-from agentos import ParameterSet
+from agentos import ArgumentSet
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_registry_integration(venv):
-    params = {
+    args = {
         "acme_r2d2_agent": {
             "evaluate": {"num_episodes": 10},
             "learn": {"num_episodes": 10},
@@ -69,8 +69,7 @@ def test_registry_integration(venv):
     }
     registry = Registry.from_dict(generate_dummy_dev_registry())
     component = Component.from_registry(registry, "acme_r2d2_agent")
-    param_set = ParameterSet(params)
-    component.run("evaluate", param_set)
+    component.run("evaluate", ArgumentSet(args))
 
 
 def test_registry_from_dict():
@@ -103,7 +102,7 @@ def test_registry_from_dict():
 
 def test_registry_from_file():
     from agentos.exceptions import RegistryException
-    from agentos.parameter_set import ParameterSet
+    from agentos.argument_set import ArgumentSet
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
     random_local_ag = Component.from_registry(r, "agent")
@@ -116,7 +115,7 @@ def test_registry_from_file():
     )
     random_local_ag.run(
         "run_episodes",
-        ParameterSet({"agent": {"run_episodes": {"num_episodes": 5}}}),
+        ArgumentSet({"agent": {"run_episodes": {"num_episodes": 5}}}),
     )
 
     # Test publishing a component to an InMemoryRegistry

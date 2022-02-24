@@ -11,14 +11,14 @@ class Simple:
 
 
 def test_component_run():
-    from agentos import ParameterSet, Component
+    from agentos import ArgumentSet, Component
     from agentos.registry import InMemoryRegistry
 
-    params = ParameterSet(
+    arg_set = ArgumentSet(
         {"Simple": {"__init__": {"x": 1}, "fn": {"input": "hi"}}}
     )
     c = Component.from_class(Simple)
-    run = c.run("fn", params)
+    run = c.run("fn", arg_set)
     assert run.run_command.component == c
     assert run.run_command.entry_point == "fn"
     new_run = run.run_command.run()

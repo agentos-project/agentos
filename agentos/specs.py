@@ -79,7 +79,7 @@ class RunCommandSpecKeys:
     IDENTIFIER = "identifier"  # for flattened RunCommandSpec
     COMPONENT_ID = "component"
     ENTRY_POINT = "entry_point"
-    PARAMETER_SET = "parameter_set"
+    PARAMETER_SET = "argument_set"
 
 
 RunSpec = Mapping

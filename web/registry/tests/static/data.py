@@ -95,6 +95,6 @@ RUN_CREATE_DATA = {
         "status": "FINISHED",
         "user_id": "nickj",
     },
-    "parameter_set": {"agent": {"evaluate": {}}},
+    "argument_set": {"agent": {"evaluate": {}}},
     "root_component": "agent",
 }
