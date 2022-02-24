@@ -14,11 +14,18 @@ from agentos.core import (
 from agentos.registry import Registry
 from agentos.component import Component
 from agentos.component_run import ComponentRun, active_component_run
-from agentos.repo import Repo
+from agentos.repo import Repo, GitHubRepo
 from agentos.parameter_set import ParameterSet
 from agentos.run import Run
 from agentos.run_command import RunCommand
-from agentos.specs import ComponentSpec, RepoSpec, ParameterSetSpec, RunSpec
+from agentos.specs import (
+    ComponentSpec,
+    RepoSpec,
+    ParameterSetSpec,
+    RunSpec,
+    flatten_spec,
+    unflatten_spec,
+)
 from agentos.agent_run import AgentRun
 
 __all__ = [
@@ -31,13 +38,16 @@ __all__ = [
     "Runnable",
     "Trainer",
     "Registry",
-    "Component",
     "Repo",
+    "GitHubRepo",
+    "Component",
     "ParameterSet",
+    "RunCommand",
     "Run",
     "ComponentRun",
     "active_component_run",
-    "RunCommand",
+    "flatten_spec",
+    "unflatten_spec",
     "ComponentSpec",
     "RepoSpec",
     "ParameterSetSpec",
