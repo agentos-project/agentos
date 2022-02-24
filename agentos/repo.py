@@ -37,6 +37,8 @@ class Repo(abc.ABC):
     is located.
     """
 
+    UNKNOWN_URL = "unknown_url"
+
     def __init__(self, identifier: str):
         self.identifier = identifier
 
@@ -139,7 +141,7 @@ class Repo(abc.ABC):
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
-        url = "unknown_url"
+        url = self.UNKNOWN_URL
         try:
             remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         except IndexError:
@@ -264,7 +266,9 @@ class GitHubRepo(Repo):
     def __init__(self, identifier: str, url: str):
         super().__init__(identifier)
         self.type = RepoType.GITHUB
-        self.url, _, _ = parse_github_web_ui_url(url)
+        if url != self.UNKNOWN_URL:
+            url, _, _ = parse_github_web_ui_url(url)
+        self.url = url
         self.local_repo_path = None
         self.porcelain_repo = None
 
