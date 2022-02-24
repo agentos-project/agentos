@@ -176,7 +176,7 @@ repo to use when testing.
 If you make changes to code that is fetched from github for use by tests, then
 please follow this process for your PR:
 
-1. While doing development, change the ``TESTING_GITHUB_REPO`` and/or
+1. While doing development, change the ``TESTING_GITHUB_REPO_URL`` and/or
    ``TESTING_BRANCH_NAME`` global variables in ``tests/utils.py``
    to point to a version of your PR branch that you've pushed to
    github. We recommend commenting out the default "prod" values of these
