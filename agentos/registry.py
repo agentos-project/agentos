@@ -143,8 +143,10 @@ class Registry(abc.ABC):
             config = yaml.safe_load(file_in)
         return InMemoryRegistry(config, base_dir=str(Path(file_path).parent))
 
-    @staticmethod
-    def from_repo(repo: "Repo", file_path: str, version: str, format: str = "yaml"):
+    @classmethod
+    def from_repo(
+        cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
+    ) -> "Registry":
         """
         Read in a registry file from an repo.
 
@@ -157,7 +159,7 @@ class Registry(abc.ABC):
         assert format == "yaml", (
             "YAML is the only registry file format supported currently"
         )
-        return Registry.from_yaml(repo.get_local_repo_dir(version) / file_path)
+        return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
 
     @classmethod
     def from_default(cls):
