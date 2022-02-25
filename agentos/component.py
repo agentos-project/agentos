@@ -321,9 +321,7 @@ class Component:
             # Note: get_object() adds the dunder component attribute before
             # calling __init__ on the instance.
             instance = self.get_object(arg_set=args)
-            res = self.call_function_with_arg_set(
-                instance, entry_point, args
-            )
+            res = self.call_function_with_arg_set(instance, entry_point, args)
             if log_return_value:
                 run.log_return_value(res, return_value_log_format)
             for c in self.dependency_list():

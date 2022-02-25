@@ -27,9 +27,7 @@ class ArgumentSet:
                         assert isinstance(arg_name, str)
         self._arguments = arguments if arguments else {}
         # Ensure serializability.
-        assert (
-            self.to_sorted_dict_str()
-        ), "arguments dict must be serializable"
+        assert self.to_sorted_dict_str(), "arguments dict must be serializable"
 
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
