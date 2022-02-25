@@ -278,7 +278,7 @@ class Component:
             entry_point = "run"
         return entry_point
 
-    def new_run(self, entry_point: str, **kwargs):
+    def run(self, entry_point: str, **kwargs):
         """
         Run an entry point with provided parameters. If you need to specify
         arguments to the init function of the managed object or any of
