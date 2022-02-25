@@ -7,8 +7,8 @@ from agentos.cli import run
 test_args = ["agent", "--use-outer-env"]
 test_kwargs = {
     "--registry-file": str(ACME_R2D2_AGENT_DIR / "components.yaml"),
-    "-P": "num_episodes=1",
-    "--param-file": str(ACME_R2D2_AGENT_DIR / "parameters.yaml"),
+    "-A": "num_episodes=1",
+    "--arg-set-file": str(ACME_R2D2_AGENT_DIR / "arguments.yaml"),
 }
 
 

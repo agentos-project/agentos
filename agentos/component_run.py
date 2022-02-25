@@ -57,7 +57,7 @@ class ComponentRun(Run):
     RUN_COMMAND_REGISTRY_FILENAME = "agentos.run_command_registry.yaml"
     """
     A ComponentRun represents the execution of a specific entry point of a
-    specific Component with a specific parameter set.
+    specific Component with a specific ArgumentSet.
     """
 
     def __init__(

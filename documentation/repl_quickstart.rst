@@ -79,7 +79,7 @@ As well as the results from our execution:
   The results of our program execution.
 
 While our ``Adder.add_one()`` example was very simple, tracking commands and
-parameters can get complex as your program grows.  PCS is designed to manage
+arguments can get complex as your program grows.  PCS is designed to manage
 this complexity in a straightforward and consistent way.
 
 # TODO: sharing

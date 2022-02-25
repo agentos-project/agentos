@@ -19,7 +19,7 @@ PCS are to:
 
 * Simplify experiment tracking and code sharing.
 
-PCS does this by allowing you to explicitly specify dependencies and parameters
+PCS does this by allowing you to explicitly specify dependencies and arguments
 for your program and then providing a thin runtime (currently based on `MLflow
 <https://mlflow.org>`_) to automatically instrument your program's execution.
 PCS is compatible with most frameworks that are used to build machine learning

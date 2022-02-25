@@ -31,7 +31,7 @@ T = TypeVar("T")
 class Component:
     """
     A Component is a class manager. It provides a standard way for runtime and
-    code implementations to communicate about parameters, entry points, and
+    code implementations to communicate about arguments, entry points, and
     dependencies.
     """
 
@@ -94,7 +94,7 @@ class Component:
         if you want to import and run the Component in your existing Python
         environment.
 
-        The ``github_url`` parameter can be found by navigating to the
+        The ``github_url`` argument can be found by navigating to the
         registry file on the GitHub web UI.  It should look like the
         following::
 
@@ -280,7 +280,7 @@ class Component:
 
     def run(self, entry_point: str, **kwargs):
         """
-        Run an entry point with provided parameters. If you need to specify
+        Run an entry point with provided arguments. If you need to specify
         arguments to the init function of the managed object or any of
         its dependency components, use :py:func:run_with_arg_set:.
 
@@ -313,8 +313,8 @@ class Component:
         :param entry_point: Name of a function to be called on a new
             instance of this component's managed object.
         :param args: A :py:func:agentos.argument_set.ArgumentSet: or
-            ArgumentSet-like dict containing the entry-point parameters and/or
-            parameters to be passed to the __init__() functions of this
+            ArgumentSet-like dict containing the entry-point arguments, and/or
+            arguments to be passed to the __init__() functions of this
             component's dependents during managed object initialization.
         :param publish_to: Optionally, publish the resulting Run object
             to the provided registry.

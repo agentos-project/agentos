@@ -156,9 +156,9 @@ class Registry(abc.ABC):
         :param format: Optionally specify the format of the registry file.
         :return: a new Registry object.
         """
-        assert format == "yaml", (
-            "YAML is the only registry file format supported currently"
-        )
+        assert (
+            format == "yaml"
+        ), "YAML is the only registry file format supported currently"
         return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
 
     @classmethod

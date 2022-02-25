@@ -35,7 +35,7 @@ def test_cli_init(tmpdir):
         run_args = ["agent"]
         run_1_kwargs = {}
         run_test_command(run, cli_args=run_args, cli_kwargs=run_1_kwargs)
-        run_2_kwargs = {"-P": "num_episodes=10"}
+        run_2_kwargs = {"-A": "num_episodes=10"}
         run_test_command(run, cli_args=run_args, cli_kwargs=run_2_kwargs)
 
 
