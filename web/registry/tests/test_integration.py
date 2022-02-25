@@ -41,10 +41,10 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
         )
-        param_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
+        arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run(
             "add_to_init_member",
-            param_set,
+            arg_set,
         )
         self.assertEqual(comp_run.return_value, 11)
         comp_run.to_registry(web_registry)
@@ -145,8 +145,8 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 
         # Test adding a RunCommand
-        param_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
-        comp_run = simple_component.run("add_to_init_member", param_set)
+        arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
+        comp_run = simple_component.run("add_to_init_member", arg_set)
         run_cmd = comp_run.run_command
         web_registry.add_run_command_spec(run_cmd.to_spec())
 
