@@ -1,7 +1,7 @@
-agentos.parameter_set
+agentos.argument_set
 =====================
 
-.. automodule:: agentos.parameter_set
+.. automodule:: agentos.argument_set
    :members:
    :undoc-members:
    :private-members: _init

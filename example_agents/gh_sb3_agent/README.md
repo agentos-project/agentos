@@ -13,7 +13,7 @@ agentos run agent --entry-point learn
 
 Optional command-line arguments:
 
-* `-Ptotal_timesteps=X` - Run the learning algorithm for X environment steps.
+* `-A total_timesteps=X` - Run the learning algorithm for X environment steps.
 
 
 ### Agent Evaluation
@@ -26,7 +26,7 @@ agentos run agent --entry-point evaluate
 
 Optional command-line arguments:
 
-* `-Pn_eval_episodes=X` - Evaluate the agent over X episodes.
+* `-A n_eval_episodes=X` - Evaluate the agent over X episodes.
 
 
 ### Agent Reset

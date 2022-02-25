@@ -137,25 +137,25 @@ def init(dir_names, agent_name):
     type=str,
     default=None,
     help="A function of the component that AgentOS Runtime will call with "
-    "the specified params.",
+    "the specified argument set.",
 )
 # Copied from https://github.com/mlflow/mlflow/blob/
 # ... 3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L54
 @click.option(
-    "--param-list",
-    "-P",
+    "--arg-set-list",
+    "-A",
     metavar="NAME=VALUE",
     multiple=True,
-    help="A parameter for the run, of the form -P name=value. All parameters "
+    help="A argument for the run, of the form -A name=value. All arguments "
     "will be passed to the entry_point function using a Python kwargs-style "
     "keyword argument https://docs.python.org/3/glossary.html#term-argument",
 )
 @click.option(
-    "--param-file",
+    "--arg-set-file",
     metavar="PARAM_FILE",
-    help="A YAML file containing parameters for the entry point being run. "
+    help="A YAML file containing arguments for the entry point being run. "
     "Will be passed to the entry_point function, along with individually "
-    "specified params, via a Python kwargs-style keyword argument "
+    "specified args, via a Python kwargs-style keyword argument "
     "https://docs.python.org/3/glossary.html#term-argument",
 )
 @_option_use_venv
@@ -163,18 +163,18 @@ def run(
     component_name,
     registry_file,
     entry_point,
-    param_list,
-    param_file,
+    arg_set_list,
+    arg_set_file,
     use_venv,
 ):
     venv = VirtualEnv.from_registry_file(registry_file, component_name)
     venv.set_environment_handling(use_venv)
     with venv:
-        param_dict = _user_args_to_dict(param_list)
+        cli_arg_dict = _user_args_to_dict(arg_set_list)
         component = Component.from_registry_file(registry_file, component_name)
-        arg_set = ArgumentSet.from_yaml(param_file)
+        arg_set = ArgumentSet.from_yaml(arg_set_file)
         entry_point = entry_point or component.get_default_entry_point()
-        arg_set.update(component_name, entry_point, param_dict)
+        arg_set.update(component_name, entry_point, cli_arg_dict)
         run = component.run_with_arg_set(entry_point, arg_set)
         print(f"Run {run.identifier} recorded.", end=" ")
         print("Execute the following for details:")

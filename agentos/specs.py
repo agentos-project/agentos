@@ -11,7 +11,7 @@ signatures.
 
 Specs are always mappings. By default, specs map from an identifier string to
 a mapping of key-value properties of the spec; and in some specs such as
-ParameterSetSpec, those values can themselves be mappings.
+ArgumentSetSpec, those values can themselves be mappings.
 
 For developer convenience many functions support flattened specs, which have
 the spec identifier at the same level as the rest of the spec properties.
@@ -55,11 +55,11 @@ class RepoSpecKeys:
     PATH = "path"
 
 
-# A paramSet is serialized as a ParameterSetSpec, which is a YAML dictionary
+# A arg_set is serialized as a ArgumentSetSpec, which is a YAML dictionary
 # with the following structure:
-# {component_name: {entry_point_name: {param_name: param_val}}
+# {component_name: {entry_point_name: {arg_name: arg_val}}
 #
-# param_value can be any type supported by YAML, which includes:
+# arg_value can be any type supported by YAML, which includes:
 # scalars (numeric or string), potentially nested lists or dictionaries with
 # scalars as leaf values.
 #
@@ -68,8 +68,8 @@ class RepoSpecKeys:
 # which themselves can be instances of an arbitrary Python class.
 # TODO: Figure out a better type than Any for the leaf type here.
 #       Specifically, one that captures the required serializability.
-ParameterSetSpec = Mapping[str, Mapping[str, Mapping[str, Any]]]
-ParameterSetSpec.identifier_key = "identifier"
+ArgumentSetSpec = Mapping[str, Mapping[str, Mapping[str, Any]]]
+ArgumentSetSpec.identifier_key = "identifier"
 
 
 RunCommandSpec = Mapping

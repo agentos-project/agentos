@@ -21,7 +21,7 @@ from agentos.run_command import RunCommand
 from agentos.specs import (
     ComponentSpec,
     RepoSpec,
-    ParameterSetSpec,
+    ArgumentSetSpec,
     RunSpec,
     flatten_spec,
     unflatten_spec,
@@ -50,6 +50,6 @@ __all__ = [
     "unflatten_spec",
     "ComponentSpec",
     "RepoSpec",
-    "ParameterSetSpec",
+    "ArgumentSetSpec",
     "RunSpec",
 ]

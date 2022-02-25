@@ -18,11 +18,11 @@ class RunCommand:
     outputs of the execution (see :py:func:agentos.Run: for more on that.)
 
     You can think of a RunCommand as a glorified dictionary containing the
-    pointers to params, and versions of code necessary to reproduce the setting
-    up of a component (including its dependency dag) and the execution of
-    one of its entry points with a specific parameter set. Whereas a Run itself
-    (which may contain a RunCommand) is more like a client to a backing store
-    used various types of outputs of the code being executed.
+    pointers to arguments and versions of code necessary to reproduce the
+    setting up of a component (including its dependency dag) and the execution
+    of one of its entry points with a specific ArgumentSet. Whereas a Run
+    itself (which may contain a RunCommand) is more like a client to a backing
+    store used various types of outputs of the code being executed.
 
     Our concept of a RunCommand is inspired by the MLflow ``Project Run``
     abstraction. In MLflow runs of Projects (which are roughly analogous to our

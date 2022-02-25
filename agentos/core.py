@@ -98,7 +98,7 @@ class Agent(MemberInitializer):
         num_episodes = int(num_episodes)
         test_num_episodes = int(test_num_episodes)
         # TODO: fix that ugliness!
-        # Handle strings from -P
+        # Handle strings from -A
         if isinstance(test_every, str):
             if test_every == "True":
                 test_every = True

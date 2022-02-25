@@ -23,10 +23,10 @@ This command runs the default agent entry point (`run_episodes()`) and will
 print out information about the agent's performance.
 
 To adjust the number of episodes run by this agent, you can pass the
-`num_episodes` parameter like so:
+`num_episodes` argument like so:
 
 ```
-agentos run agent -P num_episodes=10
+agentos run agent -A num_episodes=10
 ```
 
 ### Structure

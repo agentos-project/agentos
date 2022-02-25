@@ -71,7 +71,7 @@ artifacts associated with the run: a registry file and a results file.
   file records the information required to reproduce your run.
 
 The registry file records information about the Components instantiated, the
-command executed, the parameters passed to generate the run.  If shared with
+command executed, the arguments passed to generate the run.  If shared with
 others, this file is sufficient to allow reproduction of your run.
 
 The second file, the results file, records information about the return value
@@ -170,7 +170,7 @@ and you should see output that looks like::
 
 Great!  It looks like our ``MovementUpdater`` Component is working as we
 expected.  Because we created ``MovementUpdater`` as a Component, PCS is able
-to track parameters and dependencies of the Component for reproducibility
+to track arguments and dependencies of the Component for reproducibility
 purposes.  Additionally, this Component can be published individually and used
 in other projects separate from the rest of the Components that constitute our
 agent.

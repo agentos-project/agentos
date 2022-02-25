@@ -3,7 +3,7 @@ import yaml
 import json
 from hashlib import sha1
 from typing import TypeVar, Mapping, Dict
-from agentos.specs import ParameterSetSpec
+from agentos.specs import ArgumentSetSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -54,7 +54,7 @@ class ArgumentSet:
         return ArgumentSet(arguments)
 
     @classmethod
-    def from_spec(cls, arg_set_spec: ParameterSetSpec) -> "ArgumentSet":
+    def from_spec(cls, arg_set_spec: ArgumentSetSpec) -> "ArgumentSet":
         assert (
             len(arg_set_spec) == 1
         ), "arg_set_spec must be a dict with a single key-value pair"
@@ -95,10 +95,10 @@ class ArgumentSet:
         arg = fn_args.get(arg_key, {})
         return arg if arg else {}
 
-    def to_spec(self, flatten: bool = False) -> ParameterSetSpec:
+    def to_spec(self, flatten: bool = False) -> ArgumentSetSpec:
         inner = copy.deepcopy(self._arguments)
         if flatten:
-            inner.update({ParameterSetSpec.identifier_key: self.identifier})
+            inner.update({ArgumentSetSpec.identifier_key: self.identifier})
             return inner
         else:
             return {str(self.identifier): inner}

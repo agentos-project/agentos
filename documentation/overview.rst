@@ -59,8 +59,8 @@ More specifically, a Component consists of the following information:
 
 A developer uses a Component by running an **entry point** on it.  An entry
 point is a managed, runnable function on the Component.  A Component may have
-one or more entry points, and an entry point may be passed parameters (via a
-**Parameter Set**) when run.  When an entry point is run in the PCS runtime, it
+one or more entry points, and an entry point may be passed arguments (via an
+**Argument Set**) when run.  When an entry point is run in the PCS runtime, it
 automatically has its inputs and outputs instrumented and recorded for
 reproducibility and sharing purposes.
 
@@ -71,7 +71,7 @@ debugging, analysis, and as the inputs by subsequent runs. Runs can be shared.
 In PCS, Runs provide a logging interface and track the outputs and results of
 code execution.  A **Component Run** is a specific type of Run that contains
 information about about a particular execution of a Component's entry point
-with a particular Parameter Set.  Whenever an entry point is executed under
+with a particular Argument Set.  Whenever an entry point is executed under
 PCS, a Component Run gets created.
 
 All Runs enforce semantics around the type of outputs and results they track,
@@ -85,7 +85,7 @@ PCS's Run class is a wrapper `MLflow's <https://mlflow.org>`_ Run interface and
 uses both an MlflowClient and an MLflowRunID.
 
 The reproducibility and shareability features of PCS derive from the fact that
-all the concepts discussed so far (e.g. Components, Parameter Sets, Runs, etc)
+all the concepts discussed so far (e.g. Components, Argument Sets, Runs, etc)
 can be serialized out to a plain-text **Spec**.  Because all of these things
 can be represented as simple specs, sharing is as easy as sending a text file
 from one instance of PCS to another.
