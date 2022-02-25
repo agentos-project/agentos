@@ -54,86 +54,6 @@ class Registry(abc.ABC):
         )  # Used for file-backed Registry types.
 
     @staticmethod
-    def from_github(
-        repo_url: str, branch_name: str, repo_path: str
-    ) -> "Registry":
-        """
-        This method creates a Registry from a registry file found on GitHub.
-        If the registry file contains a LocalRepo, this method automatically
-        translates that LocalRepo into a GitHubRepo.
-
-        :param repo_url: https URL that can be used to clone the GitHub repo.
-        :param branch_name: Branch name or hash commit to use.
-        :param repo_path: Path in the repo to the registry file.
-        """
-        # Prevent circular import
-        from agentos.repo import GitHubRepo
-
-        raw_url = "/".join((repo_url, "raw", branch_name, repo_path))
-        response = requests.get(raw_url)
-        error_msg = f"Could not get registry yaml from {raw_url}"
-        assert response.status_code == 200, error_msg
-        registry = Registry.from_dict(yaml.safe_load(response.content))
-
-        # Change LocalRepo to GitHubRepo
-        local_repo_count = 0
-        new_repos = {}
-        path_prefixes = {}
-        old_repos = registry._registry["repos"]
-        for repo_id, repo_spec in old_repos.items():
-            if repo_spec["type"] == "local":
-                local_repo_count += 1
-                repo = GitHubRepo(identifier=repo_id, url=repo_url)
-                new_repos.update(repo.to_spec())
-                path_prefixes[repo_id] = "/".join(repo_path.split("/")[:-1])
-            else:
-                new_repos[repo_id] = repo_spec
-        error_msg = f"Multiple local repos in {old_repos}, aborting!"
-        assert local_repo_count <= 1, error_msg
-        registry._registry["repos"] = new_repos
-
-        # Prefix Component paths appropriately for the changed repo
-        new_components = {}
-        component_version_map = {}
-        to_version = []
-        old_components = registry._registry["components"]
-        for component_id, component_spec in old_components.items():
-            if component_spec["repo"] in path_prefixes:
-                to_version.append(component_id)
-                new_path_prefix = path_prefixes[component_spec["repo"]]
-                new_spec = {}
-                for item_name, item_val in component_spec.items():
-                    if item_name.endswith("_path"):
-                        item_val = "/".join((new_path_prefix, item_val))
-                    new_spec[item_name] = item_val
-                new_components[component_id] = new_spec
-            else:
-                new_components[component_id] = component_spec
-
-        # Version all unversioned Components in local repo with branch name
-        component_version_map = {}
-        for component_id in to_version:
-            old_id = ComponentIdentifier.from_str(component_id)
-            if old_id.version is None:
-                new_id = ComponentIdentifier(old_id.name, branch_name)
-            else:
-                new_id = old_id
-            component_version_map[component_id] = str(new_id)
-        versioned_new_components = {}
-        for component_id, component_spec in new_components.items():
-            if component_id in component_version_map:
-                component_id = component_version_map[component_id]
-            dependencies = component_spec.get("dependencies", {})
-            for alias, name in list(dependencies.items()):
-                if name in component_version_map:
-                    name = component_version_map[name]
-                component_spec["dependencies"][alias] = name
-            versioned_new_components[component_id] = component_spec
-
-        registry._registry["components"] = versioned_new_components
-        return registry
-
-    @staticmethod
     def from_dict(input_dict: Dict) -> "Registry":
         return InMemoryRegistry(input_dict)
 
@@ -156,9 +76,9 @@ class Registry(abc.ABC):
         :param format: Optionally specify the format of the registry file.
         :return: a new Registry object.
         """
-        assert format == "yaml", (
-            "YAML is the only registry file format supported currently"
-        )
+        assert (
+            format == "yaml"
+        ), "YAML is the only registry file format supported currently"
         return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
 
     @classmethod
@@ -317,6 +237,17 @@ class Registry(abc.ABC):
                     ComponentIdentifier.from_str(d_id)
                 )
         return list(component_specs.values()), list(repo_specs.values())
+
+    def has_component_by_id(self, identifier: ComponentIdentifier) -> bool:
+        try:
+            self.get_component_spec_by_id(identifier)
+        except LookupError:
+            return False
+        return True
+
+    def has_component_by_name(self, name: str, version: str = None) -> bool:
+        identifier = ComponentIdentifier(name, version)
+        return self.has_component_by_id(identifier)
 
     def get_run_command_spec(
         self,
