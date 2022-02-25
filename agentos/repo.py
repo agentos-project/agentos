@@ -2,6 +2,7 @@ import os
 import sys
 import abc
 import logging
+import uuid
 from enum import Enum
 from typing import TypeVar, Dict, Tuple, Union
 from pathlib import Path
@@ -48,20 +49,15 @@ class Repo(abc.ABC):
         return self == other
 
     @staticmethod
-    def from_spec(spec: NestedRepoSpec, base_dir: Path = None) -> "Repo":
-        assert len(spec) == 1
-        for identifier, inner_spec in spec.items():
-            repo_type = inner_spec["type"]
-            if repo_type == RepoType.LOCAL.value:
-                assert (
-                    base_dir
-                ), "The `base_dir` arg is required for local repos."
-                path = Path(base_dir) / inner_spec["path"]
-                return LocalRepo(identifier=identifier, local_dir=path)
-            elif repo_type == RepoType.GITHUB.value:
-                return GitHubRepo(identifier=identifier, url=inner_spec["url"])
+    def from_spec(spec: NestedRepoSpec, base_dir: str = None) -> "Repo":
+        flat_spec = flatten_spec(spec)
+        if flat_spec["type"] == RepoType.LOCAL.value:
+            return LocalRepo.from_spec(spec, base_dir)
+        if flat_spec["type"] == RepoType.GITHUB.value:
+            return GitHubRepo.from_spec(spec)
         raise PythonComponentSystemException(
-            f"Unknown repo spec type '{repo_type} in repo {identifier}"
+            f"Unknown repo type '{flat_spec['type']} in "
+            f"repo '{flat_spec['identifier']}'"
         )
 
     @classmethod
@@ -103,6 +99,7 @@ class Repo(abc.ABC):
                 f"Existing repo spec:\n{repo_spec}"
             )
         registry.add_repo_spec(self.to_spec())
+        return registry
 
     @abc.abstractmethod
     def get_local_repo_dir(self, version: str) -> Path:
@@ -281,6 +278,14 @@ class GitHubRepo(Repo):
         self.local_repo_path = None
         self.porcelain_repo = None
 
+    @classmethod
+    def from_spec(cls, spec: NestedRepoSpec) -> "LocalRepo":
+        flat_spec = flatten_spec(spec)
+        return cls(
+            flat_spec[RepoSpecKeys.IDENTIFIER],
+            url=flat_spec[RepoSpecKeys.URL],
+        )
+
     def to_spec(self, flatten: bool = False) -> Dict:
         spec = {
             self.identifier: {
@@ -347,21 +352,13 @@ class LocalRepo(Repo):
     def __init__(self, identifier: str, local_dir: Union[Path, str] = None):
         super().__init__(identifier)
         if not local_dir:
-            # TODO: check for a global configuration that defines a default
-            #       location for a local repo, which will be used to
-            #       write source files created by Component.from_class with
-            #       classes that are defined in the REPL.
-            # NOTE: We do not use utils.AOS_GLOBAL_REPOS_DIR here since this
-            #       is not a cache of a remote git repo, rather it is a local
-            #       repo that may be the only copy in existence.
-            local_dir = "./.pcs_local_repo"
+            local_dir = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.type = RepoType.LOCAL
         self.local_dir = Path(local_dir).absolute()
         if self.local_dir.exists():
-            assert self.local_dir.is_dir()
-            logger.debug(
-                f"Confirmed local_dir {self.local_dir} for "
-                f"LocalRepo {self.identifier} exists and is a dir."
+            assert self.local_dir.is_dir(), (
+                f"local_dir {self.local_dir} passed to LocalRepo.__init__() "
+                f"with identifier '{self.identifier}' exists but is not a dir."
             )
         else:
             self.local_dir.mkdir(parents=True, exist_ok=True)
@@ -369,6 +366,19 @@ class LocalRepo(Repo):
                 f"Created local_dir {self.local_dir} for "
                 f"LocalRepo {self.identifier}."
             )
+
+    @classmethod
+    def from_spec(
+        cls, spec: NestedRepoSpec, base_dir: str = None
+    ) -> "LocalRepo":
+        flat_spec = flatten_spec(spec)
+        local_path = flat_spec[RepoSpecKeys.PATH]
+        if base_dir and not Path(local_path).is_absolute():
+            local_path = f"{base_dir}/{local_path}"
+        return cls(
+            flat_spec[RepoSpecKeys.IDENTIFIER],
+            local_dir=local_path,
+        )
 
     def to_spec(self, flatten: bool = False) -> RepoSpec:
         spec = {

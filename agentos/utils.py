@@ -9,8 +9,6 @@ AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
-AOS_RELATIVE_CONFIG_DIR = Path.cwd() / ".agentos"
-
 
 def parse_github_web_ui_url(
     github_url: str,
