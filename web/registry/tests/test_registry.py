@@ -29,7 +29,7 @@ class RegistryTestCases(TestCase):
         )
         self.run_command = RunCommand.objects.create(
             entry_point="test_entry_pt",
-            parameter_set={},
+            argument_set={},
             component=self.component,
         )
         self.run = Run.objects.create(
