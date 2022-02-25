@@ -69,7 +69,7 @@ def test_registry_integration(venv):
     }
     registry = Registry.from_dict(generate_dummy_dev_registry())
     component = Component.from_registry(registry, "acme_r2d2_agent")
-    component.run("evaluate", ArgumentSet(args))
+    component.run_with_arg_set("evaluate", ArgumentSet(args))
 
 
 def test_registry_from_dict():
@@ -113,7 +113,7 @@ def test_registry_from_file():
     assert (
         random_local_ag.dependencies["environment"].identifier == "environment"
     )
-    random_local_ag.run(
+    random_local_ag.run_with_arg_set(
         "run_episodes",
         ArgumentSet({"agent": {"run_episodes": {"num_episodes": 5}}}),
     )

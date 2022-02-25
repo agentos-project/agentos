@@ -175,7 +175,7 @@ def run(
         arg_set = ArgumentSet.from_yaml(param_file)
         entry_point = entry_point or component.get_default_entry_point()
         arg_set.update(component_name, entry_point, param_dict)
-        run = component.run(entry_point, arg_set)
+        run = component.run_with_arg_set(entry_point, arg_set)
         print(f"Run {run.identifier} recorded.", end=" ")
         print("Execute the following for details:")
         print(f"\n  agentos status {run.identifier}\n")

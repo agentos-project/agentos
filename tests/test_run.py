@@ -18,7 +18,7 @@ def test_component_run():
         {"Simple": {"__init__": {"x": 1}, "fn": {"input": "hi"}}}
     )
     c = Component.from_class(Simple)
-    run = c.run("fn", arg_set)
+    run = c.run_with_arg_set("fn", arg_set)
     assert run.run_command.component == c
     assert run.run_command.entry_point == "fn"
     new_run = run.run_command.run()

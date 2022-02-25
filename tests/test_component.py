@@ -67,7 +67,7 @@ def test_component_repl_demo():
     assert class_dep_obj().x == "x_val"
 
     # Instantiate a SimpleAgent and run reset_env() method
-    r = agent_comp.run("reset_env")
+    r = agent_comp.run_with_arg_set("reset_env")
     assert type(r) == ComponentRun
     assert type(r.run_command) == RunCommand
     assert r.run_command.component == agent_comp
@@ -112,7 +112,7 @@ def test_component_from_github_with_venv():
         random_component = Component.from_github_registry(
             random_url, "agent", use_venv=True
         )
-        random_component.run("run_episodes")
+        random_component.run_with_arg_set("run_episodes")
 
 
 def test_component_from_github_no_venv():
@@ -124,4 +124,4 @@ def test_component_from_github_no_venv():
         random_component = Component.from_github_registry(
             sb3_url, "sb3_agent", use_venv=False
         )
-        random_component.run("evaluate")
+        random_component.run_with_arg_set("evaluate")
