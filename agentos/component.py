@@ -278,7 +278,26 @@ class Component:
             entry_point = "run"
         return entry_point
 
-    def run(
+    def run(self, entry_point: str, **kwargs):
+        """
+        Run an entry point with provided parameters. If you need to specify
+        arguments to the init function of the managed object or any of
+        its dependency components, use :py:func:run_with_arg_set:.
+
+        :param entry_point: name of function to call on manage object.
+        :param kwargs: keyword-only args to pass through to managed object
+            function called entry-point.
+        :return: the return value of the entry point called.
+        """
+        arg_set = ArgumentSet({self.name: {entry_point: kwargs}})
+        run = self.run_with_arg_set(
+            entry_point,
+            args=arg_set,
+            log_return_value=True,
+        )
+        return run.return_value
+
+    def run_with_arg_set(
         self,
         entry_point: str,
         args: Union[ArgumentSet, Dict] = None,

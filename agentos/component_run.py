@@ -240,7 +240,9 @@ class ComponentRun(Run):
             with open(filename, "w") as f:
                 yaml.dump(ret_val, f)
         else:
-            raise PythonComponentSystemException("Invalid format provided")
+            raise PythonComponentSystemException(
+                f"Invalid format provided: {format}"
+            )
         self.log_artifact(str(filename))
         filename.unlink()
 

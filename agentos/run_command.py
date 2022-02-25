@@ -189,7 +189,9 @@ class RunCommand:
 
         :return: a new RunCommand object representing the rerun.
         """
-        return self.component.run(self.entry_point, self.argument_set)
+        return self.component.run_with_arg_set(
+            self.entry_point, self.argument_set
+        )
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
         flat_spec = {

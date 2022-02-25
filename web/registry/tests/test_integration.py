@@ -42,7 +42,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             file_path="tests/test_web_registry.py",
         )
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
-        comp_run = simple_component.run(
+        comp_run = simple_component.run_with_arg_set(
             "add_to_init_member",
             arg_set,
         )
@@ -146,7 +146,9 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
 
         # Test adding a RunCommand
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
-        comp_run = simple_component.run("add_to_init_member", arg_set)
+        comp_run = simple_component.run_with_arg_set(
+            "add_to_init_member", arg_set
+        )
         run_cmd = comp_run.run_command
         web_registry.add_run_command_spec(run_cmd.to_spec())
 

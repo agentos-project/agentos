@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from agentos.component import Component
     from agentos.run import Run
+    from agentos.repo import Repo
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -137,10 +138,28 @@ class Registry(abc.ABC):
         return InMemoryRegistry(input_dict)
 
     @staticmethod
-    def from_yaml(yaml_file: str) -> "Registry":
-        with open(yaml_file) as file_in:
+    def from_yaml(file_path: str) -> "Registry":
+        with open(file_path) as file_in:
             config = yaml.safe_load(file_in)
-        return InMemoryRegistry(config, base_dir=str(Path(yaml_file).parent))
+        return InMemoryRegistry(config, base_dir=str(Path(file_path).parent))
+
+    @classmethod
+    def from_repo(
+        cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
+    ) -> "Registry":
+        """
+        Read in a registry file from an repo.
+
+        :param repo: Repo to load registry file from.
+        :param file_path: Path within Repo that registry is located, relative
+            to the repo root.
+        :param format: Optionally specify the format of the registry file.
+        :return: a new Registry object.
+        """
+        assert format == "yaml", (
+            "YAML is the only registry file format supported currently"
+        )
+        return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
 
     @classmethod
     def from_default(cls):
