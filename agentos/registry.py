@@ -574,7 +574,7 @@ class WebRegistry(Registry):
 
     def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
         flat_spec = flatten_spec(run_command_spec)
-        flat_spec = json_encode_flat_spec_field(flat_spec, "parameter_set")
+        flat_spec = json_encode_flat_spec_field(flat_spec, "argument_set")
         self._post_spec_to_web_server("runcommand", unflatten_spec(flat_spec))
 
     def add_run_spec(self, run_spec: RunSpec) -> Sequence:

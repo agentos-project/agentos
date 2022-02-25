@@ -40,7 +40,7 @@ class Run:
     AgentOS Run related abstractions are encoded into an MLflowRun as follows:
     - Component Registry -> MLflow artifact file
     - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
-    - ParameterSet -> MLflow artifact file
+    - ArgumentSet -> MLflow artifact file
 
     A Run can also contain a [pointer to a] RunCommand.
 

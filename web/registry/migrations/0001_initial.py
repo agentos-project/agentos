@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("entry_point", models.CharField(max_length=200)),
-                ("parameter_set", models.JSONField(default=dict)),
+                ("argument_set", models.JSONField(default=dict)),
                 (
                     "component",
                     models.ForeignKey(

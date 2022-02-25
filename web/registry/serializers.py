@@ -80,7 +80,7 @@ class RunCommandSerializer(serializers.ModelSerializer):
             "identifier_link",
             "component",
             "entry_point",
-            "parameter_set",
+            "argument_set",
         ]
 
     def get_identifier_link(self, obj):

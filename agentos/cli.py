@@ -9,7 +9,7 @@ import click
 from datetime import datetime
 from pathlib import Path
 from agentos import Component
-from agentos import ParameterSet
+from agentos import ArgumentSet
 from agentos.run import Run
 from agentos.registry import Registry
 from agentos.virtual_env import VirtualEnv
@@ -172,10 +172,10 @@ def run(
     with venv:
         param_dict = _user_args_to_dict(param_list)
         component = Component.from_registry_file(registry_file, component_name)
-        parameters = ParameterSet.from_yaml(param_file)
+        arg_set = ArgumentSet.from_yaml(param_file)
         entry_point = entry_point or component.get_default_entry_point()
-        parameters.update(component_name, entry_point, param_dict)
-        run = component.run(entry_point, parameters)
+        arg_set.update(component_name, entry_point, param_dict)
+        run = component.run(entry_point, arg_set)
         print(f"Run {run.identifier} recorded.", end=" ")
         print("Execute the following for details:")
         print(f"\n  agentos status {run.identifier}\n")
