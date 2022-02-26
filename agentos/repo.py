@@ -15,7 +15,7 @@ from agentos.exceptions import (
     BadGitStateException,
     PythonComponentSystemException,
 )
-from agentos.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
+from agentos.utils import AOS_GLOBAL_REPOS_DIR
 from agentos.identifiers import ComponentIdentifier, RepoIdentifier
 from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys, flatten_spec
 from agentos.registry import Registry, InMemoryRegistry
@@ -275,8 +275,8 @@ class GitHubRepo(Repo):
     def __init__(self, identifier: str, url: str):
         super().__init__(identifier)
         self.type = RepoType.GITHUB
-        if url != self.UNKNOWN_URL:
-            url, _, _ = parse_github_web_ui_url(url)
+        # https repo link allows for cloning without unlocking your GitHub keys
+        url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
         self.local_repo_path = None
         self.porcelain_repo = None

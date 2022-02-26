@@ -100,13 +100,17 @@ class Component:
 
             https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
         """
-        repo_url, branch_name, repo_path = parse_github_web_ui_url(github_url)
-        version = version or branch_name
-        registry = Registry.from_github(repo_url, version, repo_path)
+        project, repo, branch, repo_path = parse_github_web_ui_url(github_url)
+        version = version or branch
+        repo = Repo.from_github(project, repo)
+        registry = Registry.from_repo(repo, repo_path, version)
+        c_version = None
+        if registry.has_component_by_name(name=name, version=version):
+            c_version = version
         if use_venv:
-            venv = VirtualEnv.from_registry(registry, name, version)
+            venv = VirtualEnv.from_registry(registry, name, c_version)
             venv.activate()
-        return cls.from_registry(registry, name, version)
+        return Component.from_registry(registry, name, c_version)
 
     @classmethod
     def from_default_registry(
