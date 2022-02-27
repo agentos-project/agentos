@@ -8,9 +8,7 @@ from tests.utils import (
 
 
 def test_repo_from_github():
-    aos_repo = Repo.from_github(
-        TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO
-    )
+    aos_repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
     agent_component = Component.from_repo(
         aos_repo,
         identifier=f"agent=={TESTING_BRANCH_NAME}",

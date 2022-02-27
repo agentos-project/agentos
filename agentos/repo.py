@@ -71,7 +71,7 @@ class Repo(abc.ABC):
         cls, github_account: str, repo_name: str, identifier: str = None
     ) -> "GitHubRepo":
         if not identifier:
-            identifier = f"{github_account}/{repo_name}"
+            identifier = f"{github_account}__{repo_name}"
         url = f"https://github.com/{github_account}/{repo_name}"
         return GitHubRepo(identifier, url)
 
