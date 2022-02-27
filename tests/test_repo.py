@@ -12,8 +12,9 @@ def test_repo_from_github():
     agent_component = Component.from_repo(
         aos_repo,
         identifier=f"agent=={TESTING_BRANCH_NAME}",
-        class_name="Agent",
         file_path="agentos/core.py",
+        class_name="Agent",
+        instantiate=True,
     )
     assert hasattr(agent_component.get_object(), "evaluate")
     assert agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
@@ -27,8 +28,9 @@ def test_repo_from_github():
     diff_agent_component = Component.from_repo(
         aos_repo_w_custom_id,
         identifier=f"agent=={TESTING_BRANCH_NAME}",
-        class_name="Agent",
         file_path="agentos/core.py",
+        class_name="Agent",
+        instantiate=True,
     )
     assert hasattr(diff_agent_component.get_object(), "evaluate")
     assert diff_agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
@@ -41,3 +43,15 @@ def test_local_to_from_registry():
     repo_from_reg = Repo.from_registry(reg, "test_id")
     assert repo.identifier == repo_from_reg.identifier
     assert repo.local_dir == repo_from_reg.local_dir
+
+
+def test_module_component_from_ilya_github_repo():
+    ilya_repo = Repo.from_github("ikostrikov", "pytorch-a2c-ppo-acktr-gail")
+    ilya_repo.get_local_repo_dir("master")
+    #args_mod = Component.from_repo(
+    #    ilya_repo, file_path="a2c_ppo_acktr/arguments.py"
+    #)
+    main_mod = Component.from_repo(
+        ilya_repo, "ilya==master", file_path="main.py"
+    )
+    main_mod.run("main")

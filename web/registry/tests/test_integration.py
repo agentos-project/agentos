@@ -38,8 +38,9 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         simple_component = Component.from_repo(
             agentos_repo,
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
-            class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            class_name="SimpleComponent",
+            instantiate=True,
         )
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run_with_arg_set(
@@ -94,23 +95,26 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         simple_component = Component.from_repo(
             repo,
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
-            class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            class_name="SimpleComponent",
+            instantiate=True,
         )
         self.assertEqual(simple_component.repo.identifier, "AgentOSRepo")
         simple_dependency = Component.from_repo(
             agentos_repo,
             identifier=f"SimpleDependency=={TESTING_BRANCH_NAME}",
-            class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            class_name="SimpleComponent",
+            instantiate=True,
         )
         simple_component.add_dependency(simple_dependency, "dep")
 
         another_dependency = Component.from_repo(
             agentos_repo,
             identifier=f"AnotherDependency=={TESTING_BRANCH_NAME}",
-            class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            class_name="SimpleComponent",
+            instantiate=True,
         )
         simple_component.add_dependency(another_dependency, "deptwo")
 
