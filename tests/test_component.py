@@ -43,7 +43,7 @@ def test_component_repl_demo():
         GenericDependency, instantiate=False
     )
     class_comp_with_diff_name = Component.from_class(
-        GenericDependency, instantiate=False, name="ClassDependency"
+        GenericDependency, identifier="ClassDependency", instantiate=False,
     )
 
     # Add dependencies to SimpleAgent
