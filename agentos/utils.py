@@ -9,8 +9,6 @@ AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
-AOS_RELATIVE_CONFIG_DIR = Path.cwd() / ".agentos"
-
 
 def parse_github_web_ui_url(
     github_url: str,
@@ -44,7 +42,7 @@ def parse_github_web_ui_url(
     github_url = github_url.replace("git@github.com:", f"{URL_STARTS_WITH}/")
     error_msg = f'URL must start "{URL_STARTS_WITH}", not "{github_url}"'
     assert github_url.startswith(URL_STARTS_WITH), error_msg
-    stripped_url = github_url.lstrip(URL_STARTS_WITH)
+    stripped_url = github_url.replace(f"{URL_STARTS_WITH}/", "", 1)
     split_url = stripped_url.split("/")
     assert len(split_url) >= 2, f" No project or repo in url: {github_url}"
     project_name = split_url[0]

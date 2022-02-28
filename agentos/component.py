@@ -17,7 +17,7 @@ from agentos.registry import (
     InMemoryRegistry,
 )
 from agentos.exceptions import RegistryException
-from agentos.repo import Repo, LocalRepo, GitHubRepo
+from agentos.repo import RepoType, Repo, LocalRepo, GitHubRepo
 from agentos.argument_set import ArgumentSet
 from agentos.virtual_env import VirtualEnv
 from agentos.utils import parse_github_web_ui_url
@@ -189,16 +189,23 @@ class Component:
     def from_class(
         cls,
         managed_cls: Type[T],
-        name: str = None,
+        identifier: str = None,
+        repo: Repo = None,
         dunder_name: str = None,
         instantiate: bool = True,
     ) -> "Component":
-        name = name if name else managed_cls.__name__
+        name = identifier if identifier else managed_cls.__name__
         if (
             managed_cls.__module__ == "__main__"
         ):  # handle classes defined in REPL.
             file_contents = dill_getsource(managed_cls)
-            repo = LocalRepo(name)
+            if repo:
+                assert repo.type == RepoType.LOCAL, (
+                    f"Repo '{repo.identifier}' is type {repo.type}, but must "
+                    f"be {RepoType.LOCAL.value}."
+                )
+            else:
+                repo = LocalRepo(identifier)
             sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
             src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
             if src_file.exists():
