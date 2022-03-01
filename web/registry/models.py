@@ -55,6 +55,7 @@ class ComponentDependency(TimeStampedModel):
 
 
 class Component(TimeStampedModel):
+    identifier = models.CharField(max_length=200, primary_key=True)
     name = models.CharField(max_length=200)
     version = models.CharField(max_length=200)
     repo = models.ForeignKey(
@@ -77,7 +78,7 @@ class Component(TimeStampedModel):
         unique_together = [("name", "version")]
 
     def __str__(self):
-        return f"<Component {self.pk}: {self.name}=={self.short_version}>"
+        return f"<Component {self.pk}>"
 
     @property
     def short_version(self):
@@ -123,43 +124,30 @@ class Component(TimeStampedModel):
         }
 
     @staticmethod
-    def ingest_spec_dict(spec_dict: Dict):
-        repo_spec_dict = spec_dict.get("repos", {})
-        component_spec_dict = spec_dict.get("components", {})
-        repos = Repo.create_from_dict(repo_spec_dict)
-        components = Component.create_from_dict(component_spec_dict)
-        ComponentDependency.create_from_dict(component_spec_dict)
-        return repos, components
-
-    @staticmethod
-    def create_from_dict(component_spec_dict: Dict) -> List:
-        components = []
-        for name, component_spec in component_spec_dict.items():
-            identifier = CLI_Component.Identifier.from_str(name)
-            default_kwargs = {
-                "repo": Repo.objects.get(identifier=component_spec["repo"]),
-                "file_path": component_spec["file_path"],
-                "class_name": component_spec["class_name"],
-                "instantiate": component_spec["instantiate"],
-            }
-            # TODO - When we have accounts, we need to check the the user
-            #        has permission to create a new version of this Component
-            #        (i.e. if the name already exists but not the version).
-            component, created = Component.objects.get_or_create(
-                name=identifier.name,
-                version=identifier.version,
-                defaults=default_kwargs,
+    def create_from_flat_spec(flat_spec: Dict) -> List:
+        identifier = CLI_Component.Identifier.from_str(flat_spec["identifier"])
+        default_kwargs = {
+            "name": identifier.name,
+            "version": identifier.version,
+            "repo": Repo.objects.get(identifier=flat_spec["repo"]),
+            "file_path": flat_spec["file_path"],
+            "class_name": flat_spec["class_name"],
+            "instantiate": flat_spec.get("instantiate", False),
+        }
+        # TODO - When we have accounts, we need to check the the user
+        #        has permission to create a new version of this Component
+        #        (i.e. if the name already exists but not the version).
+        component, created = Component.objects.get_or_create(
+            identifier=identifier.full,
+            defaults=default_kwargs,
+        )
+        # If not created and not equal, prevent Component redefinition
+        if not created and not component._equals_spec(flat_spec):
+            raise ValidationError(
+                f"Component with id {identifier.full} already exists and "
+                "differs from uploaded spec. Try renaming your Component."
             )
-            # If not created and not equal, prevent Component redefinition
-            if not created and not component._equals_spec(component_spec):
-                raise ValidationError(
-                    f"Component with name {name} and version "
-                    f"{component.version} (id: {component.id}) "
-                    f"already exists and differs from uploaded spec. "
-                    f"Try renaming your {name} Component."
-                )
-            components.append(component)
-        return components
+        return component
 
     # TODO - check versions in here once we have Component owners
     def _equals_spec(self, other_spec):
@@ -187,15 +175,12 @@ class Component(TimeStampedModel):
 
 
 class Repo(TimeStampedModel):
-    identifier = models.CharField(max_length=200, unique=True)
+    identifier = models.CharField(max_length=200, primary_key=True)
     type = models.CharField(max_length=200)
     url = models.CharField(max_length=200)
 
     def __str__(self):
-        return (
-            f"<Repo {self.pk}: {self.identifier} (type {self.type}) "
-            f"at {self.url}>"
-        )
+        return f"<Repo '{self.identifier}' type {self.type} at {self.url}>"
 
     @staticmethod
     def create_from_dict(repo_spec_dict: Dict) -> List:
@@ -213,7 +198,7 @@ class Repo(TimeStampedModel):
 
     @property
     def full_name(self):
-        return f"{self.identifier}_{self.pk}"
+        return f"{self.identifier}"
 
     def _to_spec(self):
         return {
@@ -222,32 +207,56 @@ class Repo(TimeStampedModel):
         }
 
 
-class Run(TimeStampedModel):
-    id = models.CharField(max_length=200, unique=True, primary_key=True)
-    root = models.ForeignKey(
-        Component, on_delete=models.CASCADE, related_name="runs_as_root"
-    )
-    agent = models.ForeignKey(
-        Component, on_delete=models.CASCADE, related_name="runs_as_agent"
-    )
-    environment = models.ForeignKey(
-        Component, on_delete=models.CASCADE, related_name="runs_as_environment"
-    )
-    mlflow_metrics = models.JSONField(default=dict)
-    mlflow_params = models.JSONField(default=dict)
-    mlflow_tags = models.JSONField(default=dict)
-    mlflow_info = models.JSONField(default=dict)
-    entry_point = models.TextField()
-    parameter_set = models.JSONField(default=dict)
-    artifact_tarball = models.FileField(
-        upload_to="artifact_tarballs/", null=True
+class RunCommand(TimeStampedModel):
+    identifier = models.CharField(max_length=200, primary_key=True)
+    entry_point = models.CharField(max_length=200)
+    argument_set = models.JSONField(default=dict)
+    component = models.ForeignKey(
+        Component, on_delete=models.CASCADE, to_field="identifier"
     )
 
     def __str__(self):
         return (
-            f"<Run {self.pk} with agent "
-            f"{self.agent} and environment {self.environment}"
+            f"entry point {self.entry_point}, and argument_set "
+            f"{self.argument_set}>"
         )
+
+
+class Run(TimeStampedModel):
+    identifier = models.CharField(max_length=200, primary_key=True)
+    info = models.JSONField(default=dict)
+    data = models.JSONField(default=dict)
+    artifact_tarball = models.FileField(
+        upload_to="artifact_tarballs/", null=True
+    )
+    run_command = models.ForeignKey(
+        RunCommand, on_delete=models.CASCADE, null=True
+    )
+    agent = models.ForeignKey(
+        Component,
+        on_delete=models.CASCADE,
+        related_name="runs_as_agent",
+        null=True,
+    )
+    environment = models.ForeignKey(
+        Component,
+        on_delete=models.CASCADE,
+        related_name="runs_as_environment",
+        null=True,
+    )
+
+    def __str__(self):
+        s = f"<Run {self.pk}"
+        if self.run_command:
+            s.append(f" with run_command '{self.run_command.identifier}'")
+        if self.agent or self.environment:
+            assert self.agent and self.environment
+            s.append(
+                f" with agent '{self.agent}' and environment "
+                f"'{self.environment}'"
+            )
+        s.append(">")
+        return s
 
     @property
     def training_step_count_metric(self):

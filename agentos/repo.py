@@ -1,6 +1,8 @@
 import os
 import sys
 import abc
+import logging
+import uuid
 from enum import Enum
 from typing import TypeVar, Dict, Tuple, Union
 from pathlib import Path
@@ -14,9 +16,12 @@ from agentos.exceptions import (
     BadGitStateException,
     PythonComponentSystemException,
 )
-from agentos.utils import AOS_CACHE_DIR
-from agentos.component import ComponentIdentifier
-from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys
+from agentos.utils import AOS_GLOBAL_REPOS_DIR
+from agentos.identifiers import ComponentIdentifier, RepoIdentifier
+from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys, flatten_spec
+from agentos.registry import Registry, InMemoryRegistry
+
+logger = logging.getLogger(__name__)
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -33,6 +38,8 @@ class Repo(abc.ABC):
     is located.
     """
 
+    UNKNOWN_URL = "unknown_url"
+
     def __init__(self, identifier: str):
         self.identifier = identifier
 
@@ -42,38 +49,57 @@ class Repo(abc.ABC):
         return self == other
 
     @staticmethod
-    def from_spec(spec: NestedRepoSpec, base_dir: Path = None) -> "Repo":
-        assert len(spec) == 1
-        for identifier, inner_spec in spec.items():
-            repo_type = inner_spec["type"]
-            if repo_type == RepoType.LOCAL.value:
-                assert (
-                    base_dir
-                ), "The `base_dir` arg is required for local repos."
-                path = Path(base_dir) / inner_spec["path"]
-                return LocalRepo(identifier=identifier, local_dir=path)
-            elif repo_type == RepoType.GITHUB.value:
-                return GitHubRepo(identifier=identifier, url=inner_spec["url"])
+    def from_spec(spec: NestedRepoSpec, base_dir: str = None) -> "Repo":
+        flat_spec = flatten_spec(spec)
+        if flat_spec["type"] == RepoType.LOCAL.value:
+            return LocalRepo.from_spec(spec, base_dir)
+        if flat_spec["type"] == RepoType.GITHUB.value:
+            return GitHubRepo.from_spec(spec)
         raise PythonComponentSystemException(
-            f"Unknown repo spec type '{repo_type} in repo {identifier}"
+            f"Unknown repo type '{flat_spec['type']} in "
+            f"repo '{flat_spec['identifier']}'"
         )
+
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, identifier: RepoIdentifier
+    ) -> "Repo":
+        return cls.from_spec(registry.get_repo_spec(identifier))
+
+    @classmethod
+    def from_github(
+        cls, github_account: str, repo_name: str, identifier: str = None
+    ) -> "GitHubRepo":
+        if not identifier:
+            identifier = f"{github_account}__{repo_name}"
+        url = f"https://github.com/{github_account}/{repo_name}"
+        return GitHubRepo(identifier, url)
 
     @abc.abstractmethod
     def to_spec(self, flatten: bool = False) -> RepoSpec:
         return NotImplementedError  # type: ignore
 
-    def optionally_flatten_spec(self, inner: dict, flatten: bool):
-        """
-        Helper function for optionally flattening a spec.
-        :param inner: the inner dict to flatten or not.
-        :param flatten: the flag for whether to flatten this spec.
-        :return: a spec that is either flattened or not.
-        """
-        if flatten:
-            inner.update({RepoSpecKeys.IDENTIFIER: self.identifier})
-            return inner
-        else:
-            return {self.identifier: inner}
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,  # Leave for compatibility w/ future unified spec
+        force: bool = False,
+    ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
+        repo_spec = registry.get_repo_spec(
+            self.identifier, error_if_not_found=False
+        )
+        if repo_spec and not force:
+            assert repo_spec == self.to_spec(), (
+                f"A Repo with identifier '{self.identifier}' "
+                f"already exists in registry '{registry}' that differs "
+                f"from the one provided."
+                f"New repo spec:\n{self.to_spec()}\n\n"
+                f"Existing repo spec:\n{repo_spec}"
+            )
+        registry.add_repo_spec(self.to_spec())
+        return registry
 
     @abc.abstractmethod
     def get_local_repo_dir(self, version: str) -> Path:
@@ -121,7 +147,7 @@ class Repo(abc.ABC):
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
-        url = "unknown_url"
+        url = self.UNKNOWN_URL
         try:
             remote, url = porcelain.get_remote_repo(self.porcelain_repo)
         except IndexError:
@@ -212,23 +238,17 @@ class Repo(abc.ABC):
     ) -> Path:
         """
         Finds the 'component_path' relative to the repo containing the
-        Component.  For example, if ``component_path`` is:
+        Component.  For example, if ``component_path`` is::
 
-        ```
-        /foo/bar/baz/my_component.py
-        ```
+            /foo/bar/baz/my_component.py
 
-        and a git repo lives in:
+        and a git repo lives in::
 
-        ```
-        /foo/bar/.git/
-        ```
+            /foo/bar/.git/
 
-        then this would return:
+        then this would return::
 
-        ```
-        baz/my_component.py
-        ```
+            baz/my_component.py
         """
         full_path = self.get_local_file_path(identifier.version, file_path)
         name = full_path.name
@@ -258,12 +278,22 @@ class GitHubRepo(Repo):
         self.local_repo_path = None
         self.porcelain_repo = None
 
+    @classmethod
+    def from_spec(cls, spec: NestedRepoSpec) -> "LocalRepo":
+        flat_spec = flatten_spec(spec)
+        return cls(
+            flat_spec[RepoSpecKeys.IDENTIFIER],
+            url=flat_spec[RepoSpecKeys.URL],
+        )
+
     def to_spec(self, flatten: bool = False) -> Dict:
-        inner = {
-            RepoSpecKeys.TYPE: self.type.value,
-            RepoSpecKeys.URL: self.url,
+        spec = {
+            self.identifier: {
+                RepoSpecKeys.TYPE: self.type.value,
+                RepoSpecKeys.URL: self.url,
+            }
         }
-        return self.optionally_flatten_spec(inner, flatten)
+        return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str) -> Path:
         local_repo_path = self._clone_repo(version)
@@ -277,7 +307,9 @@ class GitHubRepo(Repo):
 
     def _clone_repo(self, version: str) -> Path:
         org_name, proj_name = self.url.split("/")[-2:]
-        clone_destination = AOS_CACHE_DIR / org_name / proj_name / version
+        clone_destination = (
+            AOS_GLOBAL_REPOS_DIR / org_name / proj_name / version
+        )
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             porcelain.clone(
@@ -320,35 +352,42 @@ class LocalRepo(Repo):
     def __init__(self, identifier: str, local_dir: Union[Path, str] = None):
         super().__init__(identifier)
         if not local_dir:
-            # TODO: check for a global .pcsconfig that defines a default
-            #      location for a local repo, which will be used to
-            #      write source files created by Component.from_class with
-            #      classes that are defined in the REPL.
-            # NOTE: We do not use utils.AOS_CACHE_DIR here since this
-            #       is not a cache of a remote git repo, rather it is a local
-            #       repo that may be the only copy in existence.
-            local_dir = "./.pcs_local_repo"
+            local_dir = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.type = RepoType.LOCAL
         self.local_dir = Path(local_dir).absolute()
         if self.local_dir.exists():
-            assert self.local_dir.is_dir()
-            print(
-                f"Confirmed local_dir {self.local_dir} for "
-                f"LocalRepo {self.identifier} exists and is a dir."
+            assert self.local_dir.is_dir(), (
+                f"local_dir {self.local_dir} passed to LocalRepo.__init__() "
+                f"with identifier '{self.identifier}' exists but is not a dir."
             )
         else:
             self.local_dir.mkdir(parents=True, exist_ok=True)
-            print(
+            logger.debug(
                 f"Created local_dir {self.local_dir} for "
                 f"LocalRepo {self.identifier}."
             )
 
+    @classmethod
+    def from_spec(
+        cls, spec: NestedRepoSpec, base_dir: str = None
+    ) -> "LocalRepo":
+        flat_spec = flatten_spec(spec)
+        local_path = flat_spec[RepoSpecKeys.PATH]
+        if base_dir and not Path(local_path).is_absolute():
+            local_path = f"{base_dir}/{local_path}"
+        return cls(
+            flat_spec[RepoSpecKeys.IDENTIFIER],
+            local_dir=local_path,
+        )
+
     def to_spec(self, flatten: bool = False) -> RepoSpec:
-        inner = {
-            RepoSpecKeys.TYPE: self.type.value,
-            RepoSpecKeys.PATH: str(self.local_dir),
+        spec = {
+            self.identifier: {
+                RepoSpecKeys.TYPE: self.type.value,
+                RepoSpecKeys.PATH: str(self.local_dir),
+            }
         }
-        return self.optionally_flatten_spec(inner, flatten)
+        return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str = None) -> Path:
         assert version is None, "LocalRepos don't support versioning."

@@ -5,12 +5,12 @@
 Train the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point learn --param-file parameters.yaml
+agentos run agent --entry-point learn --arg-set-file arguments.yaml
 ```
 
 Optional command-line arguments:
 
-* `-Pnum_episodes=X` - Run the learning algorithm for X episodes.
+* `-A num_episodes=X` - Run the learning algorithm for X episodes.
 
 
 ### Agent Evaluation
@@ -18,12 +18,12 @@ Optional command-line arguments:
 Evaluate the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point evaluate --param-file parameters.yaml
+agentos run agent --entry-point evaluate --arg-set-file arguments.yaml
 ```
 
 Optional command-line arguments:
 
-* `-Pnum_episodes=X` - Evaluate the agent over X episodes.
+* `-A num_episodes=X` - Evaluate the agent over X episodes.
 
 
 ### Agent Reset
@@ -32,7 +32,7 @@ Reset agent (including the backing model) by running the following from the
 command-line:
 
 ```bash
-agentos run agent --entry-point reset --param-file parameters.yaml
+agentos run agent --entry-point reset --arg-set-file arguments.yaml
 ```
 
 

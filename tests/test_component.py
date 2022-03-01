@@ -4,6 +4,7 @@ from unittest.mock import patch
 from unittest.mock import DEFAULT
 from agentos.component import Component
 from agentos.component_run import ComponentRun
+from agentos.virtual_env import auto_revert_venv
 from agentos.run_command import RunCommand
 from utils import run_test_command, run_in_dir
 from agentos.cli import init
@@ -42,7 +43,7 @@ def test_component_repl_demo():
         GenericDependency, instantiate=False
     )
     class_comp_with_diff_name = Component.from_class(
-        GenericDependency, instantiate=False, name="ClassDependency"
+        GenericDependency, identifier="ClassDependency", instantiate=False,
     )
 
     # Add dependencies to SimpleAgent
@@ -66,13 +67,13 @@ def test_component_repl_demo():
     assert class_dep_obj().x == "x_val"
 
     # Instantiate a SimpleAgent and run reset_env() method
-    r = agent_comp.run("reset_env")
+    r = agent_comp.run_with_arg_set("reset_env")
     assert type(r) == ComponentRun
     assert type(r.run_command) == RunCommand
     assert r.run_command.component == agent_comp
     assert r.run_command.entry_point == "reset_env"
-    for params in r.run_command.parameter_set.to_spec().values():
-        assert params == {}
+    for args in r.run_command.argument_set.to_spec().values():
+        assert args == {}
 
     copy = ComponentRun(existing_run_id=r.identifier)
     assert copy.run_command == r.run_command
@@ -89,7 +90,7 @@ def test_component_freezing(tmpdir):
             get_prefixed_path_from_repo_root=DEFAULT,
         ) as mocks:
             mocks["get_version_from_git"].return_value = (
-                "https://example.com",
+                "https://github.com/agentos-project/agentos",
                 "test_freezing_version",
             )
             mocks[
@@ -99,3 +100,28 @@ def test_component_freezing(tmpdir):
             agent_spec = reg.get_component_spec("agent", flatten=True)
             assert agent_spec["repo"] == "local_dir"
             assert agent_spec["version"] == "test_freezing_version"
+
+
+def test_component_from_github_with_venv():
+    with auto_revert_venv():
+        random_url = (
+            "https://github.com/agentos-project/agentos/"
+            "blob/439b705c15f499f0017b49ffea4d33afa0f7a7a5/"
+            "example_agents/random/components.yaml"
+        )
+        random_component = Component.from_github_registry(
+            random_url, "agent", use_venv=True
+        )
+        random_component.run_with_arg_set("run_episodes")
+
+
+def test_component_from_github_no_venv():
+    with auto_revert_venv():
+        sb3_url = (
+            "https://github.com/agentos-project/agentos/"
+            "blob/master/example_agents/sb3_agent/components.yaml"
+        )
+        random_component = Component.from_github_registry(
+            sb3_url, "sb3_agent", use_venv=False
+        )
+        random_component.run_with_arg_set("evaluate")

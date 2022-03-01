@@ -10,6 +10,7 @@ from mlflow.tracking.context import registry as context_registry
 from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
 from agentos.specs import RunSpec
+from agentos.specs import unflatten_spec
 
 
 class Run:
@@ -20,6 +21,10 @@ class Run:
     Second, a Run allows for reproducibility. For this a Run can optionally
     hold a RunCommand that can be used to recreate this run, i.e., to
     perform a "re-run".
+
+    We implement a Run that records its RunCommand as a special type of Run
+    called a :py.func.agentos.run_command.ComponentRun: which is a subclass
+    of ``Run``.
 
     A Run is similar to a logger but provides a bit more structure than loggers
     traditionally do. For example, instead of just a log-level and some free
@@ -35,8 +40,19 @@ class Run:
     AgentOS Run related abstractions are encoded into an MLflowRun as follows:
     - Component Registry -> MLflow artifact file
     - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
-    - ParameterSet -> MLflow artifact file
+    - ArgumentSet -> MLflow artifact file
+
+    A Run can also contain a [pointer to a] RunCommand.
+
+    A Run can also have pointers to other runs. These pointers can have
+    different semantic meanings. They could have an "inner-outer" relationship,
+    i.e., an outer run is already active when it's "inner" run starts and ends.
+    Alternatively, two runs could have an "output-input dependency-depender"
+    relationship, in which the depender uses the some part of dependency run's
+    output as input. In this case, the relationship is causal.
     """
+
+    # TODO: Decide if pointers to other runs should be special some how.
 
     _mlflow_client = MlflowClient()
 
@@ -129,10 +145,6 @@ class Run:
     def from_existing_run_id(cls, run_id: RunIdentifier) -> "Run":
         return cls(existing_run_id=run_id)
 
-    @classmethod
-    def from_tracking_store(cls, run_id: RunIdentifier):
-        return cls.from_existing_run_id(run_id)
-
     @property
     def _mlflow_run(self):
         return self._mlflow_client.get_run(self._mlflow_run_id)
@@ -211,20 +223,27 @@ class Run:
         registry: Registry,
         run_id: RunIdentifier,
     ) -> "Run":
-        # TODO figure out a way to deserialize an MLflowRun from the registry
-        #     and reconcile that with what is in the tracking store.
-        # run_spec = registry.get_run_spec(run_id)
-        raise NotImplementedError
+        run_spec = registry.get_run_spec(run_id)
+        return cls.from_existing_run_id(run_spec["identifier"])
 
     def to_registry(
         self,
         registry: Registry = None,
+        force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
         if not registry:
             from agentos.registry import InMemoryRegistry
 
             registry = InMemoryRegistry()
+        spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
+        if spec and not force:
+            assert spec == self.to_spec(), (
+                f"A run spec with identifier '{self.identifier}' already "
+                f"exists in registry '{registry}' and differs from the one "
+                "being added. Use force=True to overwrite the existing one."
+            )
+
         registry.add_run_spec(self.to_spec())
         # If we are writing to a WebRegistry, have local artifacts, and
         # include_artifacts is True, try uploading the artifact files to the
@@ -239,7 +258,10 @@ class Run:
         return registry
 
     def to_spec(self, flatten: bool = False) -> RunSpec:
-        return self._mlflow_run.to_dictionary()
+        mlflow_dict = self._mlflow_run.to_dictionary()
+        assert "identifier" not in mlflow_dict
+        mlflow_dict["identifier"] = self.identifier
+        return unflatten_spec(mlflow_dict) if not flatten else mlflow_dict
 
     def __enter__(self) -> "Run":
         return self

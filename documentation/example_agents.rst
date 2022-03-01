@@ -11,37 +11,40 @@ Example Agents
 
 
 The ``example_agents`` directory of the `AgentOS source repository
-<https://github.com/agentos-project/agentos>`_ contains examples of
-different types of learning agents.
+<https://github.com/agentos-project/agentos/tree/master/example_agents>`_
+contains examples of different types of learning agents built using PCS and the
+AgentOS libraries.  
 
-Existing Agents
-===============
+Most of these agents are built using RL frameworks from different research
+teams illustrating the flexibility of PCS and AgentOS. Each of these agents has
+a README describing how to run these agents.
+
 The following example agents exist:
 
-* ChatBot
-* RLlib agent
-* RL Agents
+* A `DQN agent
+  <https://github.com/agentos-project/agentos/tree/master/example_agents/acme_dqn>`_
+  that plays CartPole (built using the `Acme RL framework
+  <https://github.com/deepmind/acme>`_).
 
-  * Reinforce
-  * Deep Q Networks (DQN)
-  * Random Neural Network
+* An `R2D2 agent
+  <https://github.com/agentos-project/agentos/tree/master/example_agents/acme_r2d2>`_
+  that plays CartPole (built using the `Acme RL framework
+  <https://github.com/deepmind/acme>`_).
 
-* Evolutionary Agent
-* Predictive Coding
+* A `ChatBot agent
+  <https://github.com/agentos-project/agentos/tree/master/example_agents/chatbot>`_
 
-  * Free Energy Tutorial - based on `this tutorial
-    <https://sciencedirect.com/science/article/pii/S0022249615000759>`_
-    by Rafal Bogacz.
+* A `Random agent
+  <https://github.com/agentos-project/agentos/tree/master/example_agents/random>`_
+  that randomly explores a 1D corridor.  This is the same agent that you get
+  when you run ``agentos init .`` in a new directory.
 
-Future Agents
-==============
-Some future example agents that are planned or have been discussed include:
+* An `RLlib agent
+  <https://github.com/agentos-project/agentos/tree/master/example_agents/rllib_agent>`_
+  that plays CartPole (built using `Ray and RLlib
+  <https://github.com/ray-project/ray>`_).
 
-* [`Work In Progress <https://github.com/agentos-project/agentos/issues/57>`_]
-  An agent that implements predictive coding in the visual cortex, by Rao
-  et al.
-* Ports or wraps of popular open source projects including:
-
-  * A digital assistant such as MyCroft_ or Lucida_.
-  * More RL frameworks or toolkits such as TensorForce_ or RLKit_.
-  * A cognitive architecture such as OpenCog_ or Soar_.
+* A `PPO agent
+  <https://github.com/agentos-project/agentos/tree/master/example_agents/sb3_agent>`_
+  that plays CartPole (built using `Stable Baselines3
+  <https://stable-baselines3.readthedocs.io/en/master/>`_).

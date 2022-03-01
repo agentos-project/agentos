@@ -83,7 +83,7 @@ The above command not only installs the 2048 environment into your agent
 directory, but it also updates our agent directory's ``agent.ini`` file to
 record the specifics of the components we've installed. Details about the
 ``agent.ini`` file can be found `here
-<https://github.com/agentos-project/design_docs/blob/main/abstractions.rst#agent-definition-file>`_.
+<https://github.com/agentos-project/design_docs/blob/main/abstractions.rst#agent-definition-file>`__.
 
 Our agent will now run against the 2048 game environment.  Now, let's install a
 policy that our agent can use to determine which action to take when given a
@@ -136,7 +136,7 @@ be using Q-learning with a deep Q network to learn 2048.
 
 
 Using components within code
----------------------------
+----------------------------
 
 Let's dig into our minimal agent to see how we access our components
 programmatically::
@@ -257,6 +257,7 @@ Long Term Plans
 
 * A simple way for component authors to submit components to the registry via
   command-line and web interface.
+
     * For example, this might be two commands:
         * ``agentos package ...`` - packages up the component
         * ``agentos register ...`` - pushes the component listing to the
@@ -298,7 +299,7 @@ allows for both manual tweaking of hyperparameters as well as programmatic
 exploration and tuning (with e.g. `sk-learn grid search
 <https://scikit-learn.org/stable/modules/grid_search.html>`_).  See also the
 example ``agent.ini`` file `here
-<https://github.com/agentos-project/design_docs/blob/main/abstractions.rst#agent-definition-file>`_.
+<https://github.com/agentos-project/design_docs/blob/main/abstractions.rst#agent-definition-file>`__.
 
 
 **Q:** How can I reuse a policy from a previous run?
@@ -439,10 +440,10 @@ Revision History
   * `v7 <https://github.com/agentos-project/design_docs/blob/271b7450c0d1c50540f170857d9a6357acbd8fd7/registry.rst>`_
 
     * Address discussion feedback `here
-      <https://github.com/agentos-project/design_docs/discussions/7#discussioncomment-361544>`_.
+      <https://github.com/agentos-project/design_docs/discussions/7#discussioncomment-361544>`__.
 
     * Address meeting feedback `here
-      <https://github.com/agentos-project/design_docs/discussions/7#discussioncomment-364414>`_.
+      <https://github.com/agentos-project/design_docs/discussions/7#discussioncomment-364414>`__.
 
     * Rewrote abstract to better define terms
 

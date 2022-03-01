@@ -9,7 +9,7 @@ import click
 from datetime import datetime
 from pathlib import Path
 from agentos import Component
-from agentos import ParameterSet
+from agentos import ArgumentSet
 from agentos.run import Run
 from agentos.registry import Registry
 from agentos.virtual_env import VirtualEnv
@@ -75,15 +75,6 @@ _option_agent_name = click.option(
     "AGENT_NAME may not contain ' ', ':', or '/'.",
 )
 
-_option_agentos_dir = click.option(
-    "--agentos-dir",
-    "-d",
-    metavar="AGENTOS_DIR",
-    type=click.Path(),
-    default="./.aos",
-    help="Directory path AgentOS components and data",
-)
-
 _option_assume_yes = click.option(
     "--assume-yes",
     "-y",
@@ -102,8 +93,7 @@ _option_force = click.option(
 @agentos_cmd.command()
 @_arg_dir_names
 @_option_agent_name
-@_option_agentos_dir
-def init(dir_names, agent_name, agentos_dir):
+def init(dir_names, agent_name):
     """Initialize current (or specified) directory as an AgentOS agent.
 
     \b
@@ -120,14 +110,22 @@ def init(dir_names, agent_name, agentos_dir):
     if dir_names:
         dirs = [Path(d) for d in dir_names]
 
+    CWD_STR = "current working directory"
+
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-        os.makedirs(agentos_dir, exist_ok=True)
         _instantiate_template_files(d, agent_name)
-        d = "current working directory" if d == Path(".") else d
+        d = CWD_STR if d == Path(".") else d
         click.echo(
-            f"Finished initializing AgentOS agent '{agent_name}' in {d}."
+            f"\nFinished initializing AgentOS agent '{agent_name}' in {d}.\n"
         )
+        click.echo("To run agent:")
+
+        registry_path = ""
+        if d != CWD_STR:
+            registry_path = f"-r {d}/components.yaml"
+        run_cmd = f"\tagentos run agent {registry_path}\n"
+        click.echo(run_cmd)
 
 
 @agentos_cmd.command()
@@ -139,25 +137,25 @@ def init(dir_names, agent_name, agentos_dir):
     type=str,
     default=None,
     help="A function of the component that AgentOS Runtime will call with "
-    "the specified params.",
+    "the specified argument set.",
 )
 # Copied from https://github.com/mlflow/mlflow/blob/
 # ... 3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L54
 @click.option(
-    "--param-list",
-    "-P",
+    "--arg-set-list",
+    "-A",
     metavar="NAME=VALUE",
     multiple=True,
-    help="A parameter for the run, of the form -P name=value. All parameters "
-    "will be passed to the entry_point function using a **kwargs style "
+    help="A argument for the run, of the form -A name=value. All arguments "
+    "will be passed to the entry_point function using a Python kwargs-style "
     "keyword argument https://docs.python.org/3/glossary.html#term-argument",
 )
 @click.option(
-    "--param-file",
+    "--arg-set-file",
     metavar="PARAM_FILE",
-    help="A YAML file containing parameters for the entry point being run. "
+    help="A YAML file containing arguments for the entry point being run. "
     "Will be passed to the entry_point function, along with individually "
-    "specified params, via a **kwargs style keyword argument "
+    "specified args, via a Python kwargs-style keyword argument "
     "https://docs.python.org/3/glossary.html#term-argument",
 )
 @_option_use_venv
@@ -165,19 +163,19 @@ def run(
     component_name,
     registry_file,
     entry_point,
-    param_list,
-    param_file,
+    arg_set_list,
+    arg_set_file,
     use_venv,
 ):
     venv = VirtualEnv.from_registry_file(registry_file, component_name)
     venv.set_environment_handling(use_venv)
     with venv:
-        param_dict = _user_args_to_dict(param_list)
+        cli_arg_dict = _user_args_to_dict(arg_set_list)
         component = Component.from_registry_file(registry_file, component_name)
-        parameters = ParameterSet.from_yaml(param_file)
+        arg_set = ArgumentSet.from_yaml(arg_set_file)
         entry_point = entry_point or component.get_default_entry_point()
-        parameters.update(component_name, entry_point, param_dict)
-        run = component.run(entry_point, parameters)
+        arg_set.update(component_name, entry_point, cli_arg_dict)
+        run = component.run_with_arg_set(entry_point, arg_set)
         print(f"Run {run.identifier} recorded.", end=" ")
         print("Execute the following for details:")
         print(f"\n  agentos status {run.identifier}\n")
@@ -323,9 +321,10 @@ def _instantiate_template_files(d, agent_name):
 _AGENT_DEF_FILE = Path("./templates/agent.py")
 _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
-_TRAINER_DEF_FILE = Path("./templates/trainer.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
 _AGENT_YAML_FILE = Path("./templates/components.yaml")
+_REQUIREMENTS_FILE = Path("./templates/requirements.txt")
+_README_FILE = Path("./templates/README.md")
 
 
 _INIT_FILES = [
@@ -333,8 +332,9 @@ _INIT_FILES = [
     _ENV_DEF_FILE,
     _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
-    _TRAINER_DEF_FILE,
     _AGENT_YAML_FILE,
+    _REQUIREMENTS_FILE,
+    _README_FILE,
 ]
 
 

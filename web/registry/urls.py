@@ -1,13 +1,19 @@
 from django.urls import path, include
-from .views import RunViewSet
-from .views import RepoViewSet
-from .views import ComponentViewSet
+from .views import (
+    AgentRunViewSet,
+    RunViewSet,
+    RunCommandViewSet,
+    ComponentViewSet,
+    RepoViewSet,
+)
 from rest_framework.routers import DefaultRouter
 
 
 router = DefaultRouter()
-router.register(r"components", ComponentViewSet, basename="component")
+router.register(r"agentruns", AgentRunViewSet, basename="agentrun")
 router.register(r"runs", RunViewSet)
+router.register(r"runcommands", RunCommandViewSet, basename="runcommand")
+router.register(r"components", ComponentViewSet, basename="component")
 router.register(r"repos", RepoViewSet, basename="repo")
 
 router.get_api_root_view().cls.__name__ = "Root"

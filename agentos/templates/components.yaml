@@ -8,11 +8,11 @@ components:
         repo: local_dir
         file_path: ./agent.py
         class_name: {agent_name}
+        requirements_path: ./requirements.txt
         dependencies:
             environment: environment
             policy: policy
             dataset: dataset
-            trainer: trainer
 
     environment:
         repo: local_dir
@@ -30,8 +30,3 @@ components:
         repo: local_dir
         file_path: ./dataset.py
         class_name: BasicDataset
-    
-    trainer:
-        repo: local_dir
-        file_path: ./trainer.py
-        class_name: BasicTrainer

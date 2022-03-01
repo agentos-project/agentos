@@ -1,12 +1,13 @@
 import tempfile
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Mapping
 from agentos.exceptions import PythonComponentSystemException
+from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
 from agentos.run import Run
 from agentos.run_command import RunCommand
-from agentos.specs import RunSpec
+from agentos.specs import RunSpec, flatten_spec, unflatten_spec
 
 
 def active_component_run(
@@ -56,7 +57,7 @@ class ComponentRun(Run):
     RUN_COMMAND_REGISTRY_FILENAME = "agentos.run_command_registry.yaml"
     """
     A ComponentRun represents the execution of a specific entry point of a
-    specific Component with a specific parameter set.
+    specific Component with a specific ArgumentSet.
     """
 
     def __init__(
@@ -85,6 +86,7 @@ class ComponentRun(Run):
             f"PCS Component '{self.run_command.component.identifier.full}' "
             f"at Entry Point '{self.run_command.entry_point}'",
         )
+        self._return_value = None
 
     @property
     def run_command(self) -> "RunCommand":
@@ -111,11 +113,42 @@ class ComponentRun(Run):
         force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
-        super().to_registry(registry)
+        spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
+        if spec and not force:
+            assert spec == self.to_spec(), (
+                f"A component run spec with identifier '{self.identifier}' "
+                f"already exists in registry '{registry}' and differs from "
+                "the one being added. Use force=True to overwrite the "
+                "existing one."
+            )
         if recurse:
             self.run_command.to_registry(
                 registry, recurse=recurse, force=force
             )
+        super().to_registry(
+            registry, include_artifacts=include_artifacts, force=force
+        )
+
+    @classmethod
+    def from_registry(
+        cls, registry: Registry, identifier: RunIdentifier
+    ) -> "ComponentRun":
+        spec = registry.get_run_spec(identifier)
+        return cls.from_spec(spec, registry)
+
+    @classmethod
+    def from_spec(cls, spec: Mapping, registry: Registry) -> "ComponentRun":
+        flat_spec = flatten_spec(spec)
+        run_command = RunCommand.from_registry(
+            registry, flat_spec["run_command"]
+        )
+        w_run_cmd_from_mlflow = cls(existing_run_id=flat_spec["identifier"])
+        assert w_run_cmd_from_mlflow.run_command == run_command, (
+            "The RunCommand object created from the MLflow Run "
+            f"'{flat_spec['identifier']}' is different from the one fetched"
+            f"from the registry provided '{registry}'."
+        )
+        return w_run_cmd_from_mlflow
 
     def _fetch_run_command(self) -> RunCommand:
         try:
@@ -136,7 +169,7 @@ class ComponentRun(Run):
     def set_and_log_run_command(self, run_command: RunCommand) -> None:
         """
         Log a Registry YAML file for the RunCommand of this run, including
-        the ParameterSet, entry_point (i.e., function name), component ID,
+        the ArgumentSet, entry_point (i.e., function name), component ID,
         as well as the root component being run and its full
         transitive dependency graph of other components as part of this Run.
         This registry file will contain the component spec and repo spec for
@@ -144,7 +177,7 @@ class ComponentRun(Run):
         Run object contains a component object and thus the root component's
         full dependency graph of other components, and as such does not depend
         on a Registry to provide reproducibility. Like a Component, a Run
-        (including its entry point, parameter_set, root component, and the root
+        (including its entry point, argument_set, root component, and the root
         component's full dependency graph) can be dumped into a Registry for
         sharing purposes, which essentially normalizes the Run's root
         component's dependency graph into flat component specs.
@@ -207,7 +240,9 @@ class ComponentRun(Run):
             with open(filename, "w") as f:
                 yaml.dump(ret_val, f)
         else:
-            raise PythonComponentSystemException("Invalid format provided")
+            raise PythonComponentSystemException(
+                f"Invalid format provided: {format}"
+            )
         self.log_artifact(str(filename))
         filename.unlink()
 
@@ -220,11 +255,9 @@ class ComponentRun(Run):
             return False
 
     def to_spec(self, flatten: bool = False) -> RunSpec:
-        inner_spec = super().to_spec()
-        run_cmd = self.run_command.to_spec() if self.run_command else None
-        inner_spec["run_command"] = run_cmd
-        if flatten:
-            inner_spec.update({RunSpec.identifier_key: self.identifier})
-            return inner_spec
-        else:
-            return {self.identifier: inner_spec}
+        flat_spec = super().to_spec(flatten=True)
+        assert (
+            self.run_command
+        ), "Every ComponentRun instance must have a run_command."
+        flat_spec["run_command"] = self.run_command.identifier
+        return flat_spec if flatten else unflatten_spec(flat_spec)

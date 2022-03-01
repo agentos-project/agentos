@@ -15,10 +15,13 @@ from shared import docs_dir
 DOC_SECTIONS_PLUS_SEPARATOR_TEXT = [
     (
         "intro.rst",
-        "\n\nThe AgentOS docs are at `agentos.org "
-        "<https://agentos.org>`_.\n\n\n",
+        "\n\nQuickstart\n===========\n\n"
+        "See the agentos.org `quickstarts "
+        "<https://agentos.org/latest/quickstart>`_.\n\n\n"
+        "\n\nDocumentation\n=============\n\n"
+        "For detailed documentation see the "
+        "`agentos.org docs <https://agentos.org/latest>`_.\n\n\n",
     ),
-    ("install_and_try.rst", "\n\n"),
     ("developing.rst", "\n\n"),
 ]
 

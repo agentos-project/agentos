@@ -1,12 +1,13 @@
 import sys
 import uuid
+import logging
 import importlib
+from hashlib import sha1
 from pathlib import Path
 from dill.source import getsource as dill_getsource
 from typing import Union, TypeVar, Dict, Type, Any, Sequence
 from rich import print as rich_print
 from rich.tree import Tree
-from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.component_run import ComponentRun
 from agentos.identifiers import ComponentIdentifier
@@ -16,8 +17,12 @@ from agentos.registry import (
     InMemoryRegistry,
 )
 from agentos.exceptions import RegistryException
-from agentos.repo import Repo, LocalRepo, GitHubRepo
-from agentos.parameter_set import ParameterSet
+from agentos.repo import RepoType, Repo, LocalRepo, GitHubRepo
+from agentos.argument_set import ArgumentSet
+from agentos.virtual_env import VirtualEnv
+from agentos.utils import parse_github_web_ui_url
+
+logger = logging.getLogger(__name__)
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
@@ -26,7 +31,7 @@ T = TypeVar("T")
 class Component:
     """
     A Component is a class manager. It provides a standard way for runtime and
-    code implementations to communicate about parameters, entry points, and
+    code implementations to communicate about arguments, entry points, and
     dependencies.
     """
 
@@ -75,6 +80,39 @@ class Component:
         self.active_run = None
 
     @classmethod
+    def from_github_registry(
+        cls,
+        github_url: str,
+        name: str,
+        version: str = None,
+        use_venv: bool = True,
+    ) -> "Component":
+        """
+        This method gets a Component from a registry file found on GitHub.  If
+        the registry file contains a LocalRepo, this method automatically
+        translates that LocalRepo into a GitHubRepo.  Pass ``use_venv=False``
+        if you want to import and run the Component in your existing Python
+        environment.
+
+        The ``github_url`` argument can be found by navigating to the
+        registry file on the GitHub web UI.  It should look like the
+        following::
+
+            https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
+        """
+        project, repo, branch, repo_path = parse_github_web_ui_url(github_url)
+        version = version or branch
+        repo = Repo.from_github(project, repo)
+        registry = Registry.from_repo(repo, repo_path, version)
+        c_version = None
+        if registry.has_component_by_name(name=name, version=version):
+            c_version = version
+        if use_venv:
+            venv = VirtualEnv.from_registry(registry, name, c_version)
+            venv.activate()
+        return Component.from_registry(registry, name, c_version)
+
+    @classmethod
     def from_default_registry(
         cls, name: str, version: str = None
     ) -> "Component":
@@ -89,7 +127,10 @@ class Component:
         its full dependency tree of other Component Objects.
         If no Registry is provided, use the default registry.
         """
-        identifier = Component.Identifier(name, version)
+        if version:
+            identifier = ComponentIdentifier(name, version)
+        else:
+            identifier = ComponentIdentifier.from_str(name)
         component_specs, repo_specs = registry.get_specs_transitively_by_id(
             identifier, flatten=True
         )
@@ -148,23 +189,31 @@ class Component:
     def from_class(
         cls,
         managed_cls: Type[T],
-        name: str = None,
+        identifier: str = None,
+        repo: Repo = None,
         dunder_name: str = None,
         instantiate: bool = True,
     ) -> "Component":
-        name = name if name else managed_cls.__name__
+        name = identifier if identifier else managed_cls.__name__
         if (
             managed_cls.__module__ == "__main__"
         ):  # handle classes defined in REPL.
-            repo = LocalRepo(name)
-            src_file = repo.get_local_repo_dir() / f"{name}.py"
-            assert not src_file.exists(), (
-                f"Trying to create a source file from class {name} at"
-                f"{src_file} but that file already exists."
-            )
-            with open(src_file, "x") as f:
-                f.write(dill_getsource(managed_cls))
-            print(f"Wrote new source file {src_file}.")
+            file_contents = dill_getsource(managed_cls)
+            if repo:
+                assert repo.type == RepoType.LOCAL, (
+                    f"Repo '{repo.identifier}' is type {repo.type}, but must "
+                    f"be {RepoType.LOCAL.value}."
+                )
+            else:
+                repo = LocalRepo(identifier)
+            sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
+            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
+            if src_file.exists():
+                print(f"Re-using existing source file {src_file}.")
+            else:
+                with open(src_file, "x") as f:
+                    f.write(file_contents)
+                print(f"Wrote new source file {src_file}.")
         else:
             managed_cls_module = sys.modules[managed_cls.__module__]
             assert hasattr(managed_cls_module, managed_cls.__name__), (
@@ -172,12 +221,12 @@ class Component:
                 "available as an attribute of their module."
             )
             src_file = Path(managed_cls_module.__file__)
-            print(
-                f"handling managed_cls {managed_cls.__name__} from existing "
+            logger.debug(
+                f"Handling managed_cls {managed_cls.__name__} from existing "
                 f"source file {src_file}. dir(managed_cls): \n"
             )
             repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
-            print(
+            logger.debug(
                 f"Created LocalRepo {repo.identifier} from existing source "
                 f"file {src_file}."
             )
@@ -240,24 +289,43 @@ class Component:
             entry_point = "run"
         return entry_point
 
-    def run(
+    def run(self, entry_point: str, **kwargs):
+        """
+        Run an entry point with provided arguments. If you need to specify
+        arguments to the init function of the managed object or any of
+        its dependency components, use :py:func:run_with_arg_set:.
+
+        :param entry_point: name of function to call on manage object.
+        :param kwargs: keyword-only args to pass through to managed object
+            function called entry-point.
+        :return: the return value of the entry point called.
+        """
+        arg_set = ArgumentSet({self.name: {entry_point: kwargs}})
+        run = self.run_with_arg_set(
+            entry_point,
+            args=arg_set,
+            log_return_value=True,
+        )
+        return run.return_value
+
+    def run_with_arg_set(
         self,
         entry_point: str,
-        params: Union[ParameterSet, Dict] = None,
+        args: Union[ArgumentSet, Dict] = None,
         publish_to: Registry = None,
         log_return_value: bool = True,
         return_value_log_format: str = "yaml",
-    ) -> Run:
+    ) -> ComponentRun:
         """
         Run the specified entry point a new instance of this Component's
-        managed object given the specified params, log the results
+        managed object given the specified args, log the results
         and return the Run object.
 
         :param entry_point: Name of a function to be called on a new
             instance of this component's managed object.
-        :param params: A :py:func:agentos.parameter_set.ParameterSet: or
-            ParameterSet-like dict containing the entry-point parameters and/or
-            parameters to be passed to the __init__() functions of this
+        :param args: A :py:func:agentos.argument_set.ArgumentSet: or
+            ArgumentSet-like dict containing the entry-point arguments, and/or
+            arguments to be passed to the __init__() functions of this
             component's dependents during managed object initialization.
         :param publish_to: Optionally, publish the resulting Run object
             to the provided registry.
@@ -271,21 +339,19 @@ class Component:
             f"Component {self.identifier} already has an active_run, so a "
             "new run is not allowed."
         )
-        if params:
-            if not isinstance(params, ParameterSet):
-                params = ParameterSet(params)
+        if args:
+            if not isinstance(args, ArgumentSet):
+                args = ArgumentSet(args)
         else:
-            params = ParameterSet()
-        run_command = RunCommand(self, entry_point, params)
+            args = ArgumentSet()
+        run_command = RunCommand(self, entry_point, args)
         with ComponentRun.from_run_command(run_command) as run:
             for c in self.dependency_list():
                 c.active_run = run
             # Note: get_object() adds the dunder component attribute before
             # calling __init__ on the instance.
-            instance = self.get_object(params=params)
-            res = self.call_function_with_param_set(
-                instance, entry_point, params
-            )
+            instance = self.get_object(arg_set=args)
+            res = self.call_function_with_arg_set(instance, entry_point, args)
             if log_return_value:
                 run.log_return_value(res, return_value_log_format)
             for c in self.dependency_list():
@@ -294,14 +360,14 @@ class Component:
                 run.to_registry(publish_to)
             return run
 
-    def call_function_with_param_set(
-        self, instance: Any, function_name: str, param_set: ParameterSet
+    def call_function_with_arg_set(
+        self, instance: Any, function_name: str, arg_set: ArgumentSet
     ) -> Any:
         fn = getattr(instance, function_name)
         assert fn is not None, f"{instance} has no attr {function_name}"
-        fn_params = param_set.get_function_params(self.name, function_name)
-        print(f"Calling {self.name}.{function_name}(**{fn_params})")
-        result = fn(**fn_params)
+        fn_args = arg_set.get_function_args(self.name, function_name)
+        print(f"Calling {self.name}.{function_name}(**{fn_args})")
+        result = fn(**fn_args)
         return result
 
     def add_dependency(
@@ -317,12 +383,12 @@ class Component:
         )
         self.dependencies[attribute_name] = component
 
-    def get_object(self, params: ParameterSet = None) -> T:
+    def get_object(self, arg_set: ArgumentSet = None) -> T:
         collected = {}
-        params = params if params else ParameterSet({})
-        return self._get_object(params, collected)
+        arg_set = arg_set if arg_set else ArgumentSet({})
+        return self._get_object(arg_set, collected)
 
-    def _get_object(self, params: ParameterSet, collected: dict) -> T:
+    def _get_object(self, arg_set: ArgumentSet, collected: dict) -> T:
         if self.name in collected:
             return collected[self.name]
         if self.instantiate:
@@ -335,13 +401,13 @@ class Component:
         for dep_attr_name, dep_component in self.dependencies.items():
             print(f"Adding {dep_attr_name} to {self.name}")
             dep_obj = dep_component._get_object(
-                params=params, collected=collected
+                arg_set=arg_set, collected=collected
             )
             setattr(obj, dep_attr_name, dep_obj)
         setattr(obj, self._dunder_name, self)
         if self.instantiate:
             self._managed_cls.__init__ = save_init
-            self.call_function_with_param_set(obj, "__init__", params)
+            self.call_function_with_arg_set(obj, "__init__", arg_set)
         collected[self.name] = obj
         return obj
 
@@ -424,7 +490,9 @@ class Component:
                          themselves components) to the specified registry.
         :param recurse: If True, check that all transitive dependencies
                         exist in the registry already, and if they don't, then
-                        add them. If they do, ensure that they are equal to
+                        add them. This includes dependencies on other
+                        Components as well as dependencies a repo.
+                        If they do, ensure that they are equal to
                         this component's dependencies (unless ``force`` is
                         specified).
         :param force: Optionally, if a component with the same identifier
@@ -433,36 +501,48 @@ class Component:
         """
         if not registry:
             registry = InMemoryRegistry()
-        for c in self.dependency_list():
-            existing_c_spec = registry.get_component_specs(
-                filter_by_name=c.name, filter_by_version=c.version
-            )
-            if existing_c_spec and not force:
-                if existing_c_spec != c.to_spec():
-                    raise RegistryException(
-                        f"Trying to register a component {c.identifier} that "
-                        f"already exists in a different form:\n"
-                        f"{existing_c_spec}\n"
-                        f"VS\n"
-                        f"{c.to_spec()}\n\n"
-                        f"To overwrite, specify force=true."
-                    )
-            registry.add_component_spec(c.to_spec())
-            try:
-                repo_spec = registry.get_repo_spec(c.repo.identifier)
-                if repo_spec != c.repo.to_spec():
-                    raise RegistryException(
-                        f"A Repo with identifier {c.repo.identifier} already "
-                        "exists in this registry that differs from the one "
-                        f"referred to by component {c.identifier}.\n"
-                        f"New repo spec:\n{repo_spec}\n\n"
-                        f"Existing repo spec:\n{c.repo.to_spec()}"
-                    )
-            except LookupError:
-                # Repo not yet registered, so so add it to this registry.
-                registry.add_repo_spec(c.repo.to_spec())
-            if not recurse:
-                break
+        # Make sure this identifier does not exist in registry yet.
+        existing_spec = registry.get_component_spec(
+            self.identifier, error_if_not_found=False
+        )
+        if existing_spec and not force:
+            if existing_spec != self.to_spec():
+                raise RegistryException(
+                    f"Component {self.identifier} already exists in registry "
+                    f"{registry} and differs from the one you're trying to "
+                    f"add. Specify force=True to overwrite it.\n"
+                    f"existing: {existing_spec}"
+                    "\nVS\n"
+                    f"new: {self.to_spec()}"
+                )
+        # handle dependencies on other components
+        if recurse:
+            for c in self.dependency_list(include_root=False):
+                existing_c_spec = registry.get_component_spec(
+                    name=c.name,
+                    version=c.version,
+                    error_if_not_found=False,
+                )
+                if existing_c_spec and not force:
+                    if existing_c_spec != c.to_spec():
+                        raise RegistryException(
+                            f"Trying to register a component {c.identifier} "
+                            f"that already exists in a different form:\n"
+                            f"{existing_c_spec}\n"
+                            f"VS\n"
+                            f"{c.to_spec()}\n\n"
+                            f"To overwrite, specify force=true."
+                        )
+                # Either component dependency not in registry already or we are
+                # force adding it.
+                logger.debug(
+                    f"recursively adding dependent component '{c.name}'"
+                )
+                c.to_registry(registry, recurse=recurse, force=force)
+
+            # Either repo not in registry already or we are force adding it.
+            self.repo.to_registry(registry, recurse=recurse, force=force)
+        registry.add_component_spec(self.to_spec())
         return registry
 
     def to_frozen_registry(self, force: bool = False) -> Registry:
@@ -482,10 +562,11 @@ class Component:
                  of this component (optionally  including the root component).
         """
         component_queue = [self]
-        ret_val = set([self]) if include_root else set()
+        ret_val = set()
         while component_queue:
             component = component_queue.pop()
-            ret_val.add(component)
+            if include_root or component is not self:
+                ret_val.add(component)
             for dependency in component.dependencies.values():
                 component_queue.append(dependency)
         return list(ret_val)

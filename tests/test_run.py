@@ -1,5 +1,7 @@
 # Defined in module global namespaces since components cannot be
 # created from classes that are defined inside of functions.
+
+
 class Simple:
     def __init__(self, x):
         self._x = x
@@ -9,14 +11,14 @@ class Simple:
 
 
 def test_component_run():
-    from agentos import ParameterSet, Component
+    from agentos import ArgumentSet, Component
     from agentos.registry import InMemoryRegistry
 
-    params = ParameterSet(
+    arg_set = ArgumentSet(
         {"Simple": {"__init__": {"x": 1}, "fn": {"input": "hi"}}}
     )
     c = Component.from_class(Simple)
-    run = c.run("fn", params)
+    run = c.run_with_arg_set("fn", arg_set)
     assert run.run_command.component == c
     assert run.run_command.entry_point == "fn"
     new_run = run.run_command.run()
@@ -36,9 +38,9 @@ def test_component_run():
         == run.run_command.to_spec()
     )
 
-    # TODO: allow runs to be added to a registry. For now they should
-    #  simply be a pointer to a tracking server and a run_id.
-    # assert registry.get_run_spec(r.identifier) == r
+    registry.add_run_spec(run.to_spec())
+    fetched_run_spec = registry.get_run_spec(run.identifier)
+    assert fetched_run_spec == run.to_spec()
 
 
 def test_run_tracking():

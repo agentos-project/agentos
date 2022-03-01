@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from rest_framework.reverse import reverse
-from .models import Run
-from .models import Repo
-from .models import Component
+from .models import Repo, ComponentDependency, Component, RunCommand, Run
 
 
 def _get_link_from_id(serializer, view_name, obj_id):
@@ -11,16 +9,42 @@ def _get_link_from_id(serializer, view_name, obj_id):
     return result
 
 
+class RepoSerializer(serializers.ModelSerializer):
+    identifier_link = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Repo
+        fields = [
+            "identifier_link",
+            "identifier",
+            "type",
+            "url",
+        ]
+
+    def get_identifier_link(self, obj):
+        return _get_link_from_id(self, "repo-detail", obj.identifier)
+
+
+class ComponentDependencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComponentDependency
+        fields = [
+            "dependee",
+            "attribute_name",
+        ]
+
+
 class ComponentSerializer(serializers.ModelSerializer):
-    id_link = serializers.SerializerMethodField()
+    identifier_link = serializers.SerializerMethodField()
     repo_link = serializers.SerializerMethodField()
     github_source_link = serializers.SerializerMethodField()
+    depender_set = ComponentDependencySerializer(many=True, read_only=True)
 
     class Meta:
         model = Component
         fields = [
-            "id",
-            "id_link",
+            "identifier",
+            "identifier_link",
             "name",
             "version",
             "repo",
@@ -28,15 +52,15 @@ class ComponentSerializer(serializers.ModelSerializer):
             "file_path",
             "class_name",
             "instantiate",
-            "dependencies",
+            "depender_set",
             "github_source_link",
         ]
 
-    def get_id_link(self, obj):
-        return _get_link_from_id(self, "component-detail", obj.id)
+    def get_identifier_link(self, obj):
+        return _get_link_from_id(self, "component-detail", obj.identifier)
 
     def get_repo_link(self, obj):
-        return _get_link_from_id(self, "repo-detail", obj.repo.id)
+        return _get_link_from_id(self, "repo-detail", obj.repo.identifier)
 
     def get_github_source_link(self, obj):
         url = obj.repo.url
@@ -46,66 +70,63 @@ class ComponentSerializer(serializers.ModelSerializer):
         return final_url
 
 
+class RunCommandSerializer(serializers.ModelSerializer):
+    identifier_link = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RunCommand
+        fields = [
+            "identifier",
+            "identifier_link",
+            "component",
+            "entry_point",
+            "argument_set",
+        ]
+
+    def get_identifier_link(self, obj):
+        return _get_link_from_id(self, "runcommand-detail", obj.identifier)
+
+
 class RunSerializer(serializers.ModelSerializer):
-    id_link = serializers.SerializerMethodField()
-    root_link = serializers.SerializerMethodField()
+    identifier_link = serializers.SerializerMethodField()
+    download_artifact_tarball_link = serializers.SerializerMethodField()
+    run_command_link = serializers.SerializerMethodField()
     agent_link = serializers.SerializerMethodField()
     environment_link = serializers.SerializerMethodField()
-    download_artifact_tarball_link = serializers.SerializerMethodField()
-    root_spec_link = serializers.SerializerMethodField()
 
     class Meta:
         model = Run
         fields = [
-            "id",
-            "id_link",
-            "root",
-            "root_link",
+            "identifier",
+            "identifier_link",
+            "info",
+            "data",
+            "download_artifact_tarball_link",
+            "run_command",
+            "run_command_link",
             "agent",
             "agent_link",
             "environment",
             "environment_link",
-            "mlflow_metrics",
-            "mlflow_params",
-            "mlflow_tags",
-            "mlflow_info",
-            "download_artifact_tarball_link",
-            "root_spec_link",
-            "entry_point",
-            "parameter_set",
         ]
 
-    def get_id_link(self, obj):
-        return _get_link_from_id(self, "run-detail", obj.id)
+    def get_identifier_link(self, obj):
+        return _get_link_from_id(self, "run-detail", obj.identifier)
 
-    def get_root_link(self, obj):
-        return _get_link_from_id(self, "component-detail", obj.root.id)
-
-    def get_agent_link(self, obj):
-        return _get_link_from_id(self, "component-detail", obj.agent.id)
-
-    def get_environment_link(self, obj):
-        return _get_link_from_id(self, "component-detail", obj.environment.id)
+    def get_run_command_link(self, obj):
+        return _get_link_from_id(self, "runcommand-detail", obj.identifier)
 
     def get_download_artifact_tarball_link(self, obj):
-        return _get_link_from_id(self, "run-download-artifact", obj.id)
+        return _get_link_from_id(self, "run-download-artifact", obj.identifier)
 
-    def get_root_spec_link(self, obj):
-        return _get_link_from_id(self, "run-root-spec", obj.id)
+    def get_agent_link(self, obj):
+        if obj.agent:
+            return _get_link_from_id(
+                self, "component-detail", obj.agent.identifier
+            )
 
-
-class RepoSerializer(serializers.ModelSerializer):
-    id_link = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Repo
-        fields = [
-            "id",
-            "id_link",
-            "identifier",
-            "type",
-            "url",
-        ]
-
-    def get_id_link(self, obj):
-        return _get_link_from_id(self, "repo-detail", obj.id)
+    def get_environment_link(self, obj):
+        if obj.environment:
+            return _get_link_from_id(
+                self, "component-detail", obj.environment.identifier
+            )

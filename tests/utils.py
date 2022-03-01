@@ -15,7 +15,11 @@ RLLIB_AGENT_DIR = EXAMPLE_AGENT_DIR / "rllib_agent"
 SB3_AGENT_DIR = EXAMPLE_AGENT_DIR / "sb3_agent"
 TEST_VENV_AGENT_DIR = ROOT_DIR / "tests" / "test_agents" / "venv_agent"
 
-TESTING_GITHUB_REPO = "https://github.com/agentos-project/agentos.git"
+TESTING_GITHUB_ACCOUNT = "agentos-project"
+TESTING_GITHUB_REPO = "agentos"
+TESTING_GITHUB_REPO_URL = (
+    f"https://github.com/{TESTING_GITHUB_ACCOUNT}/{TESTING_GITHUB_REPO}.git"
+)
 TESTING_BRANCH_NAME = "test_prod"
 
 

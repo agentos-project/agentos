@@ -35,8 +35,15 @@ SECRET_KEY = (
 # TODO - for deployment
 # DEBUG = False if IS_DEPLOY else True
 DEBUG = True
+if IS_TEST:
+    DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".herokuapp.com"]
+
+LOGGING = {
+    "version": 1,  # the dictConfig format version
+    "disable_existing_loggers": False,  # retain the default loggers
+}
 
 # Application definition
 
