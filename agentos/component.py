@@ -42,9 +42,9 @@ class Component:
         managed_obj: Type[T],
         repo: Repo,
         identifier: "Component.Identifier",
-        class_name: str,
         file_path: str,
         requirements_path: str = None,
+        class_name: str = None,
         instantiate: bool = True,
         dependencies: Dict = None,
         dunder_name: str = None,
@@ -61,7 +61,7 @@ class Component:
             instance of the managed class; if False, it returns a class object.
         :param dependencies: List of other components that self depends on.
         :param dunder_name: Name used for the pointer to this Component on any
-            instances of ``managed_cls`` created by this Component.
+            instances of ``managed_obj`` created by this Component.
         """
         self._managed_obj = managed_obj
         self.repo = repo
@@ -189,17 +189,17 @@ class Component:
     @classmethod
     def from_class(
         cls,
-        managed_cls: Type[T],
+        managed_obj: Type[T],
         identifier: str = None,
         repo: Repo = None,
         dunder_name: str = None,
         instantiate: bool = True,
     ) -> "Component":
-        name = identifier if identifier else managed_cls.__name__
+        name = identifier if identifier else managed_obj.__name__
         if (
-            managed_cls.__module__ == "__main__"
+            managed_obj.__module__ == "__main__"
         ):  # handle classes defined in REPL.
-            file_contents = dill_getsource(managed_cls)
+            file_contents = dill_getsource(managed_obj)
             if repo:
                 assert repo.type == RepoType.LOCAL, (
                     f"Repo '{repo.identifier}' is type {repo.type}, but must "
@@ -216,15 +216,15 @@ class Component:
                     f.write(file_contents)
                 print(f"Wrote new source file {src_file}.")
         else:
-            managed_cls_module = sys.modules[managed_cls.__module__]
-            assert hasattr(managed_cls_module, managed_cls.__name__), (
+            managed_obj_module = sys.modules[managed_obj.__module__]
+            assert hasattr(managed_obj_module, managed_obj.__name__), (
                 "Components can only be created from classes that are "
                 "available as an attribute of their module."
             )
-            src_file = Path(managed_cls_module.__file__)
+            src_file = Path(managed_obj_module.__file__)
             logger.debug(
-                f"Handling managed_cls {managed_cls.__name__} from existing "
-                f"source file {src_file}. dir(managed_cls): \n"
+                f"Handling managed_obj {managed_obj.__name__} from existing "
+                f"source file {src_file}. dir(managed_obj): \n"
             )
             repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
             logger.debug(
@@ -232,10 +232,10 @@ class Component:
                 f"file {src_file}."
             )
         return cls(
-            managed_cls=managed_cls,
+            managed_obj=managed_obj,
             repo=repo,
             identifier=Component.Identifier(name),
-            class_name=managed_cls.__name__,
+            class_name=managed_obj.__name__,
             file_path=src_file.name,
             instantiate=instantiate,
             dunder_name=dunder_name,

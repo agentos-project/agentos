@@ -1,5 +1,5 @@
-# Defined in module global namespaces since components cannot be
-# created from classes that are defined inside of functions.
+from agentos import ArgumentSet, Component
+from agentos.registry import InMemoryRegistry
 
 
 class Simple:
@@ -10,10 +10,7 @@ class Simple:
         return self._x, input
 
 
-def test_component_run():
-    from agentos import ArgumentSet, Component
-    from agentos.registry import InMemoryRegistry
-
+def test_component_instance_run():
     arg_set = ArgumentSet(
         {"Simple": {"__init__": {"x": 1}, "fn": {"input": "hi"}}}
     )
@@ -26,13 +23,6 @@ def test_component_run():
 
     registry = InMemoryRegistry()
     run.run_command.to_registry(registry)
-    import yaml
-
-    print(yaml.dump(registry.to_dict()))
-    print("===")
-    print(yaml.dump(registry.get_run_command_spec(run.run_command.identifier)))
-    print("===")
-    print(yaml.dump(run.run_command.to_spec()))
     assert (
         registry.get_run_command_spec(run.run_command.identifier)
         == run.run_command.to_spec()
@@ -41,6 +31,14 @@ def test_component_run():
     registry.add_run_spec(run.to_spec())
     fetched_run_spec = registry.get_run_spec(run.identifier)
     assert fetched_run_spec == run.to_spec()
+
+
+def test_component_class_run():
+    c = Component.from_class(Simple, instantiate=False)
+    cls = c.get_object()
+    assert cls(1).fn(2) == (1, 2)
+    assert c(1).fn(2) == (1, 2)
+    assert c.last_runs
 
 
 def test_run_tracking():

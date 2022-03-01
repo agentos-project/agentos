@@ -43,15 +43,3 @@ def test_local_to_from_registry():
     repo_from_reg = Repo.from_registry(reg, "test_id")
     assert repo.identifier == repo_from_reg.identifier
     assert repo.local_dir == repo_from_reg.local_dir
-
-
-def test_module_component_from_ilya_github_repo():
-    ilya_repo = Repo.from_github("ikostrikov", "pytorch-a2c-ppo-acktr-gail")
-    ilya_repo.get_local_repo_dir("master")
-    #args_mod = Component.from_repo(
-    #    ilya_repo, file_path="a2c_ppo_acktr/arguments.py"
-    #)
-    main_mod = Component.from_repo(
-        ilya_repo, "ilya==master", file_path="main.py"
-    )
-    main_mod.run("main")

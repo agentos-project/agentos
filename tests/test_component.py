@@ -2,6 +2,7 @@
 import pytest
 from unittest.mock import patch
 from unittest.mock import DEFAULT
+from agentos.repo import Repo
 from agentos.component import Component
 from agentos.component_run import ComponentRun
 from agentos.virtual_env import auto_revert_venv
@@ -125,3 +126,16 @@ def test_component_from_github_no_venv():
             sb3_url, "sb3_agent", use_venv=False
         )
         random_component.run_with_arg_set("evaluate")
+
+
+def test_module_component_from_ilya_github_repo():
+    ilya_repo = Repo.from_github("ikostrikov", "pytorch-a2c-ppo-acktr-gail")
+    print(ilya_repo.get_local_repo_dir("master"))
+    main_mod = Component.from_repo(
+        ilya_repo,
+        "ilya==master",
+        file_path="main.py",
+        requirements_path="requirements.txt",
+    )
+    print(dir(main_mod.get_object()))
+    #main_mod.run("main")
