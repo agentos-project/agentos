@@ -16,11 +16,11 @@ DOC_SECTIONS_PLUS_SEPARATOR_TEXT = [
     (
         "intro.rst",
         "\n\nQuickstart\n===========\n\n"
-        "See the quickstarts at `agentos.org "
+        "See the agentos.org `quickstarts "
         "<https://agentos.org/latest/quickstart>`_.\n\n\n"
         "\n\nDocumentation\n=============\n\n"
-        "Detailed documentation can be found at "
-        "`agentos.org <https://agentos.org/latest>`_.\n\n\n",
+        "For detailed documentation see the "
+        "`agentos.org docs <https://agentos.org/latest>`_.\n\n\n",
     ),
     ("developing.rst", "\n\n"),
 ]
