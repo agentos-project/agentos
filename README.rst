@@ -70,7 +70,7 @@ licensed under the Apache License, Version 2.0.
 Quickstart
 ===========
 
-See the quickstarts at `agentos.org <https://agentos.org/latest/quickstart>`_.
+See the agentos.org `quickstarts <https://agentos.org/latest/quickstart>`_.
 
 
 
@@ -78,7 +78,7 @@ See the quickstarts at `agentos.org <https://agentos.org/latest/quickstart>`_.
 Documentation
 =============
 
-Detailed documentation can be found at `agentos.org <https://agentos.org/latest>`_.
+For detailed documentation see the `agentos.org docs <https://agentos.org/latest>`_.
 
 
 Development Process
