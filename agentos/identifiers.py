@@ -1,66 +1,41 @@
-class ComponentIdentifier:
+class ComponentIdentifier(str):
     """
     A Component Identifier is an immutable string-like construct that encodes a
     name and, optionally, a version as a string using the '==' separator. It
     allows referring to Components both as [name] and [name]==[version] (e.g.,
     in registries or the command line).
     """
-
-    @staticmethod
-    def from_str(identifier_string: str) -> "ComponentIdentifier":
-        split_identifier = str(identifier_string).split("==")
-        assert (
-            len(split_identifier) <= 2
-        ), f"Bad identifier: '{identifier_string}'"
-        if len(split_identifier) == 1:
-            return ComponentIdentifier(split_identifier[0])
-        else:
-            return ComponentIdentifier(
-                split_identifier[0], split_identifier[1]
-            )
-
-    def __init__(
-        self,
-        name: str,
+    def __new__(
+        cls,
+        identifier_or_name: str,
         version: str = None,
     ):
-        assert "==" not in name, (
-            f"Component.Identifier ({name} is not allowed to contain '=='."
-            f"You should probably use Component.Identifier.from_str() instead."
-        )
-        self._name = name
-        self._version = version
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def version(self):
-        return self._version
-
-    @property
-    def full(self) -> str:
-        if self._name and self._version:
-            return "==".join((self._name, self._version))
-        return self._name
-
-    def __repr__(self) -> str:
-        return f"<agentos.component.Component.Identifer: {self.full}>"
-
-    def __hash__(self) -> int:
-        return hash(self.full)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.full == other.full
-        elif isinstance(other, str):
-            return self.full == other
+        if version:
+            assert "==" not in identifier_or_name, (
+                f"When a version arg is passed during the creation of a "
+                "ComponentIdentifier, the first argument "
+                f"({identifier_or_name}) is interpreted as a name and so is "
+                "not allowed to contain '=='. Since your first argument "
+                "contains an '==', you probably don't need to pass in the "
+                "version explicitly."
+            )
+            obj = str.__new__(cls, f"{identifier_or_name}=={version}")
+            obj.name = identifier_or_name
+            obj.version = version
         else:
-            return self is other
-
-    def __str__(self):
-        return self.full
+            obj = str.__new__(cls, identifier_or_name)
+            parts = identifier_or_name.split("==")
+            assert 0 < len(parts) <= 2, (
+                f"identifier_or_name '{identifier_or_name}' cannot be blank "
+                "and cannot have more than one '==' in it."
+            )
+            if len(parts) == 2:
+                obj.name = parts[0]
+                obj.version = parts[1]
+            else:
+                obj.name = identifier_or_name
+                obj.version = None
+        return obj
 
 
 # Like MLflow, we use strings as RunIdentifiers, per

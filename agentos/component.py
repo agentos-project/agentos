@@ -35,12 +35,10 @@ class Component:
     dependencies.
     """
 
-    Identifier = ComponentIdentifier
-
     def __init__(
         self,
         repo: Repo,
-        identifier: "Component.Identifier",
+        identifier: ComponentIdentifier,
         class_name: str,
         file_path: str,
         requirements_path: str = None,
@@ -127,7 +125,7 @@ class Component:
         if version:
             identifier = ComponentIdentifier(name, version)
         else:
-            identifier = ComponentIdentifier.from_str(name)
+            identifier = ComponentIdentifier(name)
         component_specs, repo_specs = registry.get_specs_transitively_by_id(
             identifier, flatten=True
         )
@@ -170,7 +168,7 @@ class Component:
         except KeyError:
             # Try name without the version
             unversioned_components = {
-                ComponentIdentifier.from_str(c_id.name): c_obj
+                ComponentIdentifier(c_id.name): c_obj
                 for c_id, c_obj in components.items()
             }
             return unversioned_components[identifier]
@@ -229,7 +227,7 @@ class Component:
             )
         return cls(
             repo=repo,
-            identifier=Component.Identifier(name),
+            identifier=ComponentIdentifier(name),
             class_name=managed_cls.__name__,
             file_path=src_file.name,
             instantiate=instantiate,
@@ -240,7 +238,7 @@ class Component:
     def from_repo(
         cls,
         repo: Repo,
-        identifier: Union[str, "Component.Identifier"],
+        identifier: str,
         class_name: str,
         file_path: str,
         requirements_path: str = None,
@@ -248,7 +246,7 @@ class Component:
         dunder_name: str = None,
     ) -> "Component":
         # For convenience, optionally allow 'identifier' to be passed as str.
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         full_path = repo.get_local_file_path(identifier.version, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
         return cls(
@@ -428,8 +426,8 @@ class Component:
         repo_url, version = self.repo.get_version_from_git(
             self.identifier, self.file_path, force
         )
-        old_identifier = Component.Identifier(self.identifier.full)
-        new_identifier = Component.Identifier(old_identifier.name, version)
+        old_identifier = ComponentIdentifier(self.identifier)
+        new_identifier = ComponentIdentifier(old_identifier.name, version)
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
             new_identifier, self.file_path
         )
@@ -579,7 +577,7 @@ class Component:
         rich_print(tree)
 
     def get_status_tree(self, parent_tree: Tree = None) -> Tree:
-        self_tree = Tree(f"Component: {self.identifier.full}")
+        self_tree = Tree(f"Component: {self.identifier}")
         if parent_tree is not None:
             parent_tree.add(self_tree)
         for dep_attr_name, dep_component in self.dependencies.items():

@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework.exceptions import ValidationError
 from typing import Dict, List
-from agentos.component import Component as CLI_Component
+from agentos.identifiers import ComponentIdentifier
 
 
 class TimeStampedModel(models.Model):
@@ -34,13 +34,13 @@ class ComponentDependency(TimeStampedModel):
     def create_from_dict(component_spec_dict: Dict) -> List:
         dependencies = []
         for name, component in component_spec_dict.items():
-            identifier = CLI_Component.Identifier.from_str(name)
+            identifier = ComponentIdentifier(name)
             depender = Component.objects.get(
                 name=identifier.name,
                 version=identifier.version,
             )
             for attr_name, dependency in component["dependencies"].items():
-                dep_identifier = CLI_Component.Identifier.from_str(dependency)
+                dep_identifier = ComponentIdentifier(dependency)
                 dependee = Component.objects.get(
                     name=dep_identifier.name,
                     version=dep_identifier.version,
@@ -125,7 +125,7 @@ class Component(TimeStampedModel):
 
     @staticmethod
     def create_from_flat_spec(flat_spec: Dict) -> List:
-        identifier = CLI_Component.Identifier.from_str(flat_spec["identifier"])
+        identifier = ComponentIdentifier(flat_spec["identifier"])
         default_kwargs = {
             "name": identifier.name,
             "version": identifier.version,
@@ -138,13 +138,13 @@ class Component(TimeStampedModel):
         #        has permission to create a new version of this Component
         #        (i.e. if the name already exists but not the version).
         component, created = Component.objects.get_or_create(
-            identifier=identifier.full,
+            identifier=identifier,
             defaults=default_kwargs,
         )
         # If not created and not equal, prevent Component redefinition
         if not created and not component._equals_spec(flat_spec):
             raise ValidationError(
-                f"Component with id {identifier.full} already exists and "
+                f"Component with id {identifier} already exists and "
                 "differs from uploaded spec. Try renaming your Component."
             )
         return component
