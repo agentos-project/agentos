@@ -39,7 +39,6 @@ class Component:
 
     def __init__(
         self,
-        managed_obj: Type[T],
         repo: Repo,
         identifier: "Component.Identifier",
         file_path: str,
@@ -63,7 +62,6 @@ class Component:
         :param dunder_name: Name used for the pointer to this Component on any
             instances of ``managed_obj`` created by this Component.
         """
-        self._managed_obj = managed_obj
         self.repo = repo
         self.identifier = identifier
         self.class_name = class_name
@@ -232,7 +230,6 @@ class Component:
                 f"file {src_file}."
             )
         return cls(
-            managed_obj=managed_obj,
             repo=repo,
             identifier=Component.Identifier(name),
             class_name=managed_obj.__name__,
@@ -256,20 +253,7 @@ class Component:
         identifier = ComponentIdentifier.from_str(str(identifier))
         full_path = repo.get_local_file_path(identifier.version, file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
-        # TODO: move the object creation into self._get_object() so that it is
-        #       just-in-time.
-        sys.path.append(str(full_path.parent))
-        module_suffix = f"_{class_name.upper()}" if class_name else ""
-        spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE{module_suffix}", str(full_path)
-        )
-        managed_obj = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(managed_obj)
-        if class_name:
-            managed_obj = getattr(managed_obj, class_name)
-        sys.path.pop()
         return cls(
-            managed_obj=managed_obj,
             repo=repo,
             identifier=identifier,
             class_name=class_name,
@@ -289,7 +273,8 @@ class Component:
 
     def get_default_entry_point(self):
         try:
-            entry_point = self._managed_obj.DEFAULT_ENTRY_POINT
+            imported_obj = self._import_object()
+            entry_point = imported_obj.DEFAULT_ENTRY_POINT
         except AttributeError:
             entry_point = "run"
         return entry_point
@@ -396,15 +381,14 @@ class Component:
     def _get_object(self, arg_set: ArgumentSet, collected: dict) -> T:
         if self.name in collected:
             return collected[self.name]
-        # TODO: create the managed_obj just in time here instead of
-        #       in Component.from_repo.
+        imported_obj = self._import_object()
         if self.instantiate:
-            save_init = self._managed_obj.__init__
-            self._managed_obj.__init__ = lambda self: None
-            obj = self._managed_obj()
+            save_init = imported_obj.__init__
+            imported_obj.__init__ = lambda self: None
+            obj = imported_obj()
         else:
-            print(f"getting {self._managed_obj} w/o instantiating ")
-            obj = self._managed_obj
+            print(f"getting {imported_obj} w/o instantiating ")
+            obj = imported_obj
         for dep_attr_name, dep_component in self.dependencies.items():
             print(f"Adding {dep_attr_name} to {self.name}")
             dep_obj = dep_component._get_object(
@@ -417,6 +401,24 @@ class Component:
             self.call_function_with_arg_set(obj, "__init__", arg_set)
         collected[self.name] = obj
         return obj
+
+    def _import_object(self):
+        """Return managed module, or class if ``self.class_name`` is set."""
+        full_path = self.repo.get_local_file_path(
+            self.identifier.version, self.file_path
+        )
+        assert full_path.is_file(), f"{full_path} does not exist"
+        sys.path.append(str(full_path.parent))
+        spec = importlib.util.spec_from_file_location(
+            f"AOS_MODULE_{self.class_name.upper()}", str(full_path)
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        if self.class_name:
+            managed_obj = getattr(module, self.class_name)
+        sys.path.pop()
+        return managed_obj
 
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
@@ -442,7 +444,6 @@ class Component:
                 new_identifier, self.requirements_path
             )
         clone = Component(
-            managed_obj=self._managed_obj,
             repo=GitHubRepo(identifier=self.repo.identifier, url=repo_url),
             identifier=new_identifier,
             class_name=self.class_name,

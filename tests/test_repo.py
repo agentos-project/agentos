@@ -19,7 +19,7 @@ def test_repo_from_github():
     assert hasattr(agent_component.get_object(), "evaluate")
     assert agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
     assert agent_component.repo.identifier == (
-        f"{TESTING_GITHUB_ACCOUNT}/{TESTING_GITHUB_REPO}"
+        f"{TESTING_GITHUB_ACCOUNT}__{TESTING_GITHUB_REPO}"
     )
 
     aos_repo_w_custom_id = Repo.from_github(

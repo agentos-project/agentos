@@ -44,7 +44,9 @@ def test_component_repl_demo():
         GenericDependency, instantiate=False
     )
     class_comp_with_diff_name = Component.from_class(
-        GenericDependency, instantiate=False, name="ClassDependency"
+        GenericDependency,
+        identifier="ClassDependency",
+        instantiate=False,
     )
 
     # Add dependencies to SimpleAgent
@@ -56,7 +58,7 @@ def test_component_repl_demo():
 
     assert "GenericDependency" in agent_comp.dependencies.keys()
     inst_dep_obj = agent_comp.dependencies["GenericDependency"].get_object()
-    assert type(inst_dep_obj) == GenericDependency
+    assert inst_dep_obj.__class__.__name__ == "GenericDependency"
     assert inst_dep_obj.class_member == "class_member_val"
     assert inst_dep_obj.x == "x_val"
 

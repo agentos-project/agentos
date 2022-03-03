@@ -15,6 +15,7 @@ setup(
         "for building, running, and sharing flexible learning agents."
     ),
     long_description=open("README.rst").read(),
+    long_description_content_type="text/x-rst",
     author="Andy Konwinski",
     version=version,
     packages=find_packages(),
