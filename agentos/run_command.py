@@ -58,7 +58,7 @@ class RunCommand:
         # Not positive if this is stable across architectures.
         # See https://stackoverflow.com/q/27522626
         hash_str = (
-            self._component.identifier.full
+            self._component.identifier
             + self._entry_point
             + self._argument_set.identifier
         )
@@ -196,7 +196,7 @@ class RunCommand:
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
         flat_spec = {
             RunCommandSpecKeys.IDENTIFIER: self.identifier,
-            RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
+            RunCommandSpecKeys.COMPONENT_ID: str(self._component.identifier),
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
             RunCommandSpecKeys.PARAMETER_SET: self._argument_set.to_spec(),
         }

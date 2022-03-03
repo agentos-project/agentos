@@ -10,18 +10,31 @@ class ComponentIdentifier(str):
         identifier_or_name: str,
         version: str = None,
     ):
-        assert not version and "==" in identifier_or_name, (
-            f"When a version arg is passed during the creation of a "
-            f"ComponentIdentifier, the first argument ({identifier_or_name}) "
-            f"is interpreted as a name and so is not allowed to contain '=='."
-            f"You probably don't need to pass in the version explicitly."
-        )
         if version:
+            assert "==" not in identifier_or_name, (
+                f"When a version arg is passed during the creation of a "
+                "ComponentIdentifier, the first argument "
+                f"({identifier_or_name}) is interpreted as a name and so is "
+                "not allowed to contain '=='. Since your first argument "
+                "contains an '==', you probably don't need to pass in the "
+                "version explicitly."
+            )
             obj = str.__new__(cls, f"{identifier_or_name}=={version}")
+            obj.name = identifier_or_name
             obj.version = version
         else:
             obj = str.__new__(cls, identifier_or_name)
-        obj._name = identifier_or_name
+            parts = identifier_or_name.split("==")
+            assert 0 < len(parts) <= 2, (
+                f"identifier_or_name '{identifier_or_name}' cannot be blank "
+                "and cannot have more than one '==' in it."
+            )
+            if len(parts) == 2:
+                obj.name = parts[0]
+                obj.version = parts[1]
+            else:
+                obj.name = identifier_or_name
+                obj.version = None
         return obj
 
 

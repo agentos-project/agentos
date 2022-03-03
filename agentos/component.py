@@ -422,7 +422,7 @@ class Component:
         repo_url, version = self.repo.get_version_from_git(
             self.identifier, self.file_path, force
         )
-        old_identifier = ComponentIdentifier(self.identifier.full)
+        old_identifier = ComponentIdentifier(self.identifier)
         new_identifier = ComponentIdentifier(old_identifier.name, version)
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
             new_identifier, self.file_path
@@ -574,7 +574,7 @@ class Component:
         rich_print(tree)
 
     def get_status_tree(self, parent_tree: Tree = None) -> Tree:
-        self_tree = Tree(f"Component: {self.identifier.full}")
+        self_tree = Tree(f"Component: {self.identifier}")
         if parent_tree is not None:
             parent_tree.add(self_tree)
         for dep_attr_name, dep_component in self.dependencies.items():

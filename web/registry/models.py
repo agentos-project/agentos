@@ -138,13 +138,13 @@ class Component(TimeStampedModel):
         #        has permission to create a new version of this Component
         #        (i.e. if the name already exists but not the version).
         component, created = Component.objects.get_or_create(
-            identifier=identifier.full,
+            identifier=identifier,
             defaults=default_kwargs,
         )
         # If not created and not equal, prevent Component redefinition
         if not created and not component._equals_spec(flat_spec):
             raise ValidationError(
-                f"Component with id {identifier.full} already exists and "
+                f"Component with id {identifier} already exists and "
                 "differs from uploaded spec. Try renaming your Component."
             )
         return component

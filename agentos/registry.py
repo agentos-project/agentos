@@ -194,7 +194,7 @@ class Registry(abc.ABC):
                 return {}
         if len(components) > 1:
             versions = [
-                ComponentIdentifier.from_str(c_id).version
+                ComponentIdentifier(c_id).version
                 for c_id in components.keys()
             ]
             version_str = "\n - ".join(versions)
@@ -210,7 +210,7 @@ class Registry(abc.ABC):
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = False,
     ) -> Optional[ComponentSpec]:
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         return self.get_component_spec(
             identifier.name, identifier.version, flatten=flatten
         )
@@ -220,7 +220,7 @@ class Registry(abc.ABC):
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = True,
     ) -> (Sequence[ComponentSpec], Sequence[RepoSpec]):
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         component_identifiers = [identifier]
         repo_specs = {}
         component_specs = {}
@@ -234,7 +234,7 @@ class Registry(abc.ABC):
             repo_specs[repo_id] = repo_spec
             for d_id in inner_spec.get("dependencies", {}).values():
                 component_identifiers.append(
-                    ComponentIdentifier.from_str(d_id)
+                    ComponentIdentifier(d_id)
                 )
         return list(component_specs.values()), list(repo_specs.values())
 
@@ -335,7 +335,7 @@ class InMemoryRegistry(Registry):
             try:
                 components = {}
                 for k, v in self._registry["components"].items():
-                    candidate_id = ComponentIdentifier.from_str(k)
+                    candidate_id = ComponentIdentifier(k)
                     passes_filter = True
                     if filter_by_name and candidate_id.name != filter_by_name:
                         passes_filter = False
