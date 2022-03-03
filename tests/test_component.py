@@ -141,4 +141,4 @@ def test_module_component_from_ilya_github_repo():
     )
     print(dir(main_mod.get_object()))
     assert main_mod.get_object().__class__.__name__ == "module"
-    #main_mod.run("main")
+    # main_mod.run("main")
