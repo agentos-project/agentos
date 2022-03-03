@@ -49,7 +49,6 @@ class Component:
         dunder_name: str = None,
     ):
         """
-        :param managed_obj: The object this Component manages.
         :param repo: Where the code for this component's managed object is.
         :param identifier: Used to identify the Component.
         :param class_name: The name of the class that is being managed.
@@ -232,8 +231,8 @@ class Component:
         return cls(
             repo=repo,
             identifier=Component.Identifier(name),
-            class_name=managed_obj.__name__,
             file_path=src_file.name,
+            class_name=managed_obj.__name__,
             instantiate=instantiate,
             dunder_name=dunder_name,
         )
@@ -397,7 +396,7 @@ class Component:
             setattr(obj, dep_attr_name, dep_obj)
         setattr(obj, self._dunder_name, self)
         if self.instantiate:
-            self._managed_obj.__init__ = save_init
+            imported_obj.__init__ = save_init
             self.call_function_with_arg_set(obj, "__init__", arg_set)
         collected[self.name] = obj
         return obj
