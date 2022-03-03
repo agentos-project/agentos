@@ -64,10 +64,12 @@ if known_args.watch:
     build_tool = "sphinx-autobuild"
 else:
     build_tool = "sphinx-build"
-build_cmd = [build_tool, docs_dir, versioned_build_dir, "-c", "documentation"]
+build_cmd = [build_tool, docs_dir, versioned_build_dir, "-c", docs_dir]
 if known_args.release:
     build_cmd.append("-Dtodo_include_todos=0")
     update_latest_symlink()
 for other_arg in unknown_args:
     build_cmd.append(other_arg)
+
+print(f"Running command: {' '.join(build_cmd)}")
 Popen(build_cmd).wait()
