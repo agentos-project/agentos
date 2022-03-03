@@ -108,7 +108,7 @@ def test_registry_from_file():
     random_local_ag = Component.from_registry(r, "agent")
     assert random_local_ag.name == "agent"
     assert not random_local_ag.version
-    assert random_local_ag.identifier.full == "agent"
+    assert random_local_ag.identifier == "agent"
     assert "environment" in random_local_ag.dependencies.keys()
     assert (
         random_local_ag.dependencies["environment"].identifier == "environment"
