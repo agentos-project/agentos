@@ -409,14 +409,15 @@ class Component:
         )
         assert full_path.is_file(), f"{full_path} does not exist"
         sys.path.append(str(full_path.parent))
+        suffix = f"_{self.class_name.upper()}" if self.class_name else ""
         spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE_{self.class_name.upper()}", str(full_path)
+            f"AOS_MODULE{suffix}", str(full_path)
         )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        managed_obj = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(managed_obj)
 
         if self.class_name:
-            managed_obj = getattr(module, self.class_name)
+            managed_obj = getattr(managed_obj, self.class_name)
         sys.path.pop()
         return managed_obj
 
