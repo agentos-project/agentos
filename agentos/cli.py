@@ -167,18 +167,16 @@ def run(
     arg_set_file,
     use_venv,
 ):
-    venv = VirtualEnv.from_registry_file(registry_file, component_name)
-    venv.set_environment_handling(use_venv)
-    with venv:
-        cli_arg_dict = _user_args_to_dict(arg_set_list)
-        component = Component.from_registry_file(registry_file, component_name)
-        arg_set = ArgumentSet.from_yaml(arg_set_file)
-        entry_point = entry_point or component.get_default_entry_point()
-        arg_set.update(component_name, entry_point, cli_arg_dict)
-        run = component.run_with_arg_set(entry_point, arg_set)
-        print(f"Run {run.identifier} recorded.", end=" ")
-        print("Execute the following for details:")
-        print(f"\n  agentos status {run.identifier}\n")
+    cli_arg_dict = _user_args_to_dict(arg_set_list)
+    component = Component.from_registry_file(registry_file, component_name)
+    component.set_environment_handling(use_venv)
+    arg_set = ArgumentSet.from_yaml(arg_set_file)
+    entry_point = entry_point or component.get_default_entry_point()
+    arg_set.update(component_name, entry_point, cli_arg_dict)
+    run = component.run_with_arg_set(entry_point, arg_set)
+    print(f"Run {run.identifier} recorded.", end=" ")
+    print("Execute the following for details:")
+    print(f"\n  agentos status {run.identifier}\n")
 
 
 @agentos_cmd.command()
@@ -196,11 +194,9 @@ def status(entity_id, registry_file, use_venv):
         Run.from_existing_run_id(entity_id).print_status(detailed=True)
     else:  # assume entity_id is a ComponentIdentifier
         try:
-            venv = VirtualEnv.from_registry_file(registry_file, entity_id)
-            venv.set_environment_handling(use_venv)
-            with venv:
-                c = Component.from_registry_file(registry_file, entity_id)
-                c.print_status_tree()
+            c = Component.from_registry_file(registry_file, entity_id)
+            c.set_environment_handling(use_venv)
+            c.print_status_tree()
         except LookupError:
             print(f"No Run or component found with Identifier {entity_id}.")
 
@@ -236,12 +232,10 @@ def freeze(component_name, registry_file, force, use_venv):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    venv = VirtualEnv.from_registry_file(registry_file, component_name)
-    venv.set_environment_handling(use_venv)
-    with venv:
-        component = Component.from_registry_file(registry_file, component_name)
-        frozen_reg = component.to_frozen_registry(force=force)
-        print(yaml.dump(frozen_reg.to_dict()))
+    component = Component.from_registry_file(registry_file, component_name)
+    component.set_environment_handling(use_venv)
+    frozen_reg = component.to_frozen_registry(force=force)
+    print(yaml.dump(frozen_reg.to_dict()))
 
 
 @agentos_cmd.command()
@@ -257,12 +251,10 @@ def publish(
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
-    venv = VirtualEnv.from_registry_file(registry_file, component_name)
-    venv.set_environment_handling(use_venv)
-    with venv:
-        component = Component.from_registry_file(registry_file, component_name)
-        frozen_spec = component.to_frozen_registry(force=force).to_spec()
-        Registry.get_default().add_component_spec(frozen_spec)
+    component = Component.from_registry_file(registry_file, component_name)
+    component.set_environment_handling(use_venv)
+    frozen_spec = component.to_frozen_registry(force=force).to_spec()
+    Registry.get_default().add_component_spec(frozen_spec)
 
 
 @agentos_cmd.command()

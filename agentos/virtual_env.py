@@ -6,12 +6,10 @@ import hashlib
 import sysconfig
 import subprocess
 from pathlib import Path
+from typing import Sequence
 from contextlib import contextmanager
 
-from agentos.registry import Registry
 from agentos.utils import AOS_GLOBAL_REQS_DIR
-from agentos.identifiers import ComponentIdentifier
-from agentos.specs import unflatten_spec
 
 
 class VirtualEnv:
@@ -46,31 +44,17 @@ class VirtualEnv:
         self.deactivate()
 
     @classmethod
-    def from_registry_file(
-        cls, yaml_file: str, name: str, version: str = None
-    ) -> "VirtualEnv":
+    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
         """
-        Given a path to a yaml registry file, a Component name, and
-        (optionally) a Component version, this function instantiates and
-        returns a virtual environment that satisfies all requirements specified
-        in the requirements_path keys of all Components in the DAG.
+        Takes a sequence of full paths to pip-compatible requirements files,
+        creates a new virtual environment, installs all those requirements into
+        that environment, and then returns a VirtualEnv object corresponding to
+        that virtual environment.
         """
-        registry = Registry.from_yaml(yaml_file)
-        return cls.from_registry(registry, name, version)
-
-    @classmethod
-    def from_registry(
-        cls, registry: Registry, name: str, version: str = None
-    ) -> "VirtualEnv":
-        """
-        Given a Registry object, a Component name, and (optionally) a Component
-        version, this function instantiates and returns a virtual environment
-        that satisfies all requirements specified in the requirements_path keys
-        of all Components in the DAG.
-        """
-        identifier = ComponentIdentifier(name, version)
         venv = cls()
-        venv.build_venv_for_component(registry, identifier)
+        if not req_paths:
+            print("VirtualEnv: no requirement paths; Running in an empty env!")
+        venv._build_virtual_env(req_paths)
         return venv
 
     def set_environment_handling(self, use_venv: bool) -> None:
@@ -192,59 +176,6 @@ class VirtualEnv:
         if self._default_os_underscore:
             os.environ["_"] = self._default_os_underscore
 
-    def build_venv_for_component(
-        self, registry: Registry, identifier: "ComponentIdentifier"
-    ) -> Path:
-        """
-        Creates a new virtual environment based on the requirements specified
-        by the Component DAG rooted by Component ``identifier``.  Every
-        ``requirements_path`` specified by a Component in the DAG will be pip
-        installed by AgentOS during the creation of the virtual environment.
-        If no Component in the DAG specifies a ``requirements_path``, then no
-        virtual environment is created and the Component DAG will be run in the
-        outer Python environment.  Virtual environments are created in the
-        environment cache.
-        """
-        if not self.use_venv:
-            return None
-        req_paths = self._get_requirement_file_paths(registry, identifier)
-        if not req_paths:
-            return None
-        return self._create_virtual_env(req_paths)
-
-    def _get_requirement_file_paths(
-        self, registry: Registry, identifier: "ComponentIdentifier"
-    ) -> set:
-        # Prevent circular import
-        from agentos.repo import Repo
-
-        component_specs, repo_specs = registry.get_specs_transitively_by_id(
-            identifier, flatten=True
-        )
-        repos = {
-            repo_spec["identifier"]: Repo.from_spec(
-                unflatten_spec(repo_spec), registry.base_dir
-            )
-            for repo_spec in repo_specs
-        }
-
-        req_paths = set()
-        for c_spec in component_specs:
-            if "requirements_path" not in c_spec:
-                continue
-            repo = repos[c_spec["repo"]]
-            full_req_path = repo.get_local_file_path(
-                c_spec["version"], c_spec["requirements_path"]
-            ).absolute()
-            if not full_req_path.exists():
-                error_msg = (
-                    f"Requirement path {full_req_path} specified by "
-                    f"Component {c_spec} does not exist."
-                )
-                raise Exception(error_msg)
-            req_paths.add(full_req_path)
-        return req_paths
-
     def create_virtual_env(self) -> None:
         """
         Creates the directory and objects that back the virtual environment.
@@ -301,7 +232,8 @@ class VirtualEnv:
         }
         subprocess.run(cmd, env=component_env)
 
-    def _create_virtual_env(self, req_paths: set):
+    def _build_virtual_env(self, req_paths: Sequence):
+        req_paths = set(req_paths)
         sorted_req_paths = sorted(p for p in req_paths)
         to_hash = hashlib.sha256()
         to_hash.update("empty".encode("utf-8"))

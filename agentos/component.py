@@ -46,6 +46,7 @@ class Component:
         requirements_path: str = None,
         instantiate: bool = True,
         dependencies: Dict = None,
+        use_venv: bool = True,
         dunder_name: str = None,
     ):
         """
@@ -72,8 +73,10 @@ class Component:
             ), "instantiate can only be True if a class_name is provided"
         self.instantiate = instantiate
         self.dependencies = dependencies if dependencies else {}
+        self._use_venv = use_venv
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
+        self._root_component = self
         self.active_run = None
 
     @classmethod
@@ -104,10 +107,9 @@ class Component:
         c_version = None
         if registry.has_component_by_name(name=name, version=version):
             c_version = version
-        if use_venv:
-            venv = VirtualEnv.from_registry(registry, name, c_version)
-            venv.activate()
-        return Component.from_registry(registry, name, c_version)
+        component = Component.from_registry(registry, name, c_version)
+        component.set_environment_handling(use_venv)
+        return component
 
     @classmethod
     def from_default_registry(
@@ -277,6 +279,10 @@ class Component:
             entry_point = "run"
         return entry_point
 
+    def set_environment_handling(self, use_venv: bool):
+        for c in self.dependency_list():
+            c._use_venv = use_venv
+
     def run(self, entry_point: str, **kwargs):
         """
         Run an entry point with provided arguments. If you need to specify
@@ -355,7 +361,8 @@ class Component:
         assert fn is not None, f"{instance} has no attr {function_name}"
         fn_args = arg_set.get_function_args(self.name, function_name)
         print(f"Calling {self.name}.{function_name}(**{fn_args})")
-        result = fn(**fn_args)
+        with self._build_virtual_env():
+            result = fn(**fn_args)
         return result
 
     def add_dependency(
@@ -370,6 +377,7 @@ class Component:
             f"{attribute_name}. Please use a different attribute name."
         )
         self.dependencies[attribute_name] = component
+        component._root_component = self._root_component
 
     def get_object(self, arg_set: ArgumentSet = None) -> T:
         collected = {}
@@ -410,10 +418,24 @@ class Component:
             f"AOS_MODULE_{self.class_name.upper()}", str(full_path)
         )
         module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        with self._build_virtual_env():
+            spec.loader.exec_module(module)
         managed_obj = getattr(module, self.class_name)
         sys.path.pop()
         return managed_obj
+
+    def _build_virtual_env(self) -> VirtualEnv:
+        if not self._use_venv:
+            return VirtualEnv(use_venv=False)
+        req_paths = set()
+        for c in self._root_component.dependency_list(include_root=True):
+            if c.requirements_path is None:
+                continue
+            full_req_path = self.repo.get_local_file_path(
+                c.identifier.version, c.requirements_path
+            ).absolute()
+            req_paths.add(full_req_path)
+        return VirtualEnv.from_requirements_paths(req_paths)
 
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
