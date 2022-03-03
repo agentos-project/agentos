@@ -49,7 +49,6 @@ class Component:
         dunder_name: str = None,
     ):
         """
-        :param managed_cls: The object this Component manages.
         :param repo: Where the code for this component's managed object is.
         :param identifier: Used to identify the Component.
         :param class_name: The name of the class that is being managed.
