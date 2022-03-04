@@ -168,8 +168,9 @@ def run(
     use_venv,
 ):
     cli_arg_dict = _user_args_to_dict(arg_set_list)
-    component = Component.from_registry_file(registry_file, component_name)
-    component.set_environment_handling(use_venv)
+    component = Component.from_registry_file(
+        registry_file, component_name, use_venv=use_venv
+    )
     arg_set = ArgumentSet.from_yaml(arg_set_file)
     entry_point = entry_point or component.get_default_entry_point()
     arg_set.update(component_name, entry_point, cli_arg_dict)
@@ -194,8 +195,9 @@ def status(entity_id, registry_file, use_venv):
         Run.from_existing_run_id(entity_id).print_status(detailed=True)
     else:  # assume entity_id is a ComponentIdentifier
         try:
-            c = Component.from_registry_file(registry_file, entity_id)
-            c.set_environment_handling(use_venv)
+            c = Component.from_registry_file(
+                registry_file, entity_id, use_venv=use_venv
+            )
             c.print_status_tree()
         except LookupError:
             print(f"No Run or component found with Identifier {entity_id}.")
@@ -232,8 +234,9 @@ def freeze(component_name, registry_file, force, use_venv):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    component = Component.from_registry_file(registry_file, component_name)
-    component.set_environment_handling(use_venv)
+    component = Component.from_registry_file(
+        registry_file, component_name, use_venv=use_venv
+    )
     frozen_reg = component.to_frozen_registry(force=force)
     print(yaml.dump(frozen_reg.to_dict()))
 
@@ -251,8 +254,9 @@ def publish(
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
-    component = Component.from_registry_file(registry_file, component_name)
-    component.set_environment_handling(use_venv)
+    component = Component.from_registry_file(
+        registry_file, component_name, use_venv=use_venv
+    )
     frozen_spec = component.to_frozen_registry(force=force).to_spec()
     Registry.get_default().add_component_spec(frozen_spec)
 

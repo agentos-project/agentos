@@ -19,7 +19,7 @@ from agentos.registry import (
 from agentos.exceptions import RegistryException
 from agentos.repo import RepoType, Repo, LocalRepo, GitHubRepo
 from agentos.argument_set import ArgumentSet
-from agentos.virtual_env import VirtualEnv
+from agentos.virtual_env import VirtualEnv, NoOpVirtualEnv
 from agentos.utils import parse_github_web_ui_url
 
 logger = logging.getLogger(__name__)
@@ -107,19 +107,26 @@ class Component:
         c_version = None
         if registry.has_component_by_name(name=name, version=version):
             c_version = version
-        component = Component.from_registry(registry, name, c_version)
-        component.set_environment_handling(use_venv)
+        component = Component.from_registry(
+            registry, name, c_version, use_venv=use_venv
+        )
         return component
 
     @classmethod
     def from_default_registry(
-        cls, name: str, version: str = None
+        cls, name: str, version: str = None, use_venv: bool = True
     ) -> "Component":
-        return cls.from_registry(Registry.from_default(), name, version)
+        return cls.from_registry(
+            Registry.from_default(), name, version, use_venv=use_venv
+        )
 
     @classmethod
     def from_registry(
-        cls, registry: Registry, name: str, version: str = None
+        cls,
+        registry: Registry,
+        name: str,
+        version: str = None,
+        use_venv: bool = True,
     ) -> "Component":
         """
         Returns a Component Object from the provided registry, including
@@ -150,6 +157,7 @@ class Component:
                 "identifier": component_id,
                 "class_name": component_spec["class_name"],
                 "file_path": component_spec["file_path"],
+                "use_venv": use_venv,
             }
             if "requirements_path" in component_spec:
                 from_repo_args["requirements_path"] = component_spec[
@@ -179,19 +187,24 @@ class Component:
 
     @classmethod
     def from_registry_file(
-        cls, yaml_file: str, name: str, version: str = None
+        cls,
+        yaml_file: str,
+        name: str,
+        version: str = None,
+        use_venv: bool = True,
     ) -> "Component":
         registry = Registry.from_yaml(yaml_file)
-        return cls.from_registry(registry, name, version)
+        return cls.from_registry(registry, name, version, use_venv=use_venv)
 
     @classmethod
     def from_class(
         cls,
         managed_cls: Type[T],
-        identifier: str = None,
         repo: Repo = None,
-        dunder_name: str = None,
+        identifier: str = None,
         instantiate: bool = True,
+        use_venv: bool = True,
+        dunder_name: str = None,
     ) -> "Component":
         name = identifier if identifier else managed_cls.__name__
         if (
@@ -235,6 +248,7 @@ class Component:
             class_name=managed_cls.__name__,
             file_path=src_file.name,
             instantiate=instantiate,
+            use_venv=use_venv,
             dunder_name=dunder_name,
         )
 
@@ -247,6 +261,7 @@ class Component:
         file_path: str,
         requirements_path: str = None,
         instantiate: bool = True,
+        use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
         # For convenience, optionally allow 'identifier' to be passed as str.
@@ -260,6 +275,7 @@ class Component:
             file_path=file_path,
             requirements_path=requirements_path,
             instantiate=instantiate,
+            use_venv=use_venv,
             dunder_name=dunder_name,
         )
 
@@ -278,10 +294,6 @@ class Component:
         except AttributeError:
             entry_point = "run"
         return entry_point
-
-    def set_environment_handling(self, use_venv: bool):
-        for c in self.dependency_list():
-            c._use_venv = use_venv
 
     def run(self, entry_point: str, **kwargs):
         """
@@ -426,7 +438,7 @@ class Component:
 
     def _build_virtual_env(self) -> VirtualEnv:
         if not self._use_venv:
-            return VirtualEnv(use_venv=False)
+            return NoOpVirtualEnv()
         req_paths = set()
         for c in self._root_component.dependency_list(include_root=True):
             if c.requirements_path is None:
