@@ -19,7 +19,7 @@ from agentos.registry import (
 from agentos.exceptions import RegistryException
 from agentos.repo import RepoType, Repo, LocalRepo, GitHubRepo
 from agentos.argument_set import ArgumentSet
-from agentos.virtual_env import VirtualEnv
+from agentos.virtual_env import VirtualEnv, NoOpVirtualEnv
 from agentos.utils import parse_github_web_ui_url
 
 logger = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ class Component:
         requirements_path: str = None,
         instantiate: bool = True,
         dependencies: Dict = None,
+        use_venv: bool = True,
         dunder_name: str = None,
     ):
         """
@@ -70,8 +71,10 @@ class Component:
             ), "instantiate can only be True if a class_name is provided"
         self.instantiate = instantiate
         self.dependencies = dependencies if dependencies else {}
+        self._use_venv = use_venv
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
+        self._parent_components = set()
         self.active_run = None
 
     @classmethod
@@ -102,20 +105,26 @@ class Component:
         c_version = None
         if registry.has_component_by_name(name=name, version=version):
             c_version = version
-        if use_venv:
-            venv = VirtualEnv.from_registry(registry, name, c_version)
-            venv.activate()
-        return Component.from_registry(registry, name, c_version)
+        component = Component.from_registry(
+            registry, name, c_version, use_venv=use_venv
+        )
+        return component
 
     @classmethod
     def from_default_registry(
-        cls, name: str, version: str = None
+        cls, name: str, version: str = None, use_venv: bool = True
     ) -> "Component":
-        return cls.from_registry(Registry.from_default(), name, version)
+        return cls.from_registry(
+            Registry.from_default(), name, version, use_venv=use_venv
+        )
 
     @classmethod
     def from_registry(
-        cls, registry: Registry, name: str, version: str = None
+        cls,
+        registry: Registry,
+        name: str,
+        version: str = None,
+        use_venv: bool = True,
     ) -> "Component":
         """
         Returns a Component Object from the provided registry, including
@@ -146,6 +155,7 @@ class Component:
                 "identifier": component_id,
                 "class_name": component_spec["class_name"],
                 "file_path": component_spec["file_path"],
+                "use_venv": use_venv,
             }
             if "requirements_path" in component_spec:
                 from_repo_args["requirements_path"] = component_spec[
@@ -175,19 +185,24 @@ class Component:
 
     @classmethod
     def from_registry_file(
-        cls, yaml_file: str, name: str, version: str = None
+        cls,
+        yaml_file: str,
+        name: str,
+        version: str = None,
+        use_venv: bool = True,
     ) -> "Component":
         registry = Registry.from_yaml(yaml_file)
-        return cls.from_registry(registry, name, version)
+        return cls.from_registry(registry, name, version, use_venv=use_venv)
 
     @classmethod
     def from_class(
         cls,
         managed_cls: Type[T],
-        identifier: str = None,
         repo: Repo = None,
-        dunder_name: str = None,
+        identifier: str = None,
         instantiate: bool = True,
+        use_venv: bool = True,
+        dunder_name: str = None,
     ) -> "Component":
         name = identifier if identifier else managed_cls.__name__
         if (
@@ -231,6 +246,7 @@ class Component:
             class_name=managed_cls.__name__,
             file_path=src_file.name,
             instantiate=instantiate,
+            use_venv=use_venv,
             dunder_name=dunder_name,
         )
 
@@ -243,6 +259,7 @@ class Component:
         file_path: str,
         requirements_path: str = None,
         instantiate: bool = True,
+        use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
         # For convenience, optionally allow 'identifier' to be passed as str.
@@ -256,6 +273,7 @@ class Component:
             file_path=file_path,
             requirements_path=requirements_path,
             instantiate=instantiate,
+            use_venv=use_venv,
             dunder_name=dunder_name,
         )
 
@@ -353,7 +371,8 @@ class Component:
         assert fn is not None, f"{instance} has no attr {function_name}"
         fn_args = arg_set.get_function_args(self.name, function_name)
         print(f"Calling {self.name}.{function_name}(**{fn_args})")
-        result = fn(**fn_args)
+        with self._build_virtual_env():
+            result = fn(**fn_args)
         return result
 
     def add_dependency(
@@ -368,6 +387,7 @@ class Component:
             f"{attribute_name}. Please use a different attribute name."
         )
         self.dependencies[attribute_name] = component
+        component._parent_components.add(self)
 
     def get_object(self, arg_set: ArgumentSet = None) -> T:
         collected = {}
@@ -408,10 +428,24 @@ class Component:
             f"AOS_MODULE_{self.class_name.upper()}", str(full_path)
         )
         module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        with self._build_virtual_env():
+            spec.loader.exec_module(module)
         managed_obj = getattr(module, self.class_name)
         sys.path.pop()
         return managed_obj
+
+    def _build_virtual_env(self) -> VirtualEnv:
+        if not self._use_venv:
+            return NoOpVirtualEnv()
+        req_paths = set()
+        for c in self.dependency_list(include_parents=True):
+            if c.requirements_path is None:
+                continue
+            full_req_path = self.repo.get_local_file_path(
+                c.identifier.version, c.requirements_path
+            ).absolute()
+            req_paths.add(full_req_path)
+        return VirtualEnv.from_requirements_paths(req_paths)
 
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
@@ -551,14 +585,21 @@ class Component:
         return versioned.to_registry()
 
     def dependency_list(
-        self, include_root: bool = True
+        self, include_root: bool = True, include_parents: bool = False
     ) -> Sequence["Component"]:
         """
         Return a normalized (i.e. flat) Sequence containing all transitive
         dependencies of this component and (optionally) this component.
 
         :param include_root: Whether to include root component in the list.
-                             If True, self is first element in list returned.
+                             If True, self is included in the list returned.
+        :param include_parents: If True, then recursively include all parents
+                                of this component (and their parents, etc).
+                                A parent of this Component is a Component
+                                which depends on this Component.  Ultimately,
+                                if True, all Components in the DAG will be
+                                returned.
+
         :return: a list containing all all of the transitive dependencies
                  of this component (optionally  including the root component).
         """
@@ -569,7 +610,12 @@ class Component:
             if include_root or component is not self:
                 ret_val.add(component)
             for dependency in component.dependencies.values():
-                component_queue.append(dependency)
+                if dependency not in ret_val:
+                    component_queue.append(dependency)
+            if include_parents:
+                for parent in component._parent_components:
+                    if parent not in ret_val:
+                        component_queue.append(parent)
         return list(ret_val)
 
     def print_status_tree(self) -> None:
