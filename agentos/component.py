@@ -76,7 +76,7 @@ class Component:
         self._use_venv = use_venv
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
-        self._root_component = self
+        self._parent_components = set()
         self.active_run = None
 
     @classmethod
@@ -389,7 +389,7 @@ class Component:
             f"{attribute_name}. Please use a different attribute name."
         )
         self.dependencies[attribute_name] = component
-        component._root_component = self._root_component
+        component._parent_components.add(self)
 
     def get_object(self, arg_set: ArgumentSet = None) -> T:
         collected = {}
@@ -440,7 +440,7 @@ class Component:
         if not self._use_venv:
             return NoOpVirtualEnv()
         req_paths = set()
-        for c in self._root_component.dependency_list(include_root=True):
+        for c in self.dependency_list(include_parents=True):
             if c.requirements_path is None:
                 continue
             full_req_path = self.repo.get_local_file_path(
@@ -587,14 +587,21 @@ class Component:
         return versioned.to_registry()
 
     def dependency_list(
-        self, include_root: bool = True
+        self, include_root: bool = True, include_parents: bool = False
     ) -> Sequence["Component"]:
         """
         Return a normalized (i.e. flat) Sequence containing all transitive
         dependencies of this component and (optionally) this component.
 
         :param include_root: Whether to include root component in the list.
-                             If True, self is first element in list returned.
+                             If True, self is included in the list returned.
+        :param include_parents: If True, then recursively include all parents
+                                of this component (and their parents, etc).
+                                A parent of this Component is a Component
+                                which depends on this Component.  Ultimately,
+                                if True, all Components in the DAG will be
+                                returned.
+
         :return: a list containing all all of the transitive dependencies
                  of this component (optionally  including the root component).
         """
@@ -605,7 +612,12 @@ class Component:
             if include_root or component is not self:
                 ret_val.add(component)
             for dependency in component.dependencies.values():
-                component_queue.append(dependency)
+                if dependency not in ret_val:
+                    component_queue.append(dependency)
+            if include_parents:
+                for parent in component._parent_components:
+                    if parent not in ret_val:
+                        component_queue.append(parent)
         return list(ret_val)
 
     def print_status_tree(self) -> None:
