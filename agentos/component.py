@@ -1,26 +1,25 @@
+import importlib
+import logging
 import sys
 import uuid
-import logging
-import importlib
 from hashlib import sha1
 from pathlib import Path
+from typing import Any, Dict, Sequence, Type, TypeVar, Union
+
 from dill.source import getsource as dill_getsource
-from typing import Union, TypeVar, Dict, Type, Any, Sequence
 from rich import print as rich_print
 from rich.tree import Tree
-from agentos.run_command import RunCommand
-from agentos.component_run import ComponentRun
-from agentos.identifiers import ComponentIdentifier
-from agentos.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
-from agentos.registry import (
-    Registry,
-    InMemoryRegistry,
-)
-from agentos.exceptions import RegistryException
-from agentos.repo import RepoType, Repo, LocalRepo, GitHubRepo
+
 from agentos.argument_set import ArgumentSet
-from agentos.virtual_env import VirtualEnv, NoOpVirtualEnv
+from agentos.component_run import ComponentRun
+from agentos.exceptions import RegistryException
+from agentos.identifiers import ComponentIdentifier
+from agentos.registry import InMemoryRegistry, Registry
+from agentos.repo import GitHubRepo, LocalRepo, Repo, RepoType
+from agentos.run_command import RunCommand
+from agentos.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
 from agentos.utils import parse_github_web_ui_url
+from agentos.virtual_env import NoOpVirtualEnv, VirtualEnv
 
 logger = logging.getLogger(__name__)
 

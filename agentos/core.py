@@ -2,7 +2,8 @@
 import time
 from collections import namedtuple
 from threading import Thread
-from typing import Sequence, Optional
+from typing import Optional, Sequence
+
 from agentos.agent_run import AgentRun
 
 

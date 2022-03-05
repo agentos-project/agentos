@@ -5,6 +5,7 @@ class ComponentIdentifier(str):
     allows referring to Components both as [name] and [name]==[version] (e.g.,
     in registries or the command line).
     """
+
     def __new__(
         cls,
         identifier_or_name: str,

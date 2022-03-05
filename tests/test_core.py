@@ -4,10 +4,10 @@ See repo README for instructions to run tests.
 """
 import os
 from pathlib import Path
-from utils import run_test_command
-from utils import run_in_dir
-from utils import SB3_AGENT_DIR
-from agentos.cli import init, run, freeze, status
+
+from utils import SB3_AGENT_DIR, run_in_dir, run_test_command
+
+from agentos.cli import freeze, init, run, status
 
 
 def test_cli_init(tmpdir):

@@ -1,10 +1,11 @@
 """Test suite for AgentOS Registry."""
 import pytest
-from tests.utils import is_linux, RANDOM_AGENT_DIR, CHATBOT_AGENT_DIR
-from agentos.registry import Registry
-from agentos.component import Component
-from agentos.utils import generate_dummy_dev_registry
+
 from agentos import ArgumentSet
+from agentos.component import Component
+from agentos.registry import Registry
+from agentos.utils import generate_dummy_dev_registry
+from tests.utils import CHATBOT_AGENT_DIR, RANDOM_AGENT_DIR, is_linux
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
@@ -103,8 +104,8 @@ def test_registry_from_dict():
 
 
 def test_registry_from_file():
-    from agentos.exceptions import RegistryException
     from agentos.argument_set import ArgumentSet
+    from agentos.exceptions import RegistryException
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
     random_local_ag = Component.from_registry(r, "agent")

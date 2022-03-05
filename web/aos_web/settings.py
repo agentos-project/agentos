@@ -10,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-from pathlib import Path
-import dj_database_url
 import os
 import sys
+from pathlib import Path
+
+import dj_database_url
 
 IS_TEST = "test" in sys.argv
 

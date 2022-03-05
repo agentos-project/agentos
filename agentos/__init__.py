@@ -1,6 +1,9 @@
 """The ``agentos`` module provides an API for building learning agents."""
 
-from agentos.version import VERSION as __version__  # noqa: F401
+from agentos.agent_run import AgentRun
+from agentos.argument_set import ArgumentSet
+from agentos.component import Component
+from agentos.component_run import ComponentRun, active_component_run
 from agentos.core import (
     Agent,
     Dataset,
@@ -10,23 +13,19 @@ from agentos.core import (
     Runnable,
     Trainer,
 )
-
 from agentos.registry import Registry
-from agentos.component import Component
-from agentos.component_run import ComponentRun, active_component_run
-from agentos.repo import Repo, LocalRepo, GitHubRepo
-from agentos.argument_set import ArgumentSet
+from agentos.repo import GitHubRepo, LocalRepo, Repo
 from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.specs import (
+    ArgumentSetSpec,
     ComponentSpec,
     RepoSpec,
-    ArgumentSetSpec,
     RunSpec,
     flatten_spec,
     unflatten_spec,
 )
-from agentos.agent_run import AgentRun
+from agentos.version import VERSION as __version__  # noqa: F401
 
 __all__ = [
     "Agent",

@@ -1,7 +1,9 @@
 import tempfile
-from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 from pathlib import Path
-from typing import Any, Optional, Mapping
+from typing import Any, Mapping, Optional
+
+from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
+
 from agentos.exceptions import PythonComponentSystemException
 from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry

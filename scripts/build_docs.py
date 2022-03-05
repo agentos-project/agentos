@@ -9,9 +9,9 @@ import argparse
 import os
 from subprocess import Popen
 
+from shared import docs_build_dir, docs_dir
+
 import agentos
-from shared import docs_dir
-from shared import docs_build_dir
 
 parser = argparse.ArgumentParser(
     description="Build the AgentOS docs. Any arguments that are provided "

@@ -1,13 +1,14 @@
-import os
-import sys
-import yaml
-import shutil
 import hashlib
-import sysconfig
+import os
+import shutil
 import subprocess
+import sys
+import sysconfig
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Sequence
-from contextlib import contextmanager
+
+import yaml
 
 from agentos.utils import AOS_GLOBAL_REQS_DIR
 

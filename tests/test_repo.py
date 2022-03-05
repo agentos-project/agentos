@@ -1,9 +1,9 @@
-from agentos.repo import Repo, LocalRepo
 from agentos.component import Component
+from agentos.repo import LocalRepo, Repo
 from tests.utils import (
+    TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
-    TESTING_BRANCH_NAME,
 )
 
 
