@@ -3,7 +3,11 @@ Run flake8 linter on AgentOS Python files
 
 To use::
 
+  # Lint all code
   $ python scripts/lint_code.py
+
+  # Lint specific files
+  $ python scripts/lint_code.py [path/to/file1] [path/to/file2]
 """
 
 import os

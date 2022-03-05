@@ -6,6 +6,9 @@ To use::
   # Format all code
   $ python scripts/format_code.py
 
+  # Format specific files
+  $ python scripts/format_code.py [path/to/file1] [path/to/file2]
+
   # Print files that will be formatted, but don't actually format
   $ python scripts/format_code.py --check
 """
