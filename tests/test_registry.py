@@ -1,10 +1,17 @@
 """Test suite for AgentOS Registry."""
 import pytest
-from tests.utils import is_linux, RANDOM_AGENT_DIR, CHATBOT_AGENT_DIR
+from tests.utils import (
+    is_linux,
+    RANDOM_AGENT_DIR,
+    CHATBOT_AGENT_DIR,
+    TESTING_GITHUB_ACCOUNT,
+    TESTING_GITHUB_REPO,
+)
+from agentos.argument_set import ArgumentSet
+from agentos.repo import Repo
 from agentos.registry import Registry
 from agentos.component import Component
 from agentos.utils import generate_dummy_dev_registry
-from agentos import ArgumentSet
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
@@ -138,3 +145,11 @@ def test_registry_from_file():
     reg_from_component = chatbot_agent.to_registry()
     assert reg_from_component.get_component_spec("chatbot")
     assert reg_from_component.get_component_spec("env_class")
+
+
+def test_registry_from_repo():
+    repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    reg = Registry.from_repo(repo)
+    print(reg.to_dict())
+    reg.to_yaml("/tmp/reg_out.yaml")
+    assert reg

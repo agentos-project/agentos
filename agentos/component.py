@@ -97,10 +97,10 @@ class Component:
 
             https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
         """
-        project, repo, branch, repo_path = parse_github_web_ui_url(github_url)
+        project, repo, branch, reg_file_path = parse_github_web_ui_url(github_url)
         version = version or branch
         repo = Repo.from_github(project, repo)
-        registry = Registry.from_repo(repo, repo_path, version)
+        registry = Registry.from_file_in_repo(repo, reg_file_path, version)
         c_version = None
         if registry.has_component_by_name(name=name, version=version):
             c_version = version
@@ -250,7 +250,7 @@ class Component:
     ) -> "Component":
         # For convenience, optionally allow 'identifier' to be passed as str.
         identifier = ComponentIdentifier.from_str(str(identifier))
-        full_path = repo.get_local_file_path(identifier.version, file_path)
+        full_path = repo.get_local_file_path(file_path, identifier.version)
         assert full_path.is_file(), f"{full_path} does not exist"
         return cls(
             repo=repo,
@@ -404,7 +404,7 @@ class Component:
     def _import_object(self):
         """Return managed module, or class if ``self.class_name`` is set."""
         full_path = self.repo.get_local_file_path(
-            self.identifier.version, self.file_path
+            self.file_path, self.identifier.version
         )
         assert full_path.is_file(), f"{full_path} does not exist"
         sys.path.append(str(full_path.parent))
@@ -466,9 +466,11 @@ class Component:
         component_spec_content = {
             "repo": self.repo.identifier,
             "file_path": str(self.file_path),
-            "class_name": self.class_name,
-            "dependencies": dependencies,
         }
+        if dependencies:
+            component_spec_content["dependencies"] = dependencies
+        if self.class_name:
+            component_spec_content["class_name"] = self.class_name
         if self.requirements_path:
             component_spec_content["requirements_path"] = str(
                 self.requirements_path

@@ -234,7 +234,7 @@ class VirtualEnv:
                 continue
             repo = repos[c_spec["repo"]]
             full_req_path = repo.get_local_file_path(
-                c_spec["version"], c_spec["requirements_path"]
+                c_spec["requirements_path"], c_spec["version"]
             ).absolute()
             if not full_req_path.exists():
                 error_msg = (

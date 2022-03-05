@@ -40,13 +40,26 @@ class Repo(abc.ABC):
 
     UNKNOWN_URL = "unknown_url"
 
-    def __init__(self, identifier: str):
+    def __init__(self, identifier: str, default_version: str = "master"):
         self.identifier = identifier
+        self._default_version = default_version
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Repo):
             return self.to_spec() == other.to_spec()
         return self == other
+
+    def __contains__(self, item):
+        return self.get_local_file_path(str(item)).exists()
+
+    @property
+    def default_version(self):
+        return self._default_version
+
+    @default_version.setter
+    def default_version(self, value: str):
+        assert value, "default_version cannot be None or ''"
+        self._default_version = value
 
     @staticmethod
     def from_spec(spec: NestedRepoSpec, base_dir: str = None) -> "Repo":
@@ -102,11 +115,11 @@ class Repo(abc.ABC):
         return registry
 
     @abc.abstractmethod
-    def get_local_repo_dir(self, version: str) -> Path:
+    def get_local_repo_dir(self, version: str = None) -> Path:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_local_file_path(self, version: str, file_path: str) -> Path:
+    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
         raise NotImplementedError()
 
     def get_version_from_git(
@@ -130,7 +143,7 @@ class Repo(abc.ABC):
         If ''force'' is True, checks 2, 3, and 4 above are ignored.
         """
         full_path = self.get_local_file_path(
-            component_identifier.version, file_path
+            file_path, component_identifier.version
         )
         assert full_path.exists(), f"Path {full_path} does not exist"
         try:
@@ -250,7 +263,7 @@ class Repo(abc.ABC):
 
             baz/my_component.py
         """
-        full_path = self.get_local_file_path(identifier.version, file_path)
+        full_path = self.get_local_file_path(file_path, identifier.version)
         name = full_path.name
         curr_path = full_path.parent
         path_prefix = Path()
@@ -295,13 +308,15 @@ class GitHubRepo(Repo):
         }
         return flatten_spec(spec) if flatten else spec
 
-    def get_local_repo_dir(self, version: str) -> Path:
+    def get_local_repo_dir(self, version: str = None) -> Path:
+        version = version if version else self._default_version
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
         return local_repo_path
 
-    def get_local_file_path(self, version: str, file_path: str) -> Path:
+    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
+        version = version if version else self._default_version
         local_repo_path = self.get_local_repo_dir(version)
         return (local_repo_path / file_path).absolute()
 
@@ -393,7 +408,9 @@ class LocalRepo(Repo):
         assert version is None, "LocalRepos don't support versioning."
         return self.local_dir
 
-    def get_local_file_path(self, version: str, relative_path: str) -> Path:
+    def get_local_file_path(self,
+        relative_path: str, version: str = None
+    ) -> Path:
         if version is not None:
             print(
                 "WARNING: version was passed into get_local_path() "
