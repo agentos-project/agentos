@@ -13,7 +13,6 @@
 import os
 from importlib.machinery import SourceFileLoader
 
-
 version = (
     SourceFileLoader(
         "agentos.version", os.path.join("..", "agentos", "version.py")

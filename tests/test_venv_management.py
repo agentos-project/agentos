@@ -1,10 +1,11 @@
 import sys
-import pytest
 from pathlib import Path
-from tests.utils import run_test_command
-from tests.utils import TEST_VENV_AGENT_DIR
+
+import pytest
+
 from agentos.cli import run
 from agentos.virtual_env import VirtualEnv
+from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
 
 def _clean_up_sys_modules():

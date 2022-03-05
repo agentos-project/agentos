@@ -1,22 +1,22 @@
-from django.db import transaction
+import json
 
+from django.db import transaction
 # from django.urls import reverse
 from django.http import HttpResponse
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-import json
-from .models import Repo, Component, ComponentDependency, RunCommand, Run
-from .serializers import (
-    RunSerializer,
-    RepoSerializer,
-    ComponentSerializer,
-    RunCommandSerializer,
-)
 
+from .models import Component, ComponentDependency, Repo, Run, RunCommand
+from .serializers import (
+    ComponentSerializer,
+    RepoSerializer,
+    RunCommandSerializer,
+    RunSerializer,
+)
 
 # TODO: This used to be a member of ComponentViewSet that also called a static
 #       method of the Component model ingest_registry_dict(), but it should be

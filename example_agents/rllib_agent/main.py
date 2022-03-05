@@ -1,8 +1,8 @@
 import ray
 import ray.rllib.agents.registry as rllib_registry
-from ray.tune.registry import register_env as rllib_reg_env
 from ray.rllib.agents.trainer import COMMON_CONFIG
 from ray.rllib.utils import merge_dicts
+from ray.tune.registry import register_env as rllib_reg_env
 
 
 class RLlibAgent:

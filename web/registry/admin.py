@@ -1,9 +1,6 @@
 from django.contrib import admin
 
-from .models import Component
-from .models import ComponentDependency
-from .models import Repo
-from .models import Run
+from .models import Component, ComponentDependency, Repo, Run
 
 admin.site.register(Component)
 admin.site.register(ComponentDependency)

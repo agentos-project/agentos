@@ -1,8 +1,10 @@
 import shutil
-import sonnet as snt
 import tempfile
-import tensorflow as tf
 from pathlib import Path
+
+import sonnet as snt
+import tensorflow as tf
+
 from agentos.run import Run
 
 

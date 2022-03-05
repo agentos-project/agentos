@@ -1,8 +1,7 @@
-from django.core.management.base import BaseCommand
-from registry.models import Component
-from registry.models import ComponentRelease
 import requests
 import yaml
+from django.core.management.base import BaseCommand
+from registry.models import Component, ComponentRelease
 
 # {'2048':
 #    {

@@ -4,14 +4,15 @@ The CLI allows creation of a simple template agent.
 """
 import os
 import sys
-import yaml
-import click
 from datetime import datetime
 from pathlib import Path
-from agentos import Component
-from agentos import ArgumentSet
-from agentos.run import Run
+
+import click
+import yaml
+
+from agentos import ArgumentSet, Component
 from agentos.registry import Registry
+from agentos.run import Run
 from agentos.virtual_env import VirtualEnv
 
 

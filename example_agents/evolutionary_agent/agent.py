@@ -5,12 +5,14 @@ This agent can be run with the agentos CLI using:
     $ pip install -r requirements.txt
     $ agentos run agent.py gym.envs.classic_control.CartPoleEnv
 """
-import agentos
 import copy
+
 import gym
-from gym.envs.classic_control import CartPoleEnv
 import numpy as np
+from gym.envs.classic_control import CartPoleEnv
 from tensorflow import keras
+
+import agentos
 
 
 class TFPolicy(agentos.Policy):

@@ -1,9 +1,10 @@
-from collections import deque
-from gym import Space
-import numpy as np
-from secrets import token_bytes
 import string
 import threading
+from collections import deque
+from secrets import token_bytes
+
+import numpy as np
+from gym import Space
 
 
 class TextSpace(Space):

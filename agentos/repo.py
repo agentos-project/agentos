@@ -1,25 +1,25 @@
-import os
-import sys
 import abc
 import logging
+import os
+import sys
 import uuid
 from enum import Enum
-from typing import TypeVar, Dict, Tuple, Union
 from pathlib import Path
+from typing import Dict, Tuple, TypeVar, Union
+
 from dulwich import porcelain
-from dulwich.repo import Repo as PorcelainRepo
-from dulwich.objectspec import parse_ref
-from dulwich.objectspec import parse_commit
 from dulwich.errors import NotGitRepository
+from dulwich.objectspec import parse_commit, parse_ref
+from dulwich.repo import Repo as PorcelainRepo
 
 from agentos.exceptions import (
     BadGitStateException,
     PythonComponentSystemException,
 )
-from agentos.utils import AOS_GLOBAL_REPOS_DIR
 from agentos.identifiers import ComponentIdentifier, RepoIdentifier
-from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys, flatten_spec
-from agentos.registry import Registry, InMemoryRegistry
+from agentos.registry import InMemoryRegistry, Registry
+from agentos.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
+from agentos.utils import AOS_GLOBAL_REPOS_DIR
 
 logger = logging.getLogger(__name__)
 

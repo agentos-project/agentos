@@ -1,8 +1,10 @@
 import copy
-import yaml
 import json
 from hashlib import sha1
-from typing import TypeVar, Mapping, Dict
+from typing import Dict, Mapping, TypeVar
+
+import yaml
+
 from agentos.specs import ArgumentSetSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)

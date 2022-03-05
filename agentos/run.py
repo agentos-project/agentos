@@ -3,14 +3,15 @@ from functools import partial
 from pathlib import Path
 from typing import Sequence
 from urllib.parse import urlparse
+
 from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context import registry as context_registry
+
 from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
-from agentos.specs import RunSpec
-from agentos.specs import unflatten_spec
+from agentos.specs import RunSpec, unflatten_spec
 
 
 class Run:

@@ -19,7 +19,8 @@ the spec identifier at the same level as the rest of the spec properties.
 
 import copy
 import json
-from typing import Mapping, Union, Any
+from typing import Any, Mapping, Union
+
 from agentos.identifiers import ComponentIdentifier
 
 FlatSpec = Mapping[str, str]

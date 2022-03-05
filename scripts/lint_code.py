@@ -9,11 +9,9 @@ To use::
 import os
 import sys
 from pathlib import Path
-from subprocess import run
-from subprocess import PIPE
+from subprocess import PIPE, run
 
-from shared import root_dir
-from shared import traverse_tracked_files
+from shared import root_dir, traverse_tracked_files
 
 returncode = 0
 

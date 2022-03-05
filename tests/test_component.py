@@ -1,13 +1,14 @@
 """Test suite for AgentOS Component."""
+from unittest.mock import DEFAULT, patch
+
 import pytest
-from unittest.mock import patch
-from unittest.mock import DEFAULT
+from utils import run_in_dir, run_test_command
+
+from agentos.cli import init
 from agentos.component import Component
 from agentos.component_run import ComponentRun
-from agentos.virtual_env import auto_revert_venv
 from agentos.run_command import RunCommand
-from utils import run_test_command, run_in_dir
-from agentos.cli import init
+from agentos.virtual_env import auto_revert_venv
 
 
 # We define these classes at the module global level so that

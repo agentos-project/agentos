@@ -1,6 +1,8 @@
+from typing import Dict, List
+
 from django.db import models
 from rest_framework.exceptions import ValidationError
-from typing import Dict, List
+
 from agentos.identifiers import ComponentIdentifier
 
 

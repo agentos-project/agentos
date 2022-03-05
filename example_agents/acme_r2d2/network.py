@@ -1,5 +1,5 @@
-from acme.tf import networks
 import sonnet as snt
+from acme.tf import networks
 
 
 class R2D2Network:
