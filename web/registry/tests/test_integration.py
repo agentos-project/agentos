@@ -39,6 +39,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
             class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            use_venv=False,
         )
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run_with_arg_set(
@@ -55,13 +56,14 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
 
         # Test fetching all of the specs that were recursively added.
         wr_comp_run = ComponentRun.from_registry(
-            web_registry, comp_run.identifier
+            web_registry,
+            comp_run.identifier,
         )
         wr_run_cmd = RunCommand.from_registry(
             web_registry, wr_comp_run.run_command.identifier
         )
         wr_comp = Component.from_registry(
-            web_registry, wr_run_cmd.component.identifier
+            web_registry, wr_run_cmd.component.identifier, use_venv=False
         )
         wr_repo = Repo.from_registry(web_registry, wr_comp.repo.identifier)
         self.assertEqual(wr_repo.identifier, agentos_repo.identifier)
@@ -95,6 +97,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
             class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            use_venv=False,
         )
         self.assertEqual(simple_component.repo.identifier, "AgentOSRepo")
         simple_dependency = Component.from_repo(
@@ -102,6 +105,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             identifier=f"SimpleDependency=={TESTING_BRANCH_NAME}",
             class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            use_venv=False,
         )
         simple_component.add_dependency(simple_dependency, "dep")
 
@@ -110,6 +114,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             identifier=f"AnotherDependency=={TESTING_BRANCH_NAME}",
             class_name="SimpleComponent",
             file_path="tests/test_web_registry.py",
+            use_venv=False,
         )
         simple_component.add_dependency(another_dependency, "deptwo")
 
