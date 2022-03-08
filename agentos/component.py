@@ -471,6 +471,8 @@ class Component:
             component_spec_content["dependencies"] = dependencies
         if self.class_name:
             component_spec_content["class_name"] = self.class_name
+        if self.instantiate:
+            component_spec_content["instantiate"] = self.instantiate
         if self.requirements_path:
             component_spec_content["requirements_path"] = str(
                 self.requirements_path
