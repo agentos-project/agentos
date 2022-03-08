@@ -149,7 +149,9 @@ def test_registry_from_file():
 
 def test_registry_from_repo():
     repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
-    reg = Registry.from_repo(repo)
+    reg = Registry.from_repo_inferred(
+        repo, requirements_file="dev-requirements.txt"
+    )
     print(reg.to_dict())
     reg.to_yaml("/tmp/reg_out.yaml")
     assert reg
