@@ -2,14 +2,15 @@
 # See acme/agents/tf/r2d2/learning.py for original code source
 import copy
 import functools
-import agentos
-import tree
-from attrdict import AttrDict
-from acme.tf import utils as tf2_utils
-from acme.tf import losses
-from acme.tf import networks
+
 import sonnet as snt
 import tensorflow as tf
+import tree
+from acme.tf import losses, networks
+from acme.tf import utils as tf2_utils
+from attrdict import AttrDict
+
+import agentos
 
 
 class R2D2Trainer(agentos.Trainer):

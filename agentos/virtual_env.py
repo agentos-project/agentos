@@ -1,17 +1,16 @@
-import os
-import sys
-import yaml
-import shutil
 import hashlib
-import sysconfig
+import os
+import shutil
 import subprocess
-from pathlib import Path
+import sys
+import sysconfig
 from contextlib import contextmanager
+from pathlib import Path
+from typing import Sequence
 
-from agentos.registry import Registry
+import yaml
+
 from agentos.utils import AOS_GLOBAL_REQS_DIR
-from agentos.identifiers import ComponentIdentifier
-from agentos.specs import unflatten_spec
 
 
 class VirtualEnv:
@@ -21,8 +20,7 @@ class VirtualEnv:
     such as one to clear the whole virtual environment cache.
     """
 
-    def __init__(self, use_venv: bool = True, venv_path: Path = None):
-        self.use_venv = use_venv
+    def __init__(self, venv_path: Path = None):
         self.venv_path = venv_path
         self._saved_venv_sys_path = None
         self._venv_is_active = False
@@ -46,39 +44,18 @@ class VirtualEnv:
         self.deactivate()
 
     @classmethod
-    def from_registry_file(
-        cls, yaml_file: str, name: str, version: str = None
-    ) -> "VirtualEnv":
+    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
         """
-        Given a path to a yaml registry file, a Component name, and
-        (optionally) a Component version, this function instantiates and
-        returns a virtual environment that satisfies all requirements specified
-        in the requirements_path keys of all Components in the DAG.
+        Takes a sequence of full paths to pip-compatible requirements files,
+        creates a new virtual environment, installs all those requirements into
+        that environment, and then returns a VirtualEnv object corresponding to
+        that virtual environment.
         """
-        registry = Registry.from_yaml(yaml_file)
-        return cls.from_registry(registry, name, version)
-
-    @classmethod
-    def from_registry(
-        cls, registry: Registry, name: str, version: str = None
-    ) -> "VirtualEnv":
-        """
-        Given a Registry object, a Component name, and (optionally) a Component
-        version, this function instantiates and returns a virtual environment
-        that satisfies all requirements specified in the requirements_path keys
-        of all Components in the DAG.
-        """
-        identifier = ComponentIdentifier(name, version)
         venv = cls()
-        venv.build_venv_for_component(registry, identifier)
+        if not req_paths:
+            print("VirtualEnv: no requirement paths; Running in an empty env!")
+        venv._build_virtual_env(req_paths)
         return venv
-
-    def set_environment_handling(self, use_venv: bool) -> None:
-        """
-        Enables or disables virtual environment management.  If ``use_venv`` is
-        set to False, all public methods of this class will be no-ops.
-        """
-        self.use_venv = use_venv
 
     def set_env_cache_path(self, env_cache_path: Path) -> None:
         """
@@ -124,9 +101,7 @@ class VirtualEnv:
         activated, an import statement (e.g. run by a Component) will execute
         within the virtual environment.
         """
-        if not self.venv_path or not self.use_venv:
-            print("VirtualEnv: Running in outer Python environment")
-            return
+        assert self.venv_path.exists(), f"{self.venv_path} does not exist!"
         self._save_default_env_info()
         self._set_venv_sys_path()
         self._set_venv_sys_attributes()
@@ -192,59 +167,6 @@ class VirtualEnv:
         if self._default_os_underscore:
             os.environ["_"] = self._default_os_underscore
 
-    def build_venv_for_component(
-        self, registry: Registry, identifier: "ComponentIdentifier"
-    ) -> Path:
-        """
-        Creates a new virtual environment based on the requirements specified
-        by the Component DAG rooted by Component ``identifier``.  Every
-        ``requirements_path`` specified by a Component in the DAG will be pip
-        installed by AgentOS during the creation of the virtual environment.
-        If no Component in the DAG specifies a ``requirements_path``, then no
-        virtual environment is created and the Component DAG will be run in the
-        outer Python environment.  Virtual environments are created in the
-        environment cache.
-        """
-        if not self.use_venv:
-            return None
-        req_paths = self._get_requirement_file_paths(registry, identifier)
-        if not req_paths:
-            return None
-        return self._create_virtual_env(req_paths)
-
-    def _get_requirement_file_paths(
-        self, registry: Registry, identifier: "ComponentIdentifier"
-    ) -> set:
-        # Prevent circular import
-        from agentos.repo import Repo
-
-        component_specs, repo_specs = registry.get_specs_transitively_by_id(
-            identifier, flatten=True
-        )
-        repos = {
-            repo_spec["identifier"]: Repo.from_spec(
-                unflatten_spec(repo_spec), registry.base_dir
-            )
-            for repo_spec in repo_specs
-        }
-
-        req_paths = set()
-        for c_spec in component_specs:
-            if "requirements_path" not in c_spec:
-                continue
-            repo = repos[c_spec["repo"]]
-            full_req_path = repo.get_local_file_path(
-                c_spec["requirements_path"], c_spec["version"]
-            ).absolute()
-            if not full_req_path.exists():
-                error_msg = (
-                    f"Requirement path {full_req_path} specified by "
-                    f"Component {c_spec} does not exist."
-                )
-                raise Exception(error_msg)
-            req_paths.add(full_req_path)
-        return req_paths
-
     def create_virtual_env(self) -> None:
         """
         Creates the directory and objects that back the virtual environment.
@@ -301,7 +223,8 @@ class VirtualEnv:
         }
         subprocess.run(cmd, env=component_env)
 
-    def _create_virtual_env(self, req_paths: set):
+    def _build_virtual_env(self, req_paths: Sequence):
+        req_paths = set(req_paths)
         sorted_req_paths = sorted(p for p in req_paths)
         to_hash = hashlib.sha256()
         to_hash.update("empty".encode("utf-8"))
@@ -365,6 +288,34 @@ class VirtualEnv:
             if found_flags:
                 flag_lines.append(line)
         return flag_dict
+
+
+class NoOpVirtualEnv(VirtualEnv):
+    """
+    This class implements the VirtualEnv interface, but does not actually
+    modify the Python environment in which the program is executing.  Use this
+    class anywhere you need a VirtualEnv object but where you also do not want
+    to modify the execution environment (i.e. you just want to run code in the
+    existing Python environment).
+    """
+
+    @classmethod
+    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
+        return cls()
+
+    def activate(self) -> None:
+        print("VirtualEnv: Running in outer Python environment")
+
+    def deactivate(self) -> None:
+        pass
+
+    def create_virtual_env(self) -> None:
+        pass
+
+    def install_requirements_file(
+        self, req_path: Path, pip_flags: dict = None
+    ) -> None:
+        pass
 
 
 @contextmanager

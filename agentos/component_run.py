@@ -1,7 +1,9 @@
 import tempfile
-from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 from pathlib import Path
-from typing import Any, Optional, Mapping
+from typing import Any, Mapping, Optional
+
+from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
+
 from agentos.exceptions import PythonComponentSystemException
 from agentos.identifiers import RunIdentifier
 from agentos.registry import Registry
@@ -83,7 +85,7 @@ class ComponentRun(Run):
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
-            f"PCS Component '{self.run_command.component.identifier.full}' "
+            f"PCS Component '{self.run_command.component.identifier}' "
             f"at Entry Point '{self.run_command.entry_point}'",
         )
         self._return_value = None

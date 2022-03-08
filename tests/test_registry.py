@@ -1,17 +1,18 @@
 """Test suite for AgentOS Registry."""
 import pytest
+
+from agentos.argument_set import ArgumentSet
+from agentos.repo import Repo
+from agentos.component import Component
+from agentos.registry import Registry
+from agentos.utils import generate_dummy_dev_registry
 from tests.utils import (
-    is_linux,
-    RANDOM_AGENT_DIR,
     CHATBOT_AGENT_DIR,
+    RANDOM_AGENT_DIR,
+    is_linux,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
 )
-from agentos.argument_set import ArgumentSet
-from agentos.repo import Repo
-from agentos.registry import Registry
-from agentos.component import Component
-from agentos.utils import generate_dummy_dev_registry
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
@@ -75,7 +76,9 @@ def test_registry_integration(venv):
         },
     }
     registry = Registry.from_dict(generate_dummy_dev_registry())
-    component = Component.from_registry(registry, "acme_r2d2_agent")
+    component = Component.from_registry(
+        registry, "acme_r2d2_agent", use_venv=False
+    )
     component.run_with_arg_set("evaluate", ArgumentSet(args))
 
 
@@ -108,14 +111,14 @@ def test_registry_from_dict():
 
 
 def test_registry_from_file():
-    from agentos.exceptions import RegistryException
     from agentos.argument_set import ArgumentSet
+    from agentos.exceptions import RegistryException
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
     random_local_ag = Component.from_registry(r, "agent")
     assert random_local_ag.name == "agent"
     assert not random_local_ag.version
-    assert random_local_ag.identifier.full == "agent"
+    assert random_local_ag.identifier == "agent"
     assert "environment" in random_local_ag.dependencies.keys()
     assert (
         random_local_ag.dependencies["environment"].identifier == "environment"

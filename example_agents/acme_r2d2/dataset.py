@@ -1,10 +1,11 @@
 # TODO - update reqs
-import agentos
-from acme import datasets
-import tensorflow as tf
-from acme.tf import utils as tf2_utils
-from acme.adders import reverb as adders
 import reverb
+import tensorflow as tf
+from acme import datasets
+from acme.adders import reverb as adders
+from acme.tf import utils as tf2_utils
+
+import agentos
 
 
 class ReverbDataset(agentos.Dataset):

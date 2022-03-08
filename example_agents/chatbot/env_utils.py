@@ -1,7 +1,8 @@
-import numpy as np
-from sys import stdin
 import threading
 import time
+from sys import stdin
+
+import numpy as np
 
 
 class RandomSpeaker(threading.Thread):

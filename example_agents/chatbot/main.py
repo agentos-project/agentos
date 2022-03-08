@@ -1,8 +1,10 @@
-import agentos
 from collections import deque
+
+from numpy import random as np_random
+
+import agentos
 from example_agents.chatbot.env import MultiChatEnv
 from example_agents.chatbot.env_utils import CommandLineClient
-from numpy import random as np_random
 
 
 class ChatBot(agentos.Runnable):

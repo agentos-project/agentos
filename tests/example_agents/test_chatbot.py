@@ -1,5 +1,5 @@
-from example_agents.chatbot.main import ChatBot
 from example_agents.chatbot.env import MultiChatEnv
+from example_agents.chatbot.main import ChatBot
 
 
 def test_chatbot(capsys):

@@ -1,9 +1,10 @@
 # Thin wrapper around cartpole from OpenAI's Gym toolkit
 # This env models a cart with a pole balancing on top of it
-import agentos
-from gym.envs.classic_control.cartpole import CartPoleEnv
-from dm_env import specs
 import numpy as np
+from dm_env import specs
+from gym.envs.classic_control.cartpole import CartPoleEnv
+
+import agentos
 
 
 class CartPole(CartPoleEnv, agentos.Environment):

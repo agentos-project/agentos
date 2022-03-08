@@ -1,14 +1,15 @@
 from hashlib import sha1
 from typing import TYPE_CHECKING
+
+from agentos.identifiers import RunCommandIdentifier, RunIdentifier
 from agentos.registry import Registry
-from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
-from agentos.identifiers import RunIdentifier, RunCommandIdentifier
 from agentos.run import Run
+from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 
 # Avoids circular imports
 if TYPE_CHECKING:
-    from agentos.component import Component
     from agentos.argument_set import ArgumentSet
+    from agentos.component import Component
 
 
 class RunCommand:
@@ -58,7 +59,7 @@ class RunCommand:
         # Not positive if this is stable across architectures.
         # See https://stackoverflow.com/q/27522626
         hash_str = (
-            self._component.identifier.full
+            self._component.identifier
             + self._entry_point
             + self._argument_set.identifier
         )
@@ -115,8 +116,8 @@ class RunCommand:
             spec_identifier = key
             inner_spec = value
         component_id = inner_spec[RunCommandSpecKeys.COMPONENT_ID]
-        from agentos.component import Component
         from agentos.argument_set import ArgumentSet
+        from agentos.component import Component
 
         component = Component.from_registry(registry, component_id)
         arg_set = ArgumentSet.from_spec(
@@ -196,7 +197,7 @@ class RunCommand:
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
         flat_spec = {
             RunCommandSpecKeys.IDENTIFIER: self.identifier,
-            RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
+            RunCommandSpecKeys.COMPONENT_ID: str(self._component.identifier),
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
             RunCommandSpecKeys.PARAMETER_SET: self._argument_set.to_spec(),
         }

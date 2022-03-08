@@ -1,40 +1,42 @@
 import abc
+import json
 import logging
 import os
-import yaml
-import json
 import pprint
 import shutil
 import tarfile
 import tempfile
-import requests
 from pathlib import Path
-from typing import Dict, Sequence, Union, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
+
+import requests
+import yaml
 from dotenv import load_dotenv
+
 from agentos.identifiers import (
     ComponentIdentifier,
-    RunIdentifier,
     RepoIdentifier,
     RunCommandIdentifier,
+    RunIdentifier,
 )
 from agentos.specs import (
-    flatten_spec,
-    unflatten_spec,
-    is_flat,
-    json_encode_flat_spec_field,
-    RepoSpec,
     ComponentSpec,
     NestedComponentSpec,
-    RunSpec,
+    RepoSpec,
     RunCommandSpec,
+    RunSpec,
+    flatten_spec,
+    is_flat,
+    json_encode_flat_spec_field,
+    unflatten_spec,
 )
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from agentos.component import Component
-    from agentos.run import Run
     from agentos.repo import Repo
+    from agentos.run import Run
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -243,8 +245,7 @@ class Registry(abc.ABC):
                 return {}
         if len(components) > 1:
             versions = [
-                ComponentIdentifier.from_str(c_id).version
-                for c_id in components.keys()
+                ComponentIdentifier(c_id).version for c_id in components.keys()
             ]
             version_str = "\n - ".join(versions)
             raise LookupError(
@@ -259,7 +260,7 @@ class Registry(abc.ABC):
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = False,
     ) -> Optional[ComponentSpec]:
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         return self.get_component_spec(
             identifier.name, identifier.version, flatten=flatten
         )
@@ -269,7 +270,7 @@ class Registry(abc.ABC):
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = True,
     ) -> (Sequence[ComponentSpec], Sequence[RepoSpec]):
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         component_identifiers = [identifier]
         repo_specs = {}
         component_specs = {}
@@ -282,9 +283,7 @@ class Registry(abc.ABC):
             repo_spec = self.get_repo_spec(repo_id, flatten=flatten)
             repo_specs[repo_id] = repo_spec
             for d_id in inner_spec.get("dependencies", {}).values():
-                component_identifiers.append(
-                    ComponentIdentifier.from_str(d_id)
-                )
+                component_identifiers.append(ComponentIdentifier(d_id))
         return list(component_specs.values()), list(repo_specs.values())
 
     def has_component_by_id(self, identifier: ComponentIdentifier) -> bool:
@@ -384,7 +383,7 @@ class InMemoryRegistry(Registry):
             try:
                 components = {}
                 for k, v in self._registry["components"].items():
-                    candidate_id = ComponentIdentifier.from_str(k)
+                    candidate_id = ComponentIdentifier(k)
                     passes_filter = True
                     if filter_by_name and candidate_id.name != filter_by_name:
                         passes_filter = False

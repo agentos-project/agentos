@@ -1,8 +1,8 @@
 import pprint
-import yaml
 from pathlib import Path
 from typing import Dict, Optional
 
+import yaml
 
 AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"

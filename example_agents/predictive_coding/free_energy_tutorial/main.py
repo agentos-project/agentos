@@ -2,12 +2,14 @@
 Based on https://sciencedirect.com/science/article/pii/S0022249615000759
 by Rafal Bogacz.
 """
-import agentos
 from collections import defaultdict
 from decimal import Decimal
+
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
+
+import agentos
 
 np.random.seed(47)
 

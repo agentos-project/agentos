@@ -1,16 +1,15 @@
 from django.test import LiveServerTestCase
-from agentos.registry import WebRegistry
-from registry.models import (
-    Repo as RepoModel,
-    Component as ComponentModel,
-    RunCommand as RunCommandModel,
-    Run as RunModel,
-)
-from agentos.component_run import ComponentRun
-from agentos.run_command import RunCommand
+from registry.models import Component as ComponentModel
+from registry.models import Repo as RepoModel
+from registry.models import Run as RunModel
+from registry.models import RunCommand as RunCommandModel
+
 from agentos.component import Component
+from agentos.component_run import ComponentRun
+from agentos.registry import WebRegistry
 from agentos.repo import Repo
-from tests.utils import TESTING_GITHUB_REPO_URL, TESTING_BRANCH_NAME
+from agentos.run_command import RunCommand
+from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 
 agentos_repo_spec = {
     "AgentOSRepo": {
@@ -41,6 +40,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             file_path="tests/test_web_registry.py",
             class_name="SimpleComponent",
             instantiate=True,
+            use_venv=False,
         )
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run_with_arg_set(
@@ -57,13 +57,14 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
 
         # Test fetching all of the specs that were recursively added.
         wr_comp_run = ComponentRun.from_registry(
-            web_registry, comp_run.identifier
+            web_registry,
+            comp_run.identifier,
         )
         wr_run_cmd = RunCommand.from_registry(
             web_registry, wr_comp_run.run_command.identifier
         )
         wr_comp = Component.from_registry(
-            web_registry, wr_run_cmd.component.identifier
+            web_registry, wr_run_cmd.component.identifier, use_venv=False
         )
         wr_repo = Repo.from_registry(web_registry, wr_comp.repo.identifier)
         self.assertEqual(wr_repo.identifier, agentos_repo.identifier)
@@ -98,6 +99,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             file_path="tests/test_web_registry.py",
             class_name="SimpleComponent",
             instantiate=True,
+            use_venv=False,
         )
         self.assertEqual(simple_component.repo.identifier, "AgentOSRepo")
         simple_dependency = Component.from_repo(
@@ -106,6 +108,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             file_path="tests/test_web_registry.py",
             class_name="SimpleComponent",
             instantiate=True,
+            use_venv=False,
         )
         simple_component.add_dependency(simple_dependency, "dep")
 
@@ -115,6 +118,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             file_path="tests/test_web_registry.py",
             class_name="SimpleComponent",
             instantiate=True,
+            use_venv=False,
         )
         simple_component.add_dependency(another_dependency, "deptwo")
 
