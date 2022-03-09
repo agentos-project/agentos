@@ -2,12 +2,6 @@
 from unittest.mock import DEFAULT, patch
 
 import pytest
-from tests.utils import (
-    TESTING_GITHUB_ACCOUNT,
-    TESTING_GITHUB_REPO,
-    TESTING_BRANCH_NAME,
-    is_linux,
-)
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
@@ -16,6 +10,11 @@ from agentos.component_run import ComponentRun
 from agentos.repo import Repo
 from agentos.run_command import RunCommand
 from agentos.virtual_env import auto_revert_venv
+from tests.utils import (
+    TESTING_BRANCH_NAME,
+    TESTING_GITHUB_ACCOUNT,
+    TESTING_GITHUB_REPO,
+)
 
 
 # We define these classes at the module global level so that
@@ -163,15 +162,3 @@ def test_module_component_from_agentos_github_repo():
     ag_c.add_dependency(ds_c, "dataset")
 
     ag_c.run("run_episode")
-
-
-#@pytest.mark.skipif(not is_linux(), reason="Installing h5py fails on Windows")
-def test_module_component_from_ilya_github_repo():
-    ilya_repo = Repo.from_github("ikostrikov", "pytorch-a2c-ppo-acktr-gail")
-    main_mod = Component.from_repo(
-        ilya_repo,
-        "ilya==41332b78dfb50321c29bade65f9d244387f68a60",
-        file_path="main.py",
-        requirements_path="requirements.txt",
-    )
-    assert main_mod.get_object().__class__.__name__ == "module"
