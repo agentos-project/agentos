@@ -2,6 +2,12 @@
 from unittest.mock import DEFAULT, patch
 
 import pytest
+from tests.utils import (
+    TESTING_GITHUB_ACCOUNT,
+    TESTING_GITHUB_REPO,
+    TESTING_BRANCH_NAME,
+    is_linux,
+)
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
@@ -131,15 +137,41 @@ def test_component_from_github_no_venv():
         random_component.run_with_arg_set("evaluate")
 
 
+def test_module_component_from_agentos_github_repo():
+    repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    c_suff = f"=={TESTING_BRANCH_NAME}"
+    f_pref = "example_agents/random/"
+    ag_c = Component.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
+    env_c = Component.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
+    pol_c = Component.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
+    ds_c = Component.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
+
+    ag_c.instantiate = True
+    ag_c.class_name = "BasicAgent"
+
+    env_c.instantiate = True
+    env_c.class_name = "Corridor"
+    ag_c.add_dependency(env_c, "environment")
+
+    pol_c.instantiate = True
+    pol_c.class_name = "RandomPolicy"
+    ag_c.add_dependency(pol_c, "policy")
+    pol_c.add_dependency(env_c, "environment")
+
+    ds_c.instantiate = True
+    ds_c.class_name = "BasicDataset"
+    ag_c.add_dependency(ds_c, "dataset")
+
+    ag_c.run("run_episode")
+
+
+#@pytest.mark.skipif(not is_linux(), reason="Installing h5py fails on Windows")
 def test_module_component_from_ilya_github_repo():
     ilya_repo = Repo.from_github("ikostrikov", "pytorch-a2c-ppo-acktr-gail")
-    print(ilya_repo.get_local_repo_dir("master"))
     main_mod = Component.from_repo(
         ilya_repo,
-        "ilya==master",
+        "ilya==41332b78dfb50321c29bade65f9d244387f68a60",
         file_path="main.py",
         requirements_path="requirements.txt",
     )
-    print(dir(main_mod.get_object()))
     assert main_mod.get_object().__class__.__name__ == "module"
-    # main_mod.run("main")
