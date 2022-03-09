@@ -502,12 +502,11 @@ class Component:
         component_spec_content = {
             "repo": self.repo.identifier,
             "file_path": str(self.file_path),
+            "dependencies": dependencies,
         }
-        if dependencies:
-            component_spec_content["dependencies"] = dependencies
         if self.class_name:
             component_spec_content["class_name"] = self.class_name
-        if self.instantiate is not None:
+        if self.instantiate is not None:  # Include if it's value is False too.
             component_spec_content["instantiate"] = self.instantiate
         if self.requirements_path:
             component_spec_content["requirements_path"] = str(
