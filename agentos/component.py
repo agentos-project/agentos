@@ -67,9 +67,9 @@ class Component:
         self.file_path = file_path
         self.requirements_path = requirements_path
         if not class_name:
-            assert not instantiate, (
-                "instantiate can only be True if a class_name is provided"
-            )
+            assert (
+                not instantiate
+            ), "instantiate can only be True if a class_name is provided"
         if instantiate is None:  # default case.
             self.instantiate = bool(class_name)
         else:
@@ -102,7 +102,9 @@ class Component:
 
             https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
         """
-        project, repo, branch, reg_file_path = parse_github_web_ui_url(github_url)
+        project, repo, branch, reg_file_path = parse_github_web_ui_url(
+            github_url
+        )
         version = version or branch
         repo = Repo.from_github(project, repo)
         registry = Registry.from_file_in_repo(repo, reg_file_path, version)

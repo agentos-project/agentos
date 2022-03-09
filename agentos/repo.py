@@ -408,8 +408,8 @@ class LocalRepo(Repo):
         assert version is None, "LocalRepos don't support versioning."
         return self.local_dir
 
-    def get_local_file_path(self,
-        relative_path: str, version: str = None
+    def get_local_file_path(
+        self, relative_path: str, version: str = None
     ) -> Path:
         if version is not None:
             print(

@@ -91,6 +91,8 @@ class Registry(abc.ABC):
         py_file_suffixes: Sequence[str] = [".py", ".python"],
         requirements_file: str = "requirements.txt",
     ):
+        from agentos.component import Component  # Avoid circular ref.
+
         reg = InMemoryRegistry()
         # get list of python files in Repo
         py_files = set()
@@ -112,8 +114,6 @@ class Registry(abc.ABC):
                 component_init_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )
-            from agentos.component import Component  # Avoid circular ref.
-
             mod_component = Component(**component_init_kwargs)
             # TODO: add depenendencies to component for every import
             #       statement in the file (or just the ones at the

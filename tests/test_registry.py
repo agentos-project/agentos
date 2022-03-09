@@ -2,16 +2,16 @@
 import pytest
 
 from agentos.argument_set import ArgumentSet
-from agentos.repo import Repo
 from agentos.component import Component
 from agentos.registry import Registry
+from agentos.repo import Repo
 from agentos.utils import generate_dummy_dev_registry
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
-    is_linux,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
+    is_linux,
 )
 
 
