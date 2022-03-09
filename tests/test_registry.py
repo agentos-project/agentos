@@ -155,6 +155,4 @@ def test_registry_from_repo():
     reg = Registry.from_repo_inferred(
         repo, requirements_file="dev-requirements.txt"
     )
-    print(reg.to_dict())
-    reg.to_yaml("/tmp/reg_out.yaml")
-    assert reg
+    assert "module:agentos__component.py" in reg.to_dict()["components"]
