@@ -1,4 +1,5 @@
 import pprint
+import shutil
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -58,6 +59,25 @@ def parse_github_web_ui_url(
     branch_name = split_url[3]
     repo_path = "/".join(split_url[4:])
     return project_name, repo_name, branch_name, repo_path
+
+
+def _clear_cache_path(cache_path: Path, assume_yes: bool):
+    cache_path = Path(cache_path).absolute()
+    if not cache_path.exists():
+        print(f"Cache path {cache_path} does not exist.  Aborting...")
+        return
+    answer = None
+    if assume_yes:
+        answer = "y"
+    else:
+        answer = input(
+            f"This will remove everything under {cache_path}. Continue? [Y/N] "
+        )
+    if assume_yes or answer.lower() in ["y", "yes"]:
+        shutil.rmtree(cache_path)
+        print("Cache cleared...")
+        return
+    print("Aborting...")
 
 
 def generate_dummy_dev_registry(

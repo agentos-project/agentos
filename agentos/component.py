@@ -450,10 +450,11 @@ class Component:
         for c in self.dependency_list(include_parents=True):
             if c.requirements_path is None:
                 continue
-            full_req_path = self.repo.get_local_file_path(
-                c.requirements_path, c.identifier.version
-            ).absolute()
-            req_paths.add(full_req_path)
+            for req_path in c.requirements_path.split(";"):
+                full_req_path = self.repo.get_local_file_path(
+                    req_path, c.identifier.version
+                ).absolute()
+                req_paths.add(full_req_path)
         return VirtualEnv.from_requirements_paths(req_paths)
 
     def _handle_repo_spec(self, repos):

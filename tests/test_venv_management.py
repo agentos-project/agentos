@@ -4,6 +4,9 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
+from agentos.component import Component
+from agentos.repo import Repo
+from agentos.specs import RepoSpecKeys
 from agentos.virtual_env import VirtualEnv
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
@@ -37,6 +40,7 @@ def test_venv_management(tmpdir):
     touch_test.touch()
     assert touch_test.exists()
     VirtualEnv.clear_env_cache(env_cache_path=env_cache_path, assume_yes=True)
+    Repo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
     assert not touch_test.exists()
 
     # Should fail because of --no_venv
@@ -65,10 +69,7 @@ def test_venv_repl(tmpdir):
 
     # These packages are not found in our venv either
     with venv:
-        with pytest.raises(ModuleNotFoundError):
-            import arrow  # noqa: F401
-        with pytest.raises(ModuleNotFoundError):
-            import bottle  # noqa: F401
+        _confirm_modules_not_in_env()
 
     req_file = TEST_VENV_AGENT_DIR / "requirements.txt"
     venv.install_requirements_file(req_file)
@@ -85,3 +86,24 @@ def test_venv_repl(tmpdir):
     import bottle  # noqa: F401 F811
 
     venv.deactivate()
+
+
+def test_setup_py_agent():
+    _clean_up_sys_modules()
+    _confirm_modules_not_in_env()
+    local_repo_spec = {
+        "local__setup_py_agent__repo": {
+            RepoSpecKeys.TYPE: "local",
+            RepoSpecKeys.PATH: "test_agents/setup_py_agent/",
+        }
+    }
+    base_dir = Path(__file__).parent
+    agent_repo = Repo.from_spec(local_repo_spec, base_dir=base_dir)
+    agent_c = Component.from_repo(
+        repo=agent_repo,
+        identifier="BasicAgent",
+        class_name="BasicAgent",
+        file_path="./agent.py",
+        requirements_path="./setup.py",
+    )
+    agent_c.run("evaluate")

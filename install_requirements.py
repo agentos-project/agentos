@@ -11,28 +11,27 @@ ACME_DQN_REQS_PATH = EXAMPLE_AGENT_PATH / "acme_dqn" / "requirements.txt"
 ACME_R2D2_REQS_PATH = EXAMPLE_AGENT_PATH / "acme_r2d2" / "requirements.txt"
 WEB_REQS_PATH = REPO_ROOT / "web" / "requirements.txt"
 
+PYTORCH_CPU_URL = "https://download.pytorch.org/whl/cpu/torch_stable.html"
+
 
 def install_with_pip(pip):  # install with given pip
-    subprocess.run([pip, "install", "-r", DEV_REQS_PATH])
+    _run([pip, "install", "-r", DEV_REQS_PATH])
     if sys.platform == "linux":
         # Get CPU-only version of torch in case CUDA is not proper configured
-        subprocess.run(
-            [
-                pip,
-                "install",
-                "-r",
-                RLLIB_REQS_PATH,
-                "-f",
-                "https://download.pytorch.org/whl/torch_stable.html",
-            ]
-        )
-        subprocess.run([pip, "install", "-r", ACME_DQN_REQS_PATH])
-        subprocess.run([pip, "install", "-r", ACME_R2D2_REQS_PATH])
+        _run([pip, "install", "-r", RLLIB_REQS_PATH, "-f", PYTORCH_CPU_URL])
+        _run([pip, "install", "-r", SB3_REQS_PATH, "-f", PYTORCH_CPU_URL])
+        _run([pip, "install", "-r", ACME_DQN_REQS_PATH])
+        _run([pip, "install", "-r", ACME_R2D2_REQS_PATH])
     else:
-        subprocess.run([pip, "install", "-r", RLLIB_REQS_PATH])
-    subprocess.run([pip, "install", "-r", SB3_REQS_PATH])
-    subprocess.run([pip, "install", "-r", WEB_REQS_PATH])
-    subprocess.run([pip, "install", "-e", REPO_ROOT])
+        _run([pip, "install", "-r", RLLIB_REQS_PATH])
+        _run([pip, "install", "-r", SB3_REQS_PATH])
+    _run([pip, "install", "-r", WEB_REQS_PATH])
+    _run([pip, "install", "-e", REPO_ROOT])
+
+
+def _run(cmd):
+    print(f"\n==========\nRUNNING:\n\t{cmd }\n==========\n")
+    subprocess.run(cmd)
 
 
 def install_requirements():

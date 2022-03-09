@@ -1,6 +1,6 @@
 # agentos_pip_cmdline:
 #   linux:
-#       "-f": "https://download.pytorch.org/whl/torch_stable.html"
+#       "-f": "https://download.pytorch.org/whl/cpu/torch_stable.html"
 
 stable_baselines3==1.4.0
 dm-env==1.5
