@@ -1,6 +1,5 @@
 import hashlib
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -10,7 +9,7 @@ from typing import Sequence
 
 import yaml
 
-from agentos.utils import AOS_GLOBAL_REQS_DIR
+from agentos.utils import AOS_GLOBAL_REQS_DIR, _clear_cache_path
 
 
 class VirtualEnv:
@@ -73,19 +72,7 @@ class VirtualEnv:
         for Components.  Pass True to ``assume_yes`` to run non-interactively.
         """
         env_cache_path = env_cache_path or AOS_GLOBAL_REQS_DIR
-        answer = None
-        if assume_yes:
-            answer = "y"
-        else:
-            answer = input(
-                f"This will remove everything under {env_cache_path}.  "
-                "Continue? [Y/N] "
-            )
-        if assume_yes or answer.lower() in ["y", "yes"]:
-            shutil.rmtree(env_cache_path)
-            print("Cache cleared...")
-            return
-        print("Aborting...")
+        _clear_cache_path(env_cache_path, assume_yes)
 
     def _save_default_env_info(self):
         self._default_sys_path = [p for p in sys.path]
@@ -103,25 +90,25 @@ class VirtualEnv:
         """
         assert self.venv_path.exists(), f"{self.venv_path} does not exist!"
         self._save_default_env_info()
-        self._set_venv_sys_path()
-        self._set_venv_sys_attributes()
-        self._set_venv_sys_environment()
+        self._exec_activate_this_script()
         self._venv_is_active = True
         print(f"VirtualEnv: Running in Python venv at {self.venv_path}")
 
-    def _set_venv_sys_path(self):
-        sys_path_copy = [p for p in sys.path]
-        self._clear_sys_path()
-        for p in sys_path_copy:
-            if p.startswith(sys.base_prefix):
-                sys.path.append(p)
+    def _exec_activate_this_script(self):
+        """
+        To see how to manually activate a virtual environment in a running
+        interpreter, look at the ``activate_this.py` script automatically
+        created in the bin directory of a virtual environment.
+
+        For example, if your virtual environment is found at ``/foo/bar/venv``,
+        then you can find the script at ``/foo/bar/venv/bin/activate_this.py``.
+        """
+        scripts_path = self.venv_path / "bin"
         if sys.platform in ["win32", "win64"]:
-            sys.path.insert(0, str(self.venv_path / "Scripts"))
-            sys.path.append(str(self.venv_path / "Lib" / "site-packages"))
-        else:
-            sys.path.insert(0, str(self.venv_path / "bin"))
-            versioned_lib_path = self.venv_path / "lib" / self._py_version
-            sys.path.append(str(versioned_lib_path / "site-packages"))
+            scripts_path = self.venv_path / "Scripts"
+        activate_script_path = scripts_path / "activate_this.py"
+        with open(activate_script_path) as file_in:
+            exec(file_in.read(), {"__file__": activate_script_path})
 
     def _clear_sys_path(self):
         while len(sys.path) > 0:
@@ -197,13 +184,19 @@ class VirtualEnv:
         python_path = self.venv_path / "bin" / "python"
         if sys.platform in ["win32", "win64"]:
             python_path = self.venv_path / "Scripts" / "python.exe"
+
+        install_flag = "-r"
+        install_path = str(req_path)
+        if req_path.name == "setup.py":
+            install_flag = "-e"
+            install_path = str(req_path.parent)
         cmd = [
             str(python_path),
             "-m",
             "pip",
             "install",
-            "-r",
-            str(req_path),
+            install_flag,
+            install_path,
         ]
         embedded_pip_flags = self._get_embedded_pip_flags(req_path)
         for flag, value in embedded_pip_flags.items():

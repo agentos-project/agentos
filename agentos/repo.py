@@ -19,7 +19,7 @@ from agentos.exceptions import (
 from agentos.identifiers import ComponentIdentifier, RepoIdentifier
 from agentos.registry import InMemoryRegistry, Registry
 from agentos.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
-from agentos.utils import AOS_GLOBAL_REPOS_DIR
+from agentos.utils import AOS_GLOBAL_REPOS_DIR, _clear_cache_path
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +51,13 @@ class Repo(abc.ABC):
     @staticmethod
     def from_spec(spec: NestedRepoSpec, base_dir: str = None) -> "Repo":
         flat_spec = flatten_spec(spec)
-        if flat_spec["type"] == RepoType.LOCAL.value:
+        if flat_spec[RepoSpecKeys.TYPE] == RepoType.LOCAL.value:
             return LocalRepo.from_spec(spec, base_dir)
-        if flat_spec["type"] == RepoType.GITHUB.value:
+        if flat_spec[RepoSpecKeys.TYPE] == RepoType.GITHUB.value:
             return GitHubRepo.from_spec(spec)
         raise PythonComponentSystemException(
-            f"Unknown repo type '{flat_spec['type']} in "
-            f"repo '{flat_spec['identifier']}'"
+            f"Unknown repo type '{flat_spec[RepoSpecKeys.TYPE]} in "
+            f"repo '{flat_spec[RepoSpecKeys.IDENTIFIER]}'"
         )
 
     @classmethod
@@ -74,6 +74,17 @@ class Repo(abc.ABC):
             identifier = f"{github_account}__{repo_name}"
         url = f"https://github.com/{github_account}/{repo_name}"
         return GitHubRepo(identifier, url)
+
+    def clear_repo_cache(
+        repo_cache_path: Path = None, assume_yes: bool = False
+    ) -> None:
+        """
+        Completely removes all the repos that have been created or checked
+        out in the ``repo_cache_path``. Pass True to ``assume_yes`` to run
+        non-interactively.
+        """
+        repo_cache_path = repo_cache_path or AOS_GLOBAL_REPOS_DIR
+        _clear_cache_path(repo_cache_path, assume_yes)
 
     @abc.abstractmethod
     def to_spec(self, flatten: bool = False) -> RepoSpec:

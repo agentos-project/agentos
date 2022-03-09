@@ -12,6 +12,7 @@ import yaml
 
 from agentos import ArgumentSet, Component
 from agentos.registry import Registry
+from agentos.repo import Repo
 from agentos.run import Run
 from agentos.virtual_env import VirtualEnv
 
@@ -265,7 +266,35 @@ def publish(
 @agentos_cmd.command()
 @_option_assume_yes
 def clear_env_cache(assume_yes):
+    """
+    This command clears all virtual environments that have been cached by
+    AgentOS in your local file system.  All the virtual environments can be
+    automatically recreated when re-running a Component ``requirements_path``
+    specified.
+    """
     VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_repo_cache(assume_yes):
+    """
+    This command clears all git repos that have been cached by AgentOS on your
+    local file system.  These repos will be recreated if as you run Components
+    that require them.
+    """
+    Repo.clear_repo_cache(assume_yes=assume_yes)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_cache(assume_yes):
+    """
+    This command clears all virtual environments AND git repos that have been
+    cached by AgentOS on your local file system.
+    """
+    VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+    Repo.clear_repo_cache(assume_yes=assume_yes)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501
