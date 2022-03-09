@@ -40,7 +40,7 @@ class Component:
         identifier: ComponentIdentifier,
         file_path: str,
         class_name: str = None,
-        instantiate: bool = True,
+        instantiate: bool = None,
         requirements_path: str = None,
         dependencies: Dict = None,
         use_venv: bool = True,
@@ -49,13 +49,15 @@ class Component:
         """
         :param repo: Where the code for this component's managed object is.
         :param identifier: Used to identify the Component.
-        :param class_name: The name of the class that is being managed.
         :param file_path: The python module file where the managed class is
             defined.
-        :param requirements_path: Optional path to a pip installable file.
+        :param class_name: The name of the class that is being managed.
         :param instantiate: Optional. If True, then get_object() return an
             instance of the managed class; if False, it returns a class object.
+        :param requirements_path: Optional path to a pip installable file.
         :param dependencies: List of other components that self depends on.
+        :param use_venv: Whether to create a VM when setting up the object
+            this component manages.
         :param dunder_name: Name used for the pointer to this Component on any
             instances of ``managed_obj`` created by this Component.
         """
@@ -65,10 +67,13 @@ class Component:
         self.file_path = file_path
         self.requirements_path = requirements_path
         if not class_name:
-            assert (
-                not instantiate
-            ), "instantiate can only be True if a class_name is provided"
-        self.instantiate = instantiate
+            assert not instantiate, (
+                "instantiate can only be True if a class_name is provided"
+            )
+        if instantiate is None:  # default case.
+            self.instantiate = bool(class_name)
+        else:
+            self.instantiate = instantiate
         self.dependencies = dependencies if dependencies else {}
         self._use_venv = use_venv
         self._dunder_name = dunder_name or "__component__"
@@ -156,7 +161,7 @@ class Component:
                 "use_venv": use_venv,
             }
             if "class_name" in component_spec:
-                from_repo_args["class_name"] = component_spec["class_name"],
+                from_repo_args["class_name"] = component_spec["class_name"]
             if "requirements_path" in component_spec:
                 from_repo_args["requirements_path"] = component_spec[
                     "requirements_path"
@@ -200,7 +205,7 @@ class Component:
         managed_obj: Type[T],
         repo: Repo = None,
         identifier: str = None,
-        instantiate: bool = True,
+        instantiate: bool = None,
         use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
@@ -257,7 +262,7 @@ class Component:
         identifier: str,
         file_path: str,
         class_name: str = None,
-        instantiate: bool = False,
+        instantiate: bool = None,
         requirements_path: str = None,
         use_venv: bool = True,
         dunder_name: str = None,
@@ -424,17 +429,16 @@ class Component:
             self.file_path, self.identifier.version
         )
         assert full_path.is_file(), f"{full_path} does not exist"
-        sys.path.append(str(full_path.parent))
         suffix = f"_{self.class_name.upper()}" if self.class_name else ""
         spec = importlib.util.spec_from_file_location(
             f"AOS_MODULE{suffix}", str(full_path)
         )
         managed_obj = importlib.util.module_from_spec(spec)
         with self._build_virtual_env():
+            sys.path.append(str(full_path.parent))
             spec.loader.exec_module(managed_obj)
         if self.class_name:
             managed_obj = getattr(managed_obj, self.class_name)
-        sys.path.pop()
         return managed_obj
 
     def _build_virtual_env(self) -> VirtualEnv:
@@ -445,7 +449,7 @@ class Component:
             if c.requirements_path is None:
                 continue
             full_req_path = self.repo.get_local_file_path(
-                c.identifier.version, c.requirements_path
+                c.requirements_path, c.identifier.version
             ).absolute()
             req_paths.add(full_req_path)
         return VirtualEnv.from_requirements_paths(req_paths)

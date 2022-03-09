@@ -33,14 +33,6 @@ def test_component_instance_run():
     assert fetched_run_spec == run.to_spec()
 
 
-def test_component_class_run():
-    c = Component.from_class(Simple, instantiate=False)
-    cls = c.get_object()
-    assert cls(1).fn(2) == (1, 2)
-    assert c(1).fn(2) == (1, 2)
-    assert c.last_runs
-
-
 def test_run_tracking():
     from agentos.run import Run
 
