@@ -4,7 +4,7 @@ import sys
 import uuid
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Sequence, Type, TypeVar, Union
 
 from dill.source import getsource as dill_getsource
 from rich import print as rich_print
