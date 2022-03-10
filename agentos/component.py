@@ -103,7 +103,6 @@ class Component:
         github_url: str,
         name: str,
         version: str = None,
-        instantiate: bool = False,
         use_venv: bool = True,
     ) -> "Component":
         """
