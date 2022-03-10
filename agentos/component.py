@@ -92,6 +92,7 @@ class Component:
         self.instantiate = instantiate
         self.dependencies = dependencies if dependencies else {}
         self._use_venv = use_venv
+        self._venv = None
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
         self._parent_components = set()
@@ -394,13 +395,18 @@ class Component:
         assert fn is not None, f"{instance} has no attr {function_name}"
         fn_args = arg_set.get_function_args(self.name, function_name)
         print(f"Calling {self.name}.{function_name}(**{fn_args})")
-        with self._build_virtual_env():
-            result = fn(**fn_args)
+        result = fn(**fn_args)
         return result
 
     def add_dependency(
         self, component: "Component", attribute_name: str = None
     ) -> None:
+        if self._venv and component.requirements_path:
+            raise Exception(
+                "You cannot add a dependency with a requirements_path after a "
+                "virtual env has already been constructed and activated. Try "
+                "restarting Python and rebuilding your dependency graph"
+            )
         if type(component) is not type(self):
             raise Exception("add_dependency() must be passed a Component")
         if attribute_name is None:
@@ -443,6 +449,9 @@ class Component:
 
     def _import_object(self):
         """Return managed module, or class if ``self.class_name`` is set."""
+        if not self._venv:
+            self._venv = self._build_virtual_env()
+            self._venv.activate()
         full_path = self.repo.get_local_file_path(
             self.file_path, self.identifier.version
         )
@@ -452,15 +461,15 @@ class Component:
             f"AOS_MODULE{suffix}", str(full_path)
         )
         managed_obj = importlib.util.module_from_spec(spec)
-        with self._build_virtual_env():
-            sys.path.insert(0, str(full_path.parent))
-            spec.loader.exec_module(managed_obj)
+        sys.path.insert(0, str(full_path.parent))
+        spec.loader.exec_module(managed_obj)
         if self.class_name:
             managed_obj = getattr(managed_obj, self.class_name)
         return managed_obj
 
     def _build_virtual_env(self) -> VirtualEnv:
-        if not self._use_venv:
+        # Only the root Component will setup and activate the VirtualEnv
+        if not self._use_venv or self._parent_components:
             return NoOpVirtualEnv()
         req_paths = set()
         for c in self.dependency_list(include_parents=True):
