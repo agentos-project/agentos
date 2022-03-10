@@ -7,7 +7,7 @@ import shutil
 import tarfile
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union, Tuple
 
 import requests
 import yaml
@@ -88,7 +88,7 @@ class Registry(abc.ABC):
     def from_repo_inferred(
         cls,
         repo: "Repo",
-        py_file_suffixes: Sequence[str] = [".py", ".python"],
+        py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
         from agentos.component import Component  # Avoid circular ref.
