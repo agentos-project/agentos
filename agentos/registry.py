@@ -105,7 +105,7 @@ class Registry(abc.ABC):
             component_init_kwargs = {
                 "repo": repo,
                 "identifier": (
-                    f"module:{str(relative_path).replace('/', '__')}"
+                    f"module:{str(relative_path).replace(os.sep, '__')}"
                 ),
                 "file_path": str(relative_path),
                 "instantiate": False,
