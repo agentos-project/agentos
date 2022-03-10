@@ -102,8 +102,9 @@ def test_setup_py_agent():
     agent_c = Component.from_repo(
         repo=agent_repo,
         identifier="BasicAgent",
-        class_name="BasicAgent",
         file_path="./agent.py",
+        class_name="BasicAgent",
+        instantiate=False,
         requirements_path="./setup.py",
     )
     agent_c.run("evaluate")

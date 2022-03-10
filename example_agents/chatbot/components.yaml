@@ -9,10 +9,12 @@ components:
         repo: local_repo
         class_name: ChatBot
         file_path: ./main.py
-        dependencies: 
+        instantiate: True
+        dependencies:
             env_class: env_class
     
     env_class:
         repo: local_repo
         class_name: MultiChatEnv
         file_path: ./env.py
+        instantiate: True

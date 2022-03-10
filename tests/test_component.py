@@ -118,8 +118,7 @@ def test_component_from_github_with_venv():
     with auto_revert_venv():
         random_url = (
             "https://github.com/agentos-project/agentos/"
-            "blob/439b705c15f499f0017b49ffea4d33afa0f7a7a5/"
-            "example_agents/random/components.yaml"
+            f"blob/{TESTING_BRANCH_NAME}/example_agents/random/components.yaml"
         )
         random_component = Component.from_github_registry(
             random_url, "agent", use_venv=True
@@ -130,8 +129,8 @@ def test_component_from_github_with_venv():
 def test_component_from_github_no_venv():
     with auto_revert_venv():
         sb3_url = (
-            "https://github.com/agentos-project/agentos/"
-            "blob/master/example_agents/sb3_agent/components.yaml"
+            "https://github.com/agentos-project/agentos/blob/"
+            f"{TESTING_BRANCH_NAME}/example_agents/sb3_agent/components.yaml"
         )
         random_component = Component.from_github_registry(
             sb3_url, "sb3_agent", use_venv=False
