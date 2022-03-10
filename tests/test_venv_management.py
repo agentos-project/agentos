@@ -104,7 +104,7 @@ def test_setup_py_agent():
         identifier="BasicAgent",
         file_path="./agent.py",
         class_name="BasicAgent",
-        instantiate=False,
+        instantiate=True,
         requirements_path="./setup.py",
     )
     agent_c.run("evaluate")
