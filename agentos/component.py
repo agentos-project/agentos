@@ -4,7 +4,7 @@ import sys
 import uuid
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Dict, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Sequence, Type, TypeVar, Union, Optional
 
 from dill.source import getsource as dill_getsource
 from rich import print as rich_print
@@ -29,9 +29,19 @@ T = TypeVar("T")
 
 class Component:
     """
-    A Component is a class manager. It provides a standard way for runtime and
-    code implementations to communicate about arguments, entry points, and
-    dependencies.
+    A Component is an object manager. Objects can be Python Modules, Python
+    Classes, or Python Class Instances. The Component abstraction provides a
+    standard programmatic mechanism for managing dependencies between these
+    objects, reproducibly creating/initializing them and executing their
+    methods. You can think of methods on a managed object as "managed methods"
+    which we call "Entry Points". We call the execution of an Entry Point a
+    "Run". Components provide reproducibility by automatically tracking (i.e.,
+    logging) all of the parts that make up a Run, including: (1) the code of
+    the object being run (i.e., the Component and its Entry Point), (2) the
+    full DAG of other objects it depends on (i.e., DAG of other Components),
+    (3) the set of arguments (literally an ``ArgumentSet``) used during
+    initialization of the managed object and all objects it transitively
+    depends on, and (4) the arguments passed to the Entry Point being run.
     """
 
     def __init__(
@@ -40,20 +50,29 @@ class Component:
         identifier: ComponentIdentifier,
         file_path: str,
         class_name: str = None,
-        instantiate: bool = None,
+        instantiate: bool = False,
         requirements_path: str = None,
         dependencies: Dict = None,
         use_venv: bool = True,
         dunder_name: str = None,
     ):
         """
-        :param repo: Where the code for this component's managed object is.
+        :param repo: Repo where this component's module file can be found. The
+            ``file_path`` argument is relative to the root this Repo.
         :param identifier: Used to identify the Component.
-        :param file_path: The python module file where the managed class is
-            defined.
-        :param class_name: The name of the class that is being managed.
-        :param instantiate: Optional. If True, then get_object() return an
-            instance of the managed class; if False, it returns a class object.
+        :param file_path: Path to Python module file this Component manages.
+        :param class_name: Optionally, the name of the class that is being
+            managed. If none provided, then by default this component is a
+            managed Python Module.
+        :param instantiate: Optional. If True, this Component is a managed
+            Python Class Instance, ``class_name`` must also be passed, and
+            ``get_object()`` returns an instance of the class with name
+            ``class_name``. If False and ``class_name`` is provided, then
+            this Component is a managed Python Class and ``get_object()``
+            returns a Python Class object specified by ``class_name``.
+            If False and ``class_name`` is not provided, this Component is
+            a managed Python Module and ``get_object()`` returns a
+            Python Module object.
         :param requirements_path: Optional path to a pip installable file.
         :param dependencies: List of other components that self depends on.
         :param use_venv: Whether to create a VM when setting up the object
@@ -70,10 +89,7 @@ class Component:
             assert (
                 not instantiate
             ), "instantiate can only be True if a class_name is provided"
-        if instantiate is None:  # default case.
-            self.instantiate = bool(class_name)
-        else:
-            self.instantiate = instantiate
+        self.instantiate = instantiate
         self.dependencies = dependencies if dependencies else {}
         self._use_venv = use_venv
         self._dunder_name = dunder_name or "__component__"
@@ -87,6 +103,7 @@ class Component:
         github_url: str,
         name: str,
         version: str = None,
+        instnatiate: bool = False,
         use_venv: bool = True,
     ) -> "Component":
         """
@@ -207,7 +224,7 @@ class Component:
         managed_obj: Type[T],
         repo: Repo = None,
         identifier: str = None,
-        instantiate: bool = None,
+        instantiate: bool = False,
         use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
@@ -264,7 +281,7 @@ class Component:
         identifier: str,
         file_path: str,
         class_name: str = None,
-        instantiate: bool = None,
+        instantiate: bool = False,
         requirements_path: str = None,
         use_venv: bool = True,
         dunder_name: str = None,
@@ -504,11 +521,9 @@ class Component:
             "repo": self.repo.identifier,
             "file_path": str(self.file_path),
             "dependencies": dependencies,
+            "class_name": self.class_name,
+            "instantiate": self.instantiate,
         }
-        if self.class_name:
-            component_spec_content["class_name"] = self.class_name
-        if self.instantiate is not None:  # Include if it's value is False too.
-            component_spec_content["instantiate"] = self.instantiate
         if self.requirements_path:
             component_spec_content["requirements_path"] = str(
                 self.requirements_path

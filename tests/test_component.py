@@ -43,9 +43,11 @@ class GenericDependency:
 
 def test_component_repl_demo():
     # Generate Components from Classes
-    agent_comp = Component.from_class(SimpleAgent)
-    environment_comp = Component.from_class(SimpleEnvironment)
-    instance_comp = Component.from_class(GenericDependency)
+    agent_comp = Component.from_class(SimpleAgent, instantiate=True)
+    environment_comp = Component.from_class(
+        SimpleEnvironment, instantiate=True
+    )
+    instance_comp = Component.from_class(GenericDependency, instantiate=True)
     class_comp_with_same_name = Component.from_class(
         GenericDependency, instantiate=False
     )
@@ -59,6 +61,7 @@ def test_component_repl_demo():
     agent_comp.add_dependency(environment_comp, attribute_name="env")
     agent_comp.add_dependency(instance_comp)
     with pytest.raises(Exception):
+        # Ensure adding a dependency with same identifier raises exception.
         agent_comp.add_dependency(class_comp_with_same_name)
     agent_comp.add_dependency(class_comp_with_diff_name)
 
