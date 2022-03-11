@@ -7,7 +7,7 @@ import shutil
 import tarfile
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
 
 import requests
 import yaml
