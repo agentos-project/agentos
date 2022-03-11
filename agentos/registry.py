@@ -7,7 +7,7 @@ import shutil
 import tarfile
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
 
 import requests
 import yaml
@@ -47,6 +47,7 @@ if os.getenv("USE_LOCAL_SERVER", False) == "True":
 AOS_WEB_API_EXTENSION = "/api/v1"
 
 AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
+DEFAULT_REG_FILE = "components.yaml"
 
 
 class Registry(abc.ABC):
@@ -66,7 +67,7 @@ class Registry(abc.ABC):
         return InMemoryRegistry(config, base_dir=str(Path(file_path).parent))
 
     @classmethod
-    def from_repo(
+    def from_file_in_repo(
         cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
     ) -> "Registry":
         """
@@ -82,6 +83,54 @@ class Registry(abc.ABC):
             format == "yaml"
         ), "YAML is the only registry file format supported currently"
         return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
+
+    @classmethod
+    def from_repo_inferred(
+        cls,
+        repo: "Repo",
+        py_file_suffixes: Tuple[str] = (".py", ".python"),
+        requirements_file: str = "requirements.txt",
+    ):
+        from agentos.component import Component  # Avoid circular ref.
+
+        reg = InMemoryRegistry()
+        # get list of python files in Repo
+        py_files = set()
+        for suff in py_file_suffixes:
+            found = repo.get_local_repo_dir().rglob(f"*{suff}")
+            py_files = py_files.union(set(found))
+        # create and register module, class, and class instance components
+        for f in py_files:
+            relative_path = f.relative_to(repo.get_local_repo_dir())
+            component_init_kwargs = {
+                "repo": repo,
+                "identifier": (
+                    f"module:{str(relative_path).replace(os.sep, '__')}"
+                ),
+                "file_path": str(relative_path),
+                "instantiate": False,
+            }
+            if repo.get_local_file_path(requirements_file).is_file():
+                component_init_kwargs.update(
+                    {"requirements_path": str(requirements_file)}
+                )
+            mod_component = Component(**component_init_kwargs)
+            # TODO: add depenendencies to component for every import
+            #       statement in the file (or just the ones at the
+            #       module level?)
+            reg.add_component(mod_component)
+        return reg
+        # TODO: finish this, add class components & class instance components?
+
+    @classmethod
+    def from_repo(cls, repo: "Repo"):
+        """
+        Get a registry from a Repo. If the Repo has a default registry file,
+        use that, if not infer specs by inspecting the contents of the repo.
+        """
+        if DEFAULT_REG_FILE in repo:
+            return cls.from_file_in_repo(DEFAULT_REG_FILE)
+        return cls.from_repo_inferred(repo)
 
     @classmethod
     def from_default(cls):

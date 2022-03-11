@@ -19,9 +19,9 @@ TEST_VENV_AGENT_DIR = ROOT_DIR / "tests" / "test_agents" / "venv_agent"
 TESTING_GITHUB_ACCOUNT = "agentos-project"
 TESTING_GITHUB_REPO = "agentos"
 TESTING_GITHUB_REPO_URL = (
-    f"https://github.com/{TESTING_GITHUB_ACCOUNT}/{TESTING_GITHUB_REPO}.git"
+    f"https://github.com/{TESTING_GITHUB_ACCOUNT}/{TESTING_GITHUB_REPO}"
 )
-TESTING_BRANCH_NAME = "test_prod"
+TESTING_BRANCH_NAME = "test_staging"
 
 
 def run_test_command(cmd, cli_args=None, cli_kwargs=None):

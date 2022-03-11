@@ -12,8 +12,9 @@ def test_repo_from_github():
     agent_component = Component.from_repo(
         aos_repo,
         identifier=f"agent=={TESTING_BRANCH_NAME}",
-        class_name="Agent",
         file_path="agentos/core.py",
+        class_name="Agent",
+        instantiate=True,
     )
     assert hasattr(agent_component.get_object(), "evaluate")
     assert agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
@@ -27,8 +28,9 @@ def test_repo_from_github():
     diff_agent_component = Component.from_repo(
         aos_repo_w_custom_id,
         identifier=f"agent=={TESTING_BRANCH_NAME}",
-        class_name="Agent",
         file_path="agentos/core.py",
+        class_name="Agent",
+        instantiate=True,
     )
     assert hasattr(diff_agent_component.get_object(), "evaluate")
     assert diff_agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"

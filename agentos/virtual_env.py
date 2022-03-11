@@ -168,7 +168,7 @@ class VirtualEnv:
         """
         Installs the requirements_file pointed at by `req_path` into the
         virtual environment. ``pip_flags`` is a dictionary of command-line
-        flags to path to pip during the installation, for example:
+        flags to pass to pip during the installation, for example:
 
         ```
         {'-F': 'https://example.com/foo/bar'}

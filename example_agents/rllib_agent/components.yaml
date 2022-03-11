@@ -9,10 +9,12 @@ components:
         repo: sb3_agent_dir
         file_path: ./main.py
         class_name: RLlibAgent
-        dependencies: 
+        instantiate: True
+        dependencies:
             env: env
     
     env:
         repo: sb3_agent_dir
         file_path: ./cartpole.py
         class_name: CartPole
+        instantiate: True

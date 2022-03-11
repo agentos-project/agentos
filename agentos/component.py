@@ -29,35 +29,56 @@ T = TypeVar("T")
 
 class Component:
     """
-    A Component is a class manager. It provides a standard way for runtime and
-    code implementations to communicate about arguments, entry points, and
-    dependencies.
+    A Component is an object manager. Objects can be Python Modules, Python
+    Classes, or Python Class Instances. The Component abstraction provides a
+    standard programmatic mechanism for managing dependencies between these
+    objects, reproducibly creating/initializing them and executing their
+    methods. You can think of methods on a managed object as "managed methods"
+    which we call "Entry Points". We call the execution of an Entry Point a
+    "Run". Components provide reproducibility by automatically tracking (i.e.,
+    logging) all of the parts that make up a Run, including: (1) the code of
+    the object being run (i.e., the Component and its Entry Point), (2) the
+    full DAG of other objects it depends on (i.e., DAG of other Components),
+    (3) the set of arguments (literally an ``ArgumentSet``) used during
+    initialization of the managed object and all objects it transitively
+    depends on, and (4) the arguments passed to the Entry Point being run.
     """
 
     def __init__(
         self,
         repo: Repo,
         identifier: ComponentIdentifier,
-        class_name: str,
         file_path: str,
+        class_name: str = None,
+        instantiate: bool = False,
         requirements_path: str = None,
-        instantiate: bool = True,
         dependencies: Dict = None,
         use_venv: bool = True,
         dunder_name: str = None,
     ):
         """
-        :param repo: Where the code for this component's managed object is.
+        :param repo: Repo where this component's module file can be found. The
+            ``file_path`` argument is relative to the root this Repo.
         :param identifier: Used to identify the Component.
-        :param class_name: The name of the class that is being managed.
-        :param file_path: The python module file where the managed class is
-            defined.
+        :param file_path: Path to Python module file this Component manages.
+        :param class_name: Optionally, the name of the class that is being
+            managed. If none provided, then by default this component is a
+            managed Python Module.
+        :param instantiate: Optional. If True, this Component is a managed
+            Python Class Instance, ``class_name`` must also be passed, and
+            ``get_object()`` returns an instance of the class with name
+            ``class_name``. If False and ``class_name`` is provided, then
+            this Component is a managed Python Class and ``get_object()``
+            returns a Python Class object specified by ``class_name``.
+            If False and ``class_name`` is not provided, this Component is
+            a managed Python Module and ``get_object()`` returns a
+            Python Module object.
         :param requirements_path: Optional path to a pip installable file.
-        :param instantiate: Optional. If True, then get_object() return an
-            instance of the managed class; if False, it returns a class object.
         :param dependencies: List of other components that self depends on.
+        :param use_venv: Whether to create a VM when setting up the object
+            this component manages.
         :param dunder_name: Name used for the pointer to this Component on any
-            instances of ``managed_cls`` created by this Component.
+            managed objects created by this Component.
         """
         self.repo = repo
         self.identifier = identifier
@@ -97,14 +118,16 @@ class Component:
 
             https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
         """
-        project, repo, branch, repo_path = parse_github_web_ui_url(github_url)
+        project, repo, branch, reg_file_path = parse_github_web_ui_url(
+            github_url
+        )
         version = version or branch
         repo = Repo.from_github(project, repo)
-        registry = Registry.from_repo(repo, repo_path, version)
+        registry = Registry.from_file_in_repo(repo, reg_file_path, version)
         c_version = None
         if registry.has_component_by_name(name=name, version=version):
             c_version = version
-        component = Component.from_registry(
+        component = cls.from_registry(
             registry, name, c_version, use_venv=use_venv
         )
         return component
@@ -152,10 +175,11 @@ class Component:
             from_repo_args = {
                 "repo": repos[component_spec["repo"]],
                 "identifier": component_id,
-                "class_name": component_spec["class_name"],
                 "file_path": component_spec["file_path"],
                 "use_venv": use_venv,
             }
+            if "class_name" in component_spec:
+                from_repo_args["class_name"] = component_spec["class_name"]
             if "requirements_path" in component_spec:
                 from_repo_args["requirements_path"] = component_spec[
                     "requirements_path"
@@ -196,18 +220,18 @@ class Component:
     @classmethod
     def from_class(
         cls,
-        managed_cls: Type[T],
+        class_obj: Type[T],
         repo: Repo = None,
         identifier: str = None,
-        instantiate: bool = True,
+        instantiate: bool = False,
         use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
-        name = identifier if identifier else managed_cls.__name__
+        name = identifier if identifier else class_obj.__name__
         if (
-            managed_cls.__module__ == "__main__"
+            class_obj.__module__ == "__main__"
         ):  # handle classes defined in REPL.
-            file_contents = dill_getsource(managed_cls)
+            file_contents = dill_getsource(class_obj)
             if repo:
                 assert repo.type == RepoType.LOCAL, (
                     f"Repo '{repo.identifier}' is type {repo.type}, but must "
@@ -224,15 +248,15 @@ class Component:
                     f.write(file_contents)
                 print(f"Wrote new source file {src_file}.")
         else:
-            managed_cls_module = sys.modules[managed_cls.__module__]
-            assert hasattr(managed_cls_module, managed_cls.__name__), (
+            managed_obj_module = sys.modules[class_obj.__module__]
+            assert hasattr(managed_obj_module, class_obj.__name__), (
                 "Components can only be created from classes that are "
                 "available as an attribute of their module."
             )
-            src_file = Path(managed_cls_module.__file__)
+            src_file = Path(managed_obj_module.__file__)
             logger.debug(
-                f"Handling managed_cls {managed_cls.__name__} from existing "
-                f"source file {src_file}. dir(managed_cls): \n"
+                f"Handling class_obj {class_obj.__name__} from existing "
+                f"source file {src_file}."
             )
             repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
             logger.debug(
@@ -242,8 +266,8 @@ class Component:
         return cls(
             repo=repo,
             identifier=ComponentIdentifier(name),
-            class_name=managed_cls.__name__,
             file_path=src_file.name,
+            class_name=class_obj.__name__,
             instantiate=instantiate,
             use_venv=use_venv,
             dunder_name=dunder_name,
@@ -254,16 +278,16 @@ class Component:
         cls,
         repo: Repo,
         identifier: str,
-        class_name: str,
         file_path: str,
+        class_name: str = None,
+        instantiate: bool = False,
         requirements_path: str = None,
-        instantiate: bool = True,
         use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
         # For convenience, optionally allow 'identifier' to be passed as str.
         identifier = ComponentIdentifier(identifier)
-        full_path = repo.get_local_file_path(identifier.version, file_path)
+        full_path = repo.get_local_file_path(file_path, identifier.version)
         assert full_path.is_file(), f"{full_path} does not exist"
         return cls(
             repo=repo,
@@ -353,8 +377,8 @@ class Component:
                 c.active_run = run
             # Note: get_object() adds the dunder component attribute before
             # calling __init__ on the instance.
-            instance = self.get_object(arg_set=args)
-            res = self.call_function_with_arg_set(instance, entry_point, args)
+            obj = self.get_object(arg_set=args)
+            res = self.call_function_with_arg_set(obj, entry_point, args)
             if log_return_value:
                 run.log_return_value(res, return_value_log_format)
             for c in self.dependency_list():
@@ -418,19 +442,21 @@ class Component:
         return obj
 
     def _import_object(self):
+        """Return managed module, or class if ``self.class_name`` is set."""
         full_path = self.repo.get_local_file_path(
-            self.identifier.version, self.file_path
+            self.file_path, self.identifier.version
         )
         assert full_path.is_file(), f"{full_path} does not exist"
-        sys.path.append(str(full_path.parent))
+        suffix = f"_{self.class_name.upper()}" if self.class_name else ""
         spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE_{self.class_name.upper()}", str(full_path)
+            f"AOS_MODULE{suffix}", str(full_path)
         )
-        module = importlib.util.module_from_spec(spec)
+        managed_obj = importlib.util.module_from_spec(spec)
         with self._build_virtual_env():
-            spec.loader.exec_module(module)
-        managed_obj = getattr(module, self.class_name)
-        sys.path.pop()
+            sys.path.append(str(full_path.parent))
+            spec.loader.exec_module(managed_obj)
+        if self.class_name:
+            managed_obj = getattr(managed_obj, self.class_name)
         return managed_obj
 
     def _build_virtual_env(self) -> VirtualEnv:
@@ -442,7 +468,7 @@ class Component:
                 continue
             for req_path in c.requirements_path.split(";"):
                 full_req_path = self.repo.get_local_file_path(
-                    c.identifier.version, req_path
+                    req_path, c.identifier.version
                 ).absolute()
                 req_paths.add(full_req_path)
         return VirtualEnv.from_requirements_paths(req_paths)
@@ -493,8 +519,9 @@ class Component:
         component_spec_content = {
             "repo": self.repo.identifier,
             "file_path": str(self.file_path),
-            "class_name": self.class_name,
             "dependencies": dependencies,
+            "class_name": self.class_name,
+            "instantiate": self.instantiate,
         }
         if self.requirements_path:
             component_spec_content["requirements_path"] = str(

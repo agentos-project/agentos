@@ -1,5 +1,5 @@
-# Defined in module global namespaces since components cannot be
-# created from classes that are defined inside of functions.
+from agentos import ArgumentSet, Component
+from agentos.registry import InMemoryRegistry
 
 
 class Simple:
@@ -10,14 +10,11 @@ class Simple:
         return self._x, input
 
 
-def test_component_run():
-    from agentos import ArgumentSet, Component
-    from agentos.registry import InMemoryRegistry
-
+def test_component_instance_run():
     arg_set = ArgumentSet(
         {"Simple": {"__init__": {"x": 1}, "fn": {"input": "hi"}}}
     )
-    c = Component.from_class(Simple)
+    c = Component.from_class(Simple, instantiate=True)
     run = c.run_with_arg_set("fn", arg_set)
     assert run.run_command.component == c
     assert run.run_command.entry_point == "fn"
@@ -26,13 +23,6 @@ def test_component_run():
 
     registry = InMemoryRegistry()
     run.run_command.to_registry(registry)
-    import yaml
-
-    print(yaml.dump(registry.to_dict()))
-    print("===")
-    print(yaml.dump(registry.get_run_command_spec(run.run_command.identifier)))
-    print("===")
-    print(yaml.dump(run.run_command.to_spec()))
     assert (
         registry.get_run_command_spec(run.run_command.identifier)
         == run.run_command.to_spec()

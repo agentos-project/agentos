@@ -269,8 +269,8 @@ def clear_env_cache(assume_yes):
     """
     This command clears all virtual environments that have been cached by
     AgentOS in your local file system.  All the virtual environments can be
-    automatically recreated when re-running a Component ``requirements_path``
-    specified.
+    automatically recreated when re-running a Component that has
+    ``requirements_path`` specified.
     """
     VirtualEnv.clear_env_cache(assume_yes=assume_yes)
 
@@ -280,7 +280,7 @@ def clear_env_cache(assume_yes):
 def clear_repo_cache(assume_yes):
     """
     This command clears all git repos that have been cached by AgentOS on your
-    local file system.  These repos will be recreated if as you run Components
+    local file system.  These repos will be recreated as you run Components
     that require them.
     """
     Repo.clear_repo_cache(assume_yes=assume_yes)

@@ -7,8 +7,14 @@ from utils import run_in_dir, run_test_command
 from agentos.cli import init
 from agentos.component import Component
 from agentos.component_run import ComponentRun
+from agentos.repo import Repo
 from agentos.run_command import RunCommand
 from agentos.virtual_env import auto_revert_venv
+from tests.utils import (
+    TESTING_BRANCH_NAME,
+    TESTING_GITHUB_ACCOUNT,
+    TESTING_GITHUB_REPO,
+)
 
 
 # We define these classes at the module global level so that
@@ -37,9 +43,11 @@ class GenericDependency:
 
 def test_component_repl_demo():
     # Generate Components from Classes
-    agent_comp = Component.from_class(SimpleAgent)
-    environment_comp = Component.from_class(SimpleEnvironment)
-    instance_comp = Component.from_class(GenericDependency)
+    agent_comp = Component.from_class(SimpleAgent, instantiate=True)
+    environment_comp = Component.from_class(
+        SimpleEnvironment, instantiate=True
+    )
+    instance_comp = Component.from_class(GenericDependency, instantiate=True)
     class_comp_with_same_name = Component.from_class(
         GenericDependency, instantiate=False
     )
@@ -53,6 +61,7 @@ def test_component_repl_demo():
     agent_comp.add_dependency(environment_comp, attribute_name="env")
     agent_comp.add_dependency(instance_comp)
     with pytest.raises(Exception):
+        # Ensure adding a dependency with same identifier raises exception.
         agent_comp.add_dependency(class_comp_with_same_name)
     agent_comp.add_dependency(class_comp_with_diff_name)
 
@@ -109,8 +118,7 @@ def test_component_from_github_with_venv():
     with auto_revert_venv():
         random_url = (
             "https://github.com/agentos-project/agentos/"
-            "blob/439b705c15f499f0017b49ffea4d33afa0f7a7a5/"
-            "example_agents/random/components.yaml"
+            f"blob/{TESTING_BRANCH_NAME}/example_agents/random/components.yaml"
         )
         random_component = Component.from_github_registry(
             random_url, "agent", use_venv=True
@@ -121,10 +129,38 @@ def test_component_from_github_with_venv():
 def test_component_from_github_no_venv():
     with auto_revert_venv():
         sb3_url = (
-            "https://github.com/agentos-project/agentos/"
-            "blob/master/example_agents/sb3_agent/components.yaml"
+            "https://github.com/agentos-project/agentos/blob/"
+            f"{TESTING_BRANCH_NAME}/example_agents/sb3_agent/components.yaml"
         )
         random_component = Component.from_github_registry(
             sb3_url, "sb3_agent", use_venv=False
         )
         random_component.run_with_arg_set("evaluate")
+
+
+def test_module_component_from_agentos_github_repo():
+    repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    c_suff = f"=={TESTING_BRANCH_NAME}"
+    f_pref = "example_agents/random/"
+    ag_c = Component.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
+    env_c = Component.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
+    pol_c = Component.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
+    ds_c = Component.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
+
+    ag_c.instantiate = True
+    ag_c.class_name = "BasicAgent"
+
+    env_c.instantiate = True
+    env_c.class_name = "Corridor"
+    ag_c.add_dependency(env_c, "environment")
+
+    pol_c.instantiate = True
+    pol_c.class_name = "RandomPolicy"
+    ag_c.add_dependency(pol_c, "policy")
+    pol_c.add_dependency(env_c, "environment")
+
+    ds_c.instantiate = True
+    ds_c.class_name = "BasicDataset"
+    ag_c.add_dependency(ds_c, "dataset")
+
+    ag_c.run("run_episode")
