@@ -198,7 +198,7 @@ class RunCommand:
         return self.component.run_with_arg_set(
             self.entry_point,
             args=self.argument_set,
-            log_return_value=self.log_return_value
+            log_return_value=self.log_return_value,
         )
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
@@ -208,6 +208,5 @@ class RunCommand:
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
             RunCommandSpecKeys.ARGUMENT_SET: self._argument_set.to_spec(),
             RunCommandSpecKeys.LOG_RETURN_VALUE: self._log_return_value,
-
         }
         return flat_spec if flatten else unflatten_spec(flat_spec)

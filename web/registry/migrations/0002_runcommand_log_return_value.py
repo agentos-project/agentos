@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('registry', '0001_initial'),
+        ("registry", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='runcommand',
-            name='log_return_value',
+            model_name="runcommand",
+            name="log_return_value",
             field=models.BooleanField(default=False),
             preserve_default=False,
         ),
