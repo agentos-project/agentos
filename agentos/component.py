@@ -78,7 +78,7 @@ class Component:
         :param use_venv: Whether to create a VM when setting up the object
             this component manages.
         :param dunder_name: Name used for the pointer to this Component on any
-            instances of ``managed_obj`` created by this Component.
+            managed objects created by this Component.
         """
         self.repo = repo
         self.identifier = identifier
@@ -220,18 +220,18 @@ class Component:
     @classmethod
     def from_class(
         cls,
-        managed_obj: Type[T],
+        class_obj: Type[T],
         repo: Repo = None,
         identifier: str = None,
         instantiate: bool = False,
         use_venv: bool = True,
         dunder_name: str = None,
     ) -> "Component":
-        name = identifier if identifier else managed_obj.__name__
+        name = identifier if identifier else class_obj.__name__
         if (
-            managed_obj.__module__ == "__main__"
+            class_obj.__module__ == "__main__"
         ):  # handle classes defined in REPL.
-            file_contents = dill_getsource(managed_obj)
+            file_contents = dill_getsource(class_obj)
             if repo:
                 assert repo.type == RepoType.LOCAL, (
                     f"Repo '{repo.identifier}' is type {repo.type}, but must "
@@ -248,15 +248,15 @@ class Component:
                     f.write(file_contents)
                 print(f"Wrote new source file {src_file}.")
         else:
-            managed_obj_module = sys.modules[managed_obj.__module__]
-            assert hasattr(managed_obj_module, managed_obj.__name__), (
+            managed_obj_module = sys.modules[class_obj.__module__]
+            assert hasattr(managed_obj_module, class_obj.__name__), (
                 "Components can only be created from classes that are "
                 "available as an attribute of their module."
             )
             src_file = Path(managed_obj_module.__file__)
             logger.debug(
-                f"Handling managed_obj {managed_obj.__name__} from existing "
-                f"source file {src_file}. dir(managed_obj): \n"
+                f"Handling class_obj {class_obj.__name__} from existing "
+                f"source file {src_file}."
             )
             repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
             logger.debug(
@@ -267,7 +267,7 @@ class Component:
             repo=repo,
             identifier=ComponentIdentifier(name),
             file_path=src_file.name,
-            class_name=managed_obj.__name__,
+            class_name=class_obj.__name__,
             instantiate=instantiate,
             use_venv=use_venv,
             dunder_name=dunder_name,
