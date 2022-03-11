@@ -31,6 +31,7 @@ class RegistryTestCases(TestCase):
             entry_point="test_entry_pt",
             argument_set={},
             component=self.component,
+            log_return_value=False,
         )
         self.run = Run.objects.create(
             identifier="sklldfjiekls",
