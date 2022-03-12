@@ -7,7 +7,7 @@ To use::
 """
 
 import sys
-from subprocess import run, PIPE, STDOUT
+from subprocess import PIPE, STDOUT, run
 
 returncode = 0
 
