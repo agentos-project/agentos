@@ -102,15 +102,15 @@ class Registry(abc.ABC):
             py_files = py_files.union(set(found))
         # create and register module, class, and class instance components
         for f in py_files:
-            relative_path = f.relative_to(repo.get_local_repo_dir())
-            c_name = str(relative_path).replace(os.sep, '__')
+            relative_path = f.relative_to(
+                repo.get_local_repo_dir(version=version)
+            )
+            c_name = str(relative_path).replace(os.sep, "__")
             c_version = version if version else repo.default_version
             c_identifier = f"{c_name}=={c_version}" if c_version else c_name
             component_init_kwargs = {
                 "repo": repo,
-                "identifier": (
-                    f"module:{c_identifier}"
-                ),
+                "identifier": (f"module:{c_identifier}"),
                 "file_path": str(relative_path),
                 "instantiate": False,
             }
