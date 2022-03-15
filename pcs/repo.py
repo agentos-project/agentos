@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, Tuple, TypeVar, Union
 
-from pcs.exceptions import PythonComponentSystemException
+from pcs.spec_object import SpecObject
 from pcs.git_manager import GitManager
 from pcs.identifiers import ComponentIdentifier, RepoIdentifier
 from pcs.registry import InMemoryRegistry, Registry
@@ -24,7 +24,7 @@ class RepoType(Enum):
     GITHUB = "github"
 
 
-class Repo(abc.ABC):
+class Repo(abc.ABC, SpecObject):
     """
     Base class used to encapsulate information about where a Component
     is located.
@@ -32,14 +32,8 @@ class Repo(abc.ABC):
 
     GIT = GitManager()
 
-    def __init__(self, identifier: str, default_version: str = None):
-        self.identifier = identifier
+    def __init__(self, default_version: str = None):
         self._default_version = default_version
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Repo):
-            return self.to_spec() == other.to_spec()
-        return self == other
 
     def __contains__(self, item):
         return self.get_local_file_path(str(item)).exists()
@@ -52,24 +46,6 @@ class Repo(abc.ABC):
     def default_version(self, value: str):
         assert value, "default_version cannot be None or ''"
         self._default_version = value
-
-    @staticmethod
-    def from_spec(spec: NestedRepoSpec, base_dir: str = None) -> "Repo":
-        flat_spec = flatten_spec(spec)
-        if flat_spec[RepoSpecKeys.TYPE] == RepoType.LOCAL.value:
-            return LocalRepo.from_spec(spec, base_dir)
-        if flat_spec[RepoSpecKeys.TYPE] == RepoType.GITHUB.value:
-            return GitHubRepo.from_spec(spec)
-        raise PythonComponentSystemException(
-            f"Unknown repo type '{flat_spec[RepoSpecKeys.TYPE]} in "
-            f"repo '{flat_spec[RepoSpecKeys.IDENTIFIER]}'"
-        )
-
-    @classmethod
-    def from_registry(
-        cls, registry: Registry, identifier: RepoIdentifier
-    ) -> "Repo":
-        return cls.from_spec(registry.get_repo_spec(identifier))
 
     @classmethod
     def from_github(
@@ -90,10 +66,6 @@ class Repo(abc.ABC):
         non-interactively.
         """
         cls.GIT.clear_repo_cache(repo_cache_path, assume_yes)
-
-    @abc.abstractmethod
-    def to_spec(self, flatten: bool = False) -> RepoSpec:
-        return NotImplementedError  # type: ignore
 
     def to_registry(
         self,
@@ -175,10 +147,8 @@ class GitHubRepo(Repo):
     A Component with an GitHubRepo can be found on GitHub.
     """
 
-    def __init__(
-        self, identifier: str, url: str, default_version: str = "master"
-    ):
-        super().__init__(identifier, default_version)
+    def __init__(self, url: str, default_version: str = "master"):
+        super().__init__(default_version)
         self.type = RepoType.GITHUB
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
@@ -235,11 +205,10 @@ class LocalRepo(Repo):
     A Component with a LocalRepo can be found on your local drive.
     """
 
-    def __init__(self, identifier: str, local_dir: Union[Path, str] = None):
-        super().__init__(identifier)
+    def __init__(self, local_dir: Union[Path, str] = None):
+        super().__init__()
         if not local_dir:
             local_dir = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
-        self.type = RepoType.LOCAL
         self.local_repo_path = Path(local_dir).absolute()
         if self.local_repo_path.exists():
             assert self.local_repo_path.is_dir(), (
@@ -267,7 +236,7 @@ class LocalRepo(Repo):
             local_dir=local_path,
         )
 
-    def to_spec(self, flatten: bool = False) -> RepoSpec:
+    def to_spec(self, flatten: bool = False) -> Dict:
         spec = {
             self.identifier: {
                 RepoSpecKeys.TYPE: self.type.value,
