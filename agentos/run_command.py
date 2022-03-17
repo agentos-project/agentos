@@ -46,6 +46,22 @@ class RunCommand:
         argument_set: "ArgumentSet",
         log_return_value: bool,
     ):
+        """
+        RunCommand constructor.
+
+        :param component: The Component whose entry point is being run.
+        :param entry_point: The Entry Point being run.
+        :param argument_set: Dictionary of arguments that will be used to
+            initialize the Component plus any of its dependencies and
+            run the specified Entry Point.
+        :param log_return_value: Whether or not to log the return value
+            of the Entry point as part of this run. If True, the return
+            value will be serialized to a file per the default value of
+            the `return_value_log_format` parameter of
+            `Component.run_with_arg_set()`. If the return value is a type
+            that is not trivially serializable, you may want to set this
+            to False.
+        """
         self._component = component
         self._entry_point = entry_point
         self._argument_set = argument_set

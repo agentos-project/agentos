@@ -6,7 +6,7 @@ from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
 from agentos.exceptions import PythonComponentSystemException
 from agentos.identifiers import RunIdentifier
-from agentos.registry import Registry
+from agentos.registry import InMemoryRegistry, Registry
 from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.specs import RunSpec, flatten_spec, unflatten_spec
@@ -116,8 +116,6 @@ class ComponentRun(Run):
         include_artifacts: bool = False,
     ) -> Registry:
         if not registry:
-            from agentos.registry import InMemoryRegistry
-
             registry = InMemoryRegistry()
         spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
         if spec and not force:
