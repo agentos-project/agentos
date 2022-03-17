@@ -9,6 +9,7 @@ from agentos.utils import generate_dummy_dev_registry
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
+    TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
     is_linux,
@@ -153,6 +154,9 @@ def test_registry_from_file():
 def test_registry_from_repo():
     repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
     reg = Registry.from_repo_inferred(
-        repo, requirements_file="dev-requirements.txt"
+        repo,
+        requirements_file="dev-requirements.txt",
+        version=TESTING_BRANCH_NAME,
     )
-    assert "module:agentos__component.py" in reg.to_dict()["components"]
+    comp_name = f"module:agentos__component.py=={TESTING_BRANCH_NAME}"
+    assert comp_name in reg.to_dict()["components"]

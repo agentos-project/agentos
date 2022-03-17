@@ -40,7 +40,7 @@ class Repo(abc.ABC):
 
     UNKNOWN_URL = "unknown_url"
 
-    def __init__(self, identifier: str, default_version: str = "master"):
+    def __init__(self, identifier: str, default_version: str = None):
         self.identifier = identifier
         self._default_version = default_version
 
@@ -114,15 +114,17 @@ class Repo(abc.ABC):
         repo_spec = registry.get_repo_spec(
             self.identifier, error_if_not_found=False
         )
-        if repo_spec and not force:
-            assert repo_spec == self.to_spec(), (
-                f"A Repo with identifier '{self.identifier}' "
-                f"already exists in registry '{registry}' that differs "
-                f"from the one provided."
-                f"New repo spec:\n{self.to_spec()}\n\n"
-                f"Existing repo spec:\n{repo_spec}"
-            )
-        registry.add_repo_spec(self.to_spec())
+        if repo_spec:
+            if not force:
+                assert repo_spec == self.to_spec(), (
+                    f"A Repo with identifier '{self.identifier}' "
+                    f"already exists in registry '{registry}' that differs "
+                    f"from the one provided."
+                    f"New repo spec:\n{self.to_spec()}\n\n"
+                    f"Existing repo spec:\n{repo_spec}"
+                )
+        else:
+            registry.add_repo_spec(self.to_spec())
         return registry
 
     @abc.abstractmethod
@@ -293,8 +295,10 @@ class GitHubRepo(Repo):
     A Component with an GitHubRepo can be found on GitHub.
     """
 
-    def __init__(self, identifier: str, url: str):
-        super().__init__(identifier)
+    def __init__(
+        self, identifier: str, url: str, default_version: str = "master"
+    ):
+        super().__init__(identifier, default_version)
         self.type = RepoType.GITHUB
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")

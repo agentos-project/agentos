@@ -6,7 +6,7 @@ from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
 from agentos.exceptions import PythonComponentSystemException
 from agentos.identifiers import RunIdentifier
-from agentos.registry import Registry
+from agentos.registry import InMemoryRegistry, Registry
 from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.specs import RunSpec, flatten_spec, unflatten_spec
@@ -115,19 +115,23 @@ class ComponentRun(Run):
         force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
         spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
         if spec and not force:
             assert spec == self.to_spec(), (
                 f"A component run spec with identifier '{self.identifier}' "
                 f"already exists in registry '{registry}' and differs from "
                 "the one being added. Use force=True to overwrite the "
-                "existing one."
+                "existing one.:\n\n"
+                f"{spec}\n\n"
+                f"{self.to_spec()}"
             )
         if recurse:
             self.run_command.to_registry(
                 registry, recurse=recurse, force=force
             )
-        super().to_registry(
+        return super().to_registry(
             registry, include_artifacts=include_artifacts, force=force
         )
 

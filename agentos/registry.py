@@ -88,6 +88,7 @@ class Registry(abc.ABC):
     def from_repo_inferred(
         cls,
         repo: "Repo",
+        version: str = None,
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
@@ -97,16 +98,19 @@ class Registry(abc.ABC):
         # get list of python files in Repo
         py_files = set()
         for suff in py_file_suffixes:
-            found = repo.get_local_repo_dir().rglob(f"*{suff}")
+            found = repo.get_local_repo_dir(version=version).rglob(f"*{suff}")
             py_files = py_files.union(set(found))
         # create and register module, class, and class instance components
         for f in py_files:
-            relative_path = f.relative_to(repo.get_local_repo_dir())
+            relative_path = f.relative_to(
+                repo.get_local_repo_dir(version=version)
+            )
+            c_name = str(relative_path).replace(os.sep, "__")
+            c_version = version if version else repo.default_version
+            c_identifier = f"{c_name}=={c_version}" if c_version else c_name
             component_init_kwargs = {
                 "repo": repo,
-                "identifier": (
-                    f"module:{str(relative_path).replace(os.sep, '__')}"
-                ),
+                "identifier": (f"module:{c_identifier}"),
                 "file_path": str(relative_path),
                 "instantiate": False,
             }
@@ -621,7 +625,7 @@ class WebRegistry(Registry):
         for spec_key, spec_val in [
             (k, v)
             for k, v in flat_spec.items()
-            if k.endswith("_link") or not v
+            if k.endswith("_link") or v is None
         ]:
             logger.debug(
                 f"Dropping field '{spec_key}: {spec_val}' from spec "

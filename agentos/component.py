@@ -371,7 +371,7 @@ class Component:
                 args = ArgumentSet(args)
         else:
             args = ArgumentSet()
-        run_command = RunCommand(self, entry_point, args)
+        run_command = RunCommand(self, entry_point, args, log_return_value)
         with ComponentRun.from_run_command(run_command) as run:
             for c in self.dependency_list():
                 c.active_run = run
@@ -453,7 +453,7 @@ class Component:
         )
         managed_obj = importlib.util.module_from_spec(spec)
         with self._build_virtual_env():
-            sys.path.append(str(full_path.parent))
+            sys.path.insert(0, str(full_path.parent))
             spec.loader.exec_module(managed_obj)
         if self.class_name:
             managed_obj = getattr(managed_obj, self.class_name)

@@ -213,14 +213,16 @@ class RunCommand(TimeStampedModel):
     identifier = models.CharField(max_length=200, primary_key=True)
     entry_point = models.CharField(max_length=200)
     argument_set = models.JSONField(default=dict)
+    log_return_value = models.BooleanField()
     component = models.ForeignKey(
         Component, on_delete=models.CASCADE, to_field="identifier"
     )
 
     def __str__(self):
         return (
-            f"entry point {self.entry_point}, and argument_set "
-            f"{self.argument_set}>"
+            f"identifier {self.identifier} with entry point "
+            f"{self.entry_point}, argument_set {self.argument_set}, "
+            f"and log_return_value {self.log_return_value}>"
         )
 
 
