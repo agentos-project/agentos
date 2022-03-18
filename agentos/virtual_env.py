@@ -88,6 +88,8 @@ class VirtualEnv:
         activated, an import statement (e.g. run by a Component) will execute
         within the virtual environment.
         """
+        if self._venv_is_active:
+            return
         assert self.venv_path.exists(), f"{self.venv_path} does not exist!"
         self._save_default_env_info()
         self._exec_activate_this_script()
@@ -217,22 +219,26 @@ class VirtualEnv:
         subprocess.run(cmd, env=component_env)
 
     def _build_virtual_env(self, req_paths: Sequence):
-        req_paths = set(req_paths)
-        sorted_req_paths = sorted(p for p in req_paths)
+        hashed = self._hash_req_paths(req_paths)
+        self.venv_path = self._env_cache_path / self._py_version / hashed
+        if not self.venv_path.exists():
+            self.create_virtual_env()
+            for req_path in self._sort_req_paths(req_paths):
+                self.install_requirements_file(req_path)
+
+    def _hash_req_paths(self, req_paths: Sequence) -> str:
+        sorted_req_paths = self._sort_req_paths(req_paths)
         to_hash = hashlib.sha256()
         to_hash.update("empty".encode("utf-8"))
         for req_path in sorted_req_paths:
             with req_path.open() as file_in:
                 reqs_data = file_in.read()
                 to_hash.update(reqs_data.encode("utf-8"))
-        hashed = to_hash.hexdigest()
-        self.venv_path = self._env_cache_path / self._py_version / hashed
+        return to_hash.hexdigest()
 
-        if not self.venv_path.exists():
-            self.create_virtual_env()
-
-            for req_path in sorted_req_paths:
-                self.install_requirements_file(req_path)
+    def _sort_req_paths(self, req_paths: Sequence) -> list:
+        req_paths = set(req_paths)
+        return sorted(p for p in req_paths)
 
     def _get_embedded_pip_flags(self, req_path: Path) -> dict:
         """
