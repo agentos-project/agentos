@@ -14,7 +14,7 @@ from agentos.core import (
     Trainer,
 )
 from agentos.registry import Registry
-from agentos.repo import GitHubRepo, LocalRepo, Repo
+from pcs.repo import GitHubRepo, LocalRepo, Repo
 from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.specs import (

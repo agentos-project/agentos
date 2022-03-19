@@ -12,7 +12,7 @@ import yaml
 
 from agentos import ArgumentSet, Component
 from agentos.registry import Registry
-from agentos.repo import Repo
+from pcs.repo import Repo
 from agentos.run import Run
 from agentos.virtual_env import VirtualEnv
 

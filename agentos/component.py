@@ -15,7 +15,7 @@ from agentos.component_run import ComponentRun
 from agentos.exceptions import RegistryException
 from agentos.identifiers import ComponentIdentifier
 from agentos.registry import InMemoryRegistry, Registry
-from agentos.repo import GitHubRepo, LocalRepo, Repo, RepoType
+from pcs.repo import GitHubRepo, LocalRepo, Repo, RepoType
 from agentos.run_command import RunCommand
 from agentos.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
 from agentos.utils import parse_github_web_ui_url

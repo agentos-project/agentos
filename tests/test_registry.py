@@ -4,7 +4,7 @@ import pytest
 from agentos.argument_set import ArgumentSet
 from agentos.component import Component
 from agentos.registry import Registry
-from agentos.repo import Repo
+from pcs.repo import Repo
 from agentos.utils import generate_dummy_dev_registry
 from tests.utils import (
     CHATBOT_AGENT_DIR,

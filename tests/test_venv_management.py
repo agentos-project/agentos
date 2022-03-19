@@ -5,7 +5,7 @@ import pytest
 
 from agentos.cli import run
 from agentos.component import Component
-from agentos.repo import LocalRepo, Repo
+from pcs.repo import LocalRepo, Repo
 from agentos.specs import RepoSpecKeys
 from agentos.virtual_env import VirtualEnv, auto_revert_venv
 from tests.utils import RANDOM_AGENT_DIR, TEST_VENV_AGENT_DIR, run_test_command
