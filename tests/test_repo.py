@@ -1,4 +1,4 @@
-from agentos.component import Component
+from pcs.component import Component
 from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,

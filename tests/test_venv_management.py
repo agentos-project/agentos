@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from agentos.component import Component
+from pcs.component import Component
 from agentos.specs import RepoSpecKeys
 from agentos.virtual_env import VirtualEnv, auto_revert_venv
 from pcs.repo import LocalRepo, Repo

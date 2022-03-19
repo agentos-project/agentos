@@ -5,7 +5,7 @@ import pytest
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
-from agentos.component import Component
+from pcs.component import Component
 from agentos.component_run import ComponentRun
 from agentos.run_command import RunCommand
 from agentos.virtual_env import auto_revert_venv

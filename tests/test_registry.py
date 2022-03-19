@@ -2,7 +2,7 @@
 import pytest
 
 from agentos.argument_set import ArgumentSet
-from agentos.component import Component
+from pcs.component import Component
 from agentos.registry import Registry
 from agentos.utils import generate_dummy_dev_registry
 from pcs.repo import Repo

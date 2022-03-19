@@ -26,7 +26,7 @@ def active_component_run(
         instead of returning None.
     :return: the active component run if it exists, else None.
     """
-    from agentos.component import Component
+    from pcs.component import Component
 
     if isinstance(caller, Component):
         component = caller

@@ -4,7 +4,7 @@ from registry.models import Repo as RepoModel
 from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
-from agentos.component import Component
+from pcs.component import Component
 from agentos.component_run import ComponentRun
 from agentos.registry import WebRegistry
 from agentos.run_command import RunCommand

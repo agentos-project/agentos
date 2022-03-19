@@ -34,7 +34,7 @@ from agentos.specs import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from agentos.component import Component
+    from pcs.component import Component
     from agentos.run import Run
     from pcs.repo import Repo
 
@@ -92,7 +92,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from agentos.component import Component  # Avoid circular ref.
+        from pcs.component import Component  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo

@@ -9,7 +9,7 @@ from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 # Avoids circular imports
 if TYPE_CHECKING:
     from agentos.argument_set import ArgumentSet
-    from agentos.component import Component
+    from pcs.component import Component
 
 
 class RunCommand:
@@ -137,7 +137,7 @@ class RunCommand:
             inner_spec = value
         component_id = inner_spec[RunCommandSpecKeys.COMPONENT_ID]
         from agentos.argument_set import ArgumentSet
-        from agentos.component import Component
+        from pcs.component import Component
 
         component = Component.from_registry(registry, component_id)
         arg_set = ArgumentSet.from_spec(

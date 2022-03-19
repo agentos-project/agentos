@@ -2,7 +2,7 @@
 
 from agentos.agent_run import AgentRun
 from agentos.argument_set import ArgumentSet
-from agentos.component import Component
+from pcs.component import Component
 from agentos.component_run import ComponentRun, active_component_run
 from agentos.core import (
     Agent,
