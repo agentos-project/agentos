@@ -7,8 +7,8 @@ from registry.models import RunCommand as RunCommandModel
 from agentos.component import Component
 from agentos.component_run import ComponentRun
 from agentos.registry import WebRegistry
-from pcs.repo import Repo
 from agentos.run_command import RunCommand
+from pcs.repo import Repo
 from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 
 agentos_repo_spec = {

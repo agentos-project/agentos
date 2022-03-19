@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from agentos.component import Component
-    from pcs.repo import Repo
     from agentos.run import Run
+    from pcs.repo import Repo
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()

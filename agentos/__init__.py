@@ -14,7 +14,6 @@ from agentos.core import (
     Trainer,
 )
 from agentos.registry import Registry
-from pcs.repo import GitHubRepo, LocalRepo, Repo
 from agentos.run import Run
 from agentos.run_command import RunCommand
 from agentos.specs import (
@@ -26,6 +25,7 @@ from agentos.specs import (
     unflatten_spec,
 )
 from agentos.version import VERSION as __version__  # noqa: F401
+from pcs.repo import GitHubRepo, LocalRepo, Repo
 
 __all__ = [
     "Agent",

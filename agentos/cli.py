@@ -12,9 +12,9 @@ import yaml
 
 from agentos import ArgumentSet, Component
 from agentos.registry import Registry
-from pcs.repo import Repo
 from agentos.run import Run
 from agentos.virtual_env import VirtualEnv
+from pcs.repo import Repo
 
 
 @click.group()
