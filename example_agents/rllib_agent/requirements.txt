@@ -3,7 +3,7 @@
 # Pass the following option to pip on linux to get the CPU only torch
 # -f https://download.pytorch.org/whl/cpu/torch_stable.html
 torch==1.10.2+cpu; sys_platform == 'linux'
-torch==1.10.2; sys_platform == 'windows'
+torch==1.10.2; sys_platform == 'win32'
 torch==1.10.2; sys_platform == 'darwin'
 ray[rllib]==1.10.0
 gym==0.21.0
