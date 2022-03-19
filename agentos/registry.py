@@ -34,8 +34,8 @@ from agentos.specs import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from pcs.component import Component
     from agentos.run import Run
+    from pcs.component import Component
     from pcs.repo import Repo
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server

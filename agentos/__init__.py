@@ -2,7 +2,6 @@
 
 from agentos.agent_run import AgentRun
 from agentos.argument_set import ArgumentSet
-from pcs.component import Component
 from agentos.component_run import ComponentRun, active_component_run
 from agentos.core import (
     Agent,
@@ -25,6 +24,7 @@ from agentos.specs import (
     unflatten_spec,
 )
 from agentos.version import VERSION as __version__  # noqa: F401
+from pcs.component import Component
 from pcs.repo import GitHubRepo, LocalRepo, Repo
 
 __all__ = [

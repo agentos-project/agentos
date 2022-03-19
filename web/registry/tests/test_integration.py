@@ -4,10 +4,10 @@ from registry.models import Repo as RepoModel
 from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
-from pcs.component import Component
 from agentos.component_run import ComponentRun
 from agentos.registry import WebRegistry
 from agentos.run_command import RunCommand
+from pcs.component import Component
 from pcs.repo import Repo
 from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 

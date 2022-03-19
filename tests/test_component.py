@@ -5,10 +5,10 @@ import pytest
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
-from pcs.component import Component
 from agentos.component_run import ComponentRun
 from agentos.run_command import RunCommand
 from agentos.virtual_env import auto_revert_venv
+from pcs.component import Component
 from pcs.repo import Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
