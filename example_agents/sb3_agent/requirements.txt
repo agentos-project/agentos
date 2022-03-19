@@ -7,4 +7,4 @@ dm-env==1.5
 mlflow==1.23.1
 torch==1.9.1+cpu; sys_platform == 'linux'
 torch==1.9.1; sys_platform == 'windows'
-torch==1.9.1; sys_platform == 'darwin'
+torch==1.9.0; sys_platform == 'darwin'
