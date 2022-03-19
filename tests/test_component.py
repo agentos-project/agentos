@@ -97,7 +97,7 @@ def test_component_freezing(tmpdir):
         run_test_command(init)
         c = Component.from_registry_file("components.yaml", "agent")
         with patch.multiple(
-            "agentos.repo.Repo",
+            "pcs.repo.Repo",
             get_version_from_git=DEFAULT,
             get_prefixed_path_from_repo_root=DEFAULT,
         ) as mocks:
