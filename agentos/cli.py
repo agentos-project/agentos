@@ -10,11 +10,12 @@ from pathlib import Path
 import click
 import yaml
 
-from agentos import ArgumentSet, Component
-from agentos.registry import Registry
-from agentos.run import Run
-from agentos.virtual_env import VirtualEnv
+from pcs.argument_set import ArgumentSet
+from pcs.component import Component
+from pcs.registry import Registry
 from pcs.repo import Repo
+from pcs.run import Run
+from pcs.virtual_env import VirtualEnv
 
 
 @click.group()
