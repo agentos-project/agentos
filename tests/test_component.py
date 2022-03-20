@@ -10,11 +10,11 @@ from pcs.component_run import ComponentRun
 from pcs.repo import Repo
 from pcs.run_command import RunCommand
 from pcs.virtual_env import auto_revert_venv
+from tests.utils import clear_local_repo_cache  # noqa: F401
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
-    clear_local_repo_cache,  # noqa: F401
 )
 
 

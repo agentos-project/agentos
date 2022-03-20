@@ -10,10 +10,7 @@ from pcs.registry import WebRegistry
 from pcs.repo import Repo
 from pcs.run_command import RunCommand
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
-from tests.utils import (
-    TESTING_BRANCH_NAME,
-    TESTING_GITHUB_REPO_URL,
-)
+from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 
 agentos_repo_spec = {
     "AgentOSRepo": {
