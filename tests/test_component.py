@@ -14,7 +14,7 @@ from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
-    clear_local_repo_cache,
+    clear_local_repo_cache,  # noqa: F401
 )
 
 
@@ -115,7 +115,7 @@ def test_component_freezing(tmpdir):
             assert agent_spec["version"] == "test_freezing_version"
 
 
-def test_component_from_github_with_venv(clear_local_repo_cache):
+def test_component_from_github_with_venv(clear_local_repo_cache):  # noqa: F811
     with auto_revert_venv():
         random_url = (
             "https://github.com/agentos-project/agentos/"
@@ -127,7 +127,7 @@ def test_component_from_github_with_venv(clear_local_repo_cache):
         random_component.run_with_arg_set("run_episodes")
 
 
-def test_component_from_github_no_venv(clear_local_repo_cache):
+def test_component_from_github_no_venv(clear_local_repo_cache):  # noqa: F811
     with auto_revert_venv():
         sb3_url = (
             "https://github.com/agentos-project/agentos/blob/"

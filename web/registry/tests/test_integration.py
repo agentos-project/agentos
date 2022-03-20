@@ -4,12 +4,16 @@ from registry.models import Repo as RepoModel
 from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
-from agentos.component_run import ComponentRun
-from agentos.registry import WebRegistry
-from agentos.run_command import RunCommand
 from pcs.component import Component
+from pcs.component_run import ComponentRun
+from pcs.registry import WebRegistry
 from pcs.repo import Repo
-from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
+from pcs.run_command import RunCommand
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
+from tests.utils import (
+    TESTING_BRANCH_NAME,
+    TESTING_GITHUB_REPO_URL,
+)
 
 agentos_repo_spec = {
     "AgentOSRepo": {
@@ -31,6 +35,7 @@ class SimpleComponent:
 class WebRegistryIntegrationTestCases(LiveServerTestCase):
     def setUp(self):
         self.maxDiff = None
+        clear_cache_path(AOS_GLOBAL_REPOS_DIR, assume_yes=True)
 
     def test_web_registry_top_down(self):
         web_registry = WebRegistry(f"{self.live_server_url}/api/v1")

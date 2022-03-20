@@ -3,7 +3,7 @@ from typing import Dict, List
 from django.db import models
 from rest_framework.exceptions import ValidationError
 
-from agentos.identifiers import ComponentIdentifier
+from pcs.identifiers import ComponentIdentifier
 
 
 class TimeStampedModel(models.Model):
