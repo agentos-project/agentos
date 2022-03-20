@@ -1,9 +1,9 @@
 """Test suite for AgentOS Registry."""
 import pytest
 
-from agentos.argument_set import ArgumentSet
-from agentos.registry import Registry
-from agentos.utils import generate_dummy_dev_registry
+from pcs.argument_set import ArgumentSet
+from pcs.registry import Registry
+from pcs.utils import generate_dummy_dev_registry
 from pcs.component import Component
 from pcs.repo import Repo
 from tests.utils import (
@@ -112,8 +112,8 @@ def test_registry_from_dict():
 
 
 def test_registry_from_file():
-    from agentos.argument_set import ArgumentSet
-    from agentos.exceptions import RegistryException
+    from pcs.argument_set import ArgumentSet
+    from pcs.exceptions import RegistryException
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
     random_local_ag = Component.from_registry(r, "agent")

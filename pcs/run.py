@@ -9,9 +9,9 @@ from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context import registry as context_registry
 
-from agentos.identifiers import RunIdentifier
-from agentos.registry import Registry
-from agentos.specs import RunSpec, unflatten_spec
+from pcs.identifiers import RunIdentifier
+from pcs.registry import Registry
+from pcs.specs import RunSpec, unflatten_spec
 
 
 class Run:
@@ -24,7 +24,7 @@ class Run:
     perform a "re-run".
 
     We implement a Run that records its RunCommand as a special type of Run
-    called a :py.func.agentos.run_command.ComponentRun: which is a subclass
+    called a :py.func.pcs.run_command.ComponentRun: which is a subclass
     of ``Run``.
 
     A Run is similar to a logger but provides a bit more structure than loggers
@@ -234,7 +234,7 @@ class Run:
         include_artifacts: bool = False,
     ) -> Registry:
         if not registry:
-            from agentos.registry import InMemoryRegistry
+            from pcs.registry import InMemoryRegistry
 
             registry = InMemoryRegistry()
         spec = registry.get_run_spec(self.identifier, error_if_not_found=False)

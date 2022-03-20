@@ -5,7 +5,7 @@ from typing import Dict, Mapping, TypeVar
 
 import yaml
 
-from agentos.specs import ArgumentSetSpec
+from pcs.specs import ArgumentSetSpec
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")

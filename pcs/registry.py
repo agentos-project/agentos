@@ -13,13 +13,13 @@ import requests
 import yaml
 from dotenv import load_dotenv
 
-from agentos.identifiers import (
+from pcs.identifiers import (
     ComponentIdentifier,
     RepoIdentifier,
     RunCommandIdentifier,
     RunIdentifier,
 )
-from agentos.specs import (
+from pcs.specs import (
     ComponentSpec,
     NestedComponentSpec,
     RepoSpec,
@@ -34,7 +34,7 @@ from agentos.specs import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from agentos.run import Run
+    from pcs.run import Run
     from pcs.component import Component
     from pcs.repo import Repo
 
@@ -605,7 +605,7 @@ class WebRegistry(Registry):
             shutil.rmtree(tmp_dir_path)
 
     def get_run(self, run_id: str) -> "Run":
-        from agentos.run import Run
+        from pcs.run import Run
 
         return Run.from_registry(self, run_id)
 

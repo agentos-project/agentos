@@ -12,14 +12,14 @@ from dulwich.errors import NotGitRepository
 from dulwich.objectspec import parse_commit, parse_ref
 from dulwich.repo import Repo as PorcelainRepo
 
-from agentos.exceptions import (
+from pcs.exceptions import (
     BadGitStateException,
     PythonComponentSystemException,
 )
-from agentos.identifiers import ComponentIdentifier, RepoIdentifier
-from agentos.registry import InMemoryRegistry, Registry
-from agentos.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
-from agentos.utils import AOS_GLOBAL_REPOS_DIR, _clear_cache_path
+from pcs.identifiers import ComponentIdentifier, RepoIdentifier
+from pcs.registry import InMemoryRegistry, Registry
+from pcs.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, _clear_cache_path
 
 logger = logging.getLogger(__name__)
 

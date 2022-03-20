@@ -9,7 +9,7 @@ from typing import Sequence
 
 import yaml
 
-from agentos.utils import AOS_GLOBAL_REQS_DIR, _clear_cache_path
+from pcs.utils import AOS_GLOBAL_REQS_DIR, _clear_cache_path
 
 
 class VirtualEnv:

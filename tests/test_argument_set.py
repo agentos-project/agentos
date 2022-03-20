@@ -1,4 +1,4 @@
-from agentos.argument_set import ArgumentSet
+from pcs.argument_set import ArgumentSet
 
 
 def test_arg_set_equality():

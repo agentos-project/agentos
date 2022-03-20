@@ -4,12 +4,12 @@ from typing import Any, Mapping, Optional
 
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
-from agentos.exceptions import PythonComponentSystemException
-from agentos.identifiers import RunIdentifier
-from agentos.registry import InMemoryRegistry, Registry
-from agentos.run import Run
-from agentos.run_command import RunCommand
-from agentos.specs import RunSpec, flatten_spec, unflatten_spec
+from pcs.exceptions import PythonComponentSystemException
+from pcs.identifiers import RunIdentifier
+from pcs.registry import InMemoryRegistry, Registry
+from pcs.run import Run
+from pcs.run_command import RunCommand
+from pcs.specs import RunSpec, flatten_spec, unflatten_spec
 
 
 def active_component_run(
@@ -55,8 +55,8 @@ def active_component_run(
 class ComponentRun(Run):
     IS_FROZEN_KEY = "agentos.spec_is_frozen"
     IS_COMPONENT_RUN_TAG = "pcs.is_component_run"
-    RUN_COMMAND_ID_KEY = "agentos.run_command_id"
-    RUN_COMMAND_REGISTRY_FILENAME = "agentos.run_command_registry.yaml"
+    RUN_COMMAND_ID_KEY = "pcs.run_command_id"
+    RUN_COMMAND_REGISTRY_FILENAME = "pcs.run_command_registry.yaml"
     """
     A ComponentRun represents the execution of a specific entry point of a
     specific Component with a specific ArgumentSet.
