@@ -3,7 +3,10 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
+
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 
 ROOT_DIR = Path(__file__).parent.parent
 EXAMPLE_AGENT_DIR = ROOT_DIR / "example_agents"
@@ -47,3 +50,8 @@ def run_in_dir(dir_path):
 
 def is_linux():
     return "linux" in sys.platform
+
+
+@pytest.fixture
+def clear_local_repo_cache():
+    clear_cache_path(AOS_GLOBAL_REPOS_DIR, assume_yes=True)

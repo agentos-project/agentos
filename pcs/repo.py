@@ -16,7 +16,7 @@ from pcs.exceptions import BadGitStateException, PythonComponentSystemException
 from pcs.identifiers import ComponentIdentifier, RepoIdentifier
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
-from pcs.utils import AOS_GLOBAL_REPOS_DIR, _clear_cache_path
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class Repo(abc.ABC):
         non-interactively.
         """
         repo_cache_path = repo_cache_path or AOS_GLOBAL_REPOS_DIR
-        _clear_cache_path(repo_cache_path, assume_yes)
+        clear_cache_path(repo_cache_path, assume_yes)
 
     @abc.abstractmethod
     def to_spec(self, flatten: bool = False) -> RepoSpec:
