@@ -9,6 +9,8 @@ from agentos.core import (
     Trainer,
 )
 
+from pcs.version import VERSION as __version__  # noqa: F401
+
 __all__ = [
     "Agent",
     "AgentRun",
