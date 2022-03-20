@@ -4,10 +4,10 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from pcs.specs import RepoSpecKeys
-from pcs.virtual_env import VirtualEnv, auto_revert_venv
 from pcs.component import Component
 from pcs.repo import LocalRepo, Repo
+from pcs.specs import RepoSpecKeys
+from pcs.virtual_env import VirtualEnv, auto_revert_venv
 from tests.utils import RANDOM_AGENT_DIR, TEST_VENV_AGENT_DIR, run_test_command
 
 

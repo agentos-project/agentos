@@ -12,10 +12,7 @@ from dulwich.errors import NotGitRepository
 from dulwich.objectspec import parse_commit, parse_ref
 from dulwich.repo import Repo as PorcelainRepo
 
-from pcs.exceptions import (
-    BadGitStateException,
-    PythonComponentSystemException,
-)
+from pcs.exceptions import BadGitStateException, PythonComponentSystemException
 from pcs.identifiers import ComponentIdentifier, RepoIdentifier
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec

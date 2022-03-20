@@ -2,10 +2,10 @@
 import pytest
 
 from pcs.argument_set import ArgumentSet
-from pcs.registry import Registry
-from pcs.utils import generate_dummy_dev_registry
 from pcs.component import Component
+from pcs.registry import Registry
 from pcs.repo import Repo
+from pcs.utils import generate_dummy_dev_registry
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
