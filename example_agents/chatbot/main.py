@@ -14,6 +14,7 @@ class ChatBot(agentos.Runnable):
         self.memory = deque(maxlen=2048)
         self.reply_flag = False
         self.env = env_class()
+        self.env.reset()
 
     def advance(self):
         msg = ""
