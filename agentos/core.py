@@ -128,7 +128,7 @@ class Agent(MemberInitializer):
             total_episodes += run_size
 
     def start_agent_run(self, run_type: str, parent: AgentRun) -> None:
-        from agentos import active_component_run  # avoid circular import
+        from pcs import active_component_run  # avoid circular import
 
         if not parent:
             parent = active_component_run(self)
@@ -327,3 +327,107 @@ class Runnable:
             return t
         else:
             runner()
+
+
+def default_rollout_step(policy, obs, step_num):
+    """
+    The default rollout step function is the policy's ``decide`` function.
+    A rollout step function allows a developer to specify the behavior
+    that will occur at every step of the rollout--given a policy
+    and the last observation from the env--to decide
+    what action to take next. This usually involves the rollout's
+    policy and may perform learning. It also, may involve using, updating,
+    or saving learning related state including hyper-parameters
+    such as epsilon in epsilon greedy.
+    You can provide your own function with the same signature as this default
+    if you want to have a more complex behavior at each step of the rollout.
+    """
+    return policy.decide(obs)
+
+
+def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
+    """Perform rollout using provided policy and env.
+    :param policy: policy to use when simulating these episodes.
+    :param env_class: class to instantiate an env object from.
+    :param step_fn: a function to be called at each step of rollout.
+        The function can have 2 or 3 parameters, and must return an action:
+        * 2 parameter definition: policy, observation.
+        * 3 parameter definition: policy, observation, step_num.
+        Default value is ``agentos.core.default_rollout_step``.
+    :param max_steps: cap on number of steps per episode.
+    :return: the trajectory that was followed during this rollout.
+        A trajectory is a named tuple that contains the initial observation (a
+        scalar) as well as the following arrays: actions, observations,
+        rewards, dones, contexts. The ith entry of each array corresponds to
+        the action taken at the ith step of the rollout, and the respective
+        results returned by the environment after taking that action. To learn
+        more about the semantics of these, see the documentation and code of
+        gym.Env.
+    """
+    actions = []
+    observations = []
+    rewards = []
+    dones = []
+    contexts = []
+
+    env = env_class()
+    obs = env.reset()
+    init_obs = obs
+    done = False
+    step_num = 0
+    while True:
+        if done or (max_steps and step_num >= max_steps):
+            break
+        if step_fn.__code__.co_argcount == 2:
+            action = step_fn(policy, obs)
+        elif step_fn.__code__.co_argcount == 3:
+            action = step_fn(policy, obs, step_num)
+        else:
+            raise TypeError("step_fn must accept 2 or 3 parameters.")
+        obs, reward, done, ctx = env.step(action)
+        actions.append(action)
+        observations.append(obs)
+        rewards.append(reward)
+        dones.append(done)
+        contexts.append(ctx)
+        step_num += 1
+    Trajectory = namedtuple(
+        "Trajectory",
+        [
+            "init_obs",
+            "actions",
+            "observations",
+            "rewards",
+            "dones",
+            "contexts",
+        ],
+    )
+    return Trajectory(
+        init_obs, actions, observations, rewards, dones, contexts
+    )
+
+
+def rollouts(
+    policy,
+    env_class,
+    num_rollouts,
+    step_fn=default_rollout_step,
+    max_steps=None,
+):
+    """
+    :param policy: policy to use when simulating these episodes.
+    :param env_class: class to instatiate an env object from.
+    :param num_rollouts: how many rollouts (i.e., episodes) to perform
+    :param step_fn: a function to be called at each step of each rollout.
+                    The function can have 2 or 3 parameters.
+                    2 parameter definition: policy, observation.
+                    3 parameter definition: policy, observation, step_num.
+                    The function must return an action.
+    :param max_steps: cap on number of steps per episode.
+    :return: array with one namedtuple per rollout, each tuple containing
+             the following arrays: observations, rewards, dones, ctxs
+    """
+    return [
+        rollout(policy, env_class, step_fn, max_steps)
+        for _ in range(num_rollouts)
+    ]

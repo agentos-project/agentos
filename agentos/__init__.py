@@ -7,6 +7,8 @@ from agentos.core import (
     Policy,
     Runnable,
     Trainer,
+    rollout,
+    rollouts,
 )
 from pcs.version import VERSION as __version__  # noqa: F401
 
@@ -19,4 +21,6 @@ __all__ = [
     "Policy",
     "Runnable",
     "Trainer",
+    "rollout",
+    "rollouts",
 ]
