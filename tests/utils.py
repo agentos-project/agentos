@@ -50,8 +50,3 @@ def run_in_dir(dir_path):
 
 def is_linux():
     return "linux" in sys.platform
-
-
-@pytest.fixture
-def clear_local_repo_cache():
-    clear_cache_path(AOS_GLOBAL_REPOS_DIR, assume_yes=True)

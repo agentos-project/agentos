@@ -10,7 +10,6 @@ from pcs.component_run import ComponentRun
 from pcs.repo import Repo
 from pcs.run_command import RunCommand
 from pcs.virtual_env import auto_revert_venv
-from tests.utils import clear_local_repo_cache  # noqa: F401
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
@@ -115,7 +114,7 @@ def test_component_freezing(tmpdir):
             assert agent_spec["version"] == "test_freezing_version"
 
 
-def test_component_from_github_with_venv(clear_local_repo_cache):  # noqa: F811
+def test_component_from_github_with_venv():
     with auto_revert_venv():
         random_url = (
             "https://github.com/agentos-project/agentos/"
@@ -127,7 +126,7 @@ def test_component_from_github_with_venv(clear_local_repo_cache):  # noqa: F811
         random_component.run_with_arg_set("run_episodes")
 
 
-def test_component_from_github_no_venv(clear_local_repo_cache):  # noqa: F811
+def test_component_from_github_no_venv():  # noqa: F811
     with auto_revert_venv():
         sb3_url = (
             "https://github.com/agentos-project/agentos/blob/"
