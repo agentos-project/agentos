@@ -3,10 +3,7 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
-
-from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 
 ROOT_DIR = Path(__file__).parent.parent
 EXAMPLE_AGENT_DIR = ROOT_DIR / "example_agents"
