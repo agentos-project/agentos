@@ -6,8 +6,8 @@ from registry.models import Component, ComponentDependency, Repo, Run
 
 
 def index(request):
-    environments = Component.objects.filter(
-        runs_as_environment__isnull=False
+    environments = Run.objects.filter(
+        environment__isnull=False
     ).distinct()
     context = {
         "environments": environments,
