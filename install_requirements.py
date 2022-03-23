@@ -1,3 +1,4 @@
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -57,6 +58,24 @@ def install_requirements():
         subprocess.check_call(["pip", "--version"], stdout=subprocess.DEVNULL)
     except (FileNotFoundError, subprocess.CalledProcessError):
         pip_installed = False
+
+    # check if conda is installed and valid
+    conda_installed = True
+    try:
+        subprocess.check_call(
+            ["conda", "--version"], stdout=subprocess.DEVNULL
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        conda_installed = False
+
+    # On Apple Silicon, as of 3/23/22 using pip directly to install scipy and
+    # grpcio is broken but conda installing them works and installs them as
+    # pip packages.
+    if (sys.platform == "darwin" and
+        platform.processor() == "arm" and
+        conda_installed
+    ):
+        _run(["conda", "install", "-y", "scipy", "grpcio"])
 
     if pip_installed:
         install_with_pip("pip")
