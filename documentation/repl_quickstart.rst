@@ -28,7 +28,7 @@ Now let's import one of the core PCS abstractions: **Component**.  A Component
 wraps a Python class and provides facilities for tracking and sharing.  Let's
 wrap our ``Adder`` class in a Component now::
 
-  >>> from agentos import Component
+  >>> from pcs import Component
   >>> adder_component = Component.from_class(Adder)
 
 
@@ -38,7 +38,7 @@ way with PCS::
   >>> adder_component.run('add_one', {'Adder':{'add_one':{'x':1}}})
 
 That's it!  Using the ``run`` method on our Component automatically instruments
-our call to ``Adder.add_one`` and tracks it's inputs and outputs so we can
+our call to ``Adder.add_one`` and tracks its inputs and outputs so we can
 easily share and reproduce this program execution.
 
 Let's take a look at what we've recorded about our program execution.  Exit
