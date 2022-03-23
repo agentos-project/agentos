@@ -71,9 +71,10 @@ def install_requirements():
     # On Apple Silicon, as of 3/23/22 using pip directly to install scipy and
     # grpcio is broken but conda installing them works and installs them as
     # pip packages.
-    if (sys.platform == "darwin" and
-        platform.processor() == "arm" and
-        conda_installed
+    if (
+        sys.platform == "darwin"
+        and platform.processor() == "arm"
+        and conda_installed
     ):
         _run(["conda", "install", "-y", "scipy", "grpcio"])
 
