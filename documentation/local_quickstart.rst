@@ -41,7 +41,7 @@ corridor.
 Tracking and Reproducibility
 ----------------------------
 
-Now that we have executed our program, we can do a crash course in the the
+Now that we have executed our program, we can do a crash course in the
 tracking and reproducibility facilities provided by PCS.  Run the MLflow UI in
 your shell and navigate to `localhost:5000 <http://localhost:5000>`_::
 
