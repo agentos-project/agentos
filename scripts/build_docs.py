@@ -11,7 +11,7 @@ from subprocess import Popen
 
 from shared import docs_build_dir, docs_dir
 
-import agentos
+import pcs
 
 parser = argparse.ArgumentParser(
     description="Build the AgentOS docs. Any arguments that are provided "
@@ -36,7 +36,7 @@ parser.add_argument(
     "and automatically rebuild the docs.",
 )
 known_args, unknown_args = parser.parse_known_args()
-versioned_build_dir = os.path.join(docs_build_dir, f"{agentos.__version__}")
+versioned_build_dir = os.path.join(docs_build_dir, f"{pcs.__version__}")
 
 
 def update_latest_symlink():
@@ -47,7 +47,7 @@ def update_latest_symlink():
         print("Latest symlink not found")
 
     try:
-        os.symlink(agentos.__version__, "latest", target_is_directory=True)
+        os.symlink(pcs.__version__, "latest", target_is_directory=True)
     except OSError as e:
         print(
             "OSError: you might not have privileges to create symlink. "
@@ -56,7 +56,7 @@ def update_latest_symlink():
         raise e
     print(
         f"Created symbolic link {docs_build_dir}{os.sep}latest "
-        f"pointing to {docs_build_dir}{os.sep}{agentos.__version__}"
+        f"pointing to {docs_build_dir}{os.sep}{pcs.__version__}"
     )
 
 
