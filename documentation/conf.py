@@ -14,9 +14,7 @@ import os
 from importlib.machinery import SourceFileLoader
 
 version = (
-    SourceFileLoader(
-        "pcs.version", os.path.join("..", "pcs", "version.py")
-    )
+    SourceFileLoader("pcs.version", os.path.join("..", "pcs", "version.py"))
     .load_module()
     .VERSION
 )
@@ -36,12 +34,12 @@ release = version
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+# TODO: also use "sphinx.ext.doctest"
 extensions = [
     "sphinx_click",
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.todo",
-    #"sphinx.ext.doctest",
 ]
 
 todo_include_todos = True

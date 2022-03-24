@@ -6,10 +6,9 @@ To use::
   $ python scripts/build_docs.py
 """
 import argparse
-import pathlib
 import os
+import pathlib
 import shutil
-from distutils.dir_util import copy_tree
 from subprocess import Popen
 
 from shared import docs_build_dir, docs_dir
@@ -87,22 +86,29 @@ shutil.copytree(API_DOC_INCLUDES, API_DOC_STUB_DIR, dirs_exist_ok=True)
 
 # Generate API Doc stub files.
 template = ""
-with open(pathlib.Path(API_DOC_TEMPLATE), 'r') as template_f:
+with open(pathlib.Path(API_DOC_TEMPLATE), "r") as template_f:
     template = template_f.read()
 for source_dir in API_SOURCE_DIRS:
     for source_name in pathlib.Path(source_dir).glob(f"*{SOURCE_FILE_SUFFIX}"):
         module_name = f"{source_dir}.{source_name.stem}"
-        stub_filename = pathlib.Path(API_DOC_STUB_DIR) / source_dir / (module_name + ".rst")
+        stub_filename = (
+            pathlib.Path(API_DOC_STUB_DIR)
+            / source_dir
+            / (module_name + ".rst")
+        )
         print(stub_filename)
         if f"{source_dir}/{source_name.name}" in API_SOURCE_IGNORES:
             print(f"ignoring {source_name}")
             continue
-        with open(stub_filename, 'w', ) as source_f:
+        with open(
+            stub_filename,
+            "w",
+        ) as source_f:
             source_f.write(
                 template.format(
                     module_name=module_name,
                     title=source_name.stem,
-                    title_name_underline='=' * len(module_name)
+                    title_name_underline="=" * len(module_name),
                 )
             )
 
