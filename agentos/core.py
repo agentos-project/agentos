@@ -347,14 +347,18 @@ def default_rollout_step(policy, obs, step_num):
 
 def rollout(policy, env_class, step_fn=default_rollout_step, max_steps=None):
     """Perform rollout using provided policy and env.
+
     :param policy: policy to use when simulating these episodes.
     :param env_class: class to instantiate an env object from.
     :param step_fn: a function to be called at each step of rollout.
         The function can have 2 or 3 parameters, and must return an action:
-        * 2 parameter definition: policy, observation.
-        * 3 parameter definition: policy, observation, step_num.
+
+            * 2 parameter definition: policy, observation.
+            * 3 parameter definition: policy, observation, step_num.
+
         Default value is ``agentos.core.default_rollout_step``.
     :param max_steps: cap on number of steps per episode.
+
     :return: the trajectory that was followed during this rollout.
         A trajectory is a named tuple that contains the initial observation (a
         scalar) as well as the following arrays: actions, observations,

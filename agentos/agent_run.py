@@ -39,7 +39,7 @@ class AgentRun(Run):
 
     Like a ``Run``, an ``AgentRun`` can be used as a context manager, so that
     the developer doesn't need to remember to mark a run as finished, for
-    example:
+    example::
 
          with AgentRun('evaluate',
                        parent_run=self.__component__.active_run) as run:
