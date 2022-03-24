@@ -36,7 +36,7 @@ we run our ``Adder.add_one()`` function in a reproducible and shareable
 way by calling run on the component.
 
 That's it!  Using the ``run`` method on our Component automatically instruments
-our call to ``Adder.add_one`` and tracks it's inputs and outputs so we can
+our call to ``Adder.add_one`` and tracks its inputs and outputs so we can
 easily share and reproduce this program execution.
 
 Let's take a look at what we've recorded about our program execution.  Exit
