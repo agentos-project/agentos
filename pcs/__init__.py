@@ -1,4 +1,4 @@
-"""The ``agentos`` module provides an API for building learning agents."""
+"""The ``pcs`` package provides an API for Component Programming."""
 
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component

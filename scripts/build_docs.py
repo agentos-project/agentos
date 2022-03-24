@@ -6,12 +6,26 @@ To use::
   $ python scripts/build_docs.py
 """
 import argparse
+import pathlib
 import os
+import shutil
+from distutils.dir_util import copy_tree
 from subprocess import Popen
 
 from shared import docs_build_dir, docs_dir
 
 import pcs
+
+API_SOURCE_DIRS = ["agentos", "pcs"]
+API_SOURCE_IGNORES = [
+    "agentos/__init__.py",
+    "agentos/cli.py",
+    "pcs/__init__.py",
+]
+API_DOC_INCLUDES = "documentation/api_doc_includes"
+API_DOC_TEMPLATE = "documentation/api_doc_templates/template.rst"
+API_DOC_STUB_DIR = "documentation/api"
+SOURCE_FILE_SUFFIX = ".py"
 
 parser = argparse.ArgumentParser(
     description="Build the AgentOS docs. Any arguments that are provided "
@@ -59,6 +73,38 @@ def update_latest_symlink():
         f"pointing to {docs_build_dir}{os.sep}{pcs.__version__}"
     )
 
+
+shutil.rmtree(API_DOC_STUB_DIR, ignore_errors=True)
+for api_src_dir in API_SOURCE_DIRS:
+    dest_dir = pathlib.Path(API_DOC_STUB_DIR) / api_src_dir
+    print(f"Making dir {dest_dir}")
+    dest_dir.mkdir(parents=True)
+    assert pathlib.Path(dest_dir).is_dir()
+
+# Copy over API doc includes
+print(f"copying {API_DOC_INCLUDES} TO {API_DOC_STUB_DIR}")
+shutil.copytree(API_DOC_INCLUDES, API_DOC_STUB_DIR, dirs_exist_ok=True)
+
+# Generate API Doc stub files.
+template = ""
+with open(pathlib.Path(API_DOC_TEMPLATE), 'r') as template_f:
+    template = template_f.read()
+for source_dir in API_SOURCE_DIRS:
+    for source_name in pathlib.Path(source_dir).glob(f"*{SOURCE_FILE_SUFFIX}"):
+        module_name = f"{source_dir}.{source_name.stem}"
+        stub_filename = pathlib.Path(API_DOC_STUB_DIR) / source_dir / (module_name + ".rst")
+        print(stub_filename)
+        if f"{source_dir}/{source_name.name}" in API_SOURCE_IGNORES:
+            print(f"ignoring {source_name}")
+            continue
+        with open(stub_filename, 'w', ) as source_f:
+            source_f.write(
+                template.format(
+                    module_name=module_name,
+                    title=source_name.stem,
+                    title_name_underline='=' * len(module_name)
+                )
+            )
 
 if known_args.watch:
     build_tool = "sphinx-autobuild"
