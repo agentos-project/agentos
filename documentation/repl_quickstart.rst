@@ -16,26 +16,24 @@ open the Python REPL by running the following in your shell::
 
   python
 
-Now we'll define a very basic class and then we'll use PCS to track the
-execution of a method on this class and share the results::
+In the example below we first define a very basic class called ``Adder``.
+Then we use PCS to track the execution of a method on this class and share the
+results::
 
+  >>> from pcs import Component
   >>> class Adder:
-  ...   def add_one(self, x):
-  ...     return x + 1
+  ...     def add_one(self, x):
+  ...         return x + 1
   ...
+  >>> adder_component = Component.from_class(Adder, instantiate=True)
+  >>> adder_component.run_with_arg_set('add_one', {'Adder':{'add_one':{'x':1}}})
 
-Now let's import one of the core PCS abstractions: **Component**.  A Component
-wraps a Python class and provides facilities for tracking and sharing.  Let's
-wrap our ``Adder`` class in a Component now::
-
-  >>> from agentos import Component
-  >>> adder_component = Component.from_class(Adder)
-
-
-Now we'll run our ``Adder.add_one()`` function in a reproducible and shareable
-way with PCS::
-
-  >>> adder_component.run('add_one', {'Adder':{'add_one':{'x':1}}})
+Let's break down the example above. First we import one of the core PCS
+abstractions: **Component**.  A Component wraps a Python object (in this case
+a Python class) and provides facilities for tracking and sharing.
+Then we define our ``Adder`` class and wrap it in a Component. Finally
+we run our ``Adder.add_one()`` function in a reproducible and shareable
+way by calling run on the component.
 
 That's it!  Using the ``run`` method on our Component automatically instruments
 our call to ``Adder.add_one`` and tracks it's inputs and outputs so we can
