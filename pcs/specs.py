@@ -21,7 +21,7 @@ import copy
 import json
 from typing import Any, Mapping, Union
 
-from agentos.identifiers import ComponentIdentifier
+from pcs.identifiers import ComponentIdentifier
 
 FlatSpec = Mapping[str, str]
 

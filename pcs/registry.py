@@ -13,13 +13,13 @@ import requests
 import yaml
 from dotenv import load_dotenv
 
-from agentos.identifiers import (
+from pcs.identifiers import (
     ComponentIdentifier,
     RepoIdentifier,
     RunCommandIdentifier,
     RunIdentifier,
 )
-from agentos.specs import (
+from pcs.specs import (
     ComponentSpec,
     NestedComponentSpec,
     RepoSpec,
@@ -34,9 +34,9 @@ from agentos.specs import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from agentos.component import Component
-    from agentos.repo import Repo
-    from agentos.run import Run
+    from pcs.component import Component
+    from pcs.repo import Repo
+    from pcs.run import Run
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -92,7 +92,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from agentos.component import Component  # Avoid circular ref.
+        from pcs.component import Component  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo
@@ -605,7 +605,7 @@ class WebRegistry(Registry):
             shutil.rmtree(tmp_dir_path)
 
     def get_run(self, run_id: str) -> "Run":
-        from agentos.run import Run
+        from pcs.run import Run
 
         return Run.from_registry(self, run_id)
 

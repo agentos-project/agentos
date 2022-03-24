@@ -4,7 +4,7 @@ from importlib.machinery import SourceFileLoader
 from setuptools import find_packages, setup
 
 version = (
-    SourceFileLoader("agentos.version", os.path.join("agentos", "version.py"))
+    SourceFileLoader("pcs.version", os.path.join("pcs", "version.py"))
     .load_module()
     .VERSION
 )

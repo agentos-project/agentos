@@ -5,7 +5,7 @@ from typing import Optional
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
-from agentos.run import Run
+from pcs.run import Run
 
 _EPISODE_KEY = "episode_count"
 _STEP_KEY = "step_count"
@@ -39,7 +39,7 @@ class AgentRun(Run):
 
     Like a ``Run``, an ``AgentRun`` can be used as a context manager, so that
     the developer doesn't need to remember to mark a run as finished, for
-    example:
+    example::
 
          with AgentRun('evaluate',
                        parent_run=self.__component__.active_run) as run:
@@ -50,7 +50,7 @@ class AgentRun(Run):
               )
     """
 
-    IS_AGENT_RUN_TAG = "agentos.is_agent_run"
+    IS_AGENT_RUN_TAG = "pcs.is_agent_run"
     LEARN_KEY = "learn"
     RESET_KEY = "reset"
     RESTORE_KEY = "restore"

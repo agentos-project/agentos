@@ -61,7 +61,7 @@ def parse_github_web_ui_url(
     return project_name, repo_name, branch_name, repo_path
 
 
-def _clear_cache_path(cache_path: Path, assume_yes: bool):
+def clear_cache_path(cache_path: Path, assume_yes: bool):
     cache_path = Path(cache_path).absolute()
     if not cache_path.exists():
         print(f"Cache path {cache_path} does not exist.  Aborting...")

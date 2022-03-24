@@ -13,6 +13,7 @@ mlruns
 build/
 dist
 documentation/_build
+documentation/api
 website/_site
 docs
 web/static

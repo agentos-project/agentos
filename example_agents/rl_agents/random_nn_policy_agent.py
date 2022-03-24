@@ -33,9 +33,10 @@ class SingleLayerTFPolicy(agentos.Policy):
         )
 
 
-class RandomTFAgent(agentos.Agent):
+class RandomTFAgent(agentos.Runnable):
     def __init__(self, environment, policy):
-        super().__init__(environment=environment, policy=policy)
+        self.environment = environment
+        self.policy = policy
         self.ret_vals = []
 
     def advance(self):
@@ -53,7 +54,7 @@ if __name__ == "__main__":
             CartPoleEnv().observation_space,
         ),
     )
-    agentos.run_component(random_nn_agent, max_iters=10)
+    random_nn_agent.run(max_iters=10)
     print(
         f"Agent done!\n"
         f"Num rollouts: {len(random_nn_agent.ret_vals)}\n"

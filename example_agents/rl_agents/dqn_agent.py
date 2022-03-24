@@ -112,6 +112,10 @@ class EpsilonGreedyTFPolicy:
 
 
 class OnlineBatchAgent(agentos.Runnable):
+    def __init__(self, environment, policy):
+        self.environment = environment
+        self.policy = policy
+
     def advance(self):
         print("Training")
         self.learn()
@@ -136,4 +140,4 @@ if __name__ == "__main__":
             env_class().action_space, env_class().observation_space
         ),
     )
-    agentos.run_component(my_agent, max_iters=100)
+    my_agent.run(max_iters=100)

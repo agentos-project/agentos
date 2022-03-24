@@ -10,11 +10,11 @@ from example_agents.chatbot.env_utils import CommandLineClient
 class ChatBot(agentos.Runnable):
     """A simple chatbot that speaks by parroting back things it has heard."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, env_class):
         self.memory = deque(maxlen=2048)
         self.reply_flag = False
-        self.env = self.env_class()
+        self.env = env_class()
+        self.env.reset()
 
     def advance(self):
         msg = ""

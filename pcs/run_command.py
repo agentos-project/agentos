@@ -1,22 +1,22 @@
 from hashlib import sha1
 from typing import TYPE_CHECKING
 
-from agentos.identifiers import RunCommandIdentifier, RunIdentifier
-from agentos.registry import Registry
-from agentos.run import Run
-from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
+from pcs.identifiers import RunCommandIdentifier, RunIdentifier
+from pcs.registry import Registry
+from pcs.run import Run
+from pcs.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 
 # Avoids circular imports
 if TYPE_CHECKING:
-    from agentos.argument_set import ArgumentSet
-    from agentos.component import Component
+    from pcs.argument_set import ArgumentSet
+    from pcs.component import Component
 
 
 class RunCommand:
     """
     A RunCommand contains everything required to reproducibly execute a
     Component Entry Point. Unlike a Run, a RunCommand is not concerned with the
-    outputs of the execution (see :py:func:agentos.Run: for more on that.)
+    outputs of the execution (see :py:func:pcs.Run: for more on that.)
 
     You can think of a RunCommand as a glorified dictionary containing the
     pointers to arguments and versions of code necessary to reproduce the
@@ -68,7 +68,7 @@ class RunCommand:
         self._log_return_value = log_return_value
 
     def __repr__(self) -> str:
-        return f"<agentos.run_command.RunCommand: {self}>"
+        return f"<pcs.run_command.RunCommand: {self}>"
 
     def __hash__(self) -> int:
         return int(self._sha1(), 16)
@@ -136,8 +136,8 @@ class RunCommand:
             spec_identifier = key
             inner_spec = value
         component_id = inner_spec[RunCommandSpecKeys.COMPONENT_ID]
-        from agentos.argument_set import ArgumentSet
-        from agentos.component import Component
+        from pcs.argument_set import ArgumentSet
+        from pcs.component import Component
 
         component = Component.from_registry(registry, component_id)
         arg_set = ArgumentSet.from_spec(
@@ -182,10 +182,10 @@ class RunCommand:
         passing the given registry arg as well as the recurse and force args
         through to that call.
 
-        For details on those flags, see :py:func:agentos.Component.to_registry:
+        For details on those flags, see :py:func:pcs.Component.to_registry:
         """
         if not registry:
-            from agentos.registry import InMemoryRegistry
+            from pcs.registry import InMemoryRegistry
 
             registry = InMemoryRegistry()
 

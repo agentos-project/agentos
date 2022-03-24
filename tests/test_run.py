@@ -1,5 +1,6 @@
-from agentos import ArgumentSet, Component
-from agentos.registry import InMemoryRegistry
+from pcs.argument_set import ArgumentSet
+from pcs.component import Component
+from pcs.registry import InMemoryRegistry
 
 
 class Simple:
@@ -34,7 +35,7 @@ def test_component_instance_run():
 
 
 def test_run_tracking():
-    from agentos.run import Run
+    from pcs.run import Run
 
     run = Run()
     assert run.identifier == run._mlflow_run.info.run_id

@@ -5,11 +5,11 @@ import pytest
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
-from agentos.component import Component
-from agentos.component_run import ComponentRun
-from agentos.repo import Repo
-from agentos.run_command import RunCommand
-from agentos.virtual_env import auto_revert_venv
+from pcs.component import Component
+from pcs.component_run import ComponentRun
+from pcs.repo import Repo
+from pcs.run_command import RunCommand
+from pcs.virtual_env import auto_revert_venv
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
@@ -97,7 +97,7 @@ def test_component_freezing(tmpdir):
         run_test_command(init)
         c = Component.from_registry_file("components.yaml", "agent")
         with patch.multiple(
-            "agentos.repo.Repo",
+            "pcs.repo.Repo",
             get_version_from_git=DEFAULT,
             get_prefixed_path_from_repo_root=DEFAULT,
         ) as mocks:
@@ -126,7 +126,7 @@ def test_component_from_github_with_venv():
         random_component.run_with_arg_set("run_episodes")
 
 
-def test_component_from_github_no_venv():
+def test_component_from_github_no_venv():  # noqa: F811
     with auto_revert_venv():
         sb3_url = (
             "https://github.com/agentos-project/agentos/blob/"

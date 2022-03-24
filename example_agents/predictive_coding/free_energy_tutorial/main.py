@@ -104,7 +104,7 @@ class CookieSensorEnv(gym.Env):
         return self.last_light_intensity_sample, 0, False, {}
 
 
-class Mouse(agentos.Agent):
+class Mouse(agentos.Runnable):
     """
     The mouse brain has variables to track its beliefs about the world.
     Beliefs consist of estimates of the parameters in the environment,
@@ -123,7 +123,7 @@ class Mouse(agentos.Agent):
     """
 
     def __init__(self, env):
-        super().__init__(environment=env)
+        self.environment = env
         self.light_intensity_error_belief = Decimal(0)  # epsilon_u
         self.cookie_size_error_belief = Decimal(0)  # epsilon_p
         self.cookie_size_belief = Decimal(0)  # phi
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     print(f"Running mouse agent  for {args.max_iters} steps...")
     print("------------------------------------------------")
     mouse = Mouse(CookieSensorEnv())
-    agentos.run_component(mouse, max_iters=args.max_iters)
+    mouse.run(max_iters=args.max_iters)
     if args.plot_results:
         plt.figure(figsize=(15, 10))
         for k, v in mouse_stats.items():

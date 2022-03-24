@@ -9,7 +9,7 @@ from typing import Sequence
 
 import yaml
 
-from agentos.utils import AOS_GLOBAL_REQS_DIR, _clear_cache_path
+from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path
 
 
 class VirtualEnv:
@@ -72,7 +72,7 @@ class VirtualEnv:
         for Components.  Pass True to ``assume_yes`` to run non-interactively.
         """
         env_cache_path = env_cache_path or AOS_GLOBAL_REQS_DIR
-        _clear_cache_path(env_cache_path, assume_yes)
+        clear_cache_path(env_cache_path, assume_yes)
 
     def _save_default_env_info(self):
         self._default_sys_path = [p for p in sys.path]
