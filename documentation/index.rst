@@ -13,4 +13,5 @@ want to hop directly into code.
    repl_quickstart
    local_quickstart
    example_agents
+   tutorials/index
    api/index
