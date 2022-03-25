@@ -65,7 +65,7 @@ def install_requirements():
         subprocess.check_call(
             ["conda", "--version"], stdout=subprocess.DEVNULL
         )
-    except (FileNotFoundError, subprocess.CalledProcessError):
+    except (FileNotFoundError, subprocess.CalledProcessError, PermissionError):
         conda_installed = False
 
     # On Apple Silicon, as of 3/23/22 using pip directly to install scipy and
