@@ -1,5 +1,5 @@
-agentos.cli
-===========
+cli
+===
 
 The following documentation is for the ``agentos`` command line utility, which
 is built using `Click <https://click.palletsprojects.com>`_. The documentation

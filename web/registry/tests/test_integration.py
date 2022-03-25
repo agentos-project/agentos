@@ -1,16 +1,16 @@
 from django.test import LiveServerTestCase
-from agentos.registry import WebRegistry
-from registry.models import (
-    Repo as RepoModel,
-    Component as ComponentModel,
-    RunCommand as RunCommandModel,
-    Run as RunModel,
-)
-from agentos.component_run import ComponentRun
-from agentos.run_command import RunCommand
-from agentos.component import Component
-from agentos.repo import Repo
-from tests.utils import TESTING_GITHUB_REPO_URL, TESTING_BRANCH_NAME
+from registry.models import Component as ComponentModel
+from registry.models import Repo as RepoModel
+from registry.models import Run as RunModel
+from registry.models import RunCommand as RunCommandModel
+
+from pcs.component import Component
+from pcs.component_run import ComponentRun
+from pcs.registry import WebRegistry
+from pcs.repo import Repo
+from pcs.run_command import RunCommand
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
+from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 
 agentos_repo_spec = {
     "AgentOSRepo": {
@@ -32,14 +32,17 @@ class SimpleComponent:
 class WebRegistryIntegrationTestCases(LiveServerTestCase):
     def setUp(self):
         self.maxDiff = None
+        clear_cache_path(AOS_GLOBAL_REPOS_DIR, assume_yes=True)
 
     def test_web_registry_top_down(self):
         web_registry = WebRegistry(f"{self.live_server_url}/api/v1")
         simple_component = Component.from_repo(
             agentos_repo,
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
+            file_path="web/registry/tests/test_integration.py",
             class_name="SimpleComponent",
-            file_path="tests/test_web_registry.py",
+            instantiate=True,
+            use_venv=False,
         )
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run_with_arg_set(
@@ -56,13 +59,14 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
 
         # Test fetching all of the specs that were recursively added.
         wr_comp_run = ComponentRun.from_registry(
-            web_registry, comp_run.identifier
+            web_registry,
+            comp_run.identifier,
         )
         wr_run_cmd = RunCommand.from_registry(
             web_registry, wr_comp_run.run_command.identifier
         )
         wr_comp = Component.from_registry(
-            web_registry, wr_run_cmd.component.identifier
+            web_registry, wr_run_cmd.component.identifier, use_venv=False
         )
         wr_repo = Repo.from_registry(web_registry, wr_comp.repo.identifier)
         self.assertEqual(wr_repo.identifier, agentos_repo.identifier)
@@ -94,23 +98,29 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         simple_component = Component.from_repo(
             repo,
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
+            file_path="web/registry/tests/test_integration.py",
             class_name="SimpleComponent",
-            file_path="tests/test_web_registry.py",
+            instantiate=True,
+            use_venv=False,
         )
         self.assertEqual(simple_component.repo.identifier, "AgentOSRepo")
         simple_dependency = Component.from_repo(
             agentos_repo,
             identifier=f"SimpleDependency=={TESTING_BRANCH_NAME}",
+            file_path="web/registry/tests/test_integration.py",
             class_name="SimpleComponent",
-            file_path="tests/test_web_registry.py",
+            instantiate=True,
+            use_venv=False,
         )
         simple_component.add_dependency(simple_dependency, "dep")
 
         another_dependency = Component.from_repo(
             agentos_repo,
             identifier=f"AnotherDependency=={TESTING_BRANCH_NAME}",
+            file_path="web/registry/tests/test_integration.py",
             class_name="SimpleComponent",
-            file_path="tests/test_web_registry.py",
+            instantiate=True,
+            use_venv=False,
         )
         simple_component.add_dependency(another_dependency, "deptwo")
 
@@ -125,6 +135,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(flat_comp_spec["name"], "SimpleComponent")
         self.assertEqual(flat_comp_spec["version"], TESTING_BRANCH_NAME)
         self.assertEqual(flat_comp_spec["repo"], "AgentOSRepo")
+        self.assertEqual(flat_comp_spec["instantiate"], True)
         self.assertEqual(
             flat_comp_spec["dependencies"],
             {

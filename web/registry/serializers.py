@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.reverse import reverse
-from .models import Repo, ComponentDependency, Component, RunCommand, Run
+
+from .models import Component, ComponentDependency, Repo, Run, RunCommand
 
 
 def _get_link_from_id(serializer, view_name, obj_id):
@@ -81,6 +82,7 @@ class RunCommandSerializer(serializers.ModelSerializer):
             "component",
             "entry_point",
             "argument_set",
+            "log_return_value",
         ]
 
     def get_identifier_link(self, obj):

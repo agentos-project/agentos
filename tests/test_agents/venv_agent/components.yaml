@@ -8,5 +8,6 @@ components:
         repo: local_dir
         file_path: ./agent.py
         class_name: BasicAgent
+        instantiate: True
         requirements_path: ./requirements.txt
 

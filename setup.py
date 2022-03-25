@@ -1,9 +1,10 @@
 import os
 from importlib.machinery import SourceFileLoader
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 version = (
-    SourceFileLoader("agentos.version", os.path.join("agentos", "version.py"))
+    SourceFileLoader("pcs.version", os.path.join("pcs", "version.py"))
     .load_module()
     .VERSION
 )
@@ -21,9 +22,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         "click>=7.0",
-        "gym==0.17.1",
-        "numpy>=1.18.5",
-        "dm-env>=1.5",
         "pyyaml>=5.4.1",
         "mlflow>=1.20.2",
         "dulwich==0.20.28",

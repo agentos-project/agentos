@@ -1,3 +1,4 @@
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -11,28 +12,27 @@ ACME_DQN_REQS_PATH = EXAMPLE_AGENT_PATH / "acme_dqn" / "requirements.txt"
 ACME_R2D2_REQS_PATH = EXAMPLE_AGENT_PATH / "acme_r2d2" / "requirements.txt"
 WEB_REQS_PATH = REPO_ROOT / "web" / "requirements.txt"
 
+PYTORCH_CPU_URL = "https://download.pytorch.org/whl/cpu/torch_stable.html"
+
 
 def install_with_pip(pip):  # install with given pip
-    subprocess.run([pip, "install", "-r", DEV_REQS_PATH])
+    _run([pip, "install", "-r", DEV_REQS_PATH])
     if sys.platform == "linux":
         # Get CPU-only version of torch in case CUDA is not proper configured
-        subprocess.run(
-            [
-                pip,
-                "install",
-                "-r",
-                RLLIB_REQS_PATH,
-                "-f",
-                "https://download.pytorch.org/whl/torch_stable.html",
-            ]
-        )
-        subprocess.run([pip, "install", "-r", ACME_DQN_REQS_PATH])
-        subprocess.run([pip, "install", "-r", ACME_R2D2_REQS_PATH])
+        _run([pip, "install", "-r", RLLIB_REQS_PATH, "-f", PYTORCH_CPU_URL])
+        _run([pip, "install", "-r", SB3_REQS_PATH, "-f", PYTORCH_CPU_URL])
+        _run([pip, "install", "-r", ACME_DQN_REQS_PATH])
+        _run([pip, "install", "-r", ACME_R2D2_REQS_PATH])
     else:
-        subprocess.run([pip, "install", "-r", RLLIB_REQS_PATH])
-    subprocess.run([pip, "install", "-r", SB3_REQS_PATH])
-    subprocess.run([pip, "install", "-r", WEB_REQS_PATH])
-    subprocess.run([pip, "install", "-e", REPO_ROOT])
+        _run([pip, "install", "-r", RLLIB_REQS_PATH])
+        _run([pip, "install", "-r", SB3_REQS_PATH])
+    _run([pip, "install", "-r", WEB_REQS_PATH])
+    _run([pip, "install", "-e", REPO_ROOT])
+
+
+def _run(cmd):
+    print(f"\n==========\nRUNNING:\n\t{cmd }\n==========\n")
+    subprocess.run(cmd)
 
 
 def install_requirements():
@@ -58,6 +58,25 @@ def install_requirements():
         subprocess.check_call(["pip", "--version"], stdout=subprocess.DEVNULL)
     except (FileNotFoundError, subprocess.CalledProcessError):
         pip_installed = False
+
+    # check if conda is installed and valid
+    conda_installed = True
+    try:
+        subprocess.check_call(
+            ["conda", "--version"], stdout=subprocess.DEVNULL
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError, PermissionError):
+        conda_installed = False
+
+    # On Apple Silicon, as of 3/23/22 using pip directly to install scipy and
+    # grpcio is broken but conda installing them works and installs them as
+    # pip packages.
+    if (
+        sys.platform == "darwin"
+        and platform.processor() == "arm"
+        and conda_installed
+    ):
+        _run(["conda", "install", "-y", "scipy", "grpcio"])
 
     if pip_installed:
         install_with_pip("pip")

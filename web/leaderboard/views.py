@@ -1,12 +1,8 @@
-from django.urls import reverse
 from django.conf import settings
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
-from django.http import HttpResponseBadRequest
-from registry.models import ComponentDependency
-from registry.models import Component
-from registry.models import Repo
-from registry.models import Run
+from django.urls import reverse
+from registry.models import Component, ComponentDependency, Repo, Run
 
 
 def index(request):

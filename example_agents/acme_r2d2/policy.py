@@ -1,8 +1,8 @@
-from acme.agents.tf import actors
-from acme.tf import utils as tf2_utils
-import trfl
 import numpy as np
 import sonnet as snt
+import trfl
+from acme.agents.tf import actors
+from acme.tf import utils as tf2_utils
 
 
 class R2D2Policy:

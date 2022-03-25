@@ -13,11 +13,12 @@ as Gym's CartPole env.
 
 TODO: Add max_steps_per_iter to agent init.
 """
-import agentos
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 import tensorflow_probability as tfp
+from tensorflow import keras
+
+import agentos
 
 
 class TwoLayerTFPolicy(agentos.Policy):
@@ -123,6 +124,7 @@ class ReinforceAgent(agentos.Runnable):
 
 if __name__ == "__main__":
     import argparse
+
     from gym.envs.classic_control import CartPoleEnv
 
     parser = argparse.ArgumentParser(
@@ -147,10 +149,7 @@ if __name__ == "__main__":
         max_steps_per_rollout=args.max_steps_per_rollout,
         discount_rate=args.discount_rate,
     )
-    agentos.run_component(
-        reinforce_agent,
-        max_iters=args.max_iters,
-    )
+    reinforce_agent.run(max_iters=args.max_iters)
     print("Agent done!")
     if reinforce_agent.ret_vals:
         print(

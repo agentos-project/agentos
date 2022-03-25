@@ -1,13 +1,13 @@
-from django.urls import path, include
-from .views import (
-    AgentRunViewSet,
-    RunViewSet,
-    RunCommandViewSet,
-    ComponentViewSet,
-    RepoViewSet,
-)
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from .views import (
+    AgentRunViewSet,
+    ComponentViewSet,
+    RepoViewSet,
+    RunCommandViewSet,
+    RunViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"agentruns", AgentRunViewSet, basename="agentrun")

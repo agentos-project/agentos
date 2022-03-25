@@ -1,13 +1,15 @@
 import tempfile
-from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 from pathlib import Path
-from typing import Any, Optional, Mapping
-from agentos.exceptions import PythonComponentSystemException
-from agentos.identifiers import RunIdentifier
-from agentos.registry import Registry
-from agentos.run import Run
-from agentos.run_command import RunCommand
-from agentos.specs import RunSpec, flatten_spec, unflatten_spec
+from typing import Any, Mapping, Optional
+
+from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
+
+from pcs.exceptions import PythonComponentSystemException
+from pcs.identifiers import RunIdentifier
+from pcs.registry import InMemoryRegistry, Registry
+from pcs.run import Run
+from pcs.run_command import RunCommand
+from pcs.specs import RunSpec, flatten_spec, unflatten_spec
 
 
 def active_component_run(
@@ -24,7 +26,7 @@ def active_component_run(
         instead of returning None.
     :return: the active component run if it exists, else None.
     """
-    from agentos.component import Component
+    from pcs.component import Component
 
     if isinstance(caller, Component):
         component = caller
@@ -53,8 +55,8 @@ def active_component_run(
 class ComponentRun(Run):
     IS_FROZEN_KEY = "agentos.spec_is_frozen"
     IS_COMPONENT_RUN_TAG = "pcs.is_component_run"
-    RUN_COMMAND_ID_KEY = "agentos.run_command_id"
-    RUN_COMMAND_REGISTRY_FILENAME = "agentos.run_command_registry.yaml"
+    RUN_COMMAND_ID_KEY = "pcs.run_command_id"
+    RUN_COMMAND_REGISTRY_FILENAME = "pcs.run_command_registry.yaml"
     """
     A ComponentRun represents the execution of a specific entry point of a
     specific Component with a specific ArgumentSet.
@@ -83,7 +85,7 @@ class ComponentRun(Run):
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
-            f"PCS Component '{self.run_command.component.identifier.full}' "
+            f"PCS Component '{self.run_command.component.identifier}' "
             f"at Entry Point '{self.run_command.entry_point}'",
         )
         self._return_value = None
@@ -113,19 +115,23 @@ class ComponentRun(Run):
         force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
         spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
         if spec and not force:
             assert spec == self.to_spec(), (
                 f"A component run spec with identifier '{self.identifier}' "
                 f"already exists in registry '{registry}' and differs from "
                 "the one being added. Use force=True to overwrite the "
-                "existing one."
+                "existing one.:\n\n"
+                f"{spec}\n\n"
+                f"{self.to_spec()}"
             )
         if recurse:
             self.run_command.to_registry(
                 registry, recurse=recurse, force=force
             )
-        super().to_registry(
+        return super().to_registry(
             registry, include_artifacts=include_artifacts, force=force
         )
 

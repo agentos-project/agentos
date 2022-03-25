@@ -1,9 +1,9 @@
 # import yaml
 # import json
 from pathlib import Path
+
 from django.core.files.base import File
-from django.test import TestCase
-from django.test import Client
+from django.test import Client, TestCase
 from django.urls import reverse
 from registry.models import Component, Repo, Run, RunCommand
 
@@ -31,6 +31,7 @@ class RegistryTestCases(TestCase):
             entry_point="test_entry_pt",
             argument_set={},
             component=self.component,
+            log_return_value=False,
         )
         self.run = Run.objects.create(
             identifier="sklldfjiekls",

@@ -5,12 +5,14 @@ This agent can be run with the agentos CLI using:
     $ pip install -r requirements.txt
     $ agentos run agent.py gym.envs.classic_control.CartPoleEnv
 """
-import agentos
 import copy
+
 import gym
-from gym.envs.classic_control import CartPoleEnv
 import numpy as np
+from gym.envs.classic_control import CartPoleEnv
 from tensorflow import keras
+
+import agentos
 
 
 class TFPolicy(agentos.Policy):
@@ -32,7 +34,7 @@ class TFPolicy(agentos.Policy):
         return TFPolicy(keras.models.clone_model(self.tf_model))
 
 
-class EvolutionaryAgent(agentos.Agent):
+class EvolutionaryAgent(agentos.Runnable):
     def __init__(
         self,
         env_class,
@@ -41,7 +43,7 @@ class EvolutionaryAgent(agentos.Agent):
         survival_rate=0.1,
         max_steps=200,
     ):
-        super().__init__(env_class)
+        self.env = env_class()
         assert isinstance(self.env, gym.envs.classic_control.CartPoleEnv)
         self.population = [
             TFPolicy(m) for m in self.init_models(population_size)

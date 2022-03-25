@@ -1,25 +1,22 @@
-import os
-import sys
 import abc
 import logging
+import os
+import sys
 import uuid
 from enum import Enum
-from typing import TypeVar, Dict, Tuple, Union
 from pathlib import Path
-from dulwich import porcelain
-from dulwich.repo import Repo as PorcelainRepo
-from dulwich.objectspec import parse_ref
-from dulwich.objectspec import parse_commit
-from dulwich.errors import NotGitRepository
+from typing import Dict, Tuple, TypeVar, Union
 
-from agentos.exceptions import (
-    BadGitStateException,
-    PythonComponentSystemException,
-)
-from agentos.utils import AOS_GLOBAL_REPOS_DIR
-from agentos.identifiers import ComponentIdentifier, RepoIdentifier
-from agentos.specs import RepoSpec, NestedRepoSpec, RepoSpecKeys, flatten_spec
-from agentos.registry import Registry, InMemoryRegistry
+from dulwich import porcelain
+from dulwich.errors import NotGitRepository
+from dulwich.objectspec import parse_commit, parse_ref
+from dulwich.repo import Repo as PorcelainRepo
+
+from pcs.exceptions import BadGitStateException, PythonComponentSystemException
+from pcs.identifiers import ComponentIdentifier, RepoIdentifier
+from pcs.registry import InMemoryRegistry, Registry
+from pcs.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 
 logger = logging.getLogger(__name__)
 
@@ -40,24 +37,37 @@ class Repo(abc.ABC):
 
     UNKNOWN_URL = "unknown_url"
 
-    def __init__(self, identifier: str):
+    def __init__(self, identifier: str, default_version: str = None):
         self.identifier = identifier
+        self._default_version = default_version
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Repo):
             return self.to_spec() == other.to_spec()
         return self == other
 
+    def __contains__(self, item):
+        return self.get_local_file_path(str(item)).exists()
+
+    @property
+    def default_version(self):
+        return self._default_version
+
+    @default_version.setter
+    def default_version(self, value: str):
+        assert value, "default_version cannot be None or ''"
+        self._default_version = value
+
     @staticmethod
     def from_spec(spec: NestedRepoSpec, base_dir: str = None) -> "Repo":
         flat_spec = flatten_spec(spec)
-        if flat_spec["type"] == RepoType.LOCAL.value:
+        if flat_spec[RepoSpecKeys.TYPE] == RepoType.LOCAL.value:
             return LocalRepo.from_spec(spec, base_dir)
-        if flat_spec["type"] == RepoType.GITHUB.value:
+        if flat_spec[RepoSpecKeys.TYPE] == RepoType.GITHUB.value:
             return GitHubRepo.from_spec(spec)
         raise PythonComponentSystemException(
-            f"Unknown repo type '{flat_spec['type']} in "
-            f"repo '{flat_spec['identifier']}'"
+            f"Unknown repo type '{flat_spec[RepoSpecKeys.TYPE]} in "
+            f"repo '{flat_spec[RepoSpecKeys.IDENTIFIER]}'"
         )
 
     @classmethod
@@ -75,6 +85,17 @@ class Repo(abc.ABC):
         url = f"https://github.com/{github_account}/{repo_name}"
         return GitHubRepo(identifier, url)
 
+    def clear_repo_cache(
+        repo_cache_path: Path = None, assume_yes: bool = False
+    ) -> None:
+        """
+        Completely removes all the repos that have been created or checked
+        out in the ``repo_cache_path``. Pass True to ``assume_yes`` to run
+        non-interactively.
+        """
+        repo_cache_path = repo_cache_path or AOS_GLOBAL_REPOS_DIR
+        clear_cache_path(repo_cache_path, assume_yes)
+
     @abc.abstractmethod
     def to_spec(self, flatten: bool = False) -> RepoSpec:
         return NotImplementedError  # type: ignore
@@ -90,23 +111,25 @@ class Repo(abc.ABC):
         repo_spec = registry.get_repo_spec(
             self.identifier, error_if_not_found=False
         )
-        if repo_spec and not force:
-            assert repo_spec == self.to_spec(), (
-                f"A Repo with identifier '{self.identifier}' "
-                f"already exists in registry '{registry}' that differs "
-                f"from the one provided."
-                f"New repo spec:\n{self.to_spec()}\n\n"
-                f"Existing repo spec:\n{repo_spec}"
-            )
-        registry.add_repo_spec(self.to_spec())
+        if repo_spec:
+            if not force:
+                assert repo_spec == self.to_spec(), (
+                    f"A Repo with identifier '{self.identifier}' "
+                    f"already exists in registry '{registry}' that differs "
+                    f"from the one provided."
+                    f"New repo spec:\n{self.to_spec()}\n\n"
+                    f"Existing repo spec:\n{repo_spec}"
+                )
+        else:
+            registry.add_repo_spec(self.to_spec())
         return registry
 
     @abc.abstractmethod
-    def get_local_repo_dir(self, version: str) -> Path:
+    def get_local_repo_dir(self, version: str = None) -> Path:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_local_file_path(self, version: str, file_path: str) -> Path:
+    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
         raise NotImplementedError()
 
     def get_version_from_git(
@@ -130,7 +153,7 @@ class Repo(abc.ABC):
         If ''force'' is True, checks 2, 3, and 4 above are ignored.
         """
         full_path = self.get_local_file_path(
-            component_identifier.version, file_path
+            file_path, component_identifier.version
         )
         assert full_path.exists(), f"Path {full_path} does not exist"
         try:
@@ -250,7 +273,7 @@ class Repo(abc.ABC):
 
             baz/my_component.py
         """
-        full_path = self.get_local_file_path(identifier.version, file_path)
+        full_path = self.get_local_file_path(file_path, identifier.version)
         name = full_path.name
         curr_path = full_path.parent
         path_prefix = Path()
@@ -269,8 +292,10 @@ class GitHubRepo(Repo):
     A Component with an GitHubRepo can be found on GitHub.
     """
 
-    def __init__(self, identifier: str, url: str):
-        super().__init__(identifier)
+    def __init__(
+        self, identifier: str, url: str, default_version: str = "master"
+    ):
+        super().__init__(identifier, default_version)
         self.type = RepoType.GITHUB
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
@@ -295,13 +320,15 @@ class GitHubRepo(Repo):
         }
         return flatten_spec(spec) if flatten else spec
 
-    def get_local_repo_dir(self, version: str) -> Path:
+    def get_local_repo_dir(self, version: str = None) -> Path:
+        version = version if version else self._default_version
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
         return local_repo_path
 
-    def get_local_file_path(self, version: str, file_path: str) -> Path:
+    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
+        version = version if version else self._default_version
         local_repo_path = self.get_local_repo_dir(version)
         return (local_repo_path / file_path).absolute()
 
@@ -393,7 +420,9 @@ class LocalRepo(Repo):
         assert version is None, "LocalRepos don't support versioning."
         return self.local_dir
 
-    def get_local_file_path(self, version: str, relative_path: str) -> Path:
+    def get_local_file_path(
+        self, relative_path: str, version: str = None
+    ) -> Path:
         if version is not None:
             print(
                 "WARNING: version was passed into get_local_path() "

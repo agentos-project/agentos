@@ -10,7 +10,8 @@ components:
         file_path: ./agent.py
         class_name: AcmeDQNAgent
         requirements_path: ./requirements.txt
-        dependencies: 
+        instantiate: True
+        dependencies:
             network: network
             environment: environment
             AcmeRun: AcmeRun
@@ -19,7 +20,8 @@ components:
         repo: local_dir
         file_path: ./network.py
         class_name: AcmeDQNNetwork
-        dependencies: 
+        instantiate: True
+        dependencies:
             environment: environment
             AcmeRun: AcmeRun
     
@@ -27,6 +29,7 @@ components:
         repo: local_dir
         file_path: ./environment.py
         class_name: CartPole
+        instantiate: True
 
     AcmeRun:
         repo: local_dir

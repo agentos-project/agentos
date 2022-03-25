@@ -1,40 +1,42 @@
 import abc
+import json
 import logging
 import os
-import yaml
-import json
 import pprint
 import shutil
 import tarfile
 import tempfile
-import requests
 from pathlib import Path
-from typing import Dict, Sequence, Union, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
+
+import requests
+import yaml
 from dotenv import load_dotenv
-from agentos.identifiers import (
+
+from pcs.identifiers import (
     ComponentIdentifier,
-    RunIdentifier,
     RepoIdentifier,
     RunCommandIdentifier,
+    RunIdentifier,
 )
-from agentos.specs import (
-    flatten_spec,
-    unflatten_spec,
-    is_flat,
-    json_encode_flat_spec_field,
-    RepoSpec,
+from pcs.specs import (
     ComponentSpec,
     NestedComponentSpec,
-    RunSpec,
+    RepoSpec,
     RunCommandSpec,
+    RunSpec,
+    flatten_spec,
+    is_flat,
+    json_encode_flat_spec_field,
+    unflatten_spec,
 )
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from agentos.component import Component
-    from agentos.run import Run
-    from agentos.repo import Repo
+    from pcs.component import Component
+    from pcs.repo import Repo
+    from pcs.run import Run
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -45,6 +47,7 @@ if os.getenv("USE_LOCAL_SERVER", False) == "True":
 AOS_WEB_API_EXTENSION = "/api/v1"
 
 AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
+DEFAULT_REG_FILE = "components.yaml"
 
 
 class Registry(abc.ABC):
@@ -64,7 +67,7 @@ class Registry(abc.ABC):
         return InMemoryRegistry(config, base_dir=str(Path(file_path).parent))
 
     @classmethod
-    def from_repo(
+    def from_file_in_repo(
         cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
     ) -> "Registry":
         """
@@ -80,6 +83,60 @@ class Registry(abc.ABC):
             format == "yaml"
         ), "YAML is the only registry file format supported currently"
         return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
+
+    @classmethod
+    def from_repo_inferred(
+        cls,
+        repo: "Repo",
+        version: str = None,
+        py_file_suffixes: Tuple[str] = (".py", ".python"),
+        requirements_file: str = "requirements.txt",
+    ):
+        from pcs.component import Component  # Avoid circular ref.
+
+        reg = InMemoryRegistry()
+        # get list of python files in Repo
+        py_files = set()
+        for suff in py_file_suffixes:
+            found = repo.get_local_repo_dir(version=version).rglob(f"*{suff}")
+            py_files = py_files.union(set(found))
+        # create and register module, class, and class instance components
+        for f in py_files:
+            relative_path = f.relative_to(
+                repo.get_local_repo_dir(version=version)
+            )
+            c_name = str(relative_path).replace(os.sep, "__")
+            c_version = version if version else repo.default_version
+            c_identifier = f"{c_name}=={c_version}" if c_version else c_name
+            component_init_kwargs = {
+                "repo": repo,
+                "identifier": (f"module:{c_identifier}"),
+                "file_path": str(relative_path),
+                "instantiate": False,
+            }
+            if repo.get_local_file_path(
+                requirements_file, version=c_version
+            ).is_file():
+                component_init_kwargs.update(
+                    {"requirements_path": str(requirements_file)}
+                )
+            mod_component = Component(**component_init_kwargs)
+            # TODO: add depenendencies to component for every import
+            #       statement in the file (or just the ones at the
+            #       module level?)
+            reg.add_component(mod_component)
+        return reg
+        # TODO: finish this, add class components & class instance components?
+
+    @classmethod
+    def from_repo(cls, repo: "Repo"):
+        """
+        Get a registry from a Repo. If the Repo has a default registry file,
+        use that, if not infer specs by inspecting the contents of the repo.
+        """
+        if DEFAULT_REG_FILE in repo:
+            return cls.from_file_in_repo(DEFAULT_REG_FILE)
+        return cls.from_repo_inferred(repo)
 
     @classmethod
     def from_default(cls):
@@ -194,8 +251,7 @@ class Registry(abc.ABC):
                 return {}
         if len(components) > 1:
             versions = [
-                ComponentIdentifier.from_str(c_id).version
-                for c_id in components.keys()
+                ComponentIdentifier(c_id).version for c_id in components.keys()
             ]
             version_str = "\n - ".join(versions)
             raise LookupError(
@@ -210,7 +266,7 @@ class Registry(abc.ABC):
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = False,
     ) -> Optional[ComponentSpec]:
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         return self.get_component_spec(
             identifier.name, identifier.version, flatten=flatten
         )
@@ -220,7 +276,7 @@ class Registry(abc.ABC):
         identifier: Union[ComponentIdentifier, str],
         flatten: bool = True,
     ) -> (Sequence[ComponentSpec], Sequence[RepoSpec]):
-        identifier = ComponentIdentifier.from_str(str(identifier))
+        identifier = ComponentIdentifier(identifier)
         component_identifiers = [identifier]
         repo_specs = {}
         component_specs = {}
@@ -233,9 +289,7 @@ class Registry(abc.ABC):
             repo_spec = self.get_repo_spec(repo_id, flatten=flatten)
             repo_specs[repo_id] = repo_spec
             for d_id in inner_spec.get("dependencies", {}).values():
-                component_identifiers.append(
-                    ComponentIdentifier.from_str(d_id)
-                )
+                component_identifiers.append(ComponentIdentifier(d_id))
         return list(component_specs.values()), list(repo_specs.values())
 
     def has_component_by_id(self, identifier: ComponentIdentifier) -> bool:
@@ -335,7 +389,7 @@ class InMemoryRegistry(Registry):
             try:
                 components = {}
                 for k, v in self._registry["components"].items():
-                    candidate_id = ComponentIdentifier.from_str(k)
+                    candidate_id = ComponentIdentifier(k)
                     passes_filter = True
                     if filter_by_name and candidate_id.name != filter_by_name:
                         passes_filter = False
@@ -553,7 +607,7 @@ class WebRegistry(Registry):
             shutil.rmtree(tmp_dir_path)
 
     def get_run(self, run_id: str) -> "Run":
-        from agentos.run import Run
+        from pcs.run import Run
 
         return Run.from_registry(self, run_id)
 
@@ -573,7 +627,7 @@ class WebRegistry(Registry):
         for spec_key, spec_val in [
             (k, v)
             for k, v in flat_spec.items()
-            if k.endswith("_link") or not v
+            if k.endswith("_link") or v is None
         ]:
             logger.debug(
                 f"Dropping field '{spec_key}: {spec_val}' from spec "

@@ -1,7 +1,8 @@
 import acme
-from acme.agents.tf import dqn
 import numpy as np
-from agentos import active_component_run
+from acme.agents.tf import dqn
+
+from pcs import active_component_run
 
 
 class AcmeDQNAgent:

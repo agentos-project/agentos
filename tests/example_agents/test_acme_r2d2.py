@@ -1,8 +1,7 @@
 import pytest
-from tests.utils import run_test_command
-from tests.utils import is_linux
-from tests.utils import ACME_R2D2_AGENT_DIR
+
 from agentos.cli import run
+from tests.utils import ACME_R2D2_AGENT_DIR, is_linux, run_test_command
 
 test_args = ["agent", "--use-outer-env"]
 test_kwargs = {

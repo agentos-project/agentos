@@ -19,8 +19,9 @@ the spec identifier at the same level as the rest of the spec properties.
 
 import copy
 import json
-from typing import Mapping, Union, Any
-from agentos.identifiers import ComponentIdentifier
+from typing import Any, Mapping, Union
+
+from pcs.identifiers import ComponentIdentifier
 
 FlatSpec = Mapping[str, str]
 
@@ -79,7 +80,8 @@ class RunCommandSpecKeys:
     IDENTIFIER = "identifier"  # for flattened RunCommandSpec
     COMPONENT_ID = "component"
     ENTRY_POINT = "entry_point"
-    PARAMETER_SET = "argument_set"
+    ARGUMENT_SET = "argument_set"
+    LOG_RETURN_VALUE = "log_return_value"
 
 
 RunSpec = Mapping

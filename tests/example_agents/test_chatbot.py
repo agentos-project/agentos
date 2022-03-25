@@ -1,13 +1,12 @@
-from example_agents.chatbot.main import ChatBot
 from example_agents.chatbot.env import MultiChatEnv
+from example_agents.chatbot.main import ChatBot
 
 
 def test_chatbot(capsys):
     env_generator = MultiChatEnv()
     client_env = env_generator()
     client_env.reset()
-    ChatBot.env_class = env_generator
-    chat_bot = ChatBot()
+    chat_bot = ChatBot(env_generator)
     # Say something in the room for the agent to hear
     response_txt, _, _, _ = client_env.step("one")
     # Agent hears "one" on this advance, but can't respond yet

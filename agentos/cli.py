@@ -4,15 +4,18 @@ The CLI allows creation of a simple template agent.
 """
 import os
 import sys
-import yaml
-import click
 from datetime import datetime
 from pathlib import Path
-from agentos import Component
-from agentos import ArgumentSet
-from agentos.run import Run
-from agentos.registry import Registry
-from agentos.virtual_env import VirtualEnv
+
+import click
+import yaml
+
+from pcs.argument_set import ArgumentSet
+from pcs.component import Component
+from pcs.registry import Registry
+from pcs.repo import Repo
+from pcs.run import Run
+from pcs.virtual_env import VirtualEnv
 
 
 @click.group()
@@ -167,18 +170,17 @@ def run(
     arg_set_file,
     use_venv,
 ):
-    venv = VirtualEnv.from_registry_file(registry_file, component_name)
-    venv.set_environment_handling(use_venv)
-    with venv:
-        cli_arg_dict = _user_args_to_dict(arg_set_list)
-        component = Component.from_registry_file(registry_file, component_name)
-        arg_set = ArgumentSet.from_yaml(arg_set_file)
-        entry_point = entry_point or component.get_default_entry_point()
-        arg_set.update(component_name, entry_point, cli_arg_dict)
-        run = component.run_with_arg_set(entry_point, arg_set)
-        print(f"Run {run.identifier} recorded.", end=" ")
-        print("Execute the following for details:")
-        print(f"\n  agentos status {run.identifier}\n")
+    cli_arg_dict = _user_args_to_dict(arg_set_list)
+    component = Component.from_registry_file(
+        registry_file, component_name, use_venv=use_venv
+    )
+    arg_set = ArgumentSet.from_yaml(arg_set_file)
+    entry_point = entry_point or component.get_default_entry_point()
+    arg_set.update(component_name, entry_point, cli_arg_dict)
+    run = component.run_with_arg_set(entry_point, arg_set)
+    print(f"Run {run.identifier} recorded.", end=" ")
+    print("Execute the following for details:")
+    print(f"\n  agentos status {run.identifier}\n")
 
 
 @agentos_cmd.command()
@@ -196,11 +198,10 @@ def status(entity_id, registry_file, use_venv):
         Run.from_existing_run_id(entity_id).print_status(detailed=True)
     else:  # assume entity_id is a ComponentIdentifier
         try:
-            venv = VirtualEnv.from_registry_file(registry_file, entity_id)
-            venv.set_environment_handling(use_venv)
-            with venv:
-                c = Component.from_registry_file(registry_file, entity_id)
-                c.print_status_tree()
+            c = Component.from_registry_file(
+                registry_file, entity_id, use_venv=use_venv
+            )
+            c.print_status_tree()
         except LookupError:
             print(f"No Run or component found with Identifier {entity_id}.")
 
@@ -236,12 +237,11 @@ def freeze(component_name, registry_file, force, use_venv):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    venv = VirtualEnv.from_registry_file(registry_file, component_name)
-    venv.set_environment_handling(use_venv)
-    with venv:
-        component = Component.from_registry_file(registry_file, component_name)
-        frozen_reg = component.to_frozen_registry(force=force)
-        print(yaml.dump(frozen_reg.to_dict()))
+    component = Component.from_registry_file(
+        registry_file, component_name, use_venv=use_venv
+    )
+    frozen_reg = component.to_frozen_registry(force=force)
+    print(yaml.dump(frozen_reg.to_dict()))
 
 
 @agentos_cmd.command()
@@ -257,18 +257,45 @@ def publish(
     sub-Components) to the AgentOS server.  This command will fail if any
     Component in the dependency tree cannot be frozen.
     """
-    venv = VirtualEnv.from_registry_file(registry_file, component_name)
-    venv.set_environment_handling(use_venv)
-    with venv:
-        component = Component.from_registry_file(registry_file, component_name)
-        frozen_spec = component.to_frozen_registry(force=force).to_spec()
-        Registry.get_default().add_component_spec(frozen_spec)
+    component = Component.from_registry_file(
+        registry_file, component_name, use_venv=use_venv
+    )
+    frozen_spec = component.to_frozen_registry(force=force).to_spec()
+    Registry.get_default().add_component_spec(frozen_spec)
 
 
 @agentos_cmd.command()
 @_option_assume_yes
 def clear_env_cache(assume_yes):
+    """
+    This command clears all virtual environments that have been cached by
+    AgentOS in your local file system.  All the virtual environments can be
+    automatically recreated when re-running a Component that has
+    ``requirements_path`` specified.
+    """
     VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_repo_cache(assume_yes):
+    """
+    This command clears all git repos that have been cached by AgentOS on your
+    local file system.  These repos will be recreated as you run Components
+    that require them.
+    """
+    Repo.clear_repo_cache(assume_yes=assume_yes)
+
+
+@agentos_cmd.command()
+@_option_assume_yes
+def clear_cache(assume_yes):
+    """
+    This command clears all virtual environments AND git repos that have been
+    cached by AgentOS on your local file system.
+    """
+    VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+    Repo.clear_repo_cache(assume_yes=assume_yes)
 
 
 # Copied from https://github.com/mlflow/mlflow/blob/3958cdf9664ade34ebcf5960bee215c80efae992/mlflow/cli.py#L188 # noqa: E501

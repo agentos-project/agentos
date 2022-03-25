@@ -1,5 +1,6 @@
 import acme
-from agentos import active_component_run
+
+from pcs import active_component_run
 
 
 class AcmeR2D2Agent:

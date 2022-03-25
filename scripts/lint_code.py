@@ -3,17 +3,19 @@ Run flake8 linter on AgentOS Python files
 
 To use::
 
+  # Lint all code
   $ python scripts/lint_code.py
+
+  # Lint specific files
+  $ python scripts/lint_code.py [path/to/file1] [path/to/file2]
 """
 
 import os
 import sys
 from pathlib import Path
-from subprocess import run
-from subprocess import PIPE
+from subprocess import PIPE, run
 
-from shared import root_dir
-from shared import traverse_tracked_files
+from shared import root_dir, traverse_tracked_files
 
 returncode = 0
 

@@ -1,4 +1,5 @@
 -e ../../
-tensorflow>=2.5.1  # reinforce, dqn
-tensorflow-probability==0.10.0  # reinforce
-pandas>=1.1.5,<=1.2.0 # dqn. 1.2.0 not available on python 3.6
+tensorflow==2.5.3  # reinforce, dqn; was >=2.5.1 but 2.4.0 is newest on Apple Silicon
+tensorflow-probability==0.12.0  # reinforce; was 0.10.0
+pandas==1.4.1
+gym==0.20.0

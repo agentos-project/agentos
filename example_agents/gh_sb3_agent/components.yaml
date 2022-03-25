@@ -9,7 +9,8 @@ components:
         repo: aos_github
         file_path: example_agents/sb3_agent/agent.py
         class_name: SB3PPOAgent
-        dependencies: 
+        instantiate: True
+        dependencies:
             environment: environment==test_staging
             SB3AgentRun: SB3AgentRun==test_staging
             blah: agent==test_staging
@@ -18,7 +19,8 @@ components:
         repo: aos_github
         file_path: example_agents/sb3_agent/agent.py
         class_name: SB3PPOAgent
-        dependencies: 
+        instantiate: True
+        dependencies:
             environment: environment==test_staging
             SB3AgentRun: SB3AgentRun==test_staging
 
@@ -26,7 +28,8 @@ components:
         repo: aos_github
         file_path: example_agents/sb3_agent/environment.py
         class_name: CartPole
-    
+        instantiate: True
+
     SB3AgentRun==test_staging:
         repo: aos_github
         file_path: example_agents/sb3_agent/sb3_run.py

@@ -1,21 +1,22 @@
 from hashlib import sha1
 from typing import TYPE_CHECKING
-from agentos.registry import Registry
-from agentos.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
-from agentos.identifiers import RunIdentifier, RunCommandIdentifier
-from agentos.run import Run
+
+from pcs.identifiers import RunCommandIdentifier, RunIdentifier
+from pcs.registry import Registry
+from pcs.run import Run
+from pcs.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 
 # Avoids circular imports
 if TYPE_CHECKING:
-    from agentos.component import Component
-    from agentos.argument_set import ArgumentSet
+    from pcs.argument_set import ArgumentSet
+    from pcs.component import Component
 
 
 class RunCommand:
     """
     A RunCommand contains everything required to reproducibly execute a
     Component Entry Point. Unlike a Run, a RunCommand is not concerned with the
-    outputs of the execution (see :py:func:agentos.Run: for more on that.)
+    outputs of the execution (see :py:func:pcs.Run: for more on that.)
 
     You can think of a RunCommand as a glorified dictionary containing the
     pointers to arguments and versions of code necessary to reproduce the
@@ -43,13 +44,31 @@ class RunCommand:
         component: "Component",
         entry_point: str,
         argument_set: "ArgumentSet",
+        log_return_value: bool,
     ):
+        """
+        RunCommand constructor.
+
+        :param component: The Component whose entry point is being run.
+        :param entry_point: The Entry Point being run.
+        :param argument_set: Dictionary of arguments that will be used to
+            initialize the Component plus any of its dependencies and
+            run the specified Entry Point.
+        :param log_return_value: Whether or not to log the return value
+            of the Entry point as part of this run. If True, the return
+            value will be serialized to a file per the default value of
+            the `return_value_log_format` parameter of
+            `Component.run_with_arg_set()`. If the return value is a type
+            that is not trivially serializable, you may want to set this
+            to False.
+        """
         self._component = component
         self._entry_point = entry_point
         self._argument_set = argument_set
+        self._log_return_value = log_return_value
 
     def __repr__(self) -> str:
-        return f"<agentos.run_command.RunCommand: {self}>"
+        return f"<pcs.run_command.RunCommand: {self}>"
 
     def __hash__(self) -> int:
         return int(self._sha1(), 16)
@@ -58,9 +77,10 @@ class RunCommand:
         # Not positive if this is stable across architectures.
         # See https://stackoverflow.com/q/27522626
         hash_str = (
-            self._component.identifier.full
+            self._component.identifier
             + self._entry_point
             + self._argument_set.identifier
+            + str(self._log_return_value)
         )
         return sha1(hash_str.encode("utf-8")).hexdigest()
 
@@ -89,8 +109,9 @@ class RunCommand:
     def argument_set(self):
         return self._argument_set
 
-    def new_run(self, experiment_id: str = None):
-        return Run.from_run_command(self, experiment_id=experiment_id)
+    @property
+    def log_return_value(self):
+        return self._log_return_value
 
     @classmethod
     def from_default_registry(cls, run_id: RunIdentifier) -> "RunCommand":
@@ -115,17 +136,18 @@ class RunCommand:
             spec_identifier = key
             inner_spec = value
         component_id = inner_spec[RunCommandSpecKeys.COMPONENT_ID]
-        from agentos.component import Component
-        from agentos.argument_set import ArgumentSet
+        from pcs.argument_set import ArgumentSet
+        from pcs.component import Component
 
         component = Component.from_registry(registry, component_id)
         arg_set = ArgumentSet.from_spec(
-            inner_spec[RunCommandSpecKeys.PARAMETER_SET]
+            inner_spec[RunCommandSpecKeys.ARGUMENT_SET]
         )
         new_run_cmd = cls(
             component=component,
             entry_point=inner_spec[RunCommandSpecKeys.ENTRY_POINT],
             argument_set=arg_set,
+            log_return_value=inner_spec[RunCommandSpecKeys.LOG_RETURN_VALUE],
         )
         assert new_run_cmd.identifier == spec_identifier, (
             f"Identifier of new run_command {new_run_cmd.identifier} "
@@ -160,10 +182,10 @@ class RunCommand:
         passing the given registry arg as well as the recurse and force args
         through to that call.
 
-        For details on those flags, see :py:func:agentos.Component.to_registry:
+        For details on those flags, see :py:func:pcs.Component.to_registry:
         """
         if not registry:
-            from agentos.registry import InMemoryRegistry
+            from pcs.registry import InMemoryRegistry
 
             registry = InMemoryRegistry()
 
@@ -190,14 +212,17 @@ class RunCommand:
         :return: a new RunCommand object representing the rerun.
         """
         return self.component.run_with_arg_set(
-            self.entry_point, self.argument_set
+            self.entry_point,
+            args=self.argument_set,
+            log_return_value=self.log_return_value,
         )
 
     def to_spec(self, flatten: bool = False) -> RunCommandSpec:
         flat_spec = {
             RunCommandSpecKeys.IDENTIFIER: self.identifier,
-            RunCommandSpecKeys.COMPONENT_ID: self._component.identifier.full,
+            RunCommandSpecKeys.COMPONENT_ID: str(self._component.identifier),
             RunCommandSpecKeys.ENTRY_POINT: self._entry_point,
-            RunCommandSpecKeys.PARAMETER_SET: self._argument_set.to_spec(),
+            RunCommandSpecKeys.ARGUMENT_SET: self._argument_set.to_spec(),
+            RunCommandSpecKeys.LOG_RETURN_VALUE: self._log_return_value,
         }
         return flat_spec if flatten else unflatten_spec(flat_spec)

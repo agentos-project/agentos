@@ -53,7 +53,8 @@ More specifically, a Component consists of the following information:
 * Object Name - the name of the Python object the Component manages.
 
 * Requirements Path - the location of a requirements file that can be installed
-  using ``pip`` that list the packages needed by the Component to run.
+  using ``pip`` (or a ``setup.py`` file) that list the packages needed by the
+  Component to run.
 
 * Dependencies - a list of other Components on which this Component depends.
 

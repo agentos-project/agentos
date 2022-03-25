@@ -1,7 +1,8 @@
-from registry.models import Repo, ComponentDependency, Component
-from registry.serializers import ComponentSerializer
-from django.test import LiveServerTestCase
 import logging
+
+from django.test import LiveServerTestCase
+from registry.models import Component, ComponentDependency, Repo
+from registry.serializers import ComponentSerializer
 
 logger = logging.getLogger(__name__)
 

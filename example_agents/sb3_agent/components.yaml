@@ -9,8 +9,9 @@ components:
         repo: sb3_agent_dir
         file_path: agent.py
         class_name: SB3PPOAgent
+        instantiate: True
         requirements_path: ./requirements.txt
-        dependencies: 
+        dependencies:
             environment: environment
             SB3AgentRun: SB3AgentRun
     
@@ -18,7 +19,8 @@ components:
         repo: sb3_agent_dir
         file_path: environment.py
         class_name: CartPole
-    
+        instantiate: True
+
     SB3AgentRun:
         repo: sb3_agent_dir
         file_path: sb3_run.py
