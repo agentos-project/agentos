@@ -127,7 +127,7 @@ Use the ``--help`` flag to learn more about other optional flags that
 changed).
 
 Notice that the build file puts the compiled docs into ``docs/<version_num>``
-where ``version_num`` comes from ``agentos/version.py``.
+where ``version_num`` comes from ``pcs/version.py``.
 
 Or you can build the docs manually (e.g., to control where output goes)::
 
@@ -189,7 +189,7 @@ Here are the steps for releasing AgentOS:
 
 #. Create a release pull request (PR) that:
 
-   * Removes "-alpha" suffix from the version number in ``agentos/version.py``.
+   * Removes "-alpha" suffix from the version number in ``pcs/version.py``.
    * Contains draft release notes (summary of major changes).
 
 #. Wait till the PR gets LGTMs from all other committers, then merge it.
