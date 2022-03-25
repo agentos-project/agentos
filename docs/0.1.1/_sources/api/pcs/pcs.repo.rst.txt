@@ -1,0 +1,7 @@
+repo
+========
+
+.. automodule:: pcs.repo
+   :members:
+   :undoc-members:
+   :special-members: __init__

@@ -1,0 +1,7 @@
+argument_set
+================
+
+.. automodule:: pcs.argument_set
+   :members:
+   :undoc-members:
+   :special-members: __init__

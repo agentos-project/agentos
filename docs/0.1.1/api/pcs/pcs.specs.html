@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>specs &mdash; AgentOS 0.1.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="utils" href="pcs.utils.html" />
+    <link rel="prev" title="run_command" href="pcs.run_command.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Component System Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../repl_quickstart.html">Python REPL Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../local_quickstart.html">Local Development Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../agentos/index.html">agentos</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">pcs</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pcs.argument_set.html">argument_set</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.component.html">component</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.component_run.html">component_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.exceptions.html">exceptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.identifiers.html">identifiers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.registry.html">registry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.repo.html">repo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.run.html">run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.run_command.html">run_command</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">specs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.utils.html">utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.version.html">version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.virtual_env.html">virtual_env</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">API Documentation</a> &raquo;</li>
+          <li><a href="index.html">pcs</a> &raquo;</li>
+      <li>specs</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/pcs/pcs.specs.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pcs.specs">
+<span id="specs"></span><h1>specs<a class="headerlink" href="#module-pcs.specs" title="Permalink to this headline"></a></h1>
+<p>The spec types in this file specify which types of objects can be added to a
+Registry. They are literally types, and used in type annotations on core
+abstractions.</p>
+<p>Though this isn’t currently enforced by the types, objects that are Specs
+should be serializable to YAML format and are human readable and manageable.</p>
+<p>Currently dicts are most often used where a Spec is required by type
+signatures.</p>
+<p>Specs are always mappings. By default, specs map from an identifier string to
+a mapping of key-value properties of the spec; and in some specs such as
+ArgumentSetSpec, those values can themselves be mappings.</p>
+<p>For developer convenience many functions support flattened specs, which have
+the spec identifier at the same level as the rest of the spec properties.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">ComponentSpecKeys</span></span><a class="headerlink" href="#pcs.specs.ComponentSpecKeys" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys.CLASS_NAME">
+<span class="sig-name descname"><span class="pre">CLASS_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'class_name'</span></em><a class="headerlink" href="#pcs.specs.ComponentSpecKeys.CLASS_NAME" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys.DEPENDENCIES">
+<span class="sig-name descname"><span class="pre">DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'dependencies'</span></em><a class="headerlink" href="#pcs.specs.ComponentSpecKeys.DEPENDENCIES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys.FILE_PATH">
+<span class="sig-name descname"><span class="pre">FILE_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'file_path'</span></em><a class="headerlink" href="#pcs.specs.ComponentSpecKeys.FILE_PATH" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys.IDENTIFIER">
+<span class="sig-name descname"><span class="pre">IDENTIFIER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'identifier'</span></em><a class="headerlink" href="#pcs.specs.ComponentSpecKeys.IDENTIFIER" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys.NAME">
+<span class="sig-name descname"><span class="pre">NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'name'</span></em><a class="headerlink" href="#pcs.specs.ComponentSpecKeys.NAME" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.ComponentSpecKeys.VERSION">
+<span class="sig-name descname"><span class="pre">VERSION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'version'</span></em><a class="headerlink" href="#pcs.specs.ComponentSpecKeys.VERSION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pcs.specs.RepoSpecKeys">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">RepoSpecKeys</span></span><a class="headerlink" href="#pcs.specs.RepoSpecKeys" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RepoSpecKeys.IDENTIFIER">
+<span class="sig-name descname"><span class="pre">IDENTIFIER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'identifier'</span></em><a class="headerlink" href="#pcs.specs.RepoSpecKeys.IDENTIFIER" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RepoSpecKeys.PATH">
+<span class="sig-name descname"><span class="pre">PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'path'</span></em><a class="headerlink" href="#pcs.specs.RepoSpecKeys.PATH" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RepoSpecKeys.TYPE">
+<span class="sig-name descname"><span class="pre">TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'type'</span></em><a class="headerlink" href="#pcs.specs.RepoSpecKeys.TYPE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RepoSpecKeys.URL">
+<span class="sig-name descname"><span class="pre">URL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'url'</span></em><a class="headerlink" href="#pcs.specs.RepoSpecKeys.URL" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pcs.specs.RunCommandSpecKeys">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">RunCommandSpecKeys</span></span><a class="headerlink" href="#pcs.specs.RunCommandSpecKeys" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RunCommandSpecKeys.ARGUMENT_SET">
+<span class="sig-name descname"><span class="pre">ARGUMENT_SET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'argument_set'</span></em><a class="headerlink" href="#pcs.specs.RunCommandSpecKeys.ARGUMENT_SET" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RunCommandSpecKeys.COMPONENT_ID">
+<span class="sig-name descname"><span class="pre">COMPONENT_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'component'</span></em><a class="headerlink" href="#pcs.specs.RunCommandSpecKeys.COMPONENT_ID" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RunCommandSpecKeys.ENTRY_POINT">
+<span class="sig-name descname"><span class="pre">ENTRY_POINT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'entry_point'</span></em><a class="headerlink" href="#pcs.specs.RunCommandSpecKeys.ENTRY_POINT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RunCommandSpecKeys.IDENTIFIER">
+<span class="sig-name descname"><span class="pre">IDENTIFIER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'identifier'</span></em><a class="headerlink" href="#pcs.specs.RunCommandSpecKeys.IDENTIFIER" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RunCommandSpecKeys.LOG_RETURN_VALUE">
+<span class="sig-name descname"><span class="pre">LOG_RETURN_VALUE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'log_return_value'</span></em><a class="headerlink" href="#pcs.specs.RunCommandSpecKeys.LOG_RETURN_VALUE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pcs.specs.RunSpecKeys">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">RunSpecKeys</span></span><a class="headerlink" href="#pcs.specs.RunSpecKeys" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.RunSpecKeys.IDENTIFIER">
+<span class="sig-name descname"><span class="pre">IDENTIFIER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'identifier'</span></em><a class="headerlink" href="#pcs.specs.RunSpecKeys.IDENTIFIER" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pcs.specs.VersionedSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">VersionedSpec</span></span><a class="headerlink" href="#pcs.specs.VersionedSpec" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="pcs.specs.VersionedSpec.SEPARATOR">
+<span class="sig-name descname"><span class="pre">SEPARATOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'=='</span></em><a class="headerlink" href="#pcs.specs.VersionedSpec.SEPARATOR" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pcs.specs.flatten_spec">
+<span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">flatten_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nested_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Mapping</span></span></span><a class="headerlink" href="#pcs.specs.flatten_spec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pcs.specs.is_flat">
+<span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">is_flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#pcs.specs.is_flat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pcs.specs.json_encode_flat_spec_field">
+<span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">json_encode_flat_spec_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Mapping</span></span></span><a class="headerlink" href="#pcs.specs.json_encode_flat_spec_field" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pcs.specs.unflatten_spec">
+<span class="sig-prename descclassname"><span class="pre">pcs.specs.</span></span><span class="sig-name descname"><span class="pre">unflatten_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flat_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preserve_inner_identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Mapping</span></span></span><a class="headerlink" href="#pcs.specs.unflatten_spec" title="Permalink to this definition"></a></dt>
+<dd><p>Takes a flat spec, and returns a nested spec. A nested spec is a map
+from the spec’s identifier to a map of the specs other key-&gt;value
+attributes. A flat spec moves the identifier into the inner map,
+essentially flattening the outer two dictionaries into a single dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flat_spec</strong> – a flat spec to unflatten.</p></li>
+<li><p><strong>preserve_inner_identifier</strong> – if true, do not delete ‘identiifer’,
+‘name’, or ‘version’ keys (and their associated values) from the inner
+part of the nested spec that is returned. Else, do remove them, i.e.,
+normalize the spec.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Nested version of <code class="docutils literal notranslate"><span class="pre">flat_spec</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pcs.run_command.html" class="btn btn-neutral float-left" title="run_command" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pcs.utils.html" class="btn btn-neutral float-right" title="utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

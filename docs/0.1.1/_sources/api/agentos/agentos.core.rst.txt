@@ -1,0 +1,7 @@
+core
+============
+
+.. automodule:: agentos.core
+   :members:
+   :undoc-members:
+   :special-members: __init__

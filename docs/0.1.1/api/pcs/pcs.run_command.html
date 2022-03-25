@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>run_command &mdash; AgentOS 0.1.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="specs" href="pcs.specs.html" />
+    <link rel="prev" title="run" href="pcs.run.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Component System Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../repl_quickstart.html">Python REPL Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../local_quickstart.html">Local Development Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../agentos/index.html">agentos</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">pcs</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pcs.argument_set.html">argument_set</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.component.html">component</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.component_run.html">component_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.exceptions.html">exceptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.identifiers.html">identifiers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.registry.html">registry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.repo.html">repo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.run.html">run</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">run_command</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.specs.html">specs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.utils.html">utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.version.html">version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pcs.virtual_env.html">virtual_env</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">API Documentation</a> &raquo;</li>
+          <li><a href="index.html">pcs</a> &raquo;</li>
+      <li>run_command</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/pcs/pcs.run_command.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pcs.run_command">
+<span id="run-command"></span><h1>run_command<a class="headerlink" href="#module-pcs.run_command" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pcs.run_command.</span></span><span class="sig-name descname"><span class="pre">RunCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry_point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">argument_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentSet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_return_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pcs.run_command.RunCommand" title="Permalink to this definition"></a></dt>
+<dd><p>A RunCommand contains everything required to reproducibly execute a
+Component Entry Point. Unlike a Run, a RunCommand is not concerned with the
+outputs of the execution (see :py:func:pcs.Run: for more on that.)</p>
+<p>You can think of a RunCommand as a glorified dictionary containing the
+pointers to arguments and versions of code necessary to reproduce the
+setting up of a component (including its dependency dag) and the execution
+of one of its entry points with a specific ArgumentSet. Whereas a Run
+itself (which may contain a RunCommand) is more like a client to a backing
+store used various types of outputs of the code being executed.</p>
+<p>Our concept of a RunCommand is inspired by the MLflow <code class="docutils literal notranslate"><span class="pre">Project</span> <span class="pre">Run</span></code>
+abstraction. In MLflow runs of Projects (which are roughly analogous to our
+Components) are intertwined with MLflow’s concept of Runs for tracking
+purposes. In MLflow, a Project Run is a wrapper around an MLflow tracking
+Run.</p>
+<p>In MLflow, an entry point exists in the context of a Project Run. A
+project Run uses Tags on the underlying tracking run to log all sorts of
+metadata, including the entry point, per
+<a class="reference external" href="https://github.com/mlflow/mlflow/blob/v1.22.0/mlflow/projects/utils.py#L225">https://github.com/mlflow/mlflow/blob/v1.22.0/mlflow/projects/utils.py#L225</a>
+and
+<a class="reference external" href="https://github.com/mlflow/mlflow/blob/v1.22.0/mlflow/utils/mlflow_tags.py">https://github.com/mlflow/mlflow/blob/v1.22.0/mlflow/utils/mlflow_tags.py</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry_point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">argument_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentSet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_return_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pcs.run_command.RunCommand.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>RunCommand constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> – The Component whose entry point is being run.</p></li>
+<li><p><strong>entry_point</strong> – The Entry Point being run.</p></li>
+<li><p><strong>argument_set</strong> – Dictionary of arguments that will be used to
+initialize the Component plus any of its dependencies and
+run the specified Entry Point.</p></li>
+<li><p><strong>log_return_value</strong> – Whether or not to log the return value
+of the Entry point as part of this run. If True, the return
+value will be serialized to a file per the default value of
+the <cite>return_value_log_format</cite> parameter of
+<cite>Component.run_with_arg_set()</cite>. If the return value is a type
+that is not trivially serializable, you may want to set this
+to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.argument_set">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">argument_set</span></span><a class="headerlink" href="#pcs.run_command.RunCommand.argument_set" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.component">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">component</span></span><a class="headerlink" href="#pcs.run_command.RunCommand.component" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.entry_point">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">entry_point</span></span><a class="headerlink" href="#pcs.run_command.RunCommand.entry_point" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.from_default_registry">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_default_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pcs.run_command.RunCommand" title="pcs.run_command.RunCommand"><span class="pre">pcs.run_command.RunCommand</span></a></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.from_default_registry" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.from_registry">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pcs.registry.html#pcs.registry.Registry" title="pcs.registry.Registry"><span class="pre">pcs.registry.Registry</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_command_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pcs.run_command.RunCommand" title="pcs.run_command.RunCommand"><span class="pre">pcs.run_command.RunCommand</span></a></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.from_registry" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.from_spec">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_cmd_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pcs.registry.html#pcs.registry.Registry" title="pcs.registry.Registry"><span class="pre">pcs.registry.Registry</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pcs.run_command.RunCommand" title="pcs.run_command.RunCommand"><span class="pre">pcs.run_command.RunCommand</span></a></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.from_spec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.identifier">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identifier</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pcs.run_command.RunCommand.identifier" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.log_return_value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_return_value</span></span><a class="headerlink" href="#pcs.run_command.RunCommand.log_return_value" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.publish">
+<span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.publish" title="Permalink to this definition"></a></dt>
+<dd><p>This function is like :py:func:to_registry: but it writes the
+RunCommand to the default registry, whereas :py:func:to_registry:
+writes the RunCommand either to an explicitly provided registry object,
+or to a new InMemoryRegistry.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pcs.run.html#pcs.run.Run" title="pcs.run.Run"><span class="pre">pcs.run.Run</span></a></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.run" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new run using the same root component, entry point, and
+params as this RunCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a new RunCommand object representing the rerun.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.to_registry">
+<span class="sig-name descname"><span class="pre">to_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="pcs.registry.html#pcs.registry.Registry" title="pcs.registry.Registry"><span class="pre">pcs.registry.Registry</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pcs.registry.html#pcs.registry.Registry" title="pcs.registry.Registry"><span class="pre">pcs.registry.Registry</span></a></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.to_registry" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a registry (which may optionally already exist) containing a
+run spec for this run. If recurse is True, also adds the component that
+was run to the registry by calling <code class="docutils literal notranslate"><span class="pre">.to_registry()</span></code> on it, and
+passing the given registry arg as well as the recurse and force args
+through to that call.</p>
+<p>For details on those flags, see :py:func:pcs.Component.to_registry:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pcs.run_command.RunCommand.to_spec">
+<span class="sig-name descname"><span class="pre">to_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flatten</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Mapping</span></span></span><a class="headerlink" href="#pcs.run_command.RunCommand.to_spec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pcs.run.html" class="btn btn-neutral float-left" title="run" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pcs.specs.html" class="btn btn-neutral float-right" title="specs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

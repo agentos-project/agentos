@@ -1,0 +1,7 @@
+version
+===========
+
+.. automodule:: pcs.version
+   :members:
+   :undoc-members:
+   :special-members: __init__

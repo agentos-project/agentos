@@ -1,0 +1,7 @@
+run_command
+===============
+
+.. automodule:: pcs.run_command
+   :members:
+   :undoc-members:
+   :special-members: __init__

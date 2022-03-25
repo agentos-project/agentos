@@ -1,0 +1,7 @@
+component_run
+=================
+
+.. automodule:: pcs.component_run
+   :members:
+   :undoc-members:
+   :special-members: __init__

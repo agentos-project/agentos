@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Component System Overview &mdash; AgentOS 0.1.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Python REPL Quick Start" href="repl_quickstart.html" />
+    <link rel="prev" title="The Python Component System and AgentOS" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.1.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Component System Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-features">Key Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#key-concepts">Key Concepts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="repl_quickstart.html">Python REPL Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_quickstart.html">Local Development Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Component System Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/overview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="component-system-overview">
+<h1>Component System Overview<a class="headerlink" href="#component-system-overview" title="Permalink to this headline"></a></h1>
+<p>PCS is an implementation of what we call the <strong>component programming model</strong>.
+The goal of the component programming model is to provide:</p>
+<ul class="simple">
+<li><p>Reproducibility</p></li>
+<li><p>Experiment Tracking</p></li>
+<li><p>Virtual Environment Management</p></li>
+<li><p>Composability, and</p></li>
+<li><p>Sharing</p></li>
+</ul>
+<p>to Python programmers with minimal additional requirements and complications in
+their code. The component programming model provides a <strong>standard, reproducible
+way</strong> to setup, run, capture the outputs and results of a Python program, and
+then share these outputs and results with collaborators.</p>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this headline"></a></h2>
+<p>The key features provided by PCS, our implementation of the component programming model, are:</p>
+<ul class="simple">
+<li><p>A standard reproducible way to run Python code.</p></li>
+<li><p>Transparent handling of dependency and environment management.</p></li>
+<li><p>An API to <code class="docutils literal notranslate"><span class="pre">pip</span></code> and <code class="docutils literal notranslate"><span class="pre">virtualenv</span></code>.</p></li>
+<li><p>Support for easy, decentralized sharing of code and run history.</p></li>
+<li><p>Full code lifecycle handling from setup to running to capturing run results.</p></li>
+<li><p>All functionality available from within Python and on the command-line.</p></li>
+<li><p>Integrates with the existing Python ecosystem.</p></li>
+<li><p>Ability to incrementally adopt PCS functionality as your project requirements
+become better defined.</p></li>
+</ul>
+</section>
+<section id="key-concepts">
+<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Permalink to this headline"></a></h2>
+<p>At the core of PCS is the idea of a <strong>Component</strong>.  A Component is an
+abstraction for encapsulating and sharing runnable Python code in a way that is
+portable and easy to reproduce.  A Component wraps a Python object (e.g. a
+class instance, a class, or a module) and tracks that object’s setup
+requirements as well as its inputs and outputs.</p>
+<p>More specifically, a Component consists of the following information:</p>
+<ul class="simple">
+<li><p>Repo - a reference to a location where the source code can be fetched (e.g. a
+git URL)</p></li>
+<li><p>Module Path - the location of a Python file within the repo from which the
+managed object can be fetched.</p></li>
+<li><p>Object Name - the name of the Python object the Component manages.</p></li>
+<li><p>Requirements Path - the location of a requirements file that can be installed
+using <code class="docutils literal notranslate"><span class="pre">pip</span></code> (or a <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> file) that list the packages needed by the
+Component to run.</p></li>
+<li><p>Dependencies - a list of other Components on which this Component depends.</p></li>
+</ul>
+<p>A developer uses a Component by running an <strong>entry point</strong> on it.  An entry
+point is a managed, runnable function on the Component.  A Component may have
+one or more entry points, and an entry point may be passed arguments (via an
+<strong>Argument Set</strong>) when run.  When an entry point is run in the PCS runtime, it
+automatically has its inputs and outputs instrumented and recorded for
+reproducibility and sharing purposes.</p>
+<p>When a Component’s entry point is run under PCS, a <strong>Run</strong> object gets created.
+Runs are used for tracking the outputs of executing code, which can be used for
+debugging, analysis, and as the inputs by subsequent runs. Runs can be shared.</p>
+<p>In PCS, Runs provide a logging interface and track the outputs and results of
+code execution.  A <strong>Component Run</strong> is a specific type of Run that contains
+information about about a particular execution of a Component’s entry point
+with a particular Argument Set.  Whenever an entry point is executed under
+PCS, a Component Run gets created.</p>
+<p>All Runs enforce semantics around the type of outputs and results they track,
+dividing the world into info, data, and artifacts:</p>
+<ul class="simple">
+<li><p>Info is metadata (start-time, run_id)</p></li>
+<li><p>Data can be metrics, parameters, and tags</p></li>
+<li><p>Artifacts are files or folders produced during the Run</p></li>
+</ul>
+<p>PCS’s Run class is a wrapper <a class="reference external" href="https://mlflow.org">MLflow’s</a> Run interface and
+uses both an MlflowClient and an MLflowRunID.</p>
+<p>The reproducibility and shareability features of PCS derive from the fact that
+all the concepts discussed so far (e.g. Components, Argument Sets, Runs, etc)
+can be serialized out to a plain-text <strong>Spec</strong>.  Because all of these things
+can be represented as simple specs, sharing is as easy as sending a text file
+from one instance of PCS to another.</p>
+<p>To aid in sharing, PCS also provides a <strong>Registry</strong> interface.  A Registry
+provides a way to store and retrieve specs.  PCS includes several
+implementations of Registries, including one backed by the local filesystem and
+one backed by a web server.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="The Python Component System and AgentOS" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="repl_quickstart.html" class="btn btn-neutral float-right" title="Python REPL Quick Start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
