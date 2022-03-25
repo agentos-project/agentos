@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Development Process &mdash; AgentOS 0.2.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Component System Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../repl_quickstart.html">Python REPL Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_quickstart.html">Local Development Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Development Process</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/includes/developing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="development-process">
+<h1>Development Process<a class="headerlink" href="#development-process" title="Permalink to this headline"></a></h1>
+<p>AgentOS uses <a class="reference external" href="https://github.com/agentos-project/agentos/issues">GitHub Issues</a> to track development
+work.  Submit any bug reports or feature requests to this issues tracker.</p>
+<p>For significant feature work (more than a couple dev days or something that
+fundamentally changes internal or external interfaces), we run a design process
+to solicit feedback from other collaborators.  Read more about this process
+in the <a class="reference internal" href="#proposing-features">Proposing Features</a> section.</p>
+<p>To contribute to AgentOS, the general workflow is as follows:</p>
+<ul class="simple">
+<li><p>Sync with the core development team via the
+<a class="reference external" href="https://github.com/agentos-project/agentos/issues">issue tracker</a>
+so we can avoid unnecessary or duplicated work.</p></li>
+<li><p>Fork the AgentOS repo.</p></li>
+<li><p>Complete your feature work on a branch in your forked repo.  Ensure all
+checks and tests pass.</p></li>
+<li><p>Issue a pull request from your forked repo into the central AgentOS repo.
+Assign a core developer to review.</p></li>
+<li><p>Address any comments and the core developer will merge once the PR looks
+good.</p></li>
+</ul>
+</section>
+<section id="proposing-features">
+<h1>Proposing Features<a class="headerlink" href="#proposing-features" title="Permalink to this headline"></a></h1>
+<p>For new features and other big chunks of work, AgentOS uses a design process
+centered around design proposals, discussions, and design docs. The goal of the
+process is to:</p>
+<ul class="simple">
+<li><p>Allow developers to think through a design, and</p></li>
+<li><p>Allow stakeholders to give feedback</p></li>
+</ul>
+<p>…before development begins.</p>
+<p>If you’d like to propose a feature, please follow the procedure found in the
+<a class="reference external" href="documentation/design_docs/README.rst">design_docs README</a>.  You can also
+browse existing design docs in the folder to get a feel for the general
+content and style.</p>
+</section>
+<section id="installing-agentos-from-source">
+<h1>Installing AgentOS From Source<a class="headerlink" href="#installing-agentos-from-source" title="Permalink to this headline"></a></h1>
+<p>To install agentos from source (e.g., to play with the example_agents), run the
+following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">agentos</span><span class="o">-</span><span class="n">project</span><span class="o">/</span><span class="n">agentos</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="n">agentos</span> <span class="c1"># you may want to do this in a virtualenv or conda env.</span>
+</pre></div>
+</div>
+</section>
+<section id="testing">
+<h1>Testing<a class="headerlink" href="#testing" title="Permalink to this headline"></a></h1>
+<p>To run tests, first install the requirements (note, this script installs the
+Python requirements into the currently active virtual environment):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">agentos</span> <span class="c1"># the project root, not the nested agentos/agentos dir</span>
+<span class="n">python</span> <span class="n">install_requirements</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Then run the tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytest</span>
+</pre></div>
+</div>
+<p>Also, we use Github Actions to run tests with every commit
+and pull request (see the <a class="reference external" href="https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml">test workflow</a>)</p>
+<p>If you want to the CLI to interact with a local development server, define the
+environment variable (or create a <cite>.env</cite> file) <cite>USE_LOCAL_SERVER=True</cite>.</p>
+<p>To run website tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">install_requirements</span><span class="o">.</span><span class="n">py</span>
+<span class="n">cd</span> <span class="n">web</span> <span class="c1"># the web directory contained in project root</span>
+<span class="n">python</span> <span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">test</span>
+</pre></div>
+</div>
+<p>Note that some tests (e.g., see <code class="docutils literal notranslate"><span class="pre">web/registry/tests/test_integration.py</span></code>)
+test functionality for interacting with github repositories by fetching code
+from <a class="reference external" href="https://github.com/agentos-project/agentos">https://github.com/agentos-project/agentos</a>. Where possible, in order to
+make it easy to have those tests run against code in a github repo that you can
+change during development without disrupting other PRs, the test code uses
+global variables defined in <code class="docutils literal notranslate"><span class="pre">tests/utils.py</span></code> to decide which github
+repo to use when testing.</p>
+<p>If you make changes to code that is fetched from github for use by tests, then
+please follow this process for your PR:</p>
+<ol class="arabic simple">
+<li><p>While doing development, change the <code class="docutils literal notranslate"><span class="pre">TESTING_GITHUB_REPO_URL</span></code> and/or
+<code class="docutils literal notranslate"><span class="pre">TESTING_BRANCH_NAME</span></code> global variables in <code class="docutils literal notranslate"><span class="pre">tests/utils.py</span></code>
+to point to a version of your PR branch that you’ve pushed to
+github. We recommend commenting out the default “prod” values of these
+variables so that you can uncomment them in the next step when the PR
+is approved for merge.</p></li>
+<li><p>After your PR is approved and right before it is merged, push the branch
+you used during testing to the <code class="docutils literal notranslate"><span class="pre">test_prod</span></code> branch of the agentos-project
+account <code class="docutils literal notranslate"><span class="pre">https://github.com/agentos-project/agentos.git</span></code>. And then update
+the variables in <code class="docutils literal notranslate"><span class="pre">tests/utils.py</span></code> (you should be able to just uncomment
+the lines you commented out in step 1 above, and delete the lines you added).</p></li>
+</ol>
+</section>
+<section id="building-docs">
+<h1>Building Docs<a class="headerlink" href="#building-docs" title="Permalink to this headline"></a></h1>
+<p>The documentation source is in the <code class="docutils literal notranslate"><span class="pre">documentation</span></code> directory and written in
+<a class="reference external" href="https://docutils.sourceforge.io/rst.html">ReStructuredText</a>.  The docs are
+built using <a class="reference external" href="https://www.sphinx-doc.org">Sphinx</a>.  To build the docs, first
+install the dev requirements (note, this script will install requirements into
+the currently active Python virtual environment):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">install_requirements</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Then use the build script:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">build_docs</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">--help</span></code> flag to learn more about other optional flags that
+<code class="docutils literal notranslate"><span class="pre">build_docs.py</span></code> takes, including <code class="docutils literal notranslate"><span class="pre">--release</span></code> (for publishing the docs) and
+<code class="docutils literal notranslate"><span class="pre">--watch</span></code> (for auto-recompiling the docs whenever doc source files are
+changed).</p>
+<p>Notice that the build file puts the compiled docs into <code class="docutils literal notranslate"><span class="pre">docs/&lt;version_num&gt;</span></code>
+where <code class="docutils literal notranslate"><span class="pre">version_num</span></code> comes from <code class="docutils literal notranslate"><span class="pre">pcs/version.py</span></code>.</p>
+<p>Or you can build the docs manually (e.g., to control where output goes):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sphinx</span><span class="o">-</span><span class="n">build</span> <span class="n">documentation</span> <span class="n">outdir</span>  <span class="c1"># Or use sphinx-autobuild.</span>
+<span class="c1"># Open and inspect outdir/index.html in your browser.</span>
+</pre></div>
+</div>
+</section>
+<section id="publishing-docs-to-agentos-org">
+<h1>Publishing Docs to agentos.org<a class="headerlink" href="#publishing-docs-to-agentos-org" title="Permalink to this headline"></a></h1>
+<p><a class="reference external" href="https://agentos.org">agentos.org</a> is a github.io website where the AgentOS
+docs are hosted.  To publish updated docs to agentos.org, checkout the
+<code class="docutils literal notranslate"><span class="pre">website</span></code> branch and build the docs per the instructions above, then create a
+PR against the <code class="docutils literal notranslate"><span class="pre">agentos-dev/website</span></code> branch. Once committed, those changes
+will become live at agentos.org automatically.</p>
+<p>Assuming you have local branches tracking both the <code class="docutils literal notranslate"><span class="pre">master</span></code> and <code class="docutils literal notranslate"><span class="pre">website</span></code>
+branches, and all changes to the documentation source files have all been
+committed in the <code class="docutils literal notranslate"><span class="pre">master</span></code> branch, the workflow to publish updated docs to
+agentos.org might look similar to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="n">website</span>
+<span class="n">git</span> <span class="n">merge</span> <span class="n">master</span>
+<span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">build_docs</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">release</span> <span class="o">-</span><span class="n">a</span>  <span class="c1"># The -a is a `sphinx-build` flag.</span>
+<span class="n">git</span> <span class="n">add</span> <span class="n">docs</span>
+<span class="n">git</span> <span class="n">commit</span> <span class="o">-</span><span class="n">m</span> <span class="s2">&quot;push updated docs to website for version X.Y.Z&quot;</span>
+<span class="n">git</span> <span class="n">push</span>
+</pre></div>
+</div>
+</section>
+<section id="building-readme-rst">
+<h1>Building README.rst<a class="headerlink" href="#building-readme-rst" title="Permalink to this headline"></a></h1>
+<p>The main project <code class="docutils literal notranslate"><span class="pre">README.rst</span></code> is built via the script
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">scripts/build_readme.py</span></code>, which re-uses sections of
+documentation. This avoids duplication of efforts and lowers the chances
+that a developer will forget to update one or the either of the README or
+the docs.</p>
+<p>To update <code class="docutils literal notranslate"><span class="pre">README.rst</span></code>, first familiarize yourself with its build script
+<code class="docutils literal notranslate"><span class="pre">scripts/build_readme.py</span></code>. There you can see which sections of
+documentation are included in <code class="docutils literal notranslate"><span class="pre">README.rst</span></code>, plus some text that is manually
+inserted directly into <code class="docutils literal notranslate"><span class="pre">README.rst</span></code> (e.g., the footer).</p>
+</section>
+<section id="releasing">
+<h1>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline"></a></h1>
+<p>Here are the steps for releasing AgentOS:</p>
+<ol class="arabic">
+<li><p>Build and check the distribution artifacts for the release by running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">install_requirements</span><span class="o">.</span><span class="n">py</span>
+<span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">sdist</span> <span class="o">--</span><span class="n">formats</span><span class="o">=</span><span class="n">gztar</span><span class="p">,</span><span class="nb">zip</span> <span class="n">bdist_wheel</span>
+<span class="n">twine</span> <span class="n">check</span> <span class="n">dist</span><span class="o">/*</span>
+</pre></div>
+</div>
+<p>This will create a <a class="reference external" href="https://wheel.readthedocs.io/en/stable/">wheel file</a>
+as well as tar.gz and zip source distribution files, and catch any blockers
+that PyPI would raise at upload time. Fix any errors before proceeding.</p>
+</li>
+<li><p>Create a release pull request (PR) that:</p>
+<ul class="simple">
+<li><p>Removes “-alpha” suffix from the version number in <code class="docutils literal notranslate"><span class="pre">pcs/version.py</span></code>.</p></li>
+<li><p>Contains draft release notes (summary of major changes).</p></li>
+</ul>
+</li>
+<li><p>Wait till the PR gets LGTMs from all other committers, then merge it.</p></li>
+<li><p>Build and publish the docs for the new version, which involves creating a
+pull request against <code class="docutils literal notranslate"><span class="pre">website</span></code> branch. This is required for all releases,
+even if the docs have not changed, since the docs are versioned. When you
+run the <code class="docutils literal notranslate"><span class="pre">build_docs.py</span></code> script, you will use the <code class="docutils literal notranslate"><span class="pre">--release</span></code> flag
+(see <a class="reference internal" href="#building-docs">Building Docs</a> &amp; <a class="reference internal" href="#publishing-docs-to-agentos-org">Publishing Docs to agentos.org</a> for more details).</p></li>
+<li><p>Create another follow-on PR that bumps version number to be <code class="docutils literal notranslate"><span class="pre">X.Y.Z-alpha</span></code>
+which reflects that work going forward will be part of the next release
+(we use <a class="reference external" href="https://semver.org">semantic versioning</a>).</p></li>
+<li><p>Push the release to PyPI (see <a class="reference internal" href="#pushing-releases-to-pypi">Pushing Releases to PyPI</a>).</p></li>
+<li><p>Create a <a class="reference external" href="https://github.com/agentos-project/agentos/releases">github release</a> and upload the
+tar.gz and zip source code distribution files. This will create a git tag.
+For the tag name, use “vX.Y.Z” (e.g. v0.1.0).</p></li>
+</ol>
+</section>
+<section id="pushing-releases-to-pypi">
+<h1>Pushing Releases to PyPI<a class="headerlink" href="#pushing-releases-to-pypi" title="Permalink to this headline"></a></h1>
+<p>We make AgentOS <a class="reference external" href="https://pypi.org/project/agentos/">available in PyPI</a>. To
+push a release to PyPI, you can approximately follow <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/">these python.org
+instructions</a>,
+which will probably look something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">install_requirements</span><span class="o">.</span><span class="n">py</span>
+<span class="n">rm</span> <span class="o">-</span><span class="n">rf</span> <span class="n">dist</span>
+<span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">sdist</span> <span class="o">--</span><span class="n">formats</span><span class="o">=</span><span class="n">gztar</span> <span class="n">bdist_wheel</span>
+<span class="n">twine</span> <span class="n">check</span> <span class="n">dist</span><span class="o">/*</span>
+<span class="n">twine</span> <span class="n">upload</span> <span class="n">dist</span><span class="o">/*</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

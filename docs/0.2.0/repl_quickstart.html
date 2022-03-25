@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python REPL Quick Start &mdash; AgentOS 0.2.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Local Development Quick Start" href="local_quickstart.html" />
+    <link rel="prev" title="Component System Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Component System Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python REPL Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_quickstart.html">Local Development Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Python REPL Quick Start</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/repl_quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="python-repl-quick-start">
+<h1>Python REPL Quick Start<a class="headerlink" href="#python-repl-quick-start" title="Permalink to this headline"></a></h1>
+<p>The Python Component System (PCS) is a <strong>command line interface and Python
+developer API</strong> for building, running, and sharing Python programs.</p>
+<p>In this quickstart, we’ll introduce PCS by using it directly in the Python
+REPL, so let’s install it and write a simple program. Installation is easy,
+run the following in your shell:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">agentos</span>
+</pre></div>
+</div>
+<p>Writing a trivial program that takes advantage of PCS is also easy.  First,
+open the Python REPL by running the following in your shell:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span>
+</pre></div>
+</div>
+<p>In the example below we first define a very basic class called <code class="docutils literal notranslate"><span class="pre">Adder</span></code>.
+Then we use PCS to track the execution of a method on this class and share the
+results:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pcs</span> <span class="kn">import</span> <span class="n">Component</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">add_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adder_component</span> <span class="o">=</span> <span class="n">Component</span><span class="o">.</span><span class="n">from_class</span><span class="p">(</span><span class="n">Adder</span><span class="p">,</span> <span class="n">instantiate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adder_component</span><span class="o">.</span><span class="n">run_with_arg_set</span><span class="p">(</span><span class="s1">&#39;add_one&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;Adder&#39;</span><span class="p">:{</span><span class="s1">&#39;add_one&#39;</span><span class="p">:{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">}}})</span>
+</pre></div>
+</div>
+<p>Let’s break down the example above. First we import one of the core PCS
+abstractions: <strong>Component</strong>.  A Component wraps a Python object (in this case
+a Python class) and provides facilities for tracking and sharing.
+Then we define our <code class="docutils literal notranslate"><span class="pre">Adder</span></code> class and wrap it in a Component. Finally
+we run our <code class="docutils literal notranslate"><span class="pre">Adder.add_one()</span></code> function in a reproducible and shareable
+way by calling run on the component.</p>
+<p>That’s it!  Using the <code class="docutils literal notranslate"><span class="pre">run</span></code> method on our Component automatically instruments
+our call to <code class="docutils literal notranslate"><span class="pre">Adder.add_one</span></code> and tracks its inputs and outputs so we can
+easily share and reproduce this program execution.</p>
+<p>Let’s take a look at what we’ve recorded about our program execution.  Exit
+the Python REPL and then run the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mlflow</span> <span class="n">ui</span>
+</pre></div>
+</div>
+<p>Now navigate to <a class="reference external" href="http://127.0.0.1:5000">http://127.0.0.1:5000</a> to see the
+results of our program execution.  First you’ll land on your local <a class="reference external" href="https://mlflow.org">MLflow</a> experiment tracking page (PCS uses MLflow under the hood
+for experiment tracking):</p>
+<figure class="align-center" id="id1">
+<span id="fig-pcs-ui-1"></span><a class="reference internal image-reference" href="_images/pcs-ui-1.png"><img alt="_images/pcs-ui-1.png" src="_images/pcs-ui-1.png" style="width: 80%;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">The MLflow experiment tracking page.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>As you can see, we’ve recorded one run (our call to <code class="docutils literal notranslate"><span class="pre">Adder.add_one()</span></code>).
+Click the link into the run and you’ll see that we’ve recorded information
+about the inputs and command we ran:</p>
+<figure class="align-center" id="id2">
+<span id="fig-pcs-ui-2"></span><a class="reference internal image-reference" href="_images/pcs-ui-2.png"><img alt="_images/pcs-ui-2.png" src="_images/pcs-ui-2.png" style="width: 80%;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">The command we ran to execute our program.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>As well as the results from our execution:</p>
+<figure class="align-center" id="id3">
+<span id="fig-pcs-ui-3"></span><a class="reference internal image-reference" href="_images/pcs-ui-3.png"><img alt="_images/pcs-ui-3.png" src="_images/pcs-ui-3.png" style="width: 80%;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">The results of our program execution.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>While our <code class="docutils literal notranslate"><span class="pre">Adder.add_one()</span></code> example was very simple, tracking commands and
+arguments can get complex as your program grows.  PCS is designed to manage
+this complexity in a straightforward and consistent way.</p>
+<p># TODO: sharing</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Component System Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="local_quickstart.html" class="btn btn-neutral float-right" title="Local Development Quick Start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

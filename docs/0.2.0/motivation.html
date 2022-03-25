@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motivation &mdash; AgentOS 0.2.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/main.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> AgentOS
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Component System Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repl_quickstart.html">Python REPL Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_quickstart.html">Local Development Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_agents.html">Example Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">AgentOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Motivation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/motivation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="motivation">
+<h1>Motivation<a class="headerlink" href="#motivation" title="Permalink to this headline"></a></h1>
+<p>Researchers and developers across many fields build learning agents, including
+reinforcement learning, robotics, artificial intelligence, natural language
+programming (NLP), neuroscience, machine learning, cognitive science, psychology,
+and business (for example, <a class="reference external" href="https://docs.ray.io/en/master/rllib.html">Ray RLlib</a>, <a class="reference external" href="https://www.nengo.ai">Nengo</a>, <a class="reference external" href="https://soar.eecs.umich.edu">Soar</a>, <a class="reference external" href="http://act-r.psy.cmu.edu">ACT-R</a>,
+<a class="reference external" href="https://www.ros.org/">ROS</a>, <a class="reference external" href="https://github.com/MycroftAI/mycroft-core">MyCroft</a>,
+<a class="reference external" href="https://assistant.google.com">Google Assistant</a>,
+<a class="reference external" href="https://www.apple.com/siri/">Apple’s Siri</a>).</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/agent_landscape.png"><img alt="_images/agent_landscape.png" src="_images/agent_landscape.png" style="width: 70%;" /></a>
+<figcaption>
+<p><span class="caption-text">The learning agent landscape. Each box represents a different discipline or
+area where learning agents are used.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Typically, agents…</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>interact with the world via observe -&gt; decide -&gt; act loops</p></li>
+<li><p>have goals or intentions, e.g., to maximize a reward signal</p></li>
+<li><p>are driven by complex inner state, which may include a model of their
+environment, the value of past actions, or memories of past interactions
+with the environment</p></li>
+</ul>
+</div></blockquote>
+<p>While there exist open source APIs and implementations for Environments (e.g.,
+OpenAI <a class="reference external" href="https://github.com/openai/gym/blob/master/gym/core.py&gt;">gym.Env</a> ) and
+learning algorithms (e.g. <a class="reference external" href="https://docs.ray.io/en/master/rllib.html">Ray RLlib</a>, <a class="reference external" href="https://www.tensorflow.org/agents">TensorFlow Agents</a>), there has not
+emerged a de facto standard set of APIs and tools for composing, running, and
+managing long running learning agents.</p>
+<p>Thus, each researcher or developer designs and implements their own agent
+architecture, including how the agent interacts with an environment, organizes
+trials (or “rollouts”) used for learning, stores memories in some format, uses
+experience for learning, etc. (e.g., <a class="reference external" href="https://github.com/berkeleydeeprlcourse/homework_fall2019/tree/master/hw1/cs285">Berkeley CS285 RL Course</a>, <a class="reference external" href="https://soar.eecs.umich.edu">Soar</a>, <a class="reference external" href="https://www.ros.org/">ROS</a>,
+<a class="reference external" href="https://github.com/MycroftAI/mycroft-core">MyCroft</a>).</p>
+<p>To rapidly build new agents, it should be easy to focus on one new sub-system
+and not have to re-create all of the other necessary functionality from
+scratch.</p>
+<p>It should also be easy to upgrade an agent so that it starts using a learning
+algorithm released/maintained by somebody else, similar to how we can upgrade
+an application or an operating system component like a file system.</p>
+<p>However, most existing systems that support agent development are monolithic
+and do not provide standard interoperable components. For example,
+<a class="reference external" href="https://github.com/openai/baselines">OpenAI Baselines</a> algorithms cannot easily be plugged into a Ray Trainer or an
+instance of MyCroft; neither is it easy to plug a memory module from <a class="reference external" href="http://act-r.psy.cmu.edu">ACT-R</a>
+into <a class="reference external" href="https://soar.eecs.umich.edu">Soar</a>, <a class="reference external" href="https://github.com/opencog/opencog">OpenCog</a>, or any other cognitive architecture or agent
+architecture.</p>
+<p>In contrast, the popular RL <code class="docutils literal notranslate"><span class="pre">gym.Env</span></code> API built by OpenAI is simple,
+accessible, and RL classes (e.g., <a class="reference external" href="https://github.com/berkeleydeeprlcourse/homework_fall2019/tree/master/hw1/cs285">Berkeley CS285 RL Course</a>) and RL
+frameworks (<a class="reference external" href="https://docs.ray.io/en/master/rllib.html">Ray RLlib</a>, <a class="reference external" href="https://www.tensorflow.org/agents">Tensorflow Agents</a>, <a class="reference external" href="https://github.com/tensorforce/tensorforce">TensorForce</a>) are using it as
+a standard.</p>
+<p>We would like to see a similar standardization happen for the structure of a
+learning Agent itself, and related common components (e.g., behavior policy,
+memory). We hope that the AgentOS <code class="docutils literal notranslate"><span class="pre">Agent</span></code> and related abstractions – with
+their simplistic and modular design – might inspire new open source de facto
+standards that accelerate building and researching learning agents.</p>
+<p>Finally, we hope that progress towards more general agent behavior might be
+accelerated by focusing on agents composed of a combination of RL algorithms
+and learning techniques (perhaps many sub-agents arranged hierarchically)
+interacting concurrently with many environments (virtual sensors and actuators,
+and their underlying directly unavailable state), just as humans do. We aim to
+facilitate and demonstrate this in agents we build using AgentOS.</p>
+<p>In summary, AgentOS aims to make it easy to build and work with agents and
+their environments. This includes composing agents from common components, and
+building such components using simple minimalistic APIs. AgentOS does this in a
+modern way, building on—and interoperating with—existing popular languages,
+libraries, tools, and frameworks including Python, pip/PyPI, Conda, Git, and
+MLflow.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, AgentOS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
