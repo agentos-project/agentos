@@ -337,11 +337,7 @@ class GitHubRepo(Repo):
         clone_destination = (
             AOS_GLOBAL_REPOS_DIR / org_name / proj_name / version
         )
-        if clone_destination.exists():
-            porcelain.fetch(
-                repo=str(clone_destination), remote_location=self.url
-            )
-        else:
+        if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             porcelain.clone(
                 source=self.url, target=str(clone_destination), checkout=True

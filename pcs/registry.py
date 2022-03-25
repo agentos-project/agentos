@@ -114,7 +114,9 @@ class Registry(abc.ABC):
                 "file_path": str(relative_path),
                 "instantiate": False,
             }
-            if repo.get_local_file_path(requirements_file).is_file():
+            if repo.get_local_file_path(
+                requirements_file, version=c_version
+            ).is_file():
                 component_init_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )

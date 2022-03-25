@@ -158,5 +158,5 @@ def test_registry_from_repo():
         requirements_file="dev-requirements.txt",
         version=TESTING_BRANCH_NAME,
     )
-    comp_name = f"module:agentos__component.py=={TESTING_BRANCH_NAME}"
+    comp_name = f"module:pcs__component.py=={TESTING_BRANCH_NAME}"
     assert comp_name in reg.to_dict()["components"]
