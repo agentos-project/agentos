@@ -1,0 +1,21 @@
+repos:
+    papag_agent_dir:
+        type: local
+        path: .
+
+
+components:
+    agent:
+        repo: papag_agent_dir
+        file_path: agent.py
+        class_name: PAPAGAgent
+        instantiate: True
+        requirements_path: ./requirements.txt
+        dependencies:
+            PAPAGRun: PAPAGRun
+ 
+    PAPAGRun:
+        repo: papag_agent_dir
+        file_path: papag_run.py
+        class_name: PAPAGRun
+        instantiate: False

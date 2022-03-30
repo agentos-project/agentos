@@ -1,0 +1,27 @@
+# https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c
+# python main.py --env-name "PongNoFrameskip-v4"
+
+agent:
+    evaluate:
+        env_name: PongNoFrameskip-v4
+        algo: a2c
+        lr: .0007
+        clip_param: 0.2
+        value_loss_coef: 0.5
+        num_processes: 8
+        num_steps: 5
+        num_mini_batch: 32
+        log_interval: 10
+        entropy_coef: 0.01
+    learn:
+        env_name: PongNoFrameskip-v4
+        algo: a2c
+        lr: .0007
+        clip_param: 0.2
+        value_loss_coef: 0.5
+        num_processes: 8
+        num_steps: 5
+        num_mini_batch: 32
+        log_interval: 10
+        entropy_coef: 0.01
+        num_env_steps: 25000
