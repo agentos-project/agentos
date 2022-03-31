@@ -1,5 +1,5 @@
 -e ../../
-tensorflow==2.5.3  # reinforce, dqn; was >=2.5.1 but 2.4.0 is newest on Apple Silicon
+tensorflow==2.5.3  # reinforce, dqn; On Apple Silicon change this to 2.4.0 (newest as of 3/31/22)
 tensorflow-probability==0.12.0  # reinforce; was 0.10.0
 pandas==1.4.1
 gym==0.20.0

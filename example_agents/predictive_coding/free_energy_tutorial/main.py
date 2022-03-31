@@ -163,10 +163,10 @@ class Mouse(agentos.Runnable):
 
             # update neural network synaptic weights (belief type 2)
             dF_dSigma_p = Decimal(0.5) * (
-                epsilon_p ** 2 - 1 / self.cookie_size_var_belief
+                epsilon_p**2 - 1 / self.cookie_size_var_belief
             )  # dF/dSigma_p
             dF_dSigma_u = Decimal(0.5) * (
-                epsilon_u ** 2 - 1 / self.light_intensity_var_belief
+                epsilon_u**2 - 1 / self.light_intensity_var_belief
             )  # dF/dSigma_u
             dF_dvp = epsilon_p  # dF/dv_p
 
