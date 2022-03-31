@@ -23,4 +23,3 @@ main_module.main()
 #    requirements_path="requirements.txt",
 # )
 # assert main_mod_comp.get_object().__class__.__name__ == "module"
-
