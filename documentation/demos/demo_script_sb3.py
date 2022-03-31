@@ -1,12 +1,12 @@
-from agentos.argument_set import ArgumentSet
-from agentos.component import Component
-from agentos.component_run import ComponentRun
-from agentos.registry import Registry, WebRegistry
-from agentos.repo import Repo
+from pcs.argument_set import ArgumentSet
+from pcs.component import Component
+from pcs.component_run import ComponentRun
+from pcs.registry import Registry, WebRegistry
+from pcs.repo import Repo
 
-# sb3_repo = Repo.from_github("DLR-RM", "stable-baselines3")
-# sb3_reg = Registry.from_repo(sb3_repo)
-sb3_reg = Registry.from_yaml("/tmp/sb3_registry_inferred.yaml")
+sb3_repo = Repo.from_github("DLR-RM", "stable-baselines3")
+sb3_reg = Registry.from_repo(sb3_repo)
+#sb3_reg = Registry.from_yaml("/tmp/sb3_registry_inferred.yaml")
 
 sb3_comp = Component.from_registry(
     sb3_reg, "module:stable_baselines3____init__.py"
