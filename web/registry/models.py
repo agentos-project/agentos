@@ -1,6 +1,9 @@
+import json
+
 from typing import Dict, List
 
 from django.db import models
+from django.http import QueryDict
 from rest_framework.exceptions import ValidationError
 
 from pcs.identifiers import ComponentIdentifier
@@ -80,7 +83,12 @@ class Component(TimeStampedModel):
         unique_together = [("name", "version")]
 
     def __str__(self):
-        return f"<Component {self.pk}>"
+        return (
+            f"<Component {self.pk}, identifier: {self.identifier}, "
+            f"repo: {self.repo}>, file_path: {self.file_path}, "
+            f"class_name: {self.class_name}, instantiate: {self.instantiate}, "
+            f"dependencies: {self.dependencies}"
+        )
 
     @property
     def short_version(self):
@@ -126,7 +134,15 @@ class Component(TimeStampedModel):
         }
 
     @staticmethod
-    def create_from_flat_spec(flat_spec: Dict) -> List:
+    def create_from_request_data(request_data: QueryDict) -> List:
+        # get mutable version of request to that we can decode json fields. Per
+        # https://docs.djangoproject.com/en/4.0/ref/request-response/#querydict-objects
+        flat_spec = request_data.copy()
+        flat_spec["instantiate"] = flat_spec.get("instantiate", False) == "True"
+        if flat_spec["dependencies"]:
+            flat_spec["dependencies"] = json.decoder.JSONDecoder().decode(
+                flat_spec["dependencies"]
+            )
         identifier = ComponentIdentifier(flat_spec["identifier"])
         default_kwargs = {
             "name": identifier.name,
@@ -134,7 +150,7 @@ class Component(TimeStampedModel):
             "repo": Repo.objects.get(identifier=flat_spec["repo"]),
             "file_path": flat_spec["file_path"],
             "class_name": flat_spec["class_name"],
-            "instantiate": flat_spec.get("instantiate", False),
+            "instantiate": flat_spec["instantiate"]
         }
         # TODO - When we have accounts, we need to check the the user
         #        has permission to create a new version of this Component
@@ -144,36 +160,61 @@ class Component(TimeStampedModel):
             defaults=default_kwargs,
         )
         # If not created and not equal, prevent Component redefinition
-        if not created and not component._equals_spec(flat_spec):
-            raise ValidationError(
-                f"Component with id {identifier} already exists and "
-                "differs from uploaded spec. Try renaming your Component."
+        if not created:
+            component._check_equals(flat_spec)
+        # Add the component's dependencies.
+        for attr, identifier in flat_spec["dependencies"].items():
+            ComponentDependency.objects.get_or_create(
+                depender=component,
+                dependee=Component.objects.get(identifier=identifier),
+                attribute_name=attr,
             )
         return component
 
     # TODO - check versions in here once we have Component owners
-    def _equals_spec(self, other_spec):
+    def _check_equals(self, other_spec):
+        error_str = []
         other_repo = Repo.objects.get(identifier=other_spec["repo"])
         if self.repo.url != other_repo.url:
-            return False
+            error_str.append(f"repo: {self.repo.url} != {other_repo.url}")
         if self.file_path != other_spec["file_path"]:
-            return False
+            error_str.append(
+                f"file_path: {self.file_path} != {other_spec['file_path']}"
+            )
         if self.class_name != other_spec["class_name"]:
-            return False
+            error_str.append(
+                f"class_name: {self.class_name} != {other_spec['class_name']}"
+            )
         if self.instantiate != other_spec["instantiate"]:
-            return False
+            error_str.append(
+                f"instantiate: {self.instantiate} != {other_spec['instantiate']}"
+            )
         self_deps = ComponentDependency.objects.filter(
             depender=self
         ).distinct()
         for self_dep in self_deps:
             if self_dep.attribute_name not in other_spec["dependencies"]:
-                return False
+                error_str.append(
+                    f"dependency {self_dep.attribute_name} not found in "
+                    f"existing component {other_spec['identifier']}"
+                )
             other_dep_name = other_spec["dependencies"][
                 self_dep.attribute_name
             ]
             if other_dep_name != self_dep.dependee.full_name:
-                return False
-        return True
+                error_str.append(
+                    f"A dependency is different in the existing component: "
+                    f"'{self_dep.attribute_name}: {other_dep_name}' "
+                    f"VS "
+                    f"'{self_dep.attribute_name}: {self_dep.dependee.full_name}'"
+                )
+
+        if error_str:
+            error_str = (
+                f"Component with id {self.identifier} already exists and "
+                "differs from uploaded spec. Try renaming your Component. "
+            ) + "; ".join(error_str)
+            raise ValidationError(error_str)
 
 
 class Repo(TimeStampedModel):

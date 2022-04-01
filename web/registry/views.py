@@ -65,18 +65,8 @@ class ComponentViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request):
-        # First create component.
-        component = Component.create_from_flat_spec(request.data)
-        # Then add its dependencies.
-        deps = json.loads(request.data["dependencies"])
-        for attr, identifier in deps.items():
-            ComponentDependency.objects.get_or_create(
-                depender=component,
-                dependee=Component.objects.get(identifier=identifier),
-                attribute_name=attr,
-            )
-        c = Component.objects.get(identifier=request.data["identifier"])
-        serialized = ComponentSerializer(c)
+        component = Component.create_from_request_data(request.data)
+        serialized = ComponentSerializer(component)
         return Response(serialized.data)
 
 
