@@ -8,9 +8,9 @@ and AgentOS.
 Python Component System (PCS)
 ==================================
 
-PCS is an open source **Python API, command line interface, and public web
-registry** for building, running, and sharing Python programs.  The goals of
-PCS are to:
+PCS is an open source **Python API, command line interface, and web server
+registry** for building, running, and sharing Python programs.
+The goals of PCS are to:
 
 * Make Python program execution reproducible.
 
