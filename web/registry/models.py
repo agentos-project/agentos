@@ -1,5 +1,4 @@
 import json
-
 from typing import Dict, List
 
 from django.db import models
@@ -138,7 +137,9 @@ class Component(TimeStampedModel):
         # get mutable version of request to that we can decode json fields. Per
         # https://docs.djangoproject.com/en/4.0/ref/request-response/#querydict-objects
         flat_spec = request_data.copy()
-        flat_spec["instantiate"] = flat_spec.get("instantiate", False) == "True"
+        flat_spec["instantiate"] = (
+            flat_spec.get("instantiate", False) == "True"
+        )
         if flat_spec["dependencies"]:
             flat_spec["dependencies"] = json.decoder.JSONDecoder().decode(
                 flat_spec["dependencies"]
@@ -150,7 +151,7 @@ class Component(TimeStampedModel):
             "repo": Repo.objects.get(identifier=flat_spec["repo"]),
             "file_path": flat_spec["file_path"],
             "class_name": flat_spec["class_name"],
-            "instantiate": flat_spec["instantiate"]
+            "instantiate": flat_spec["instantiate"],
         }
         # TODO - When we have accounts, we need to check the the user
         #        has permission to create a new version of this Component

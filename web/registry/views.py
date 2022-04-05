@@ -1,5 +1,3 @@
-import json
-
 from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import viewsets
@@ -9,7 +7,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from .models import Component, ComponentDependency, Repo, Run, RunCommand
+from .models import Component, Repo, Run, RunCommand
 from .serializers import (
     ComponentSerializer,
     RepoSerializer,

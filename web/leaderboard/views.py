@@ -6,9 +6,7 @@ from registry.models import Component, ComponentDependency, Repo, Run
 
 
 def index(request):
-    environments = Run.objects.filter(
-        environment__isnull=False
-    ).distinct()
+    environments = Run.objects.filter(environment__isnull=False).distinct()
     context = {
         "environments": environments,
         "is_debug": settings.DEBUG,

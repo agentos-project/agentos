@@ -3,7 +3,6 @@ from pcs.component_run import ComponentRun
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
 
-
 # download agent Component, its dependency components, and wire them up.
 repo = Repo.from_github("agentos-project", "agentos")
 c_suff = "==master"
