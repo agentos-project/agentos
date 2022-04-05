@@ -188,7 +188,8 @@ class Component(TimeStampedModel):
             )
         if self.instantiate != other_spec["instantiate"]:
             error_str.append(
-                f"instantiate: {self.instantiate} != {other_spec['instantiate']}"
+                f"instantiate: {self.instantiate} != "
+                f"{other_spec['instantiate']}"
             )
         self_deps = ComponentDependency.objects.filter(
             depender=self
@@ -207,7 +208,8 @@ class Component(TimeStampedModel):
                     f"A dependency is different in the existing component: "
                     f"'{self_dep.attribute_name}: {other_dep_name}' "
                     f"VS "
-                    f"'{self_dep.attribute_name}: {self_dep.dependee.full_name}'"
+                    f"'{self_dep.attribute_name}: "
+                    f"{self_dep.dependee.full_name}'"
                 )
 
         if error_str:
