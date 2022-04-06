@@ -475,7 +475,7 @@ class Component:
         for c in self.dependency_list(include_parents=True):
             if c.requirements_path is None:
                 continue
-            for req_path in c.requirements_path.split(";"):
+            for req_path in str(c.requirements_path).split(";"):
                 full_req_path = self.repo.get_local_file_path(
                     req_path, c.identifier.version
                 ).absolute()
