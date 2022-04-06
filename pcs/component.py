@@ -489,7 +489,7 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def _get_versioned_dependency_dag(
+    def to_versioned_component(
         self, force: bool = False
     ) -> "Component":
         repo_url, version = self.repo.get_version_from_git(
@@ -515,7 +515,7 @@ class Component:
             dunder_name=self._dunder_name,
         )
         for attr_name, dependency in self.dependencies.items():
-            frozen_dependency = dependency._get_versioned_dependency_dag(
+            frozen_dependency = dependency.to_versioned_component(
                 force=force
             )
             clone.add_dependency(frozen_dependency, attribute_name=attr_name)
@@ -617,7 +617,7 @@ class Component:
         return registry
 
     def to_frozen_registry(self, force: bool = False) -> Registry:
-        versioned = self._get_versioned_dependency_dag(force)
+        versioned = self.to_versioned_component(force)
         return versioned.to_registry()
 
     def dependency_list(
