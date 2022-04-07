@@ -27,12 +27,20 @@ class RepoSerializer(serializers.ModelSerializer):
 
 
 class ComponentDependencySerializer(serializers.ModelSerializer):
+    dependee_link = serializers.SerializerMethodField()
+
     class Meta:
         model = ComponentDependency
         fields = [
             "dependee",
+            "dependee_link",
             "attribute_name",
         ]
+
+    def get_dependee_link(self, obj):
+        return _get_link_from_id(
+            self, "component-detail", obj.dependee.identifier
+        )
 
 
 class ComponentSerializer(serializers.ModelSerializer):
@@ -73,6 +81,7 @@ class ComponentSerializer(serializers.ModelSerializer):
 
 class RunCommandSerializer(serializers.ModelSerializer):
     identifier_link = serializers.SerializerMethodField()
+    component_link = serializers.SerializerMethodField()
 
     class Meta:
         model = RunCommand
@@ -80,6 +89,7 @@ class RunCommandSerializer(serializers.ModelSerializer):
             "identifier",
             "identifier_link",
             "component",
+            "component_link",
             "entry_point",
             "argument_set",
             "log_return_value",
@@ -87,6 +97,11 @@ class RunCommandSerializer(serializers.ModelSerializer):
 
     def get_identifier_link(self, obj):
         return _get_link_from_id(self, "runcommand-detail", obj.identifier)
+
+    def get_component_link(self, obj):
+        return _get_link_from_id(
+            self, "component-detail", obj.component.identifier
+        )
 
 
 class RunSerializer(serializers.ModelSerializer):
@@ -116,7 +131,9 @@ class RunSerializer(serializers.ModelSerializer):
         return _get_link_from_id(self, "run-detail", obj.identifier)
 
     def get_run_command_link(self, obj):
-        return _get_link_from_id(self, "runcommand-detail", obj.identifier)
+        return _get_link_from_id(
+            self, "runcommand-detail", obj.run_command.identifier
+        )
 
     def get_download_artifact_tarball_link(self, obj):
         return _get_link_from_id(self, "run-download-artifact", obj.identifier)
