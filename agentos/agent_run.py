@@ -95,6 +95,7 @@ class AgentRun(Run):
             self.agent_name = self.data.tags[self.AGENT_NAME_KEY]
             self.environment_name = self.data.tags[self.ENV_NAME_KEY]
         else:
+            super().__init__()
             self.parent_run = parent_run
             self.set_tag(self.IS_AGENT_RUN_TAG, "True")
             self.episode_data = []
