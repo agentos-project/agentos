@@ -121,11 +121,10 @@ class AgentRun(Run):
         self.set_tag(self.RUN_TYPE_TAG, self.run_type)
 
     def log_agent_name(self, agent_name: str) -> None:
-        self.log_param(self.AGENT_NAME_KEY, agent_name)
-        print(f"logged agent name {self.AGENT_NAME_KEY}: {agent_name}")
+        self.set_tag(self.AGENT_NAME_KEY, agent_name)
 
     def log_environment_name(self, environment_name: str) -> None:
-        self.log_param(self.ENV_NAME_KEY, environment_name)
+        self.set_tag(self.ENV_NAME_KEY, environment_name)
 
     def log_run_metrics(self):
         assert self.episode_data, "No episode data!"
