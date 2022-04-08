@@ -61,10 +61,11 @@ class AgentRun(Run):
 
     def __init__(
         self,
-        run_type: str,
+        run_type: str = None,
         parent_run: Optional[str] = None,
         agent_name: Optional[str] = None,
         environment_name: Optional[str] = None,
+        existing_run_id: str = None,
     ) -> None:
         """
         Create a new AgentRun.
@@ -79,27 +80,41 @@ class AgentRun(Run):
         :param environment_name: The name of the environment component being
             evaluated or trained. Defaults to "environment".
         """
-        super().__init__()
-        self.parent_run = parent_run
-        self.set_tag(self.IS_AGENT_RUN_TAG, "True")
-        self.episode_data = []
-        self.run_type = run_type
-        self.agent_name = agent_name or "agent"
-        self.environment_name = environment_name or "environment"
+        if existing_run_id:
+            assert not (
+                run_type or parent_run or agent_name or environment_name
+            ), (
+                "Exactly one of 'run_type' and 'existing_run_id' "
+                "must be provided."
+            )
 
-        self.set_tag(
-            MLFLOW_RUN_NAME,
-            (
-                f"AgentOS {run_type} with Agent '{self.agent_name}' "
-                f"and Env '{self.environment_name}'"
-            ),
-        )
-        if self.parent_run:
-            self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
+            super().__init__(existing_run_id=existing_run_id)
+            self.parent_run = self.data.tags[MLFLOW_PARENT_RUN_ID]
+            self.episode_data = []
+            self.run_type = self.data.tags[self.RUN_TYPE_TAG]
+            self.agent_name = self.data.tags[self.AGENT_NAME_KEY]
+            self.environment_name = self.data.tags[self.ENV_NAME_KEY]
+        else:
+            self.parent_run = parent_run
+            self.set_tag(self.IS_AGENT_RUN_TAG, "True")
+            self.episode_data = []
+            self.run_type = run_type
+            self.agent_name = agent_name or "agent"
+            self.environment_name = environment_name or "environment"
 
-        self.log_run_type(self.run_type)
-        self.log_agent_name(self.agent_name)
-        self.log_environment_name(self.environment_name)
+            self.set_tag(
+                MLFLOW_RUN_NAME,
+                (
+                    f"AgentOS {run_type} with Agent '{self.agent_name}' "
+                    f"and Env '{self.environment_name}'"
+                ),
+            )
+            if self.parent_run:
+                self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
+
+            self.log_run_type(self.run_type)
+            self.log_agent_name(self.agent_name)
+            self.log_environment_name(self.environment_name)
 
     def log_run_type(self, run_type: str) -> None:
         self.run_type = run_type
@@ -107,6 +122,7 @@ class AgentRun(Run):
 
     def log_agent_name(self, agent_name: str) -> None:
         self.log_param(self.AGENT_NAME_KEY, agent_name)
+        print(f"logged agent name {self.AGENT_NAME_KEY}: {agent_name}")
 
     def log_environment_name(self, environment_name: str) -> None:
         self.log_param(self.ENV_NAME_KEY, environment_name)
