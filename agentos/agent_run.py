@@ -132,6 +132,7 @@ class AgentRun(Run):
         if not self.episode_data:
             return
         run_stats = self._get_run_stats()
+        print(f"Results for AgentRun {self.identifier}")
         if self.run_type == self.LEARN_KEY:
             print(
                 "\nTraining results over "
