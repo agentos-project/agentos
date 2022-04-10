@@ -131,9 +131,10 @@ class RunSerializer(serializers.ModelSerializer):
         return _get_link_from_id(self, "run-detail", obj.identifier)
 
     def get_run_command_link(self, obj):
-        return _get_link_from_id(
-            self, "runcommand-detail", obj.run_command.identifier
-        )
+        if obj.run_command:
+            return _get_link_from_id(
+                self, "runcommand-detail", obj.run_command.identifier
+            )
 
     def get_download_artifact_tarball_link(self, obj):
         return _get_link_from_id(self, "run-download-artifact", obj.identifier)

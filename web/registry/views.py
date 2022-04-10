@@ -1,3 +1,5 @@
+import json
+
 from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import viewsets
@@ -87,6 +89,20 @@ class RunViewSet(viewsets.ModelViewSet):
     queryset = Run.objects.all().order_by("-created")
     serializer_class = RunSerializer
     permission_classes = [AllowAny]
+
+    @transaction.atomic
+    def create(self, request):
+        default_kwargs = {
+            "info": json.loads(request.data["info"]),
+            "data": json.loads(request.data["data"]),
+            "run_command": request.data.get("run_command", None),
+        }
+        run, created = Run.objects.get_or_create(
+            identifier=request.data["identifier"],
+            defaults=default_kwargs,
+        )
+        serialized = RunSerializer(run)
+        return Response(serialized.data)
 
     @action(detail=True, methods=["POST"], url_name="upload-artifact")
     @transaction.atomic
