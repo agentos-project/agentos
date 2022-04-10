@@ -92,15 +92,7 @@ class RunViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request):
-        default_kwargs = {
-            "info": json.loads(request.data["info"]),
-            "data": json.loads(request.data["data"]),
-            "run_command": request.data.get("run_command", None),
-        }
-        run, created = Run.objects.get_or_create(
-            identifier=request.data["identifier"],
-            defaults=default_kwargs,
-        )
+        run = Run.create_from_request_data(request.data)
         serialized = RunSerializer(run)
         return Response(serialized.data)
 

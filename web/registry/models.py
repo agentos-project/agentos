@@ -133,7 +133,7 @@ class Component(TimeStampedModel):
         }
 
     @staticmethod
-    def create_from_request_data(request_data: QueryDict) -> List:
+    def create_from_request_data(request_data: QueryDict):
         # get mutable version of request to that we can decode json fields. Per
         # https://docs.djangoproject.com/en/4.0/ref/request-response/#querydict-objects
         flat_spec = request_data.copy()
@@ -322,3 +322,20 @@ class Run(TimeStampedModel):
             f"Total Training Transitions: {self.training_step_count_metric}, "
             f"Mean Reward: {self.mean_reward_metric}"
         )
+
+    @staticmethod
+    def create_from_request_data(request_data: QueryDict):
+        default_kwargs = {
+            "info": json.loads(request_data["info"]),
+            "data": json.loads(request_data["data"]),
+        }
+        run, created = Run.objects.get_or_create(
+            identifier=request_data["identifier"],
+            defaults=default_kwargs,
+        )
+        # Link to a RunCommand object.
+        run_command_id = request_data.get("run_command", None)
+        if run_command_id:
+            run.component = RunCommand.objects.get_or_create(
+                identifier=run_command_id
+            )
