@@ -336,6 +336,6 @@ class Run(TimeStampedModel):
         # Link to a RunCommand object.
         run_command_id = request_data.get("run_command", None)
         if run_command_id:
-            run.component = RunCommand.objects.get_or_create(
+            run.run_command = RunCommand.objects.get_or_create(
                 identifier=run_command_id
             )
