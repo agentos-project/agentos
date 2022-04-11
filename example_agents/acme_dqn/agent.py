@@ -20,8 +20,12 @@ class AcmeDQNAgent:
         )
 
     def evaluate(self, num_episodes):
-
-        with self.AcmeRun("evaluate", active_component_run(self)) as run:
+        with self.AcmeRun(
+            run_type="evaluate",
+            parent_run=active_component_run(self),
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
+        ) as run:
             num_episodes = int(num_episodes)
             loop = acme.EnvironmentLoop(
                 self.environment,
@@ -32,7 +36,12 @@ class AcmeDQNAgent:
             loop.run(num_episodes=num_episodes)
 
     def learn(self, num_episodes):
-        with self.AcmeRun("learn", active_component_run(self)) as run:
+        with self.AcmeRun(
+            run_type="learn",
+            parent_run=active_component_run(self),
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
+        ) as run:
             num_episodes = int(num_episodes)
             loop = acme.EnvironmentLoop(
                 self.environment, self.agent, should_update=True, logger=run
