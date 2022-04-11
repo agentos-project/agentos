@@ -297,14 +297,14 @@ class Run(TimeStampedModel):
     def __str__(self):
         s = f"<Run {self.pk}"
         if self.run_command:
-            s.append(f" with run_command '{self.run_command.identifier}'")
+            s += f" with run_command '{self.run_command.identifier}'"
         if self.agent or self.environment:
             assert self.agent and self.environment
-            s.append(
+            s += (
                 f" with agent '{self.agent}' and environment "
                 f"'{self.environment}'"
             )
-        s.append(">")
+        s += ">"
         return s
 
     @property
