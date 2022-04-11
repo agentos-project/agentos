@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
