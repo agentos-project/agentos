@@ -32,8 +32,8 @@ class SB3PPOAgent:
         with self.SB3AgentRun(
             run_type="evaluate",
             parent_run=self.active_run,
-            agent_name=self.__component__.identifier,
-            environment_name=self.environment.__component__.identifier,
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
         ) as eval_run:
             evaluate_policy(
                 model=self.sb3_ppo,
@@ -51,8 +51,8 @@ class SB3PPOAgent:
         with self.SB3AgentRun(
             run_type="learn",
             parent_run=self.active_run,
-            agent_name=self.__component__.identifier,
-            environment_name=self.environment.__component__.identifier,
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
         ) as learn_run:
             self.sb3_ppo.learn(
                 total_timesteps=int(total_timesteps),
