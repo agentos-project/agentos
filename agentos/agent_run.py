@@ -103,7 +103,7 @@ class AgentRun(Run):
         else:
             assert agent_identifier and environment_identifier, (
                 "If 'existing_run_id' is not provided, then "
-                "'agent_identifier' 'environment_identifier' must be."
+                "'agent_identifier' and 'environment_identifier' must be."
             )
             super().__init__()
             self.parent_run = parent_run
