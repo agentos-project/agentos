@@ -115,7 +115,7 @@ class AgentRun(Run):
                 self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
 
             self.log_run_type(self.run_type)
-            self.log_agent_identifier(self.agent_identifer)
+            self.log_agent_identifier(self.agent_identifier)
             self.log_environment_identifier(self.environment_identifier)
 
     def log_run_type(self, run_type: str) -> None:
