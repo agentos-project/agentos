@@ -6,7 +6,7 @@ from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
 from pcs.component_run import ComponentRun
-from pcs.registry import Registry, InMemoryRegistry
+from pcs.registry import InMemoryRegistry, Registry
 from pcs.run import Run
 
 _EPISODE_KEY = "episode_count"
@@ -86,7 +86,8 @@ class AgentRun(Run):
                 run_type
                 or parent_run
                 or agent_identifier
-                or environment_identifier), (
+                or environment_identifier
+            ), (
                 "If 'existing_run_id' is specified, then 'run_type', "
                 "'parent_run', 'agent_identifier', and "
                 "'environment_identifier' must be None."
@@ -229,7 +230,7 @@ class AgentRun(Run):
                 registry=registry,
                 recurse=recurse,
                 force=force,
-                include_artifacts=include_artifacts
+                include_artifacts=include_artifacts,
             )
         return super().to_registry(
             registry=registry, force=force, include_artifacts=include_artifacts

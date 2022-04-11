@@ -1,5 +1,3 @@
-import json
-
 from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import viewsets

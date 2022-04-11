@@ -489,9 +489,7 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def to_versioned_component(
-        self, force: bool = False
-    ) -> "Component":
+    def to_versioned_component(self, force: bool = False) -> "Component":
         repo_url, version = self.repo.get_version_from_git(
             self.identifier, self.file_path, force
         )
@@ -515,9 +513,7 @@ class Component:
             dunder_name=self._dunder_name,
         )
         for attr_name, dependency in self.dependencies.items():
-            frozen_dependency = dependency.to_versioned_component(
-                force=force
-            )
+            frozen_dependency = dependency.to_versioned_component(force=force)
             clone.add_dependency(frozen_dependency, attribute_name=attr_name)
         return clone
 
