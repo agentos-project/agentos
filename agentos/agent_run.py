@@ -101,6 +101,10 @@ class AgentRun(Run):
             self.agent_identifier = self.data.tags[self.AGENT_ID_KEY]
             self.environment_identifier = self.data.tags[self.ENV_ID_KEY]
         else:
+            assert agent_identifier and environment_identifier, (
+                "If 'existing_run_id' is not provided, then "
+                "'agent_identifier' 'environment_identifier' must be."
+            )
             super().__init__()
             self.parent_run = parent_run
             self.set_tag(self.IS_AGENT_RUN_TAG, "True")
