@@ -5,6 +5,8 @@ from typing import Optional
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
+from pcs.component_run import ComponentRun
+from pcs.registry import Registry, InMemoryRegistry
 from pcs.run import Run
 
 _EPISODE_KEY = "episode_count"
@@ -62,7 +64,7 @@ class AgentRun(Run):
     def __init__(
         self,
         run_type: str = None,
-        parent_run: Optional[str] = None,
+        parent_run: Run = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
@@ -71,12 +73,13 @@ class AgentRun(Run):
         Create a new AgentRun.
 
         :param run_type: must be 'evaluate' or 'learn'
-        :param parent_run: Optionally, specify the identifier of another Run
-            that this run is a sub-run of. Setting this will result in this
-            AgentRun being visually nested under the parent_run in the MLflow
-            UI.
-        :param agent: Agent component being evaluated or trained.
-        :param environment: Environment component being evaluated or trained.
+        :param parent_run: Optionally, specify another Run that this run is
+            a sub-run of. Setting this will result in this AgentRun being
+            visually nested under the parent_run in the MLflow UI.
+        :param agent_identifier: Identifier of Agent component being evaluated
+            or trained.
+        :param environment_identifier: Identifier of Environment component
+            being evaluated or trained.
         """
         if existing_run_id:
             assert not (
@@ -90,7 +93,8 @@ class AgentRun(Run):
             )
 
             super().__init__(existing_run_id=existing_run_id)
-            self.parent_run = self.data.tags[MLFLOW_PARENT_RUN_ID]
+            parent_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
+            self.parent_run = ComponentRun.from_existing_run_id(parent_run_id)
             self.episode_data = []
             self.run_type = self.data.tags[self.RUN_TYPE_TAG]
             self.agent_identifier = self.data.tags[self.AGENT_ID_KEY]
@@ -209,6 +213,26 @@ class AgentRun(Run):
                 "steps": steps,
                 "reward": reward,
             }
+        )
+
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,
+        force: bool = False,
+        include_artifacts: bool = False,
+    ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
+        if recurse:
+            self.parent_run.to_registry(
+                registry=registry,
+                recurse=recurse,
+                force=force,
+                include_artifacts=include_artifacts
+            )
+        return super().to_registry(
+            registry=registry, force=force, include_artifacts=include_artifacts
         )
 
     def end(

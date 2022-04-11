@@ -129,10 +129,10 @@ class ComponentRun(Run):
             )
         if recurse:
             self.run_command.to_registry(
-                registry, recurse=recurse, force=force
+                registry=registry, recurse=recurse, force=force
             )
         return super().to_registry(
-            registry, include_artifacts=include_artifacts, force=force
+            registry=registry, force=force, include_artifacts=include_artifacts
         )
 
     @classmethod
