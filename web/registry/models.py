@@ -325,17 +325,29 @@ class Run(TimeStampedModel):
 
     @staticmethod
     def create_from_request_data(request_data: QueryDict):
+        # Set up RunCommand FK if one was specified.
+        run_command_id = request_data.get("run_command", None)
+        print(f"run_command: {run_command_id}")
+        run_command = None
+        if run_command_id:
+            run_command, run_created = RunCommand.objects.get_or_create(
+                identifier=run_command_id
+            )
+        # Set up Agent FK if one was specified.
+        run_command_id = request_data.get("agent", None)
+        print(f"run_command: {run_command_id}")
+        run_command = None
+        if run_command_id:
+            run_command, run_created = RunCommand.objects.get_or_create(
+                identifier=run_command_id
+            )
         default_kwargs = {
             "info": json.loads(request_data["info"]),
             "data": json.loads(request_data["data"]),
+            "run_command": run_command,
         }
         run, created = Run.objects.get_or_create(
             identifier=request_data["identifier"],
             defaults=default_kwargs,
         )
-        # Link to a RunCommand object.
-        run_command_id = request_data.get("run_command", None)
-        if run_command_id:
-            run.run_command = RunCommand.objects.get_or_create(
-                identifier=run_command_id
-            )
+        return run
