@@ -1,5 +1,5 @@
 ***********************************
-Component System Overview
+Python Component System Intro
 ***********************************
 
 PCS is an implementation of what we call the **component programming model**.
@@ -60,8 +60,8 @@ More specifically, a Component consists of the following information:
 
 A developer uses a Component by running an **entry point** on it.  An entry
 point is a managed, runnable function on the Component.  A Component may have
-one or more entry points, and an entry point may be passed arguments (via an
-**Argument Set**) when run.  When an entry point is run in the PCS runtime, it
+one or more entry points, and an entry point may be passed arguments (via a
+:py:func:`pcs.argument_set.ArgumentSet`) when run.  When an entry point is run in the PCS runtime, it
 automatically has its inputs and outputs instrumented and recorded for
 reproducibility and sharing purposes.
 

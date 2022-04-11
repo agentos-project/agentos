@@ -39,9 +39,10 @@ class Component:
     logging) all of the parts that make up a Run, including: (1) the code of
     the object being run (i.e., the Component and its Entry Point), (2) the
     full DAG of other objects it depends on (i.e., DAG of other Components),
-    (3) the set of arguments (literally an ``ArgumentSet``) used during
-    initialization of the managed object and all objects it transitively
-    depends on, and (4) the arguments passed to the Entry Point being run.
+    (3) the set of arguments (literally an
+    :py:func:`pcs.argument_set.ArgumentSet`) used during initialization of
+    the managed object and all objects it transitively depends on, and
+    (4) the arguments passed to the Entry Point being run.
     """
 
     def __init__(
@@ -321,7 +322,7 @@ class Component:
         """
         Run an entry point with provided arguments. If you need to specify
         arguments to the init function of the managed object or any of
-        its dependency components, use :py:func:run_with_arg_set:.
+        its dependency components, use :py:func:`run_with_arg_set`.
 
         :param entry_point: name of function to call on manage object.
         :param kwargs: keyword-only args to pass through to managed object
@@ -351,7 +352,7 @@ class Component:
 
         :param entry_point: Name of a function to be called on a new
             instance of this component's managed object.
-        :param args: A :py:func:agentos.argument_set.ArgumentSet: or
+        :param args: A :py:func:`pcs.argument_set.ArgumentSet` or
             ArgumentSet-like dict containing the entry-point arguments, and/or
             arguments to be passed to the __init__() functions of this
             component's dependents during managed object initialization.
