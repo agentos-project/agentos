@@ -90,7 +90,7 @@ class SB3Run(AgentRun):
         parent_run: str = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
-        existing_run_id:Optional[str] = None,
+        existing_run_id: Optional[str] = None,
     ) -> None:
         super().__init__(
             run_type,
