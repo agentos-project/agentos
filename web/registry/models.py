@@ -133,7 +133,7 @@ class Component(TimeStampedModel):
         }
 
     @staticmethod
-    def create_from_request_data(request_data: QueryDict) -> List:
+    def create_from_request_data(request_data: QueryDict):
         # get mutable version of request to that we can decode json fields. Per
         # https://docs.djangoproject.com/en/4.0/ref/request-response/#querydict-objects
         flat_spec = request_data.copy()
@@ -296,14 +296,14 @@ class Run(TimeStampedModel):
     def __str__(self):
         s = f"<Run {self.pk}"
         if self.run_command:
-            s.append(f" with run_command '{self.run_command.identifier}'")
+            s += f" with run_command '{self.run_command.identifier}'"
         if self.agent or self.environment:
             assert self.agent and self.environment
-            s.append(
+            s += (
                 f" with agent '{self.agent}' and environment "
                 f"'{self.environment}'"
             )
-        s.append(">")
+        s += ">"
         return s
 
     @property
@@ -322,3 +322,49 @@ class Run(TimeStampedModel):
             f"Total Training Transitions: {self.training_step_count_metric}, "
             f"Mean Reward: {self.mean_reward_metric}"
         )
+
+    @staticmethod
+    def create_from_request_data(request_data: QueryDict):
+        # Set up RunCommand FK if one was specified.
+        run_command_id = request_data.get("run_command", None)
+        print(f"run_command: {run_command_id}")
+        run_command = None
+        if run_command_id:
+            run_command, run_created = RunCommand.objects.get_or_create(
+                identifier=run_command_id
+            )
+        # Set up Agent FK if one was specified.
+        agent_id = None
+        data = request_data.get("data", None)
+        print(data)
+        if data:
+            data_dict = json.loads(data)
+            tags = data_dict.get("tags", None)
+            print(f"tags: {tags}")
+            if tags:
+                agent_id = tags.get("agent_identifier", None)
+                env_id = tags.get("environment_identifier", None)
+        print(f"agent_id: {agent_id}")
+        print(f"env_id: {env_id}")
+        agent_comp = None
+        if agent_id:
+            agent_comp, agent_comp_created = Component.objects.get_or_create(
+                identifier=agent_id
+            )
+        env_comp = None
+        if env_id:
+            env_comp, env_comp_created = Component.objects.get_or_create(
+                identifier=env_id
+            )
+        default_kwargs = {
+            "info": json.loads(request_data["info"]),
+            "data": json.loads(request_data["data"]),
+            "run_command": run_command,
+            "agent": agent_comp,
+            "environment": env_comp,
+        }
+        run, created = Run.objects.get_or_create(
+            identifier=request_data["identifier"],
+            defaults=default_kwargs,
+        )
+        return run

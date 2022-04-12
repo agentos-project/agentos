@@ -16,7 +16,7 @@ class RunCommand:
     """
     A RunCommand contains everything required to reproducibly execute a
     Component Entry Point. Unlike a Run, a RunCommand is not concerned with the
-    outputs of the execution (see :py:func:pcs.Run: for more on that.)
+    outputs of the execution (see :py:func:`pcs.run.Run` for more on that.)
 
     You can think of a RunCommand as a glorified dictionary containing the
     pointers to arguments and versions of code necessary to reproduce the
@@ -158,8 +158,8 @@ class RunCommand:
 
     def publish(self) -> None:
         """
-        This function is like :py:func:to_registry: but it writes the
-        RunCommand to the default registry, whereas :py:func:to_registry:
+        This function is like :py:func:`to_registry` but it writes the
+        RunCommand to the default registry, whereas :py:func:`to_registry`:
         writes the RunCommand either to an explicitly provided registry object,
         or to a new InMemoryRegistry.
         """
@@ -182,7 +182,7 @@ class RunCommand:
         passing the given registry arg as well as the recurse and force args
         through to that call.
 
-        For details on those flags, see :py:func:pcs.Component.to_registry:
+        For details on those flags, see :py:func:`pcs.Component.to_registry`
         """
         if not registry:
             from pcs.registry import InMemoryRegistry

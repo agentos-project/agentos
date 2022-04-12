@@ -10,7 +10,11 @@ class AcmeR2D2Agent:
         pass
 
     def evaluate(self, num_episodes):
-        with self.AcmeRun("evaluate", active_component_run(self)) as run:
+        with self.AcmeRun.evaluate_run(
+            parent_run=active_component_run(self),
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
+        ) as run:
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self,
@@ -20,7 +24,11 @@ class AcmeR2D2Agent:
             loop.run(num_episodes=int(num_episodes))
 
     def learn(self, num_episodes):
-        with self.AcmeRun("learn", active_component_run(self)) as run:
+        with self.AcmeRun.learn_run(
+            parent_run=active_component_run(self),
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
+        ) as run:
             loop = acme.EnvironmentLoop(
                 self.environment,
                 self,

@@ -29,10 +29,10 @@ class SB3PPOAgent:
         return_episode_rewards=False,
         warn=True,
     ):
-        with self.SB3AgentRun(
-            run_type="evaluate",
+        with self.SB3AgentRun.evaluate_run(
             parent_run=self.active_run,
-            agent_name="sb3_agent",
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
         ) as eval_run:
             evaluate_policy(
                 model=self.sb3_ppo,
@@ -47,10 +47,10 @@ class SB3PPOAgent:
             )
 
     def learn(self, total_timesteps=250):
-        with self.SB3AgentRun(
-            run_type="learn",
+        with self.SB3AgentRun.learn_run(
             parent_run=self.active_run,
-            agent_name="sb3_agent",
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.environment.__component__.identifier,
         ) as learn_run:
             self.sb3_ppo.learn(
                 total_timesteps=int(total_timesteps),

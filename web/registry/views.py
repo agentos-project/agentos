@@ -88,6 +88,12 @@ class RunViewSet(viewsets.ModelViewSet):
     serializer_class = RunSerializer
     permission_classes = [AllowAny]
 
+    @transaction.atomic
+    def create(self, request):
+        run = Run.create_from_request_data(request.data)
+        serialized = RunSerializer(run)
+        return Response(serialized.data)
+
     @action(detail=True, methods=["POST"], url_name="upload-artifact")
     @transaction.atomic
     def upload_artifact(self, request: Request, pk=None) -> Response:

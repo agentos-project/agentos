@@ -209,7 +209,8 @@ def status(entity_id, registry_file, use_venv):
 @agentos_cmd.command()
 @_arg_optional_entity_id
 def publish_run(entity_id):
-    Run.from_existing_run_id(run_id=entity_id).publish()
+    r = Run.from_existing_run_id(run_id=entity_id)
+    r.to_registry(Registry.from_default())
 
 
 @agentos_cmd.command()
@@ -249,7 +250,7 @@ def freeze(component_name, registry_file, force, use_venv):
 @_option_registry_file
 @_option_force
 @_option_use_venv
-def publish(
+def publish_component(
     component_name: str, registry_file: str, force: bool, use_venv: bool
 ):
     """
@@ -260,8 +261,8 @@ def publish(
     component = Component.from_registry_file(
         registry_file, component_name, use_venv=use_venv
     )
-    frozen_spec = component.to_frozen_registry(force=force).to_spec()
-    Registry.get_default().add_component_spec(frozen_spec)
+    frozen_component = component.to_versioned_component()
+    frozen_component.to_registry(Registry.get_default(), force=force)
 
 
 @agentos_cmd.command()

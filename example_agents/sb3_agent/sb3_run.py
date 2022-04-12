@@ -88,14 +88,16 @@ class SB3Run(AgentRun):
         self,
         run_type: str,
         parent_run: str = None,
-        agent_name: Optional[str] = None,
-        environment_name: Optional[str] = None,
+        agent_identifier: Optional[str] = None,
+        environment_identifier: Optional[str] = None,
+        existing_run_id: Optional[str] = None,
     ) -> None:
         super().__init__(
             run_type,
             parent_run=parent_run,
-            agent_name=agent_name,
-            environment_name=environment_name,
+            agent_identifier=agent_identifier,
+            environment_identifier=environment_identifier,
+            existing_run_id=existing_run_id,
         )
         self.evaluate_callback = EvaluateCallback(self)
         self.learn_callback = LearnCallback(self)

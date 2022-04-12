@@ -5,6 +5,8 @@ from typing import Optional
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
+from pcs.component_run import ComponentRun
+from pcs.registry import InMemoryRegistry, Registry
 from pcs.run import Run
 
 _EPISODE_KEY = "episode_count"
@@ -56,60 +58,119 @@ class AgentRun(Run):
     RESTORE_KEY = "restore"
     EVALUATE_KEY = "evaluate"
     RUN_TYPE_TAG = "run_type"
-    AGENT_NAME_KEY = "agent_name"
-    ENV_NAME_KEY = "environment_name"
+    AGENT_ID_KEY = "agent_identifier"
+    ENV_ID_KEY = "environment_identifier"
 
     def __init__(
         self,
-        run_type: str,
-        parent_run: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        environment_name: Optional[str] = None,
+        run_type: str = None,
+        parent_run: Run = None,
+        agent_identifier: Optional[str] = None,
+        environment_identifier: Optional[str] = None,
+        existing_run_id: str = None,
     ) -> None:
         """
         Create a new AgentRun.
 
         :param run_type: must be 'evaluate' or 'learn'
-        :param parent_run: Optionally, specify the identifier of another Run
-            that this run is a sub-run of. Setting this will result in this
-            AgentRun being visually nested under the parent_run in the MLflow
-            UI.
-        :param agent_name: The name of the agent component being evaluated or
-            trained. Defaults to "agent".
-        :param environment_name: The name of the environment component being
-            evaluated or trained. Defaults to "environment".
+        :param parent_run: Optionally, specify another Run that this run is
+            a sub-run of. Setting this will result in this AgentRun being
+            visually nested under the parent_run in the MLflow UI.
+        :param agent_identifier: Identifier of Agent component being evaluated
+            or trained.
+        :param environment_identifier: Identifier of Environment component
+            being evaluated or trained.
+        :param existing_run_id: Optional. If provided, load an existing run
+            from the MLflow backing store. If provided, no other options can be
+            provided.
         """
-        super().__init__()
-        self.parent_run = parent_run
-        self.set_tag(self.IS_AGENT_RUN_TAG, "True")
-        self.episode_data = []
-        self.run_type = run_type
-        self.agent_name = agent_name or "agent"
-        self.environment_name = environment_name or "environment"
+        if existing_run_id:
+            assert not (
+                run_type
+                or parent_run
+                or agent_identifier
+                or environment_identifier
+            ), (
+                "If 'existing_run_id' is specified, then 'run_type', "
+                "'parent_run', 'agent_identifier', and "
+                "'environment_identifier' must be None."
+            )
 
-        self.set_tag(
-            MLFLOW_RUN_NAME,
-            (
-                f"AgentOS {run_type} with Agent '{self.agent_name}' "
-                f"and Env '{self.environment_name}'"
-            ),
+            super().__init__(existing_run_id=existing_run_id)
+            parent_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
+            self.parent_run = ComponentRun.from_existing_run_id(parent_run_id)
+            self.episode_data = []
+            self.run_type = self.data.tags[self.RUN_TYPE_TAG]
+            self.agent_identifier = self.data.tags[self.AGENT_ID_KEY]
+            self.environment_identifier = self.data.tags[self.ENV_ID_KEY]
+        else:
+            assert agent_identifier and environment_identifier, (
+                "If 'existing_run_id' is not provided, then "
+                "'agent_identifier' and 'environment_identifier' must be."
+            )
+            super().__init__()
+            self.parent_run = parent_run
+            self.set_tag(self.IS_AGENT_RUN_TAG, "True")
+            self.episode_data = []
+            self.run_type = run_type
+            self.agent_identifier = agent_identifier
+            self.environment_identifier = environment_identifier
+
+            self.set_tag(
+                MLFLOW_RUN_NAME,
+                (
+                    f"AgentOS {run_type} with Agent '{self.agent_identifier}' "
+                    f"and Env '{self.environment_identifier}'"
+                ),
+            )
+            if self.parent_run:
+                self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
+
+            self.log_run_type(self.run_type)
+            self.log_agent_identifier(self.agent_identifier)
+            self.log_environment_identifier(self.environment_identifier)
+
+    @classmethod
+    def evaluate_run(
+        cls,
+        parent_run: Run = None,
+        agent_identifier: Optional[str] = None,
+        environment_identifier: Optional[str] = None,
+        existing_run_id: str = None,
+    ) -> "AgentRun":
+        return cls(
+            run_type=cls.EVALUATE_KEY,
+            parent_run=parent_run,
+            agent_identifier=agent_identifier,
+            environment_identifier=environment_identifier,
+            existing_run_id=existing_run_id,
         )
-        if self.parent_run:
-            self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
 
-        self.log_run_type(self.run_type)
-        self.log_agent_name(self.agent_name)
-        self.log_environment_name(self.environment_name)
+    @classmethod
+    def learn_run(
+        cls,
+        parent_run: Run = None,
+        agent_identifier: Optional[str] = None,
+        environment_identifier: Optional[str] = None,
+        existing_run_id: str = None,
+    ) -> "AgentRun":
+        return cls(
+            run_type=cls.LEARN_KEY,
+            parent_run=parent_run,
+            agent_identifier=agent_identifier,
+            environment_identifier=environment_identifier,
+            existing_run_id=existing_run_id,
+        )
 
     def log_run_type(self, run_type: str) -> None:
         self.run_type = run_type
         self.set_tag(self.RUN_TYPE_TAG, self.run_type)
 
-    def log_agent_name(self, agent_name: str) -> None:
-        self.log_param(self.AGENT_NAME_KEY, agent_name)
+    def log_agent_identifier(self, agent_identifier: str) -> None:
+        self.set_tag(self.AGENT_ID_KEY, agent_identifier)
 
-    def log_environment_name(self, environment_name: str) -> None:
-        self.log_param(self.ENV_NAME_KEY, environment_name)
+    def log_environment_identifier(self, environment_identifier: str) -> None:
+        self.set_tag(self.ENV_ID_KEY, environment_identifier)
 
     def log_run_metrics(self):
         assert self.episode_data, "No episode data!"
@@ -132,6 +193,7 @@ class AgentRun(Run):
         if not self.episode_data:
             return
         run_stats = self._get_run_stats()
+        print(f"Results for AgentRun {self.identifier}")
         if self.run_type == self.LEARN_KEY:
             print(
                 "\nTraining results over "
@@ -191,6 +253,26 @@ class AgentRun(Run):
                 "steps": steps,
                 "reward": reward,
             }
+        )
+
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,
+        force: bool = False,
+        include_artifacts: bool = False,
+    ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
+        if recurse:
+            self.parent_run.to_registry(
+                registry=registry,
+                recurse=recurse,
+                force=force,
+                include_artifacts=include_artifacts,
+            )
+        return super().to_registry(
+            registry=registry, force=force, include_artifacts=include_artifacts
         )
 
     def end(

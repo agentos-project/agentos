@@ -12,29 +12,26 @@
 
   <div class="content">
 
-    {% if environments %}
-      {% for environment in environments %}
+    {% if env_dict %}
+      {% for env_id, run_list in env_dict.items %}
         <h4>
-          <a href="{% url 'component-detail' environment.id %}">
-            {{ environment.name }}=={{ environment.short_version }}
-          </a>
-          {% if environment.description %}
-              - {{environment.description}}
-          {% endif %}
+            <a href="{% url 'component-detail' env_id %}">
+                {{ env_id }}
+            </a>
         </h4>
-        <h5>
-          Leaders:
-        </h5>
           <ul>
-            {% for run in environment.top_five_runs %}
+            {% for run in run_list %}
               <li>
-                <a href="{% url 'run-detail' run.id %}">
-                  Run {{run.id}}
+                <a href="{% url 'run-detail' run.identifier %}">
+                  Run {{ run.identifier }}
                 </a>
-                : {{run.mlflow_metrics.mean_reward}} mean reward
-                over {{run.mlflow_metrics.episode_count }} episodes
+                <ul>
+                    {%  for metric_name, metric_val in run.data.metrics.items %}
+                        <li>{{ metric_name }}: {{ metric_val }} </li>
+                    {% endfor %}
+                </ul>
               </li>
-            {% endfor %}
+              {%  endfor %}
           </ul>
       {% endfor %}
     {% else %}
