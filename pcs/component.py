@@ -39,7 +39,7 @@ class Component:
     logging) all of the parts that make up a Run, including: (1) the code of
     the object being run (i.e., the Component and its Entry Point), (2) the
     full DAG of other objects it depends on (i.e., DAG of other Components),
-    (3) the set of arguments (literally an
+    (3) the set of arguments (literally a
     :py:func:`pcs.argument_set.ArgumentSet`) used during initialization of
     the managed object and all objects it transitively depends on, and
     (4) the arguments passed to the Entry Point being run.

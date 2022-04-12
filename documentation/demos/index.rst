@@ -15,7 +15,7 @@ AgentOS example SB3 agent from registry file in Github
 ======================================================
 In this demo, we create an agent Component from a registry file that
 exists in our local clone of the AgentOS github repo. Then we auto-convert
-the agent Component from an unversioned component to a versioned component
+the agent Component from an unversioned Component to a versioned Component.
 Then we run that agent and publish the run to a local WebRegistry.
 
 Assuming you have the WebRegistry server running, try the following code:

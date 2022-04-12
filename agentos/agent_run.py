@@ -80,6 +80,9 @@ class AgentRun(Run):
             or trained.
         :param environment_identifier: Identifier of Environment component
             being evaluated or trained.
+        :param existing_run_id: Optional. If provided, load an existing run
+            from the MLflow backing store. If provided, no other options can be
+            provided.
         """
         if existing_run_id:
             assert not (
@@ -126,6 +129,38 @@ class AgentRun(Run):
             self.log_run_type(self.run_type)
             self.log_agent_identifier(self.agent_identifier)
             self.log_environment_identifier(self.environment_identifier)
+
+    @classmethod
+    def evaluate_run(
+        cls,
+        parent_run: Run = None,
+        agent_identifier: Optional[str] = None,
+        environment_identifier: Optional[str] = None,
+        existing_run_id: str = None,
+    ) -> "AgentRun":
+        return cls(
+            run_type=cls.EVALUATE_KEY,
+            parent_run=parent_run,
+            agent_identifier=agent_identifier,
+            environment_identifier=environment_identifier,
+            existing_run_id=existing_run_id,
+        )
+
+    @classmethod
+    def learn_run(
+        cls,
+        parent_run: Run = None,
+        agent_identifier: Optional[str] = None,
+        environment_identifier: Optional[str] = None,
+        existing_run_id: str = None,
+    ) -> "AgentRun":
+        return cls(
+            run_type=cls.LEARN_KEY,
+            parent_run=parent_run,
+            agent_identifier=agent_identifier,
+            environment_identifier=environment_identifier,
+            existing_run_id=existing_run_id,
+        )
 
     def log_run_type(self, run_type: str) -> None:
         self.run_type = run_type

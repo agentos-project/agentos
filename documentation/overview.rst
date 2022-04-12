@@ -1,9 +1,10 @@
 ***********************************
-Python Component System Intro
+Python Component System (PCS) Intro
 ***********************************
 
-PCS is an implementation of what we call the **component programming model**.
-The goal of the component programming model is to provide:
+The Python Component System (PCS) is an implementation of what we call the
+**component programming model**. The goal of the component programming model
+is to provide:
 
 * Reproducibility
 * Experiment Tracking

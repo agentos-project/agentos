@@ -326,7 +326,6 @@ class Run(TimeStampedModel):
 
     @staticmethod
     def create_from_request_data(request_data: QueryDict):
-        pprint.pprint(request_data)
         # Set up RunCommand FK if one was specified.
         run_command_id = request_data.get("run_command", None)
         print(f"run_command: {run_command_id}")
