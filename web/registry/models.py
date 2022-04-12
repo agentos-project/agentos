@@ -1,5 +1,4 @@
 import json
-import pprint
 from typing import Dict, List
 
 from django.db import models
