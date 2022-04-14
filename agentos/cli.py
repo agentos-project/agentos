@@ -327,7 +327,7 @@ def _user_args_to_dict(arguments, argument_type="P"):
 def _instantiate_template_files(d, agent_name):
     AOS_PATH = Path(__file__).parent
     for file_path in _INIT_FILES:
-        with open(AOS_PATH / file_path, "r") as fin:
+        with open(AOS_PATH / file_path) as fin:
             with open(d / file_path.name, "w") as fout:
                 print(file_path)
                 content = fin.read()

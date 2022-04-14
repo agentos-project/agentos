@@ -36,7 +36,7 @@ def format_file(path):
         codespell_cmd.remove("-w")
     _run_command(path, codespell_cmd)
 
-    # black and isort only run on Python
+    # black, isort, and pyupgrade only run on Python
     extension = os.path.splitext(path)[1]
     if extension != ".py":
         return
@@ -52,6 +52,10 @@ def format_file(path):
     if CHECK_ARG in sys.argv:
         isort_cmd.append("--check")
     _run_command(path, isort_cmd)
+
+    # pyupgrade to upgrade deprecated lines
+    pyupgrade_cmd = ["pyupgrade", "--py37-plus", path]
+    _run_command(path, pyupgrade_cmd)
 
 
 def _run_command(path, cmd):

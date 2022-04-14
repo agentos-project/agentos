@@ -31,7 +31,7 @@ with open(target_readme, "w") as readme_f:
 
     def include_docs_section(src_filename, separator_text):
         text_path = os.path.join(docs_dir, "includes", src_filename)
-        with open(text_path, "r") as f:
+        with open(text_path) as f:
             readme_f.write(f.read())
             readme_f.write(separator_text)
 

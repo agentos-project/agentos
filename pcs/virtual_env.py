@@ -229,7 +229,7 @@ class VirtualEnv:
     def _hash_req_paths(self, req_paths: Sequence) -> str:
         sorted_req_paths = self._sort_req_paths(req_paths)
         to_hash = hashlib.sha256()
-        to_hash.update("empty".encode("utf-8"))
+        to_hash.update(b"empty")
         for req_path in sorted_req_paths:
             with req_path.open() as file_in:
                 reqs_data = file_in.read()
