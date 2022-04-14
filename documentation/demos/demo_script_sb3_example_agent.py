@@ -1,6 +1,8 @@
 from pcs import Component
+import requests
 # from pcs.registry import WebRegistry
 
+requests.get("http://localhost:8000/empty_database")
 random_agent = Component.from_registry_file(
     "example_agents/sb3_agent/components.yaml", "sb3_agent"
 ).to_versioned_component()

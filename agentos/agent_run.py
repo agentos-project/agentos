@@ -280,18 +280,20 @@ class AgentRun(Run):
         if not registry:
             registry = InMemoryRegistry()
         if recurse:
-            self.outer_run.to_registry(
-                registry=registry,
-                recurse=recurse,
-                force=force,
-                include_artifacts=include_artifacts,
-            )
-            self.model_input_run.to_registry(
-                registry=registry,
-                recurse=recurse,
-                force=force,
-                include_artifacts=include_artifacts,
-            )
+            if self.outer_run:
+                self.outer_run.to_registry(
+                    registry=registry,
+                    recurse=recurse,
+                    force=force,
+                    include_artifacts=include_artifacts,
+                )
+            if self.model_input_run:
+                self.model_input_run.to_registry(
+                    registry=registry,
+                    recurse=recurse,
+                    force=force,
+                    include_artifacts=include_artifacts,
+                )
         return super().to_registry(
             registry=registry, force=force, include_artifacts=include_artifacts
         )
