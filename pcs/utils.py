@@ -248,6 +248,8 @@ def dulwich_checkout(repo, target: bytes, force: bool = False):
     saved_repo_path = repo.path
     repo.path = str(repo.path)
     for file in unstaged_files:
+        file_path = Path(repo.path) / file.decode()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         porcelain.reset_file(repo, file.decode(), b"HEAD")
     repo.path = saved_repo_path
 
