@@ -361,7 +361,9 @@ class GitHubRepo(Repo):
         if treeish is None:
             treeish = parse_commit(repo, to_checkout).sha().hexdigest()
 
-        dulwich_checkout(repo=repo, target=treeish)
+        # Checks for a clean working directory were failing on Windows, so
+        # force the checkout since this should be a clean clone anyway.
+        dulwich_checkout(repo=repo, target=treeish, force=True)
         os.chdir(curr_dir)
 
 

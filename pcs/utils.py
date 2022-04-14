@@ -255,14 +255,22 @@ def dulwich_checkout(repo, target: bytes, force: bool = False):
     for file in porcelain.get_untracked_paths(
         repo.path, repo.path, repo.open_index(), exclude_ignored=True
     ):
-        try:
-            current_tree.lookup_path(
-                repo.object_store.__getitem__, file.encode()
-            )
-        except KeyError:
-            pass
-        else:
-            os.remove(os.path.join(repo.path, file))
+        # TODO: Code below is from the original dulwich PR; had trouble
+        # getting this to work on Windows; Untracked files sitting in repo
+        # weren't being properly removed.  Went with a more direct approach.
+        #
+        # try:
+        #     current_tree.lookup_path(
+        #         repo.object_store.__getitem__, file.encode()
+        #     )
+        # except KeyError:
+        #     pass
+        # else:
+        #     os.remove(os.path.join(repo.path, file))
+
+        full_path = Path(repo.path) / Path(file)
+        if full_path.exists():
+            os.remove(full_path)
 
 
 if __name__ == "__main__":
