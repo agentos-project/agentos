@@ -121,7 +121,7 @@ class Registry(abc.ABC):
                     {"requirements_path": str(requirements_file)}
                 )
             mod_component = Component(**component_init_kwargs)
-            # TODO: add depenendencies to component for every import
+            # TODO: add dependencies to component for every import
             #       statement in the file (or just the ones at the
             #       module level?)
             reg.add_component(mod_component)

@@ -206,7 +206,7 @@ class Run:
                 for k, v in self.data.tags.items()
                 if not k.startswith("mlflow.")
             }
-            print(f"\tRun {self.identifier}: {filtered_tags}")
+            print(f"    Run {self.identifier}: {filtered_tags}")
         else:
             pprint.pprint(self.to_spec())
 

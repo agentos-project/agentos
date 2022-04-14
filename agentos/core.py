@@ -420,7 +420,7 @@ def rollouts(
 ):
     """
     :param policy: policy to use when simulating these episodes.
-    :param env_class: class to instatiate an env object from.
+    :param env_class: class to instantiate an env object from.
     :param num_rollouts: how many rollouts (i.e., episodes) to perform
     :param step_fn: a function to be called at each step of each rollout.
                     The function can have 2 or 3 parameters.

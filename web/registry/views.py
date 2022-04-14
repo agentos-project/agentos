@@ -120,7 +120,7 @@ class RunViewSet(viewsets.ModelViewSet):
 
 
 # TODO: this should be very similar to RunViewSet but filter to just Runs
-#    from the Run table that have an agent and environemnt FK set.
+#    from the Run table that have an agent and environment FK set.
 class AgentRunViewSet(viewsets.ModelViewSet):
     queryset = Run.objects.filter(agent__isnull=False).order_by("-created")
     serializer_class = RunSerializer

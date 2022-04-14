@@ -30,19 +30,32 @@ CHECK_ARG = "--check"
 
 
 def format_file(path):
+    # Run codespell on every tracked file
+    codespell_cmd = ["codespell", path, "-w"]
+    if CHECK_ARG in sys.argv:
+        codespell_cmd.remove("-w")
+    _run_command(path, codespell_cmd)
+
+    # black and isort only run on Python
     extension = os.path.splitext(path)[1]
     if extension != ".py":
         return
+
+    # black to format code
     black_cmd = ["black", "--line-length=79", path]
+    if CHECK_ARG in sys.argv:
+        black_cmd.append("--check")
     _run_command(path, black_cmd)
+
+    # isort to arrange import statements:w
     isort_cmd = ["isort", "-m" "VERTICAL_HANGING_INDENT", "--tc", path]
+    if CHECK_ARG in sys.argv:
+        isort_cmd.append("--check")
     _run_command(path, isort_cmd)
 
 
 def _run_command(path, cmd):
     global returncode
-    if CHECK_ARG in sys.argv:
-        cmd.append("--check")
     result = run(cmd, stdout=PIPE, stderr=STDOUT)
     returncode = returncode | result.returncode
     out = result.stdout.decode("utf-8")

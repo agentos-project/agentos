@@ -47,7 +47,7 @@ class RegistryTestCases(TestCase):
     #     self.assertEqual(Component.objects.count(), 1)
     #     self.assertEqual(ComponentDependency.objects.count(), 0)
     #     self.assertEqual(Repo.objects.count(), 1)
-    #     # the ingest registry functionalty doesn't live under the Component
+    #     # the ingest registry functionality doesn't live under the Component
     #     # model/viewset anymore so this URL will be different.
     #     url = reverse("component-ingest-registry")
     #     yaml_file = open(self.static_dir / "test_spec_ingest.yaml")

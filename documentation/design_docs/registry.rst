@@ -458,6 +458,6 @@ Revision History
 Further Reading
 ===============
 
-* `AgentOS Issue 68: Registery for Envs, Policies, and Agents <https://github.com/agentos-project/agentos/issues/68>`_
+* `AgentOS Issue 68: Registry for Envs, Policies, and Agents <https://github.com/agentos-project/agentos/issues/68>`_
 * `PEP 301 -- Package Index and Metadata for Distutils <https://www.python.org/dev/peps/pep-0301/>`_
 * `PEP 243 -- Module Repository Upload Mechanism <https://www.python.org/dev/peps/pep-0243/>`_
