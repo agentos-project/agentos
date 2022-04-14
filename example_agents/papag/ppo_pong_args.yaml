@@ -4,9 +4,10 @@
 
 
 agent:
-    evaluate:
+    __init__:
         env_name: PongNoFrameskip-v4
         algo: ppo
+    evaluate:
         use_gae: True
         lr: .00025
         clip_param: 0.1
@@ -18,8 +19,6 @@ agent:
         use_linear_lr_decay: True
         entropy_coef: 0.01
     learn:
-        env_name: PongNoFrameskip-v4
-        algo: ppo
         use_gae: True
         lr: .00025
         clip_param: 0.1

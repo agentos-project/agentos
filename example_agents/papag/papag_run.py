@@ -22,19 +22,8 @@ class PAPAGRun(AgentRun):
 
     PAPAG_RUN_TAG_KEY = "papag_agent_run"
 
-    def __init__(
-        self,
-        run_type: str,
-        parent_run: str = None,
-        agent_name: Optional[str] = None,
-        environment_name: Optional[str] = None,
-    ) -> None:
-        super().__init__(
-            run_type,
-            parent_run=parent_run,
-            agent_name=agent_name,
-            environment_name=environment_name,
-        )
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.set_tag(self.PAPAG_RUN_TAG_KEY, "True")
 
     def log_model(self, name: str, actor_critic, envs):
@@ -60,13 +49,11 @@ class PAPAGRun(AgentRun):
             print("PAPAGRun: no episode data to log")
 
     @classmethod
-    def get_last_logged_model(cls, name: str, envs) -> Optional[Any]:
-        """
-        Returns the most recent model that was logged by an PAPAGRun as an
-        artifact with filename ``name``.
-        :param name: the filename of the artifact to restore.
-        :return: Most recently logged model, if one can be found, else None.
-        """
+    def _get_artifact_path(cls, run, name: str) -> Path:
+        return cls._mlflow_client.download_artifacts(run.info.run_id, name)
+
+    @classmethod
+    def get_last_logged_model_run(cls, name: str) -> AgentRun:
         runs = cls._mlflow_client.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
@@ -77,23 +64,32 @@ class PAPAGRun(AgentRun):
             # for the first run that contains a policy by the name provided.
             for run in runs:
                 try:
-                    policy_path = cls._mlflow_client.download_artifacts(
-                        run.info.run_id, name
-                    )
-                except IOError:
+                    cls._get_artifact_path(run, name)
+                except OSError:
                     continue  # No policy was logged in this run, keep trying.
-                print(f"PAPAGRun: Found last_logged policy '{name}'.")
-                # We need to use the same statistics for normalization as
-                # used in training
-                actor_critic, obs_rms = torch.load(
-                    policy_path, map_location="cpu"
-                )
+                return run
+        return None
 
-                vec_norm = get_vec_normalize(envs)
-                if vec_norm is not None:
-                    vec_norm.eval()
-                    vec_norm.obs_rms = obs_rms
+    @classmethod
+    def get_last_logged_model(cls, name: str, envs) -> Optional[Any]:
+        """
+        Returns the most recent model that was logged by an PAPAGRun as an
+        artifact with filename ``name``.
+        :param name: the filename of the artifact to restore.
+        :return: Most recently logged model, if one can be found, else None.
+        """
+        run = cls.get_last_logged_model_run(name)
+        if run:
+            print(f"PAPAGRun: Found last_logged policy '{name}'.")
+            model_path = cls._get_artifact_path(run, name)
+            # We need the same stats for normalization as used in training
+            actor_critic, obs_rms = torch.load(model_path, map_location="cpu")
 
-                return actor_critic, obs_rms
+            vec_norm = get_vec_normalize(envs)
+            if vec_norm is not None:
+                vec_norm.eval()
+                vec_norm.obs_rms = obs_rms
+
+            return actor_critic, obs_rms
         print(f"PAPAGRun: No policy with name '{name}' found.")
         return None, None

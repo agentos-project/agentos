@@ -26,9 +26,16 @@ class PAPAGAgent:
 
     DEFAULT_ENTRY_POINT = "evaluate"
 
+    def __init__(self, algo: str, env_name: str):
+        self.algo = algo
+        self.env_name = env_name
+        model_name = self.get_model_name()
+        self.model_input_run = self.PAPAGRun.get_last_logged_model_run(
+            model_name
+        )
+
     def evaluate(
         self,
-        algo="a2c",
         use_gail=False,
         gail_experts_dir="./gail_experts",
         gail_batch_size=128,
@@ -53,7 +60,6 @@ class PAPAGAgent:
         save_interval=100,
         eval_interval=None,
         num_env_steps=10000000.0,
-        env_name="PongNoFrameskip-v4",
         log_dir="/tmp/gym/",
         save_dir="./trained_models/",
         no_cuda=False,
@@ -63,10 +69,11 @@ class PAPAGAgent:
         cuda=False,
     ):
         num_processes = int(num_processes)
-        with self.PAPAGRun(
-            run_type="evaluate",
-            parent_run=active_component_run(self),
-            agent_name=f"papag_{algo}_agent",
+        with self.PAPAGRun.evaluate_run(
+            outer_run=active_component_run(self),
+            model_input_run=self.model_input_run,
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.__component__.identifier,
         ) as eval_run:
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
@@ -83,9 +90,15 @@ class PAPAGAgent:
             torch.set_num_threads(1)
             device = torch.device("cuda:0" if cuda else "cpu")
             envs = make_vec_envs(
-                env_name, seed, num_processes, gamma, log_dir, device, False
+                self.env_name,
+                seed,
+                num_processes,
+                gamma,
+                log_dir,
+                device,
+                False,
             )
-            model_name = self.get_model_name(algo, env_name)
+            model_name = self.get_model_name()
             actor_critic, obs_rms = self.get_actor_critic(
                 model_name, eval_run, envs, recurrent_policy, device
             )
@@ -98,7 +111,7 @@ class PAPAGAgent:
             papag_evaluate(
                 actor_critic,
                 obs_rms,
-                env_name,
+                self.env_name,
                 seed,
                 num_processes,
                 eval_log_dir,
@@ -108,7 +121,6 @@ class PAPAGAgent:
 
     def learn(
         self,
-        algo="a2c",
         use_gail=False,
         gail_experts_dir="./gail_experts",
         gail_batch_size=128,
@@ -133,7 +145,6 @@ class PAPAGAgent:
         save_interval=100,
         eval_interval=None,
         num_env_steps=10000000.0,
-        env_name="PongNoFrameskip-v4",
         log_dir="/tmp/gym/",
         save_dir="./trained_models/",
         no_cuda=False,
@@ -143,10 +154,11 @@ class PAPAGAgent:
         cuda=False,
     ):
         num_processes = int(num_processes)
-        with self.PAPAGRun(
-            run_type="learn",
-            parent_run=active_component_run(self),
-            agent_name=f"papag_{algo}_agent",
+        with self.PAPAGRun.learn_run(
+            outer_run=active_component_run(self),
+            model_input_run=self.model_input_run,
+            agent_identifier=self.__component__.identifier,
+            environment_identifier=self.__component__.identifier,
         ) as learn_run:
 
             torch.manual_seed(seed)
@@ -165,14 +177,20 @@ class PAPAGAgent:
             device = torch.device("cuda:0" if cuda else "cpu")
 
             envs = make_vec_envs(
-                env_name, seed, num_processes, gamma, log_dir, device, False
+                self.env_name,
+                seed,
+                num_processes,
+                gamma,
+                log_dir,
+                device,
+                False,
             )
 
-            model_name = self.get_model_name(algo, env_name)
+            model_name = self.get_model_name()
             actor_critic, obs_rms = self.get_actor_critic(
                 model_name, learn_run, envs, recurrent_policy, device
             )
-            if algo == "a2c":
+            if self.algo == "a2c":
                 agent = a2c_ppo_acktr.algo.A2C_ACKTR(
                     actor_critic,
                     value_loss_coef,
@@ -182,7 +200,7 @@ class PAPAGAgent:
                     alpha=alpha,
                     max_grad_norm=max_grad_norm,
                 )
-            elif algo == "ppo":
+            elif self.algo == "ppo":
                 agent = a2c_ppo_acktr.algo.PPO(
                     actor_critic,
                     clip_param,
@@ -194,7 +212,7 @@ class PAPAGAgent:
                     eps=eps,
                     max_grad_norm=max_grad_norm,
                 )
-            elif algo == "acktr":
+            elif self.algo == "acktr":
                 agent = a2c_ppo_acktr.algo.A2C_ACKTR(
                     actor_critic, value_loss_coef, entropy_coef, acktr=True
                 )
@@ -209,7 +227,7 @@ class PAPAGAgent:
                 )
                 file_name = os.path.join(
                     gail_experts_dir,
-                    "trajs_{}.pt".format(env_name.split("-")[0].lower()),
+                    "trajs_{}.pt".format(self.env_name.split("-")[0].lower()),
                 )
 
                 expert_dataset = gail.ExpertDataset(
@@ -247,7 +265,7 @@ class PAPAGAgent:
                         agent.optimizer,
                         j,
                         num_updates,
-                        agent.optimizer.lr if algo == "acktr" else lr,
+                        agent.optimizer.lr if self.algo == "acktr" else lr,
                     )
 
                 for step in range(num_steps):
@@ -366,7 +384,7 @@ class PAPAGAgent:
                     papag_evaluate(
                         actor_critic,
                         obs_rms,
-                        env_name,
+                        self.env_name,
                         seed,
                         num_processes,
                         eval_log_dir,
@@ -387,8 +405,8 @@ class PAPAGAgent:
         actor_critic.to(device)
         return actor_critic, obs_rms
 
-    def get_model_name(self, algo, env_name):
-        return f"{algo}_{env_name}.pt"
+    def get_model_name(self):
+        return f"{self.algo}_{self.env_name}.pt"
 
 
 def papag_evaluate(

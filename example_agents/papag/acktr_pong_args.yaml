@@ -2,9 +2,10 @@
 # python main.py --env-name "PongNoFrameskip-v4" --algo acktr --num-processes 32 --num-steps 20
 
 agent:
-    evaluate:
+    __init__:
         env_name: PongNoFrameskip-v4
         algo: acktr
+    evaluate:
         lr: .0007
         clip_param: 0.2
         value_loss_coef: 0.5
@@ -14,8 +15,6 @@ agent:
         log_interval: 10
         entropy_coef: 0.01
     learn:
-        env_name: PongNoFrameskip-v4
-        algo: acktr
         lr: .0007
         clip_param: 0.2
         value_loss_coef: 0.5

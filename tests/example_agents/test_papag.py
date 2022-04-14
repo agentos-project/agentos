@@ -7,12 +7,11 @@ test_args = [
     "--use-outer-env",
     "-Anum_env_steps=1",
     "-Anum_processes=1",
-    "-Aenv_name=CartPole-v1",
 ]
 
 test_kwargs = {
     "--registry-file": str(PAPAG_AGENT_DIR / "components.yaml"),
-    "--arg-set-file": str(PAPAG_AGENT_DIR / "a2c_pong_args.yaml"),
+    "--arg-set-file": str(PAPAG_AGENT_DIR / "a2c_cartpole_args.yaml"),
 }
 
 
