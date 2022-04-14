@@ -16,7 +16,7 @@ from pcs.exceptions import BadGitStateException, PythonComponentSystemException
 from pcs.identifiers import ComponentIdentifier, RepoIdentifier
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
-from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
+from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path, dulwich_checkout
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +361,9 @@ class GitHubRepo(Repo):
         if treeish is None:
             treeish = parse_commit(repo, to_checkout).sha().hexdigest()
 
-        porcelain.reset(repo=repo, mode="hard", treeish=treeish)
+        # Checks for a clean working directory were failing on Windows, so
+        # force the checkout since this should be a clean clone anyway.
+        dulwich_checkout(repo=repo, target=treeish, force=True)
         os.chdir(curr_dir)
 
 
