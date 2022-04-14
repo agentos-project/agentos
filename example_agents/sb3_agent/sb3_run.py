@@ -135,7 +135,7 @@ class SB3Run(AgentRun):
                     policy_path = cls._mlflow_client.download_artifacts(
                         run.info.run_id, name
                     )
-                except IOError:
+                except OSError:
                     continue  # No policy was logged in this run, keep trying.
                 print(f"SB3Run: Found last_logged SB3 policy '{name}'.")
                 return PPO.load(policy_path)

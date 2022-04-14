@@ -86,7 +86,7 @@ shutil.copytree(API_DOC_INCLUDES, API_DOC_STUB_DIR, dirs_exist_ok=True)
 
 # Generate API Doc stub files.
 template = ""
-with open(pathlib.Path(API_DOC_TEMPLATE), "r") as template_f:
+with open(pathlib.Path(API_DOC_TEMPLATE)) as template_f:
     template = template_f.read()
 for source_dir in API_SOURCE_DIRS:
     for source_name in pathlib.Path(source_dir).glob(f"*{SOURCE_FILE_SUFFIX}"):

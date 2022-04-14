@@ -159,8 +159,8 @@ class ComponentRun(Run):
     def _fetch_run_command(self) -> RunCommand:
         try:
             path = self.download_artifacts(self.RUN_COMMAND_REGISTRY_FILENAME)
-        except IOError as e:
-            raise IOError(
+        except OSError as e:
+            raise OSError(
                 f"RunCommand registry artifact not found in Run with id "
                 f"{self._mlflow_run_id}. {repr(e)}"
             )

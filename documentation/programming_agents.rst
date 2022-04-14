@@ -54,7 +54,7 @@ returns an action. Policies must:
 
 Agents: putting it all together
 ================================
-The architeture and API that AgentOS provides for Agents is minimal in order to
+The architecture and API that AgentOS provides for Agents is minimal in order to
 provide flexibility, because different agents should be able to perform very
 different types of tasks. But it is also expected that Agents will be highly
 sophisticated. So then most of the complexity of agents will be outside of

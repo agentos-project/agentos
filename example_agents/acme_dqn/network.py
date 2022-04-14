@@ -44,7 +44,7 @@ class TFModelSaver:
                             f"{save_as_name} from {save_path}."
                         )
                         return
-            except IOError as e:
+            except OSError as e:
                 print(f"failed to download artifacts: {e}")
         print(
             f"{cls.__name__}: No saved Tensorflow model "

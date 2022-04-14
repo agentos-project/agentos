@@ -199,7 +199,7 @@ class Repo(abc.ABC):
                 raise BadGitStateException(error_msg)
         REMOTE_GIT_PREFIX = "refs/remotes"
         branch = porcelain.active_branch(self.porcelain_repo).decode("UTF-8")
-        full_id = f"{REMOTE_GIT_PREFIX}/{remote}/{branch}".encode("UTF-8")
+        full_id = f"{REMOTE_GIT_PREFIX}/{remote}/{branch}".encode()
         refs_dict = self.porcelain_repo.refs.as_dict()
         try:
             curr_remote_hash = refs_dict[full_id].decode("UTF-8")
