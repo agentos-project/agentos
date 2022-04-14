@@ -286,6 +286,12 @@ class AgentRun(Run):
                 force=force,
                 include_artifacts=include_artifacts,
             )
+            self.model_input_run.to_registry(
+                registry=registry,
+                recurse=recurse,
+                force=force,
+                include_artifacts=include_artifacts,
+            )
         return super().to_registry(
             registry=registry, force=force, include_artifacts=include_artifacts
         )

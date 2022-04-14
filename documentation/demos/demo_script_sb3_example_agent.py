@@ -1,5 +1,5 @@
 from pcs import Component
-from pcs.registry import WebRegistry
+# from pcs.registry import WebRegistry
 
 random_agent = Component.from_registry_file(
     "example_agents/sb3_agent/components.yaml", "sb3_agent"
