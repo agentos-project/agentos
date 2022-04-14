@@ -3,7 +3,6 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import BasePolicy
 
@@ -86,15 +85,17 @@ class SB3Run(AgentRun):
 
     def __init__(
         self,
-        run_type: str,
-        parent_run: str = None,
+        run_type: str = None,
+        outer_run: str = None,
+        model_input_run: str = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: Optional[str] = None,
     ) -> None:
         super().__init__(
             run_type,
-            parent_run=parent_run,
+            outer_run=outer_run,
+            model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,
@@ -115,28 +116,32 @@ class SB3Run(AgentRun):
         shutil.rmtree(dir_path)
 
     @classmethod
-    def get_last_logged_model(cls, name: str) -> Optional[BasePolicy]:
+    def get_last_learning_run(cls, name: str) -> Optional["SB3Run"]:
         """
-        Returns the most recent model that was logged by an SB3Run as an
-        artifact with filename ``name``.
+        Returns the ID of the most recent training run by an instance of
+        this Agent that logged an artifact with filename ``name``.
         :param name: the filename of the artifact to restore.
-        :return: Most recently logged model, if one can be found, else None.
+        :return: ID of the Run found in MLflow, or None if none were found.
         """
-        runs = cls._mlflow_client.search_runs(
+        mlflow_runs = cls._mlflow_client.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.SB3_RUN_TAG_KEY} ILIKE "%"',
         )
-        if runs:
+        if mlflow_runs:
             # Since runs is sorted by start_time descending, scan the list
             # for the first run that contains a policy by the name provided.
-            for run in runs:
+            for run in mlflow_runs:
                 try:
-                    policy_path = cls._mlflow_client.download_artifacts(
+                    cls._mlflow_client.download_artifacts(
                         run.info.run_id, name
                     )
                 except OSError:
                     continue  # No policy was logged in this run, keep trying.
-                print(f"SB3Run: Found last_logged SB3 policy '{name}'.")
-                return PPO.load(policy_path)
+                print(
+                    f"SB3Run: Found last_logged SB3 policy '{name}' "
+                    f"in {run.info.run_id}."
+                )
+                # Create and return an SB3Run out of this MLflow run.
+                return cls.from_existing_run_id(run.info.run_id)
         print(f"SB3Run: No SB3 policy with name '{name}' found.")
