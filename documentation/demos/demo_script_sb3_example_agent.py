@@ -1,22 +1,30 @@
-from pcs import Component
 import requests
+
+from pcs import Component
+
 # from pcs.registry import WebRegistry
 
 requests.get("http://localhost:8000/empty_database")
 random_agent = Component.from_registry_file(
     "example_agents/sb3_agent/components.yaml", "sb3_agent"
 ).to_versioned_component()
-learning_run = random_agent.run_with_arg_set(  # "learn", {})
+
+# This first run will be start training an agent from stractch.
+learning_run = random_agent.run_with_arg_set(
     "learn",
     {
         "sb3_agent": {
             "__init__": {
-                #                "model_input_run_id": "6bc918162f57481db67cf56417b3b938",
-                #                "load_most_recent_run": False,
+                "load_most_recent_run": False,
             }
         }
     },
 )
+
+# This second run will automatically load in the model trained
+# by the first run and continue to improve it.
+learning_run = random_agent.run_with_arg_set("learn", {})
+
 # run = random_agent.run_with_arg_set("evaluate", {})
 # wr = WebRegistry("http://localhost:8000/api/v1")
 

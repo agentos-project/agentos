@@ -33,7 +33,6 @@
     </script>
 
 
-    <link rel="stylesheet" href="{% static 'leaderboard/bulma.min.css' %}">
     <style type="text/css">
       .code {
         background-color: #f0f0f0;
@@ -44,6 +43,7 @@
         padding: .5em;
       }
     </style>
+    <link rel="stylesheet" href="{% static 'leaderboard/bulma.min.css' %}">
     <script>
       // https://bulma.io/documentation/components/navbar/#navbar-menu
       document.addEventListener('DOMContentLoaded', () => {
@@ -72,18 +72,20 @@
       });
     </script>
 
+  {% block head_code %}{% endblock head_code %}
+
   </head>
   <body>
 
 
 
-  <nav class="navbar" role="navigation" aria-label="main navigation">
+  <nav class="navbar is-light is-spaced" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://agentos.org">
         <img
-          src="{% static 'leaderboard/aos-logo.png' %}"
+          src="{% static 'leaderboard/agentos-logo-purple.png' %}"
           alt="AgentOS Logo"
-          style="display:none;"
+          style="display:none; max-height: 2.1rem;"
           id="agentos-logo-img"
         >
       </a>
@@ -102,11 +104,11 @@
       </a>
     </div>
   
-    <div id="navbarBasicExample" class="navbar-menu">
+    <div class="navbar-menu">
       <div class="navbar-start">
 
         <a href="/" class="navbar-item">
-          Home
+          Leaderboards
         </a>
 
         <a href="{% url 'run-list' %}" class="navbar-item">
@@ -122,6 +124,20 @@
             DEBUG: Empty Database
           </a>
         {% endif %}
+    </div>
+    <div class="navbar-end">
+        <div class="field is-grouped">
+            <p class="control">
+                <a href="https://agentos.org/" class="navbar-item button is-white has-background-grey-light">
+                    Docs
+                </a>
+            </p>
+            <p class="control">
+                <a href="https://github.com/agentos-project/agentos" class="navbar-item button is-white has-background-grey-light">
+                    Github
+                </a>
+            </p>
+        </div>
     </div>
   </nav>
     
