@@ -197,9 +197,9 @@ class RunCommand:
             if not force:
                 assert spec == self.to_spec(), (
                     f"A run command spec with identifier '{self.identifier}' "
-                    f"already exists in registry '{registry}' and differs from "
-                    "the one being added. Use force=True to overwrite the "
-                    "existing one."
+                    f"already exists in registry '{registry}' and differs "
+                    "from the one being added. Use force=True to overwrite "
+                    "the existing one."
                 )
             spec_exists_and_is_same = True
         if recurse:
