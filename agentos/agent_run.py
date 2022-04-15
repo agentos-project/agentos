@@ -97,8 +97,13 @@ class AgentRun(Run):
             )
 
             super().__init__(existing_run_id=existing_run_id)
-            outer_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
-            self.outer_run = ComponentRun.from_existing_run_id(outer_run_id)
+            if MLFLOW_PARENT_RUN_ID in self.data.tags:
+                outer_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
+                self.outer_run = ComponentRun.from_existing_run_id(
+                    outer_run_id
+                )
+            else:
+                self.outer_run = None
             if self.MODEL_INPUT_RUN_ID in self.data.tags:
                 model_input_run = self.data.tags[self.MODEL_INPUT_RUN_ID]
                 self.model_input_run = self.__class__.from_existing_run_id(
