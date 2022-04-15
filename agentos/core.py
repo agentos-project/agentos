@@ -129,6 +129,7 @@ class Agent(MemberInitializer):
 
     def start_agent_run(self, run_type: str, outer_run: AgentRun) -> None:
         from pcs import active_component_run  # avoid circular import
+
         agent_comp = self.__component__
         env_comp = self.environment.__component__
         if not outer_run:

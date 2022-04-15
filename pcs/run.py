@@ -1,10 +1,10 @@
 import pprint
-from deepdiff import DeepDiff
 from functools import partial
 from pathlib import Path
 from typing import Sequence
 from urllib.parse import urlparse
 
+from deepdiff import DeepDiff
 from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
