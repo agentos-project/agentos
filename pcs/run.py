@@ -245,7 +245,7 @@ class Run:
                 f"A run spec with identifier '{self.identifier}' already "
                 f"exists in registry '{registry}' and differs from the one "
                 "being added. Use force=True to overwrite the existing one. "
-                f"Diff of existing vs new spec:\n\n {diff}"
+                f"Diff of new spec vs existing:\n\n {diff}"
             )
 
         registry.add_run_spec(self.to_spec())

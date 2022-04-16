@@ -24,7 +24,7 @@ class RepoType(Enum):
     GITHUB = "github"
 
 
-class Repo(abc.ABC, SpecObject):
+class Repo(abc.ABC):
     """
     Base class used to encapsulate information about where a Component
     is located.

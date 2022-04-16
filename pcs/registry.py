@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from pcs.component import Component
     from pcs.repo import Repo
     from pcs.run import Run
+    from pcs.spec_object import SpecObject
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -148,18 +149,12 @@ class Registry(abc.ABC):
     def to_dict(self) -> Dict:
         raise NotImplementedError
 
-    def to_yaml(self, filename: str) -> None:
-        with open(filename, "w") as file:
-            yaml.dump(self.to_dict(), file)
-
-    @abc.abstractmethod
-    def get_repo_spec(
-        self,
-        repo_id: RepoIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RepoSpec]:
-        raise NotImplementedError
+    def to_yaml(self, filename: str = None) -> None:
+        if filename:
+            with open(filename, "w") as file:
+                yaml.dump(self.to_dict(), file)
+        else:
+            return yaml.dump(self.to_dict())
 
     @abc.abstractmethod
     def get_component_specs(
@@ -194,37 +189,18 @@ class Registry(abc.ABC):
         """
         raise NotImplementedError
 
-    def get_component_spec(
+    def get_spec(
         self,
-        name: str,
-        version: str = None,
+        identifier: str,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> Optional[ComponentSpec]:
+    ) -> Optional["SpecObject"]:
         """
-        Returns the component spec with ``name`` and ``version``, if it exists,
-        or raise an Error if it does not. A component's name and version are
-        defined as its identifier's name and version.
+        Returns the spec dict with ``identifier`` if it exists, or raise an
+        Error if it does not. Registries are not allowed to contain multiple
+        specs with the same identifier.
 
-        Registries are not allowed to contain multiple Components with the same
-        identifier. The Registry abstract base class does not enforce that all
-        Components have a version (version can be None) though some
-        sub-classes, such as web service backed registries, may choose to
-        enforce that constraint.
-
-        When version is unspecified or None, this function assumes that a
-        Component ``c`` exists where ``c.name == name`` and ``c.version is
-        None``, and throws an error otherwise.
-
-        Subclasses of Registry may choose to provide their own (more elaborate)
-        semantics for "default components". E.g., since WebRegistry does not
-        allow non-versioned components, it defines its own concept of a default
-        component by maintaining a separate map from component name to
-        a specific version of the component, and it allows that mapping to be
-        updated by users.
-
-        :param name: The name of the component to fetch.
-        :param version: Optional version of the component to fetch.
+        :param identifier: The identifier of the component to fetch.
         :param flatten: If True, flatten the outermost 2 layers of nested
             dicts into a single dict. In an unflattened component spec, the
             outermost dict is from identifier (which is a string in the format
@@ -235,41 +211,12 @@ class Registry(abc.ABC):
         :param error_if_not_found: Set to False to return an empty dict in
             the case that a matching component is not found in this registry.
 
-        :returns: a ComponentSpec (i.e. a dict) matching the filter criteria
-            provided, else throw an error.
+        :returns: the spec dict with the identifier provided, if it exists
+            in this registry, otherwise either return None or throw an Error,
+            depending on whether error_if_not_found is True or False.
 
         """
-        components = self.get_component_specs(name, version)
-        if len(components) == 0:
-            if error_if_not_found:
-                raise LookupError(
-                    f"This registry does not contain any components that "
-                    f"match your filter criteria: name:'{name}', "
-                    f"version:'{version}'."
-                )
-            else:
-                return {}
-        if len(components) > 1:
-            versions = [
-                ComponentIdentifier(c_id).version for c_id in components.keys()
-            ]
-            version_str = "\n - ".join(versions)
-            raise LookupError(
-                f"This registry contains more than one component with "
-                f"the name {name}. Please specify one of the following "
-                f"versions:\n - {version_str}"
-            )
-        return flatten_spec(components) if flatten else components
-
-    def get_component_spec_by_id(
-        self,
-        identifier: Union[ComponentIdentifier, str],
-        flatten: bool = False,
-    ) -> Optional[ComponentSpec]:
-        identifier = ComponentIdentifier(identifier)
-        return self.get_component_spec(
-            identifier.name, identifier.version, flatten=flatten
-        )
+        raise NotImplementedError
 
     def get_specs_transitively_by_id(
         self,
@@ -282,76 +229,23 @@ class Registry(abc.ABC):
         component_specs = {}
         while component_identifiers:
             c_id = component_identifiers.pop()
-            c_spec = self.get_component_spec_by_id(c_id, flatten=flatten)
+            c_spec = self.get_spec(c_id, flatten=flatten)
             inner_spec = c_spec if flatten else c_spec[c_id]
             component_specs[c_id] = c_spec
             repo_id = inner_spec["repo"]
-            repo_spec = self.get_repo_spec(repo_id, flatten=flatten)
+            repo_spec = self.get_spec(repo_id, flatten=flatten)
             repo_specs[repo_id] = repo_spec
             for d_id in inner_spec.get("dependencies", {}).values():
                 component_identifiers.append(ComponentIdentifier(d_id))
         return list(component_specs.values()), list(repo_specs.values())
 
-    def has_component_by_id(self, identifier: ComponentIdentifier) -> bool:
-        try:
-            self.get_component_spec_by_id(identifier)
-        except LookupError:
-            return False
-        return True
 
-    def has_component_by_name(self, name: str, version: str = None) -> bool:
-        identifier = ComponentIdentifier(name, version)
-        return self.has_component_by_id(identifier)
-
-    def get_run_command_spec(
-        self,
-        run_command_id: RunCommandIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunCommandSpec]:
+    @abc.abstractmethod
+    def __contains__(self, identifier):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_run_spec(
-        self,
-        run_id: RunIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunSpec]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_registries(self) -> Sequence:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        """
-        Adds a component spec to this registry. *This does not add any
-        Registry Objects* to this registry.
-
-        To register a component, use the higher the level function
-        Component.register(registry) or Registry.add_component().
-
-        :param component_spec: The ``ComponentSpec`` to register.
-        """
-        raise NotImplementedError
-
-    def add_component(
-        self, component: "Component", recurse: bool = True, force: bool = False
-    ) -> None:
-        component.to_registry(self, recurse=recurse, force=force)
-
-    @abc.abstractmethod
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_run_spec(self, run_spec: RunSpec) -> None:
+    def add_spec(self, spec: Dict) -> None:
         raise NotImplementedError
 
 
@@ -363,32 +257,40 @@ class InMemoryRegistry(Registry):
     def __init__(self, input_dict: Dict = None, base_dir: str = None):
         super().__init__(base_dir)
         self._registry = input_dict if input_dict else {}
-        if "components" not in self._registry.keys():
-            self._registry["components"] = {}
-        if "repos" not in self._registry.keys():
-            self._registry["repos"] = {}
-        if "runs" not in self._registry.keys():
-            self._registry["runs"] = {}
-        if "run_commands" not in self._registry.keys():
-            self._registry["run_commands"] = {}
-        if "registries" not in self._registry.keys():
-            self._registry["registries"] = []
 
-    def get_repo_spec(
+    def __contains__(self, identifier):
+        return identifier in self._registry
+
+    def get_spec(
         self,
-        repo_id: RepoIdentifier,
+        identifier: str,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> Optional[RepoSpec]:
-        return self._get_spec(repo_id, "repos", flatten, error_if_not_found)
+    ) -> Optional[Dict]:
+        """
+        Factor out common functionality for fetching specs from the
+        internal representation of them. Because Components are special,
+        (i.e., their identifiers can be versioned) they are handled
+        differently.
+        """
+        if identifier not in self._registry:
+            if error_if_not_found:
+                raise LookupError(
+                    f"{self.__class__}l spec with identifier "
+                    f"'{identifier}' not found."
+                )
+            else:
+                return None
+        spec = {identifier: self._registry[spec_type][identifier]}
+        return flatten_spec(spec) if flatten else spec
 
     def get_component_specs(
         self, filter_by_name: str = None, filter_by_version: str = None
-    ) -> NestedComponentSpec:
+    ) -> Dict:
         if filter_by_name or filter_by_version:
             try:
                 components = {}
-                for k, v in self._registry["components"].items():
+                for k, v in self._registry.items():
                     candidate_id = ComponentIdentifier(k)
                     passes_filter = True
                     if filter_by_name and candidate_id.name != filter_by_name:
@@ -405,63 +307,13 @@ class InMemoryRegistry(Registry):
                 return {}
         return self._registry["components"]
 
-    def get_run_command_spec(
-        self,
-        run_command_id: RunCommandIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunCommandSpec]:
-        return self._get_spec(
-            run_command_id, "run_commands", flatten, error_if_not_found
-        )
-
-    def get_run_spec(
-        self,
-        run_id: RunIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunSpec]:
-        return self._get_spec(run_id, "runs", flatten, error_if_not_found)
-
-    def _get_spec(
-        self,
-        identifier: str,
-        spec_type: str,
-        flatten: bool,
-        error_if_not_found: bool = True,
-    ) -> Optional[Dict]:
-        """
-        Factor out common functionality for fetching specs from the
-        internal represention of them. Because Components are special,
-        (i.e., their identifiers can be versioned) they are handled
-        differently.
-        """
-        assert spec_type in ["repos", "runs", "run_commands"]
-        if identifier not in self._registry[spec_type]:
-            if error_if_not_found:
-                raise LookupError(
-                    f"{self.__class__}l spec with identifier "
-                    f"'{identifier}' not found."
-                )
-            else:
-                return None
-        spec = {identifier: self._registry[spec_type][identifier]}
-        return flatten_spec(spec) if flatten else spec
-
     def get_registries(self) -> Sequence[Registry]:
         return self._registry["registries"]
 
-    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        self._registry["components"].update(component_spec)
-
-    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        self._registry["repos"].update(repo_spec)
-
-    def add_run_spec(self, run_spec: RunSpec) -> None:
-        self._registry["runs"].update(run_spec)
-
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
-        self._registry["run_commands"].update(run_command_spec)
+    def add_spec(self, spec: NestedComponentSpec) -> None:
+        if flatten_spec(spec)["identifier"] in self._registry:
+            print(f"Overwriting spec w/ identifier {spec['identifier']}")
+        self._registry.update(spec)
 
     def to_dict(self) -> Dict:
         return self._registry
