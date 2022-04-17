@@ -26,11 +26,11 @@ learning_run = random_agent.run_with_arg_set(
 learning_run = random_agent.run_with_arg_set("learn", {})
 
 # run = random_agent.run_with_arg_set("evaluate", {})
-# wr = WebRegistry("http://localhost:8000/api/v1")
+wr = WebRegistry("http://localhost:8000/api/v1")
 
 # You can publish the ComponentRun to locally running WebRegistry server
 # via the following command:
-# run.to_registry(wr)
+run.to_registry(wr)
 
 # OR, update and uncomment the code below to publish the AgentRun itself.
 # Look at the output printed by the call to `run_with_arg_set()` above,

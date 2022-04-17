@@ -142,6 +142,7 @@ class Registry(abc.ABC):
     def from_default(cls):
         if not hasattr(cls, "_default_registry"):
             cls._default_registry = WebRegistry(AOS_WEB_API_ROOT)
+        print(cls._default_registry.root_api_url)
         return cls._default_registry
 
     @abc.abstractmethod

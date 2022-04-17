@@ -89,7 +89,7 @@ class PAPAGAgent:
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
-            environment_identifier=self.__component__.identifier,
+            environment_identifier=self.AtariEnv.__component__.identifier,
         ) as eval_run:
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
@@ -445,6 +445,10 @@ class PAPAGAgent:
         return env_creator_fn
 
 
+# Modified from original.  Find the original at:
+#   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
+#   Commit: 41332b78dfb50321c29bade65f9d244387f68a60
+#   File: ./a2c_ppo_acktr/envs.py
 def papag_make_vec_envs(
     env_creator_fn,
     seed,
@@ -459,8 +463,6 @@ def papag_make_vec_envs(
         _papag_make_env(env_creator_fn, seed, i, log_dir, allow_early_resets)
         for i in range(num_processes)
     ]
-    # print(envs[0]().unwrapped)
-    # import sys; sys.exit(0)
 
     if len(envs) > 1:
         envs = SubprocVecEnv(envs)
@@ -483,6 +485,10 @@ def papag_make_vec_envs(
     return envs
 
 
+# Modified from original.  Find the original at:
+#   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
+#   Commit: 41332b78dfb50321c29bade65f9d244387f68a60
+#   File: ./a2c_ppo_acktr/envs.py
 def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
     def _thunk():
         # if env_id.startswith("dm"):
@@ -538,7 +544,10 @@ def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
 
     return _thunk
 
-
+# Modified from original.  Find the original at:
+#   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
+#   Commit: 41332b78dfb50321c29bade65f9d244387f68a60
+#   File: ./evaluation.py
 def papag_evaluate(
     eval_envs,
     actor_critic,
