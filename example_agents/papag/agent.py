@@ -10,7 +10,9 @@ from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.envs import make_vec_envs
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
-
+from gym.wrappers import TimeLimit
+from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
+                                              VecEnvWrapper)
 from pcs.component_run import active_component_run
 
 
@@ -89,8 +91,8 @@ class PAPAGAgent:
 
             torch.set_num_threads(1)
             device = torch.device("cuda:0" if cuda else "cpu")
-            envs = make_vec_envs(
-                self.env_name,
+            envs = papag_make_vec_envs(
+                self._env_creator,
                 seed,
                 num_processes,
                 gamma,
@@ -109,6 +111,7 @@ class PAPAGAgent:
             #    obs_rms = vec_normalized.obs_rms
             eval_log_dir = log_dir + "_eval"
             papag_evaluate(
+                envs,
                 actor_critic,
                 obs_rms,
                 self.env_name,
@@ -176,8 +179,8 @@ class PAPAGAgent:
             torch.set_num_threads(1)
             device = torch.device("cuda:0" if cuda else "cpu")
 
-            envs = make_vec_envs(
-                self.env_name,
+            envs = papag_make_vec_envs(
+                self._env_creator,
                 seed,
                 num_processes,
                 gamma,
@@ -382,6 +385,7 @@ class PAPAGAgent:
                 ):
                     obs_rms = utils.get_vec_normalize(envs).obs_rms
                     papag_evaluate(
+                        envs,
                         actor_critic,
                         obs_rms,
                         self.env_name,
@@ -408,8 +412,100 @@ class PAPAGAgent:
     def get_model_name(self):
         return f"{self.algo}_{self.env_name}.pt"
 
+    def _env_creator(self):
+        env = self.AtariEnv(game='pong', mode=None, difficulty=None, obs_type='image', frameskip=1, repeat_action_probability=0.0, full_action_space=False)
+        env = TimeLimit(env, 400000)
+
+ 
+def papag_make_vec_envs(env_creator_fn,
+                  seed,
+                  num_processes,
+                  gamma,
+                  log_dir,
+                  device,
+                  allow_early_resets,
+                  num_frame_stack=None):
+    envs = [
+        _papag_make_env(env_creator_fn, seed, i, log_dir, allow_early_resets)
+        for i in range(num_processes)
+    ]
+
+    if len(envs) > 1:
+        envs = SubprocVecEnv(envs)
+    else:
+        envs = DummyVecEnv(envs)
+
+    if len(envs.observation_space.shape) == 1:
+        if gamma is None:
+            envs = VecNormalize(envs, norm_reward=False)
+        else:
+            envs = VecNormalize(envs, gamma=gamma)
+
+    envs = VecPyTorch(envs, device)
+
+    if num_frame_stack is not None:
+        envs = VecPyTorchFrameStack(envs, num_frame_stack, device)
+    elif len(envs.observation_space.shape) == 3:
+        envs = VecPyTorchFrameStack(envs, 4, device)
+
+    return envs
+
+
+
+
+def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
+    def _thunk():
+        #if env_id.startswith("dm"):
+        #    _, domain, task = env_id.split('.')
+        #    env = dmc2gym.make(domain_name=domain, task_name=task)
+        #    env = ClipAction(env)
+        #else:
+        #    env = gym.make(env_id)
+        #env = env_cls(game='pong', mode=None, difficulty=None, obs_type='image', frameskip=1, repeat_action_probability=0.0, full_action_space=False)
+        #env = TimeLimit(env, 400000)
+        env = env_creator_fn()
+ 
+        is_atari = hasattr(gym.envs, 'atari') and isinstance(
+            env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
+        if is_atari:
+            env = NoopResetEnv(env, noop_max=30)
+            env = MaxAndSkipEnv(env, skip=4)
+
+        env.seed(seed + rank)
+
+        if str(env.__class__.__name__).find('TimeLimit') >= 0:
+            env = TimeLimitMask(env)
+
+        if log_dir is not None:
+            env = Monitor(env,
+                          os.path.join(log_dir, str(rank)),
+                          allow_early_resets=allow_early_resets)
+
+        if is_atari:
+            if len(env.observation_space.shape) == 3:
+                env = EpisodicLifeEnv(env)
+                if "FIRE" in env.unwrapped.get_action_meanings():
+                    env = FireResetEnv(env)
+                env = WarpFrame(env, width=84, height=84)
+                env = ClipRewardEnv(env)
+        elif len(env.observation_space.shape) == 3:
+            raise NotImplementedError(
+                "CNN models work only for atari,\n"
+                "please use a custom wrapper for a custom pixel input env.\n"
+                "See wrap_deepmind for an example.")
+
+        # If the input has shape (W,H,3), wrap for PyTorch convolutions
+        obs_shape = env.observation_space.shape
+        if len(obs_shape) == 3 and obs_shape[2] in [1, 3]:
+            env = TransposeImage(env, op=[2, 0, 1])
+
+        return env
+
+    return _thunk
+
 
 def papag_evaluate(
+    eval_envs,
     actor_critic,
     obs_rms,
     env_name,
@@ -419,15 +515,15 @@ def papag_evaluate(
     device,
     run,
 ):
-    eval_envs = make_vec_envs(
-        env_name,
-        seed + num_processes,
-        num_processes,
-        None,
-        eval_log_dir,
-        device,
-        True,
-    )
+    #eval_envs = papag_make_vec_envs(
+    #    env_name,
+    #    seed + num_processes,
+    #    num_processes,
+    #    None,
+    #    eval_log_dir,
+    #    device,
+    #    True,
+    #)
 
     vec_norm = utils.get_vec_normalize(eval_envs)
     if vec_norm is not None and obs_rms is not None:

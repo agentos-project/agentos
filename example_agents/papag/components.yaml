@@ -3,6 +3,9 @@ repos:
         type: local
         path: .
 
+    openai_gym:
+        type: github
+        url: git@github.com:openai/gym.git
 
 components:
     agent:
@@ -13,9 +16,18 @@ components:
         requirements_path: ./requirements.txt
         dependencies:
             PAPAGRun: PAPAGRun
+            AtariEnv: AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
  
     PAPAGRun:
         repo: papag_agent_dir
         file_path: papag_run.py
         class_name: PAPAGRun
         instantiate: False
+
+    AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
+        repo: openai_gym
+        file_path: ./gym/envs/atari/atari_env.py
+        class_name: AtariEnv
+        instantiate: False
+
+
