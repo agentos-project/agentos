@@ -21,7 +21,6 @@ components:
         dependencies:
             PAPAGRun: PAPAGRun
             AtariEnv: AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
-            PAPAGPolicy: PAPAGPolicy==41332b78dfb50321c29bade65f9d244387f68a60
             A2C_ACKTR: A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60
             PPO: PPO==41332b78dfb50321c29bade65f9d244387f68a60
 
