@@ -44,7 +44,7 @@ class AgentRun(Run):
     example::
 
          with AgentRun('evaluate',
-                       parent_run=self.__component__.active_run) as run:
+                       outer_run=self.__component__.active_run) as run:
               # run an episode
               run.log_episode(
                     # episode_data
@@ -54,17 +54,17 @@ class AgentRun(Run):
 
     IS_AGENT_RUN_TAG = "pcs.is_agent_run"
     LEARN_KEY = "learn"
-    RESET_KEY = "reset"
-    RESTORE_KEY = "restore"
     EVALUATE_KEY = "evaluate"
     RUN_TYPE_TAG = "run_type"
     AGENT_ID_KEY = "agent_identifier"
     ENV_ID_KEY = "environment_identifier"
+    MODEL_INPUT_RUN_ID = "model_input_run_id"
 
     def __init__(
         self,
         run_type: str = None,
-        parent_run: Run = None,
+        outer_run: Run = None,
+        model_input_run: Run = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
@@ -73,9 +73,9 @@ class AgentRun(Run):
         Create a new AgentRun.
 
         :param run_type: must be 'evaluate' or 'learn'
-        :param parent_run: Optionally, specify another Run that this run is
+        :param outer_run: Optionally, specify another Run that this run is
             a sub-run of. Setting this will result in this AgentRun being
-            visually nested under the parent_run in the MLflow UI.
+            visually nested under the outer_run in the MLflow UI.
         :param agent_identifier: Identifier of Agent component being evaluated
             or trained.
         :param environment_identifier: Identifier of Environment component
@@ -87,18 +87,30 @@ class AgentRun(Run):
         if existing_run_id:
             assert not (
                 run_type
-                or parent_run
+                or outer_run
                 or agent_identifier
                 or environment_identifier
             ), (
                 "If 'existing_run_id' is specified, then 'run_type', "
-                "'parent_run', 'agent_identifier', and "
+                "'outer_run', 'agent_identifier', and "
                 "'environment_identifier' must be None."
             )
 
             super().__init__(existing_run_id=existing_run_id)
-            parent_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
-            self.parent_run = ComponentRun.from_existing_run_id(parent_run_id)
+            if MLFLOW_PARENT_RUN_ID in self.data.tags:
+                outer_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
+                self.outer_run = ComponentRun.from_existing_run_id(
+                    outer_run_id
+                )
+            else:
+                self.outer_run = None
+            if self.MODEL_INPUT_RUN_ID in self.data.tags:
+                model_input_run = self.data.tags[self.MODEL_INPUT_RUN_ID]
+                self.model_input_run = self.__class__.from_existing_run_id(
+                    model_input_run
+                )
+            else:
+                self.model_input_run = None
             self.episode_data = []
             self.run_type = self.data.tags[self.RUN_TYPE_TAG]
             self.agent_identifier = self.data.tags[self.AGENT_ID_KEY]
@@ -109,7 +121,8 @@ class AgentRun(Run):
                 "'agent_identifier' and 'environment_identifier' must be."
             )
             super().__init__()
-            self.parent_run = parent_run
+            self.outer_run = outer_run
+            self.model_input_run = model_input_run
             self.set_tag(self.IS_AGENT_RUN_TAG, "True")
             self.episode_data = []
             self.run_type = run_type
@@ -123,9 +136,12 @@ class AgentRun(Run):
                     f"and Env '{self.environment_identifier}'"
                 ),
             )
-            if self.parent_run:
-                self.set_tag(MLFLOW_PARENT_RUN_ID, self.parent_run.info.run_id)
-
+            if self.outer_run:
+                self.set_tag(MLFLOW_PARENT_RUN_ID, self.outer_run.info.run_id)
+            if self.model_input_run:
+                self.set_tag(
+                    self.MODEL_INPUT_RUN_ID, self.model_input_run.info.run_id
+                )
             self.log_run_type(self.run_type)
             self.log_agent_identifier(self.agent_identifier)
             self.log_environment_identifier(self.environment_identifier)
@@ -133,14 +149,16 @@ class AgentRun(Run):
     @classmethod
     def evaluate_run(
         cls,
-        parent_run: Run = None,
+        outer_run: Run = None,
+        model_input_run: Run = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
     ) -> "AgentRun":
         return cls(
             run_type=cls.EVALUATE_KEY,
-            parent_run=parent_run,
+            outer_run=outer_run,
+            model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,
@@ -149,14 +167,16 @@ class AgentRun(Run):
     @classmethod
     def learn_run(
         cls,
-        parent_run: Run = None,
+        outer_run: Run = None,
+        model_input_run: Run = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
     ) -> "AgentRun":
         return cls(
             run_type=cls.LEARN_KEY,
-            parent_run=parent_run,
+            outer_run=outer_run,
+            model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,
@@ -265,12 +285,20 @@ class AgentRun(Run):
         if not registry:
             registry = InMemoryRegistry()
         if recurse:
-            self.parent_run.to_registry(
-                registry=registry,
-                recurse=recurse,
-                force=force,
-                include_artifacts=include_artifacts,
-            )
+            if self.outer_run:
+                self.outer_run.to_registry(
+                    registry=registry,
+                    recurse=recurse,
+                    force=force,
+                    include_artifacts=include_artifacts,
+                )
+            if self.model_input_run:
+                self.model_input_run.to_registry(
+                    registry=registry,
+                    recurse=recurse,
+                    force=force,
+                    include_artifacts=include_artifacts,
+                )
         return super().to_registry(
             registry=registry, force=force, include_artifacts=include_artifacts
         )

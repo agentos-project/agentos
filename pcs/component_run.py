@@ -71,12 +71,12 @@ class ComponentRun(Run):
         assert (
             run_command or existing_run_id
         ), "One of 'run_command' or 'existing_run_id' must be provided."
-        super().__init__(
-            experiment_id=experiment_id, existing_run_id=existing_run_id
-        )
         assert not (
             run_command and existing_run_id
         ), "`run_command` cannot be passed with `existing_run_id`."
+        super().__init__(
+            experiment_id=experiment_id, existing_run_id=existing_run_id
+        )
         self._run_command = None
         if run_command:
             self.set_and_log_run_command(run_command)

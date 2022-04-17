@@ -9,10 +9,12 @@ from registry.models import Component, ComponentDependency, Repo, Run
 
 def index(request):
     runs = Run.objects.filter(environment__isnull=False)
+    runs = sorted(
+        runs, key=lambda run: run.data["metrics"]["mean_reward"], reverse=True
+    )
     env_dict = defaultdict(list)
-    for env, run in [(r.environment.identifier, r) for r in runs]:
+    for env, run in [(r.environment, r) for r in runs]:
         env_dict[env].append(run)
-    print("env_dict: ", env_dict)
     context = {
         "env_dict": dict(env_dict),
         "is_debug": settings.DEBUG,

@@ -561,9 +561,21 @@ class WebRegistry(Registry):
         flatten: bool = False,
         error_if_not_found: bool = True,
     ) -> RunSpec:
-        return self._request_spec_from_web_server(
+        run_spec = self._request_spec_from_web_server(
             "run", run_id, flatten, error_if_not_found
         )
+        # TODO: Handle Runs in WebRegistry in a more sane way by treating
+        #       different RunTypes each as a separate type of Spec,
+        #       so that we don't need these special cases to remove
+        #       attributes that are added on the webapp side.
+        if run_spec:
+            run_spec = flatten_spec(run_spec) if not flatten else run_spec
+            if "environment" in run_spec:
+                run_spec.pop("environment")
+            if "agent" in run_spec:
+                run_spec.pop("agent")
+            run_spec = unflatten_spec(run_spec) if not flatten else run_spec
+        return run_spec
 
     def get_registries(self) -> Sequence:
         raise NotImplementedError

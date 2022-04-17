@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Sequence
 from urllib.parse import urlparse
 
+from deepdiff import DeepDiff
 from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
@@ -239,10 +240,12 @@ class Run:
             registry = InMemoryRegistry()
         spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
         if spec and not force:
-            assert spec == self.to_spec(), (
+            diff = DeepDiff(self.to_spec(), spec)
+            assert not diff, (
                 f"A run spec with identifier '{self.identifier}' already "
                 f"exists in registry '{registry}' and differs from the one "
-                "being added. Use force=True to overwrite the existing one."
+                "being added. Use force=True to overwrite the existing one. "
+                f"Diff of existing vs new spec:\n\n {diff}"
             )
 
         registry.add_run_spec(self.to_spec())

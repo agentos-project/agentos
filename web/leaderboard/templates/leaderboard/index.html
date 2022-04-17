@@ -1,39 +1,73 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block head_title %}
   AgentOS Leaderboard
 {% endblock head_title %}
 
-{% block container %}
-  <div class='title'>AgentOS Environment Leaderboard</div>
-{% endblock container %}
+{% block head_code %}
+<script type="text/javascript" src="static/leaderboard/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="{% static 'leaderboard/jquery.dataTables.min.css' %}"/>
+<script type="text/javascript" src="static/leaderboard/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready( function () {
+    $('#myTable').DataTable();
+} );
+</script>
+{% endblock head_code %}
 
 {% block content %}
 
   <div class="content">
 
-    {% if env_dict %}
-      {% for env_id, run_list in env_dict.items %}
-        <h4>
-            <a href="{% url 'component-detail' env_id %}">
-                {{ env_id }}
-            </a>
-        </h4>
-          <ul>
-            {% for run in run_list %}
-              <li>
-                <a href="{% url 'run-detail' run.identifier %}">
-                  Run {{ run.identifier }}
-                </a>
-                <ul>
-                    {%  for metric_name, metric_val in run.data.metrics.items %}
-                        <li>{{ metric_name }}: {{ metric_val }} </li>
-                    {% endfor %}
-                </ul>
-              </li>
-              {%  endfor %}
-          </ul>
-      {% endfor %}
+      {% if env_dict %}
+          {% for env, run_list in env_dict.items %}
+              <div class="box" style="padding: 15px">
+              <h1 class="title is-1">{{ env.class_name }}
+                  <a href="{% url 'component-detail' env.identifier %}" style="font-size:0.35em">{{ env.identifier|truncatechars:20 }}</a>
+              </h1>
+              <table id="myTable" class="display">
+                  <thead>
+                      <tr>
+                          <th>Agent</th>
+                          <th>Run ID</th>
+                          <th>Run Description</th>
+                          <th>Avg. Reward</th>
+                          <th># Training Episodes</th>
+                          <th>#Training Steps</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for run in run_list %}
+                          <tr>
+                              <td><a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a></td>
+                              <td><a href="{% url 'run-detail' run.identifier %}">{{ run.identifier|truncatechars:7 }}</a></td>
+                              <td>
+                                  <a href="{% url 'run-detail' run.identifier %}">
+                                      {% for k, v in run.data.tags.items %}
+                                          {% if k == "mlflow.runName" %}
+                                              {{ v|truncatechars:40 }}
+                                          {% endif %}
+                                      {% endfor %}
+                                  </a>
+                              </td>
+                              {%  for metric_name, metric_val in run.data.metrics.items %}
+                                  {% if metric_name == "mean_reward" %}
+                                      <td>{{ metric_val|floatformat:"g" }}</td>
+                                  {% endif %}
+                                  {% if metric_name == "training_episode_count" %}
+                                      <td>{{ metric_val|floatformat:"g" }}</td>
+                                  {% endif %}
+                                  {% if metric_name == "training_step_count" %}
+                                      <td>{{ metric_val|floatformat:"g" }}</td>
+                                  {% endif %}
+                              {% endfor %}
+                          </tr>
+                      {%  endfor %}
+                  </tbody>
+              </table>
+              </div>
+          {% endfor %}
     {% else %}
       <p>No Environments are available.</p>
     {% endif %}

@@ -24,6 +24,8 @@ returncode = 0
 
 IGNORED_FILES = [
     "agentos/templates/agent.py",
+    "web/leaderboard/static/leaderboard/jquery-3.6.0.min.js",
+    "web/leaderboard/static/leaderboard/jquery.dataTables.min.js",
 ]
 
 CHECK_ARG = "--check"
