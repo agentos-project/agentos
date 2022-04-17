@@ -1,4 +1,4 @@
-from stable_baselines3 import PPO
+from gym.wrappers import TimeLimit
 from stable_baselines3.common.evaluation import evaluate_policy
 
 from pcs.component_run import active_component_run
@@ -13,6 +13,7 @@ class SB3PPOAgent:
         load_most_recent_run: bool = True,
         model_input_run_id: str = None,
     ):
+        self.environment = self._get_environment()
         assert not (load_most_recent_run and model_input_run_id), (
             "If 'model_input_run_id' is specified, then "
             "'load_most_recent_run' must be False."
@@ -26,7 +27,7 @@ class SB3PPOAgent:
                 policy_path = self.model_input_run.download_artifacts(
                     "ppo.zip"
                 )
-                self.sb3_ppo = PPO.load(policy_path)
+                self.sb3_ppo = self.PPO.load(policy_path)
                 self.sb3_ppo.set_env(self.environment)
                 return
         if model_input_run_id:
@@ -37,11 +38,24 @@ class SB3PPOAgent:
                 model_input_run_id
             )
             policy_path = self.model_input_run.download_artifacts("ppo.zip")
-            self.sb3_ppo = PPO.load(policy_path)
+            self.sb3_ppo = self.PPO.load(policy_path)
             self.sb3_ppo.set_env(self.environment)
             return
         self.model_input_run = None
-        self.sb3_ppo = PPO("MlpPolicy", self.environment)
+        self.sb3_ppo = self.PPO("MlpPolicy", self.environment)
+
+    def _get_environment(self):
+        env = self.AtariEnv(
+            game="pong",
+            mode=None,
+            difficulty=None,
+            obs_type="image",
+            frameskip=1,
+            repeat_action_probability=0.0,
+            full_action_space=False,
+        )
+        env = TimeLimit(env, 400000)
+        return env
 
     @property
     def active_run(self):
@@ -59,8 +73,8 @@ class SB3PPOAgent:
         with self.SB3AgentRun.evaluate_run(
             outer_run=self.active_run,
             model_input_run=self.model_input_run,
-            agent_identifier=self.__component__.identifier,
-            environment_identifier=self.environment.__component__.identifier,
+            agent_identifier=self.PPO.__component__.identifier,
+            environment_identifier=self.AtariEnv.__component__.identifier,
         ) as eval_run:
             evaluate_policy(
                 model=self.sb3_ppo,
@@ -78,8 +92,8 @@ class SB3PPOAgent:
         with self.SB3AgentRun.learn_run(
             outer_run=self.active_run,
             model_input_run=self.model_input_run,
-            agent_identifier=self.__component__.identifier,
-            environment_identifier=self.environment.__component__.identifier,
+            agent_identifier=self.PPO.__component__.identifier,
+            environment_identifier=self.AtariEnv.__component__.identifier,
         ) as learn_run:
             self.sb3_ppo.learn(
                 total_timesteps=int(total_timesteps),
