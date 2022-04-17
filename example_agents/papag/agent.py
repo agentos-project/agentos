@@ -16,7 +16,6 @@ from a2c_ppo_acktr.envs import (
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from gym.wrappers import TimeLimit
-from pcs.component_run import active_component_run
 from stable_baselines3.common.atari_wrappers import (
     ClipRewardEnv,
     EpisodicLifeEnv,
@@ -27,6 +26,8 @@ from stable_baselines3.common.atari_wrappers import (
 )
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+
+from pcs.component_run import active_component_run
 
 
 class PAPAGAgent:

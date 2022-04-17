@@ -1,7 +1,6 @@
 import requests
 
 from pcs import Component
-
 from pcs.registry import WebRegistry
 
 requests.get("http://localhost:8000/empty_database")
