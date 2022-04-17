@@ -10,9 +10,9 @@ from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.envs import (
     TimeLimitMask,
     TransposeImage,
+    VecNormalize,
     VecPyTorch,
     VecPyTorchFrameStack,
-    VecNormalize
 )
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
@@ -27,10 +27,7 @@ from stable_baselines3.common.atari_wrappers import (
     WarpFrame,
 )
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import (
-    DummyVecEnv,
-    SubprocVecEnv,
-)
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
 class PAPAGAgent:
