@@ -175,7 +175,7 @@ class PAPAGAgent:
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
-            environment_identifier=self.__component__.identifier,
+            environment_identifier=self.AtariEnv.__component__.identifier,
         ) as learn_run:
 
             torch.manual_seed(seed)
