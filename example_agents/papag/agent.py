@@ -2,7 +2,6 @@ import os
 import time
 from collections import deque
 
-import a2c_ppo_acktr
 import numpy as np
 import torch
 from a2c_ppo_acktr import utils
@@ -42,13 +41,19 @@ class PAPAGAgent:
 
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self, algo: str, env_name: str):
-        self.algo = algo
+    def __init__(self, algo_name: str, env_name: str):
+        self.algo_name = algo_name
         self.env_name = env_name
         model_name = self.get_model_name()
         self.model_input_run = self.PAPAGRun.get_last_logged_model_run(
             model_name
         )
+        if self.algo_name == "a2c":
+            self.Algo = self.A2C_ACKTR
+        elif self.algo_name == "ppo":
+            self.Algo = self.PPO
+        elif self.algo_name == "acktr":
+            self.Algo = self.A2C_ACKTR
 
     def evaluate(
         self,
@@ -88,7 +93,7 @@ class PAPAGAgent:
         with self.PAPAGRun.evaluate_run(
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
-            agent_identifier=self.__component__.identifier,
+            agent_identifier=self.Algo.__component__.identifier,
             environment_identifier=self.AtariEnv.__component__.identifier,
         ) as eval_run:
             torch.manual_seed(seed)
@@ -174,10 +179,9 @@ class PAPAGAgent:
         with self.PAPAGRun.learn_run(
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
-            agent_identifier=self.__component__.identifier,
+            agent_identifier=self.Algo.__component__.identifier,
             environment_identifier=self.AtariEnv.__component__.identifier,
         ) as learn_run:
-
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
@@ -207,8 +211,8 @@ class PAPAGAgent:
             actor_critic, obs_rms = self.get_actor_critic(
                 model_name, learn_run, envs, recurrent_policy, device
             )
-            if self.algo == "a2c":
-                agent = a2c_ppo_acktr.algo.A2C_ACKTR(
+            if self.algo_name == "a2c":
+                agent = self.Algo(
                     actor_critic,
                     value_loss_coef,
                     entropy_coef,
@@ -217,8 +221,8 @@ class PAPAGAgent:
                     alpha=alpha,
                     max_grad_norm=max_grad_norm,
                 )
-            elif self.algo == "ppo":
-                agent = a2c_ppo_acktr.algo.PPO(
+            elif self.algo_name == "ppo":
+                agent = self.Algo(
                     actor_critic,
                     clip_param,
                     ppo_epoch,
@@ -229,8 +233,8 @@ class PAPAGAgent:
                     eps=eps,
                     max_grad_norm=max_grad_norm,
                 )
-            elif self.algo == "acktr":
-                agent = a2c_ppo_acktr.algo.A2C_ACKTR(
+            elif self.algo_name == "acktr":
+                agent = self.Algo(
                     actor_critic, value_loss_coef, entropy_coef, acktr=True
                 )
 
@@ -282,7 +286,9 @@ class PAPAGAgent:
                         agent.optimizer,
                         j,
                         num_updates,
-                        agent.optimizer.lr if self.algo == "acktr" else lr,
+                        agent.optimizer.lr
+                        if self.algo_name == "acktr"
+                        else lr,
                     )
 
                 for step in range(num_steps):
@@ -424,7 +430,7 @@ class PAPAGAgent:
         return actor_critic, obs_rms
 
     def get_model_name(self):
-        return f"{self.algo}_{self.env_name}.pt"
+        return f"{self.algo_name}_{self.env_name}.pt"
 
     def _get_env_creator_fn(self):
         env_class = self.AtariEnv
@@ -543,6 +549,7 @@ def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
         return env
 
     return _thunk
+
 
 # Modified from original.  Find the original at:
 #   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail

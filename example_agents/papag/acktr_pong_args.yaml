@@ -4,7 +4,7 @@
 agent:
     __init__:
         env_name: PongNoFrameskip-v4
-        algo: acktr
+        algo_name: acktr
     evaluate:
         lr: .0007
         clip_param: 0.2
