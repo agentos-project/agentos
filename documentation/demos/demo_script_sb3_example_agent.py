@@ -30,7 +30,7 @@ wr = WebRegistry("http://localhost:8000/api/v1")
 
 # You can publish the ComponentRun to locally running WebRegistry server
 # via the following command:
-run.to_registry(wr)
+learning_run.to_registry(wr)
 
 # OR, update and uncomment the code below to publish the AgentRun itself.
 # Look at the output printed by the call to `run_with_arg_set()` above,
