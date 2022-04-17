@@ -2,7 +2,7 @@ import requests
 
 from pcs import Component
 
-# from pcs.registry import WebRegistry
+from pcs.registry import WebRegistry
 
 requests.get("http://localhost:8000/empty_database")
 random_agent = Component.from_registry_file(
