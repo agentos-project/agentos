@@ -2,6 +2,7 @@
 #   linux:
 #       "--extra-index-url": "https://download.pytorch.org/whl/cpu"
 
+gym[atari]==0.19.0
 stable_baselines3==1.4.0
 dm-env==1.5
 mlflow==1.23.1

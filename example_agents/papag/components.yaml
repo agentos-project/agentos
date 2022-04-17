@@ -3,6 +3,13 @@ repos:
         type: local
         path: .
 
+    openai_gym:
+        type: github
+        url: git@github.com:openai/gym.git
+
+    ikostrikov_papag:
+        type: github
+        url: git@github.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
 
 components:
     agent:
@@ -13,9 +20,40 @@ components:
         requirements_path: ./requirements.txt
         dependencies:
             PAPAGRun: PAPAGRun
- 
+            AtariEnv: AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
+            CartPoleEnv: CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
+            A2C_ACKTR: A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60
+            PPO: PPO==41332b78dfb50321c29bade65f9d244387f68a60
+
     PAPAGRun:
         repo: papag_agent_dir
         file_path: papag_run.py
         class_name: PAPAGRun
         instantiate: False
+
+    AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
+        repo: openai_gym
+        file_path: ./gym/envs/atari/atari_env.py
+        class_name: AtariEnv
+        instantiate: False
+
+    CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
+        repo: openai_gym
+        file_path: ./gym/envs/classic_control/cartpole.py
+        class_name: CartPoleEnv
+        instantiate: False
+
+    A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60:
+        repo: ikostrikov_papag
+        file_path: ./a2c_ppo_acktr/algo/a2c_acktr.py
+        class_name: A2C_ACKTR
+        instantiate: False
+
+    PPO==41332b78dfb50321c29bade65f9d244387f68a60:
+        repo: ikostrikov_papag
+        file_path: ./a2c_ppo_acktr/algo/ppo.py
+        class_name: PPO
+        instantiate: False
+
+
+
