@@ -10,8 +10,11 @@ from pathlib import Path
 import click
 import yaml
 
+from agentos.agent_run import AgentRun
+
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
+from pcs.component_run import ComponentRun
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.run import Run
@@ -210,6 +213,10 @@ def status(entity_id, registry_file, use_venv):
 @_arg_optional_entity_id
 def publish_run(entity_id):
     r = Run.from_existing_run_id(run_id=entity_id)
+    if AgentRun.IS_AGENT_RUN_TAG in r.data.tags:
+       r = AgentRun.from_existing_run_id(run_id=entity_id)
+    if ComponentRun.IS_COMPONENT_RUN_TAG in r.data.tags:
+        r = ComponentRun.from_existing_run_id(run_id=entity_id)
     r.to_registry(Registry.from_default())
 
 
