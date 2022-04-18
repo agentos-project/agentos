@@ -216,7 +216,7 @@ class VirtualEnv:
             "VIRTUAL_ENV": str(self.venv_path),
             "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
         }
-        subprocess.run(cmd, env=component_env)
+        subprocess.run(cmd, shell=True, env=component_env)
 
     def _build_virtual_env(self, req_paths: Sequence):
         hashed = self._hash_req_paths(req_paths)
