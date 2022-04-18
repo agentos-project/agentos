@@ -6,6 +6,7 @@ from hashlib import sha1
 from pathlib import Path
 from typing import Any, Dict, Sequence, Type, TypeVar, Union
 
+from deepdiff import DeepDiff
 from dill.source import getsource as dill_getsource
 from rich import print as rich_print
 from rich.tree import Tree
@@ -574,14 +575,13 @@ class Component:
             self.identifier, error_if_not_found=False
         )
         if existing_spec and not force:
-            if existing_spec != self.to_spec():
+            spec_diff = DeepDiff(existing_spec, self.to_spec())
+            if spec_diff:
                 raise RegistryException(
                     f"Component {self.identifier} already exists in registry "
                     f"{registry} and differs from the one you're trying to "
-                    f"add. Specify force=True to overwrite it.\n"
-                    f"existing: {existing_spec}"
-                    "\nVS\n"
-                    f"new: {self.to_spec()}"
+                    f"add. Specify force=True to overwrite it. Diff:\n"
+                    f"{spec_diff}"
                 )
         # handle dependencies on other components
         if recurse:
@@ -592,14 +592,12 @@ class Component:
                     error_if_not_found=False,
                 )
                 if existing_c_spec and not force:
-                    if existing_c_spec != c.to_spec():
+                    dep_spec_diff = DeepDiff(existing_c_spec, c.to_spec())
+                    if dep_spec_diff:
                         raise RegistryException(
                             f"Trying to register a component {c.identifier} "
-                            f"that already exists in a different form:\n"
-                            f"{existing_c_spec}\n"
-                            f"VS\n"
-                            f"{c.to_spec()}\n\n"
-                            f"To overwrite, specify force=true."
+                            f"that already exists in a different form. Diff:\n"
+                            f"{dep_spec_diff}"
                         )
                 # Either component dependency not in registry already or we are
                 # force adding it.
