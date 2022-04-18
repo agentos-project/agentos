@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
 
 import requests
 import yaml
+from deepdiff import DeepDiff
 from dotenv import load_dotenv
 
 from pcs.identifiers import (
@@ -239,7 +240,6 @@ class Registry(abc.ABC):
                 component_identifiers.append(ComponentIdentifier(d_id))
         return list(component_specs.values()), list(repo_specs.values())
 
-
     @abc.abstractmethod
     def __contains__(self, identifier):
         raise NotImplementedError
@@ -281,7 +281,7 @@ class InMemoryRegistry(Registry):
                 )
             else:
                 return None
-        spec = {identifier: self._registry[spec_type][identifier]}
+        spec = {identifier: self._registry[identifier]}
         return flatten_spec(spec) if flatten else spec
 
     def get_component_specs(
@@ -310,9 +310,18 @@ class InMemoryRegistry(Registry):
     def get_registries(self) -> Sequence[Registry]:
         return self._registry["registries"]
 
-    def add_spec(self, spec: NestedComponentSpec) -> None:
-        if flatten_spec(spec)["identifier"] in self._registry:
-            print(f"Overwriting spec w/ identifier {spec['identifier']}")
+    def add_spec(self, spec: Dict) -> None:
+        from pcs.spec_object import SpecObject  # Avoid circular import.
+
+        flat_spec = flatten_spec(spec)
+        identifier = flat_spec[SpecObject.IDENTIFIER_ATTR_NAME]
+        if identifier in self._registry:
+            spec_diff = DeepDiff(spec[identifier], self._registry[identifier])
+            assert not spec_diff, (
+                f"Spec {identifier} exists in registry and is different:\n\n"
+                f"{spec_diff}"
+            )
+            print(f"Spec {identifier} is already in registry; nothing to do.")
         self._registry.update(spec)
 
     def to_dict(self) -> Dict:

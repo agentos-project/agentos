@@ -21,11 +21,7 @@ import copy
 import json
 from typing import Any, Mapping, Union
 
-from pcs.identifiers import ComponentIdentifier
-
 FlatSpec = Mapping[str, str]
-
-
 NestedComponentSpec = Mapping[str, Mapping[str, str]]
 ComponentSpec = Union[NestedComponentSpec, FlatSpec]
 
@@ -52,7 +48,6 @@ RepoSpec = Union[NestedRepoSpec, FlatSpec]
 class RepoSpecKeys:
     IDENTIFIER = "identifier"
     TYPE = "type"
-    URL = "url"
     PATH = "path"
 
 
@@ -106,16 +101,9 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
                 "nested spec, its value must match the spec's identifier."
             )
 
-        if ComponentSpecKeys.IDENTIFIER in flat_spec:
-            flat_spec_id = flat_spec[ComponentSpecKeys.IDENTIFIER]
-            assert flat_spec_id == identifier, err("identifier")
-        if ComponentSpecKeys.NAME in flat_spec:
-            name = ComponentIdentifier(identifier).name
-            assert flat_spec[ComponentSpecKeys.NAME] == name, err("name")
-        if ComponentSpecKeys.VERSION in flat_spec:
-            ver = ComponentIdentifier(identifier).version
-            assert flat_spec[ComponentSpecKeys.version] == ver, err("version")
-        flat_spec[ComponentSpecKeys.IDENTIFIER] = identifier
+        from pcs.spec_object import SpecObject  # Avoid circular import.
+
+        flat_spec[SpecObject.IDENTIFIER_ATTR_NAME] = identifier
         id_parts = identifier.split(VersionedSpec.SEPARATOR)
         assert 0 < len(id_parts) <= 2, f"invalid identifier {identifier}"
         flat_spec[ComponentSpecKeys.NAME] = id_parts[0]

@@ -1,13 +1,15 @@
-import json
+import logging
+from typing import Collection, Dict, List, Mapping
+
 import yaml
-from deepdiff import DeepDiff
-from hashlib import sha1
-from typing import Collection, Dict, List, Mapping, Union
-from pcs.registry import Registry, InMemoryRegistry
+from deepdiff import DeepDiff, DeepHash
+
+from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import flatten_spec
 
+logger = logging.getLogger(__name__)
 
-#class SpecMeta(type):
+# class SpecMeta(type):
 #    def __new__(mcs, name, parents, namespace):
 #        o = type.__new__(mcs, name, parents, namespace)
 #        orig_init = o.__init__
@@ -39,15 +41,18 @@ class SpecObject:
     A value in the spec contents map can be another Spec's identifier.
     This represents a causal dependency between the two Specs.
     """
+
+    IDENTIFIER_ATTR_NAME = "identifier"
+    TYPE_ATTR_NAME = "type"
+
     def __init__(self):
         self._spec_attr_names: List[str] = []  # Managed by register_attribute
-        self._spec_attr_types: Dict[str: Union[str, "SpecObject"]] = {}
         self.type = self.__class__.__name__
-        self.register_attribute("type")
+        self.register_attribute(self.TYPE_ATTR_NAME)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
-            return hash(self) == hash(self)
+            return hash(self) == hash(other)
         else:
             return NotImplemented
 
@@ -55,41 +60,18 @@ class SpecObject:
         return self.identifier
 
     def __hash__(self) -> int:
-        return int(self._sha1(), 16)
+        return int(self.sha1(), 16)
 
-    def _sha1(self) -> str:
-        # Not positive if this is stable across architectures.
-        # See https://stackoverflow.com/q/27522626
-        return sha1(self.to_sorted_dict_str().encode("utf-8")).hexdigest()
-
-    def to_sorted_dict_str(self) -> str:
-        # See https://stackoverflow.com/a/22003440
-        return json.dumps(self.attributes, sort_keys=True)
+    def sha1(self) -> str:
+        return DeepHash(self.attributes_as_strings, hasher=DeepHash.sha1hex)[
+            self.attributes_as_strings
+        ]
 
     def register_attribute(self, attribute_name: str):
-        # TODO: check that all attributes in self._spec_attr_names can be
-        #       cleanly serialized into YAML.
-        # TODO: Handle attributes that have default values.
-        # TODO: Handle optional attributes (i.e., default value = None)
-        # TODO: Handle dependency attributes (i.e., an attribute whose value
-        #       must be another SpecObject), e.g. Component.repo, also
-        #       ComponentRun.argument_set.
-        # TODO: Component(SpecObject) should have its own functionality for
-        #       handling its dependencies on other components. This
-        #       functionality lives in Component.get_object() and similar
-        #       functions that need to use the spec attributes
-        #       to do things like pass values into managed object __init__()
-        #       functions, manipulate calls to __import__() (in the case of
-        #       module components). These special attributes are
-        #       dictionaries from attribute name to other SpecObject, e.g.,
-        #       Component.dependencies.
-        #       ComponentRun(SpecObject) also needs do something similar when
-        #       it passes arguments into an entry point being run.
         assert attribute_name not in self.attributes
         assert hasattr(self, attribute_name)
         attr = getattr(self, attribute_name)
-        assert type(attr) is str or isinstance(attr, SpecObject)
-        self._spec_attr_types[attribute_name] = type(attr)
+        assert isinstance(attr, str) or isinstance(attr, SpecObject)
         self._spec_attr_names.append(attribute_name)
 
     def register_attributes(self, attribute_names: Collection[str]):
@@ -98,11 +80,20 @@ class SpecObject:
 
     @property
     def identifier(self) -> str:
-        return self._sha1()
+        return self.sha1()
 
     @property
     def attributes(self) -> Dict:
         return {name: getattr(self, name) for name in self._spec_attr_names}
+
+    @property
+    def attributes_as_strings(self) -> Dict:
+        attr_strings = {}
+        for name in self._spec_attr_names:
+            v = getattr(self, name)
+            attr_val_as_str = v if isinstance(v, str) else v.identifier
+            attr_strings[name] = attr_val_as_str
+        return attr_strings
 
     @property
     def dependencies(self) -> List:
@@ -110,11 +101,11 @@ class SpecObject:
         Returns the subset of ``self.attributes`` that are references to
         other SpecObjects.
         """
-        return [
-            getattr(self, name) for name, type
-            in self._spec_attr_types.items()
-            if isinstance(type, SpecObject)
-        ]
+        return {
+            name: value
+            for name, value in self.attributes.items()
+            if isinstance(value, SpecObject)
+        }
 
     def to_registry(
         self,
@@ -134,7 +125,7 @@ class SpecObject:
             assert not diff, (
                 f"A spec with identifier '{self.identifier}' already exists "
                 f"in registry '{registry}' and differs from the one you're "
-                "trying to add. Diff of existing spec vs this spec:\n\n {diff}"
+                f"trying to add. Diff of existing spec vs this spec:\n {diff}"
             )
         if not dry_run:
             self._all_dependencies_to_registry(registry, False)
@@ -142,13 +133,13 @@ class SpecObject:
         return registry
 
     def _all_dependencies_to_registry(self, registry: Registry, dry_run: bool):
-        deps = self.dependencies
+        dep_objs = self.dependencies.values()
         dry_run_text = "Dry running " if dry_run else "Actually "
-        print(
+        logger.debug(
             f"{dry_run_text}pushing dependencies of {self.identifier} "
-            f"({deps}) to registry {registry}."
+            f"({dep_objs}) to registry {registry}."
         )
-        for d in deps:
+        for d in dep_objs:
             d.to_registry(
                 registry=registry,
                 recurse=True,
@@ -159,14 +150,14 @@ class SpecObject:
         raise NotImplementedError
 
     def to_spec(self, flatten: bool = False) -> Dict:
-        spec = {self.identifier: self.attributes}
+        spec = {self.identifier: self.attributes_as_strings}
         return flatten_spec(spec) if flatten else spec
 
     def to_yaml(self) -> str:
         return yaml.dump(self.to_spec())
 
     @staticmethod
-    def from_spec(self, spec: Mapping, registry: Registry = None) -> Mapping:
+    def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
         return NotImplementedError
 
     def publish(self) -> Registry:
@@ -174,17 +165,33 @@ class SpecObject:
 
 
 def test_spec_object():
-    class RepoSpec(SpecObject):
-        def __init__(self, repo_type: str, url: str):
+    class GitHubSpec(SpecObject):
+        def __init__(self, url: str):
             super().__init__()
-            self.repo_type = repo_type
             self.url = url
-            self.register_attributes(["repo_type", "url"])
+            self.register_attribute("url")
 
-    r = RepoSpec(
-        repo_type="github", url="https://github.com/agentos-project/agentos"
+    r = GitHubSpec(url="https://github.com/agentos-project/agentos")
+    assert r.type == "GitHubSpec"
+
+    class ModuleComponentSpec(SpecObject):
+        def __init__(self, repo: GitHubSpec, version: str, module_path: str):
+            super().__init__()
+            self.repo = repo
+            self.version = version
+            self.module_path = module_path
+            self.register_attributes(["repo", "version", "module_path"])
+
+    c = ModuleComponentSpec(
+        repo=r, version="master", module_path="example_agents/random/agent.py"
     )
-    assert r.type == "RepoSpec"
-    assert r.repo_type == "github"
-    print(r.to_spec())
-    print(r.to_registry().to_yaml())
+    assert c.repo is r
+    reg = c.to_registry()
+    print(reg.to_yaml())
+    print("=======")
+    print(c.to_registry(reg))
+    print("=======")
+    c_two = ModuleComponentSpec(
+        repo=r, version="master", module_path="example_agents/random/agent.py"
+    )
+    print(c_two.to_registry(reg))

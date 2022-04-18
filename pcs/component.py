@@ -16,7 +16,7 @@ from pcs.component_run import ComponentRun
 from pcs.exceptions import RegistryException
 from pcs.identifiers import ComponentIdentifier
 from pcs.registry import InMemoryRegistry, Registry
-from pcs.repo import GitHubRepo, LocalRepo, Repo, RepoType
+from pcs.repo import GitHubRepo, LocalRepo, Repo
 from pcs.run_command import RunCommand
 from pcs.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
 from pcs.utils import parse_github_web_ui_url
