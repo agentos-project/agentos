@@ -11,7 +11,6 @@ import click
 import yaml
 
 from agentos.agent_run import AgentRun
-
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.component_run import ComponentRun
@@ -214,7 +213,7 @@ def status(entity_id, registry_file, use_venv):
 def publish_run(entity_id):
     r = Run.from_existing_run_id(run_id=entity_id)
     if AgentRun.IS_AGENT_RUN_TAG in r.data.tags:
-       r = AgentRun.from_existing_run_id(run_id=entity_id)
+        r = AgentRun.from_existing_run_id(run_id=entity_id)
     if ComponentRun.IS_COMPONENT_RUN_TAG in r.data.tags:
         r = ComponentRun.from_existing_run_id(run_id=entity_id)
     r.to_registry(Registry.from_default())
