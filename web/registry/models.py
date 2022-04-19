@@ -1,6 +1,6 @@
+import json
 from collections import defaultdict
 from typing import Dict, List, Tuple
-import json
 
 from django.db import models
 from django.http import QueryDict
@@ -406,13 +406,12 @@ class Run(TimeStampedModel):
                         terminal = run_graph[terminal]
                     env_id = run_to_env_id[terminal]
                     terminals[env_id].append(terminal)
-        return run_obj_by_id, env_obj_by_id, root_list, terminals
+        return run_obj_by_id, env_obj_by_id, root_runs, terminals, run_graph
 
     @staticmethod
     def agent_run_dag(identifier) -> List:
-        run_obj_by_id, env_obj_by_id, root_list, terms = Run.agent_run_dags()
+        run_id_map, env_id_map, roots, terms, graph = Run.agent_run_dags()
         res = []
-        for k, v in run_obj_by_id.items():
-            res.append(v)
+        for ident, obj in run_id_map.items():
+            res.append(obj)
         return res
-
