@@ -16,6 +16,7 @@ from a2c_ppo_acktr.envs import (
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from gym.wrappers import TimeLimit
+from pcs.component_run import active_component_run
 from stable_baselines3.common.atari_wrappers import (
     ClipRewardEnv,
     EpisodicLifeEnv,
@@ -26,8 +27,6 @@ from stable_baselines3.common.atari_wrappers import (
 )
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-
-from pcs.component_run import active_component_run
 
 
 class PAPAGAgent:
@@ -91,11 +90,12 @@ class PAPAGAgent:
         cuda=False,
     ):
         num_processes = int(num_processes)
+        env_class, _ = self._get_env_class_and_kwargs()
         with self.PAPAGRun.evaluate_run(
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.Algo.__component__.identifier,
-            environment_identifier=self.AtariEnv.__component__.identifier,
+            environment_identifier=env_class.__component__.identifier,
         ) as eval_run:
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
@@ -134,10 +134,7 @@ class PAPAGAgent:
                 envs,
                 actor_critic,
                 obs_rms,
-                self.env_name,
-                seed,
                 num_processes,
-                eval_log_dir,
                 device,
                 eval_run,
             )
@@ -177,11 +174,12 @@ class PAPAGAgent:
         cuda=False,
     ):
         num_processes = int(num_processes)
+        env_class, _ = self._get_env_class_and_kwargs()
         with self.PAPAGRun.learn_run(
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.Algo.__component__.identifier,
-            environment_identifier=self.AtariEnv.__component__.identifier,
+            environment_identifier=env_class.__component__.identifier,
         ) as learn_run:
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
@@ -409,10 +407,7 @@ class PAPAGAgent:
                         envs,
                         actor_critic,
                         obs_rms,
-                        self.env_name,
-                        seed,
                         num_processes,
-                        eval_log_dir,
                         device,
                         learn_run,
                     )
@@ -434,28 +429,42 @@ class PAPAGAgent:
         return f"{self.algo_name}_{self.env_name}.pt"
 
     def _get_env_creator_fn(self):
-        env_class = self.AtariEnv
+        # We must assign these attributes to locals because PAPAG attempts to
+        # do some sort of serialization to the generation function below and it
+        # cannot serialize a reference to self (even if it's just captured in
+        # the inner fn to reference an attribute)
+        env_class, env_kwargs = self._get_env_class_and_kwargs()
 
         def env_creator_fn():
-            env = env_class(
-                game="pong",
-                mode=None,
-                difficulty=None,
-                obs_type="image",
-                frameskip=1,
-                repeat_action_probability=0.0,
-                full_action_space=False,
-            )
+            env = env_class(**env_kwargs)
             env = TimeLimit(env, 400000)
             return env
 
         return env_creator_fn
 
+    def _get_env_class_and_kwargs(self):
+        if self.env_name == "PongNoFrameskip-v4":
+            env_kwargs = {
+                "game": "pong",
+                "mode": None,
+                "difficulty": None,
+                "obs_type": "image",
+                "frameskip": 1,
+                "repeat_action_probability": 0.0,
+                "full_action_space": False,
+            }
+            return self.AtariEnv, env_kwargs
+        elif self.env_name == "CartPole-v1":
+            return self.CartPoleEnv, {}
+        raise Exception(f"Unsupported Env {self.env_name}")
 
+
+# TODO -- all these args still necessary?
 # Modified from original.  Find the original at:
 #   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
 #   Commit: 41332b78dfb50321c29bade65f9d244387f68a60
 #   File: ./a2c_ppo_acktr/envs.py
+#   Function: make_vec_envs()
 def papag_make_vec_envs(
     env_creator_fn,
     seed,
@@ -496,6 +505,7 @@ def papag_make_vec_envs(
 #   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
 #   Commit: 41332b78dfb50321c29bade65f9d244387f68a60
 #   File: ./a2c_ppo_acktr/envs.py
+#   Function: make_env()
 def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
     def _thunk():
         # if env_id.startswith("dm"):
@@ -511,7 +521,7 @@ def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
 
         # is_atari = hasattr(gym.envs, 'atari') and isinstance(
         #    env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
-        is_atari = True
+        is_atari = env.unwrapped.__class__.__name__ == "AtariEnv"
         if is_atari:
             env = NoopResetEnv(env, noop_max=30)
             env = MaxAndSkipEnv(env, skip=4)
@@ -519,7 +529,6 @@ def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
         env.seed(seed + rank)
 
         if str(env.__class__.__name__).find("TimeLimit") >= 0:
-            raise Exception
             env = TimeLimitMask(env)
 
         if log_dir is not None:
@@ -556,27 +565,15 @@ def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
 #   Repo: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
 #   Commit: 41332b78dfb50321c29bade65f9d244387f68a60
 #   File: ./evaluation.py
+#   Function: evaluate()
 def papag_evaluate(
     eval_envs,
     actor_critic,
     obs_rms,
-    env_name,
-    seed,
     num_processes,
-    eval_log_dir,
     device,
     run,
 ):
-    # eval_envs = papag_make_vec_envs(
-    #    env_name,
-    #    seed + num_processes,
-    #    num_processes,
-    #    None,
-    #    eval_log_dir,
-    #    device,
-    #    True,
-    # )
-
     vec_norm = utils.get_vec_normalize(eval_envs)
     if vec_norm is not None and obs_rms is not None:
         vec_norm.eval()
