@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block head_title %}
+  Run {{ run.identifier }}
+{% endblock head_title %}
+
+{% block container %}
+  <div class='title'>Run {{ run.identifier }}</div>
+{% endblock container %}
+
+{% block content %}
+  <div class="content">
+    <h4>Rerun Locally</h4>
+    <span class="code">$ agentos get {{ run.identifier }} .</span>
+  </div>
+
+  <div class="content">
+    <h4>Details</h4>
+    <ul>
+      <li>
+        <strong>Agent:</strong>
+          <a href="{% url 'component-detail' run.agent.identifier %}">
+              {{ run.agent.identifier|truncatechars:20 }}
+          </a>
+      </li>
+      <li>
+        <strong>Environment:</strong>
+          <a href="{% url 'component-detail' run.environment.identifier %}">
+              {{ run.environment.identifier|truncatechars:20 }}
+          </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="content">
+    <h4>Learning History</h4>
+    <table>
+        <thead>
+            <tr>
+                <td>Run Identifier</td>
+                <td>Run Name</td>
+                <td>Avg. Reward</td>
+                <td># Training Episodes</td>
+                <td># Training Steps</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% for run in run_dag %}
+                    <td>{{ run.identifier|truncatechars:10 }}</td>
+                    <td>
+                    <a href="/run/{{ run.identifier }}">
+                        {% for k, v in run.data.tags.items %}
+                            {% if k == "mlflow.runName" %}
+                                {{ v|truncatechars:40 }}
+                            {% endif %}
+                        {% endfor %}
+                    </a>
+                    </td>
+                    {%  for metric_name, metric_val in run.data.metrics.items %}
+                        {% if metric_name == "mean_reward" %}
+                            <td>{{ metric_val|floatformat:"g" }}</td>
+                        {% endif %}
+                        {% if metric_name == "training_episode_count" %}
+                            <td>{{ metric_val|floatformat:"g" }}</td>
+                        {% endif %}
+                        {% if metric_name == "training_step_count" %}
+                            <td>{{ metric_val|floatformat:"g" }}</td>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+  </div>
+
+{% endblock content %}
