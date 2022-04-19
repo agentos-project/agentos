@@ -73,7 +73,7 @@ class PAPAGAgent:
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
-            environment_identifier=self.environment.__component__.identifier,
+            environment_identifier=self.__component__.identifier,
         ) as eval_run:
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
