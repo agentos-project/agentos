@@ -1,5 +1,6 @@
 import json
-from typing import Dict, List
+from collections import defaultdict
+from typing import Dict, List, Tuple
 
 from django.db import models
 from django.http import QueryDict
@@ -368,3 +369,49 @@ class Run(TimeStampedModel):
             defaults=default_kwargs,
         )
         return run
+
+    @staticmethod
+    def agent_run_dags() -> Tuple:
+        run_objs = Run.objects.filter(environment__isnull=False)
+        run_obj_by_id = {}
+        env_obj_by_id = {}
+        run_to_env_id = {}
+
+        # {env_id: {agent_id: [runs_without_input_parents]}}
+        root_runs = defaultdict(lambda: defaultdict(list))
+        run_graph = {}  # {parent_id: child_id}
+        for run in run_objs:
+            run_obj_by_id[run.identifier] = run
+            env_obj_by_id[run.environment.identifier] = run.environment
+            agent_id = run.agent.identifier
+            env_id = run.environment.identifier
+            run_id = run.identifier
+            tags = run.data["tags"]
+            run_to_env_id[run_id] = env_id
+            # Store our roots, which we'll use to for traversal later
+            if "model_input_run_id" not in tags:
+                root_runs[env_id][agent_id].append(run_id)
+            # store graph edges from parent to child (opposite of how they are)
+            else:
+                parent_id = tags["model_input_run_id"]
+                run_graph[parent_id] = run_id
+
+        # find the terminal node for every root_run (might be itself)
+        terminals = defaultdict(list)
+        for env_id in root_runs.values():
+            for root_list in env_id.values():
+                for root in root_list:
+                    terminal = root
+                    while terminal in run_graph:
+                        terminal = run_graph[terminal]
+                    env_id = run_to_env_id[terminal]
+                    terminals[env_id].append(terminal)
+        return run_obj_by_id, env_obj_by_id, root_runs, terminals, run_graph
+
+    @staticmethod
+    def agent_run_dag(identifier) -> List:
+        run_id_map, env_id_map, roots, terms, graph = Run.agent_run_dags()
+        res = []
+        for ident, obj in run_id_map.items():
+            res.append(obj)
+        return res

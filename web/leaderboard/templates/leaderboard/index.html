@@ -26,7 +26,7 @@ $(document).ready( function () {
               <h1 class="title is-1">{{ env.class_name }}
                   <a href="{% url 'component-detail' env.identifier %}" style="font-size:0.35em">{{ env.identifier|truncatechars:20 }}</a>
               </h1>
-              <table id="myTable" class="display">
+              <table id="myTable" class="display table">
                   <thead>
                       <tr>
                           <th>Agent</th>
@@ -41,9 +41,9 @@ $(document).ready( function () {
                       {% for run in run_list %}
                           <tr>
                               <td><a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a></td>
-                              <td><a href="{% url 'run-detail' run.identifier %}">{{ run.identifier|truncatechars:7 }}</a></td>
+                              <td><a href="run/{{ run.identifier }}">{{ run.identifier|truncatechars:7 }}</a></td>
                               <td>
-                                  <a href="{% url 'run-detail' run.identifier %}">
+                                  <a href="run/{{ run.identifier }}">
                                       {% for k, v in run.data.tags.items %}
                                           {% if k == "mlflow.runName" %}
                                               {{ v|truncatechars:40 }}

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_title %}
+  Run {{ run.identifier }}
+{% endblock head_title %}
+
+{% block head_code %}
+<script type="text/javascript" src="/static/leaderboard/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="/static/leaderboard/jquery.dataTables.min.css"/>
+<script type="text/javascript" src="/static/leaderboard/jquery.dataTables.min.js"></script>
+<script type="text/javascript">
+$(document).ready( function () {
+    $('#LineageTable').DataTable();
+    $("#run_info_header").click(function () {
+        $("#run_info_content").slideToggle("slow", function () {
+            // Animation complete.
+        });
+        $("#run_info_show").toggleClass('hide')
+        $("#run_info_hide").toggleClass('hide')
+    });
+    $("#run_metrics_header").click(function () {
+        $("#run_metrics_content").slideToggle("slow", function () {
+            // Animation complete.
+        });
+        $("#run_metrics_show").toggleClass('hide')
+        $("#run_metrics_hide").toggleClass('hide')
+    });
+    $("#run_tags_header").click(function () {
+        $("#run_tags_content").slideToggle("slow", function () {
+            // Animation complete.
+        });
+        $("#run_tags_show").toggleClass('hide')
+        $("#run_tags_hide").toggleClass('hide')
+    });
+});
+</script>
+<style>
+    .hide{
+        display: none;
+    }
+</style>
+{% endblock head_code %}
+
+{% block container %}
+  <div class='title'>AgentRun {{ run.identifier }}</div>
+{% endblock container %}
+
+{% block content %}
+  <div class="content" style="display:none">
+    <h4>Re-run Locally</h4>
+    <span class="code">$ agentos get {{ run.identifier }} .</span>
+  </div>
+
+  <div class="content">
+    <h4>Details</h4>
+    <ul>
+      <li>
+        Agent:
+        <a href="{% url 'component-detail' run.agent.identifier %}">
+          {{ run.agent.identifier|truncatechars:20 }}
+        </a>
+      </li>
+      <li>
+        Environment:
+        <a href="{% url 'component-detail' run.environment.identifier %}">
+         {{ run.environment.identifier|truncatechars:20 }}
+        </a>
+      </li>
+      <li id="run_info_header">
+        Run.info
+        <button style="font-size:0.65em; font-weight: bold" id="run_info_show">
+          show
+        </button>
+        <button style="font-size:0.65em; font-weight: bold" class="hide" id="run_info_hide">
+          hide
+        </button>
+        <pre id="run_info_content" style="display:none">{{ run.info|pprint }}</pre>
+      </li>
+      <li id="run_metrics_header">
+          Run.metrics
+          <button style="font-size:0.65em; font-weight: bold" id="run_metrics_show">
+              show
+          </button>
+          <button style="font-size:0.65em; font-weight: bold" class="hide" id="run_metrics_hide">
+              hide
+          </button>
+          <pre id="run_metrics_content" style="display:none">{{ run.data.metrics|pprint }}</pre>
+      </li>
+      <li id="run_tags_header">
+          Run.tags
+          <button style="font-size:0.65em; font-weight: bold" id="run_tags_show">
+              show
+          </button>
+          <button style="font-size:0.65em; font-weight: bold" class="hide" id="run_tags_hide">
+              hide
+          </button>
+          <pre id="run_tags_content" style="display:none">{{ run.data.tags|pprint }}</pre>
+      </li>
+      <li>
+        <a href="{% url 'run-detail' run.identifier %}">View run in REST API</a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="content">
+    <h4>Learning History</h4>
+    <table id="LineageTable" class="display table">
+        <thead>
+            <tr>
+                <th>Run Identifier</th>
+                <th>Run Name</th>
+                <th>Avg. Reward</th>
+                <th># Training Episodes</th>
+                <th># Training Steps</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in run_dag %}
+                <tr>
+                    <td>
+                      <a href="/run/{{ r.identifier }}" {%  if r.identifier == run.identifier %}style="font-weight: bold"{% endif %}>
+                        {{ r.identifier|truncatechars:10 }}
+                      </a>
+                    </td>
+                    <td>
+                        <a href="/run/{{ r.identifier }}">
+                            {% for k, v in r.data.tags.items %}
+                                {% if k == "mlflow.runName" %}
+                                    {{ v|truncatechars:40 }}
+                                {% endif %}
+                            {% endfor %}
+                        </a>
+                    </td>
+                    <td>{{ r.data.metrics.mean_reward|floatformat:"g" }}</td>
+                    <td>{{ r.data.metrics.training_episode_count|floatformat:"g" }}</td>
+                    <td>{{ r.data.metrics.training_step_count|floatformat:"g" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+
+{% endblock content %}
