@@ -396,7 +396,7 @@ class Run(TimeStampedModel):
                 parent_id = tags["model_input_run_id"]
                 run_graph[parent_id] = run_id
 
-        # find the terminal node for every root_run (might be itself, i.e. no edge)
+        # find the terminal node for every root_run (might be itself)
         terminals = defaultdict(list)
         for env_id in root_runs.values():
             for root_list in env_id.values():
