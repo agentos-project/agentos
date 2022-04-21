@@ -8,6 +8,7 @@ import yaml
 from dulwich import porcelain
 from dulwich.refs import LOCAL_BRANCH_PREFIX
 
+AOS_ROOT = Path(__file__).parent.absolute()
 AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"

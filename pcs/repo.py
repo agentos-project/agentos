@@ -1,6 +1,7 @@
 import abc
 import logging
 import os
+import re
 import sys
 import uuid
 from enum import Enum
@@ -9,10 +10,10 @@ from typing import Dict, Tuple, TypeVar, Union
 
 from dulwich import porcelain
 from dulwich.errors import NotGitRepository
-from dulwich.objectspec import parse_commit, parse_ref
+from dulwich.objectspec import parse_commit
 from dulwich.repo import Repo as PorcelainRepo
-
 from pcs.exceptions import BadGitStateException, PythonComponentSystemException
+from pcs.github_api_manager import GitHubAPIManager
 from pcs.identifiers import ComponentIdentifier, RepoIdentifier
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import NestedRepoSpec, RepoSpec, RepoSpecKeys, flatten_spec
@@ -34,8 +35,7 @@ class Repo(abc.ABC):
     Base class used to encapsulate information about where a Component
     is located.
     """
-
-    UNKNOWN_URL = "unknown_url"
+    GITHUB_API = GitHubAPIManager()
 
     def __init__(self, identifier: str, default_version: str = None):
         self.identifier = identifier
@@ -170,15 +170,7 @@ class Repo(abc.ABC):
         return url, curr_head_hash
 
     def _check_for_github_url(self, force: bool) -> str:
-        url = self.UNKNOWN_URL
-        try:
-            remote, url = porcelain.get_remote_repo(self.porcelain_repo)
-        except IndexError:
-            error_msg = "Could not find remote repo"
-            if force:
-                print(f"Warning: {error_msg}")
-            else:
-                raise BadGitStateException(error_msg)
+        url = self._get_remote_url(force)
         if url is None or "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
@@ -187,36 +179,48 @@ class Repo(abc.ABC):
                 raise BadGitStateException(error_msg)
         return url
 
-    def _check_remote_branch_status(self, force: bool) -> str:
+    def _get_remote_url(self, force: bool, remote_name: str = "origin"):
+        url = None
         try:
-            remote, url = porcelain.get_remote_repo(self.porcelain_repo)
-        except IndexError:
-            error_msg = "Unable to get remote repo"
+            REMOTE_KEY = (b"remote", remote_name.encode())
+            url = self.porcelain_repo.get_config()[REMOTE_KEY][b"url"].decode()
+            # remote, url = porcelain.get_remote_repo(self.porcelain_repo)
+        except KeyError:
+            error_msg = "Could not find remote repo"
             if force:
                 print(f"Warning: {error_msg}")
-                return "unknown_version"
             else:
                 raise BadGitStateException(error_msg)
-        REMOTE_GIT_PREFIX = "refs/remotes"
-        branch = porcelain.active_branch(self.porcelain_repo).decode("UTF-8")
-        full_id = f"{REMOTE_GIT_PREFIX}/{remote}/{branch}".encode()
-        refs_dict = self.porcelain_repo.refs.as_dict()
-        try:
-            curr_remote_hash = refs_dict[full_id].decode("UTF-8")
-        except KeyError:
-            curr_remote_hash = None
+        return url
 
-        curr_head_hash = self.porcelain_repo.head().decode("UTF-8")
+    def _get_github_project_and_repo_name(self, url: str):
+        """
+        Parses a github url of forms:
+            * git@github.com:{project_name}/{repo_name}.git
+            * https://github.com/{project_name}/{repo_name}.git
+        And returns the project_name and repo_name.
+        """
+        assert url.endswith(".git")
+        url = url[:-4]
+        if url.startswith("git@github.com:"):
+            github_path = url.split(":")[1]
+            project_name, repo_name = github_path.split("/")
+        else:
+            assert url.startswith("https://github.com/")
+            project_name, repo_name = url.split("/")[-2:]
 
-        if curr_head_hash != curr_remote_hash:
-            print(
-                f"\nBranch {remote}/{branch} "
-                "current commit differs from local:"
-            )
-            print(f"\t{remote}/{branch}: {curr_remote_hash}")
-            print(f"\tlocal/{branch}: {curr_head_hash}\n")
+        return project_name, repo_name
+
+    def _check_remote_branch_status(self, force: bool) -> str:
+        curr_head_hash = self.porcelain_repo.head().decode()
+        url = self._get_remote_url(force)
+        project_name, repo_name = self._get_github_project_and_repo_name(url)
+        remote_commit_exists = self.GITHUB_API.sha1_hash_exists(project_name, repo_name, curr_head_hash)
+        if not remote_commit_exists:
             error_msg = (
-                f"Push your changes to {remote}/{branch} before freezing"
+                f"Current head hash {curr_head_hash} in "
+                f"PCS repo {self.local_repo_path} is not on remote {url}. "
+                "Push your changes to your remote!"
             )
             if force:
                 print(f"Warning: {error_msg}")
@@ -292,6 +296,8 @@ class GitHubRepo(Repo):
     A Component with an GitHubRepo can be found on GitHub.
     """
 
+    FULL_GIT_SHA1_RE = re.compile(r"\b[0-9a-f]{40}\b")
+
     def __init__(
         self, identifier: str, url: str, default_version: str = "master"
     ):
@@ -300,6 +306,7 @@ class GitHubRepo(Repo):
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
+        self.org_name, self.project_name = self.url.split("/")[-2:]
         self.local_repo_path = None
         self.porcelain_repo = None
 
@@ -321,21 +328,46 @@ class GitHubRepo(Repo):
         return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str = None) -> Path:
-        version = version if version else self._default_version
+        version = self._get_valid_version(version)
         local_repo_path = self._clone_repo(version)
         self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
         return local_repo_path
 
     def get_local_file_path(self, file_path: str, version: str = None) -> Path:
-        version = version if version else self._default_version
+        version = self._get_valid_version(version)
         local_repo_path = self.get_local_repo_dir(version)
         return (local_repo_path / file_path).absolute()
 
+    def _get_valid_version(self, version):
+        version = version if version else self._default_version
+        return self._get_hash_from_version(version)
+
+    def _get_hash_from_version(self, version):
+        match = re.match(self.FULL_GIT_SHA1_RE, version)
+        if match:
+            return match.group(0)
+        # See if we're referring to a branch
+        branches = self.GITHUB_API.get_branches(
+            self.org_name, self.project_name
+        )
+        for branch in branches:
+            if branch["name"] == version:
+                return branch["commit"]["sha"]
+        # See if we're referring to a tag
+        tags = self.GITHUB_API.get_tags(self.org_name, self.project_name)
+        for tag in tags:
+            if tag["name"] == version:
+                return tag["commit"]["sha"]
+        error_msg = (
+            f"Version {version} is not a full SHA1 hash and was "
+            f"also not found in branches or tags"
+        )
+        raise BadGitStateException(error_msg)
+
     def _clone_repo(self, version: str) -> Path:
-        org_name, proj_name = self.url.split("/")[-2:]
         clone_destination = (
-            AOS_GLOBAL_REPOS_DIR / org_name / proj_name / version
+            AOS_GLOBAL_REPOS_DIR / self.org_name / self.project_name / version
         )
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
@@ -346,21 +378,10 @@ class GitHubRepo(Repo):
         return clone_destination
 
     def _checkout_version(self, local_repo_path: Path, version: str) -> None:
-        to_checkout = version if version else "master"
         curr_dir = os.getcwd()
         os.chdir(local_repo_path)
         repo = porcelain.open_repo(local_repo_path)
-        treeish = None
-        # Is version a branch name?
-        try:
-            treeish = parse_ref(repo, f"origin/{to_checkout}")
-        except KeyError:
-            pass
-
-        # Is version a commit hash (long or short)?
-        if treeish is None:
-            treeish = parse_commit(repo, to_checkout).sha().hexdigest()
-
+        treeish = parse_commit(repo, version).sha().hexdigest()
         # Checks for a clean working directory were failing on Windows, so
         # force the checkout since this should be a clean clone anyway.
         dulwich_checkout(repo=repo, target=treeish, force=True)
@@ -383,16 +404,17 @@ class LocalRepo(Repo):
         if not local_dir:
             local_dir = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.type = RepoType.LOCAL
-        self.local_dir = Path(local_dir).absolute()
-        if self.local_dir.exists():
-            assert self.local_dir.is_dir(), (
-                f"local_dir {self.local_dir} passed to LocalRepo.__init__() "
-                f"with identifier '{self.identifier}' exists but is not a dir."
+        self.local_repo_path = Path(local_dir).absolute()
+        if self.local_repo_path.exists():
+            assert self.local_repo_path.is_dir(), (
+                f"local_dir {self.local_repo_path} passed to "
+                f"LocalRepo.__init__() with identifier '{self.identifier}'"
+                "exists but is not a dir."
             )
         else:
-            self.local_dir.mkdir(parents=True, exist_ok=True)
+            self.local_repo_path.mkdir(parents=True, exist_ok=True)
             logger.debug(
-                f"Created local_dir {self.local_dir} for "
+                f"Created local_dir {self.local_repo_path} for "
                 f"LocalRepo {self.identifier}."
             )
 
@@ -413,14 +435,14 @@ class LocalRepo(Repo):
         spec = {
             self.identifier: {
                 RepoSpecKeys.TYPE: self.type.value,
-                RepoSpecKeys.PATH: str(self.local_dir),
+                RepoSpecKeys.PATH: str(self.local_repo_path),
             }
         }
         return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str = None) -> Path:
         assert version is None, "LocalRepos don't support versioning."
-        return self.local_dir
+        return self.local_repo_path
 
     def get_local_file_path(
         self, relative_path: str, version: str = None
@@ -432,4 +454,4 @@ class LocalRepo(Repo):
                 "If this is actually a versioned repo, use GithubRepo "
                 "or another versioned Repo type."
             )
-        return self.local_dir / relative_path
+        return self.local_repo_path / relative_path
