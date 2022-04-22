@@ -2,6 +2,7 @@ import json
 import os
 
 import requests
+
 from pcs.utils import AOS_ROOT
 
 

@@ -12,6 +12,7 @@ from dulwich import porcelain
 from dulwich.errors import NotGitRepository
 from dulwich.objectspec import parse_commit
 from dulwich.repo import Repo as PorcelainRepo
+
 from pcs.exceptions import BadGitStateException, PythonComponentSystemException
 from pcs.github_api_manager import GitHubAPIManager
 from pcs.identifiers import ComponentIdentifier, RepoIdentifier
@@ -35,6 +36,7 @@ class Repo(abc.ABC):
     Base class used to encapsulate information about where a Component
     is located.
     """
+
     GITHUB_API = GitHubAPIManager()
 
     def __init__(self, identifier: str, default_version: str = None):
@@ -215,7 +217,9 @@ class Repo(abc.ABC):
         curr_head_hash = self.porcelain_repo.head().decode()
         url = self._get_remote_url(force)
         project_name, repo_name = self._get_github_project_and_repo_name(url)
-        remote_commit_exists = self.GITHUB_API.sha1_hash_exists(project_name, repo_name, curr_head_hash)
+        remote_commit_exists = self.GITHUB_API.sha1_hash_exists(
+            project_name, repo_name, curr_head_hash
+        )
         if not remote_commit_exists:
             error_msg = (
                 f"Current head hash {curr_head_hash} in "
