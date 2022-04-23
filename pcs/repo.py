@@ -332,22 +332,21 @@ class GitHubRepo(Repo):
         return flatten_spec(spec) if flatten else spec
 
     def get_local_repo_dir(self, version: str = None) -> Path:
-        version = self._get_valid_version(version)
+        version = self._get_valid_version_sha1(version)
         local_repo_path = self._clone_repo(version)
-        self._checkout_version(local_repo_path, version)
         sys.stdout.flush()
         return local_repo_path
 
     def get_local_file_path(self, file_path: str, version: str = None) -> Path:
-        version = self._get_valid_version(version)
+        version = self._get_valid_version_sha1(version)
         local_repo_path = self.get_local_repo_dir(version)
         return (local_repo_path / file_path).absolute()
 
-    def _get_valid_version(self, version):
+    def _get_valid_version_sha1(self, version):
         version = version if version else self._default_version
-        return self._get_hash_from_version(version)
+        return self._get_sha1_from_version(version)
 
-    def _get_hash_from_version(self, version):
+    def _get_sha1_from_version(self, version):
         match = re.match(self.FULL_GIT_SHA1_RE, version)
         if match:
             return match.group(0)
@@ -378,6 +377,7 @@ class GitHubRepo(Repo):
             porcelain.clone(
                 source=self.url, target=str(clone_destination), checkout=True
             )
+            self._checkout_version(clone_destination, version)
         assert clone_destination.exists(), f"Unable to clone {self.url}"
         return clone_destination
 

@@ -482,7 +482,7 @@ def papag_make_vec_envs(
     ]
 
     if len(envs) > 1:
-        envs = SubprocVecEnv(envs)
+        envs = SubprocVecEnv(envs, start_method="fork")
     else:
         envs = DummyVecEnv(envs)
 
