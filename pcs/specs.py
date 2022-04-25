@@ -101,9 +101,9 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
                 "nested spec, its value must match the spec's identifier."
             )
 
-        from pcs.spec_object import SpecObject  # Avoid circular import.
+        from pcs.spec_object import Component as NewComponent  # Avoid circular import.
 
-        flat_spec[SpecObject.IDENTIFIER_ATTR_NAME] = identifier
+        flat_spec[NewComponent.IDENTIFIER_ATTR_NAME] = identifier
         id_parts = identifier.split(VersionedSpec.SEPARATOR)
         assert 0 < len(id_parts) <= 2, f"invalid identifier {identifier}"
         flat_spec[ComponentSpecKeys.NAME] = id_parts[0]

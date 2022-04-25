@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from pcs.component import Component
     from pcs.repo import Repo
     from pcs.run import Run
-    from pcs.spec_object import SpecObject
+    from pcs.spec_object import Component as NewComponent
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -195,7 +195,7 @@ class Registry(abc.ABC):
         identifier: str,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> Optional["SpecObject"]:
+    ) -> Optional["Component"]:
         """
         Returns the spec dict with ``identifier`` if it exists, or raise an
         Error if it does not. Registries are not allowed to contain multiple
@@ -311,10 +311,10 @@ class InMemoryRegistry(Registry):
         return self._registry["registries"]
 
     def add_spec(self, spec: Dict) -> None:
-        from pcs.spec_object import SpecObject  # Avoid circular import.
+        from pcs.spec_object import Component as NewComponent  # Avoid circular import.
 
         flat_spec = flatten_spec(spec)
-        identifier = flat_spec[SpecObject.IDENTIFIER_ATTR_NAME]
+        identifier = flat_spec[NewComponent.IDENTIFIER_ATTR_NAME]
         if identifier in self._registry:
             spec_diff = DeepDiff(spec[identifier], self._registry[identifier])
             assert not spec_diff, (

@@ -5,9 +5,9 @@ import uuid
 from pathlib import Path
 from typing import Tuple, TypeVar
 
-from pcs.spec_object import SpecObject
 from pcs.git_manager import GitManager
 from pcs.identifiers import ComponentIdentifier
+from pcs.spec_object import Component
 from pcs.specs import NestedRepoSpec, RepoSpecKeys, flatten_spec
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
 
@@ -17,17 +17,18 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Repo(abc.ABC, SpecObject):
+class Repo(abc.ABC, Component):
     """
     Base class used to encapsulate information about where a Component
     is located.
     """
+    ATTRIBUTES = ["default_version"]  # default_version is an @property
 
     GIT = GitManager()
 
     def __init__(self, default_version: str = None):
+        self._default_version = default_version  # see self.default_version()
         super().__init__()
-        self._default_version = default_version
 
     def __contains__(self, item):
         return self.get_local_file_path(str(item)).exists()
@@ -116,16 +117,16 @@ class GitHubRepo(Repo):
     """
     A Component with an GitHubRepo can be found on GitHub.
     """
+    ATTRIBUTES = ["url"]
 
     def __init__(self, url: str, default_version: str = "master"):
-        super().__init__(default_version)
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
         self.org_name, self.project_name, _, _ = parse_github_web_ui_url(url)
+        super().__init__(default_version)
         self.local_repo_path = None
         self.porcelain_repo = None
-        self.register_attributes(["url"])
 
     def get_local_repo_dir(self, version: str = None) -> Path:
         version = self._get_valid_version_sha1(version)
@@ -157,13 +158,13 @@ class LocalRepo(Repo):
     """
     A Component with a LocalRepo can be found on your local drive.
     """
+    ATTRIBUTES = ["path"]
 
     def __init__(self, path: str = None):
         super().__init__()
         if not path:
             path = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
-        self.path = Path(path).absolute()
-        self.register_attribute("local_dir")
+        self.path = path
         actually_a_path = Path(path).absolute()
         if actually_a_path.exists():
             assert actually_a_path.is_dir(), (

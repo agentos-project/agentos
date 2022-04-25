@@ -1,9 +1,9 @@
 import os
 import sys
-from contextlib import contextmanager
-from pathlib import Path
 
 from click.testing import CliRunner
+from contextlib import contextmanager
+from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent
 EXAMPLE_AGENT_DIR = ROOT_DIR / "example_agents"
@@ -17,12 +17,12 @@ PAPAG_AGENT_DIR = EXAMPLE_AGENT_DIR / "papag"
 SB3_AGENT_DIR = EXAMPLE_AGENT_DIR / "sb3_agent"
 TEST_VENV_AGENT_DIR = ROOT_DIR / "tests" / "test_agents" / "venv_agent"
 
-TESTING_GITHUB_ACCOUNT = "agentos-project"
+TESTING_GITHUB_ACCOUNT = "andyk"
 TESTING_GITHUB_REPO = "agentos"
 TESTING_GITHUB_REPO_URL = (
     f"https://github.com/{TESTING_GITHUB_ACCOUNT}/{TESTING_GITHUB_REPO}"
 )
-TESTING_BRANCH_NAME = "test_staging"
+TESTING_BRANCH_NAME = "spec_structure_revamp"
 
 
 def run_test_command(cmd, cli_args=None, cli_kwargs=None):
