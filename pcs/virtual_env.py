@@ -85,7 +85,7 @@ class VirtualEnv:
     def activate(self) -> None:
         """
         Activates the virtual environment currently being managed. When
-        activated, an import statement (e.g. run by a Component) will execute
+        activated, an import statement (e.g. run by a Module) will execute
         within the virtual environment.
         """
         if self._venv_is_active:

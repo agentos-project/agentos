@@ -1,16 +1,16 @@
-from pcs.component import Component
+from pcs.component import Module
 from pcs.component_run import ComponentRun
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
 
-# download agent Component, its dependency components, and wire them up.
+# download agent Module, its dependency components, and wire them up.
 repo = Repo.from_github("agentos-project", "agentos")
 c_suff = "==master"
 f_pref = "example_agents/random/"
-ag_c = Component.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
-env_c = Component.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
-pol_c = Component.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
-ds_c = Component.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
+ag_c = Module.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
+env_c = Module.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
+pol_c = Module.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
+ds_c = Module.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
 
 env_c.instantiate = True
 env_c.class_name = "Corridor"

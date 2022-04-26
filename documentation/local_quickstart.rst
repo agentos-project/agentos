@@ -33,7 +33,7 @@ project::
 
     agentos run agent
 
-This command runs the default entry point of the ``agent`` Component as
+This command runs the default entry point of the ``agent`` Module as
 defined in ``components.yaml``.  If everything is successful, you will see
 output reporting how many steps your agent took to walk down the whole
 corridor.
@@ -89,11 +89,11 @@ Extending Our Agent
 -------------------
 
 PCS is designed to make it easy to modularize your projects at the class
-level.  We will now use PCS to add a new Component to our corridor-walking
+level.  We will now use PCS to add a new Module to our corridor-walking
 agent.
 
-Our new Component will simply print an update to stdout whenever our agent
-walks left or right.  First let's create our new Component.  Create the file
+Our new Module will simply print an update to stdout whenever our agent
+walks left or right.  First let's create our new Module.  Create the file
 ``movement_updater.py`` in your agent directory and add the following code to
 it::
 
@@ -102,8 +102,8 @@ it::
             move_name = "left" if action == 0 else "right"
             print(f"I just moved {move_name}")
 
-Now let's add this new Component to our registry file, open
-``components.yaml`` and add the following entry for our Component under the
+Now let's add this new Module to our registry file, open
+``components.yaml`` and add the following entry for our Module under the
 ``components`` key::
 
     movement_updater:
@@ -111,9 +111,9 @@ Now let's add this new Component to our registry file, open
         file_path: ./movement_updater.py
         class_name: MovementUpdater
 
-Now let's update our ``agent`` Component to depend on the ``MovementUpdater``.
+Now let's update our ``agent`` Module to depend on the ``MovementUpdater``.
 Still in ``components.yaml``, update the ``dependencies`` entry of the
-``agent`` Component to include ``movement_updater``.  Afterward, the entry
+``agent`` Module to include ``movement_updater``.  Afterward, the entry
 should look as follows::
 
     agent:
@@ -147,7 +147,7 @@ after each time the agent takes a step in the environment.  Update the
 
 Notice that PCS automatically initializes an instance of the
 ``MovementUpdater`` class and adds it as a member to the ``Agent`` class.  We
-can now run our agent again to ensure our ``MovementUpdater`` Component is
+can now run our agent again to ensure our ``MovementUpdater`` Module is
 functioning as expected.  On the command-line, run::
 
     agentos run agent
@@ -168,10 +168,10 @@ and you should see output that looks like::
     Results after 1 episodes
     ...
 
-Great!  It looks like our ``MovementUpdater`` Component is working as we
-expected.  Because we created ``MovementUpdater`` as a Component, PCS is able
-to track arguments and dependencies of the Component for reproducibility
-purposes.  Additionally, this Component can be published individually and used
+Great!  It looks like our ``MovementUpdater`` Module is working as we
+expected.  Because we created ``MovementUpdater`` as a Module, PCS is able
+to track arguments and dependencies of the Module for reproducibility
+purposes.  Additionally, this Module can be published individually and used
 in other projects separate from the rest of the Components that constitute our
 agent.
 

@@ -35,18 +35,18 @@ This agent is composed of a number of Components and supporting files that are
 used by the Python Component System and AgentOS to instantiate and run the
 agent:
 
-* `components.yaml` - A registry file that describes each Component in the
+* `components.yaml` - A registry file that describes each Module in the
   agent system and how they depend on each other.
 
-* `agent.py` - A Component that contains the core agent implementation and
+* `agent.py` - A Module that contains the core agent implementation and
   logic to rollout various episodes in the environment.
 
-* `dataset.py` - A Component that records each transition the agent makes in
+* `dataset.py` - A Module that records each transition the agent makes in
   the environment to enable analysis of the agent's performance.
 
-* `environment.py` - The environment Component that simulates the 1D corridor.
+* `environment.py` - The environment Module that simulates the 1D corridor.
 
-* `policy.py` - This Component contains the random policy that the agent uses
+* `policy.py` - This Module contains the random policy that the agent uses
   to decide what action to take in the environment at each timestep. 
 
 * `requirements.txt` - A text file listing the external pip dependencies of

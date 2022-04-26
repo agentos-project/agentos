@@ -1,7 +1,7 @@
-"""The ``pcs`` package provides an API for Component Programming."""
+"""The ``pcs`` package provides an API for Module Programming."""
 
 from pcs.argument_set import ArgumentSet
-from pcs.component import Component
+from pcs.component import Module
 from pcs.component_run import ComponentRun, active_component_run
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, LocalRepo, Repo
@@ -22,7 +22,7 @@ __all__ = [
     "Repo",
     "LocalRepo",
     "GitHubRepo",
-    "Component",
+    "Module",
     "ArgumentSet",
     "RunCommand",
     "Run",

@@ -1,5 +1,4 @@
 from typing import Collection, Dict, List, Mapping
-import inspect
 import logging
 
 import yaml
@@ -16,9 +15,9 @@ class Component:
     A Component is a Python class whose instances can serialize themselves
     to and from spec YAML strings and registry objects.
 
-    A SpecObject is the Python object version of a PCS Spec, which itself
-    is a YAML dictionary that maps content hash identifier string to
-    "spec contents". The contents are in turn a str->str map.
+    A Component is the Python object version of a PCS Spec, which itself
+    is a YAML dictionary that maps a content hash identifier string to
+    "spec contents". The contents of a spec are, in turn, a str->str map.
 
     A value in the spec contents map can be another Spec's identifier.
     This represents a causal dependency between the two Specs.
@@ -59,8 +58,9 @@ class Component:
         return int(self.sha1(), 16)
 
     def sha1(self) -> str:
-        return DeepHash(self.attributes_as_strings, hasher=DeepHash.sha1hex)[
-            self.attributes_as_strings
+        attrs_as_strings = self.attributes_as_strings
+        return DeepHash(attrs_as_strings, hasher=DeepHash.sha1hex)[
+            attrs_as_strings
         ]
 
     def register_attribute(self, attribute_name: str):
@@ -86,7 +86,7 @@ class Component:
 
     @property
     def identifier(self) -> str:
-        return self.sha1()
+        return self._identifier
 
     @property
     def attributes(self) -> Dict:
@@ -155,6 +155,19 @@ class Component:
     @classmethod
     def from_registry(cls, registry: Registry, identifier: str):
         return cls.from_spec(registry.get_spec(identifier))
+
+    @classmethod
+    def from_default_registry(cls, identifier: str) -> "Module":
+        return cls.from_registry(Registry.from_default(), identifier)
+
+    @classmethod
+    def from_registry_file(
+        cls,
+        yaml_file: str,
+        identifier: str,
+    ) -> "Module":
+        registry = Registry.from_yaml(yaml_file)
+        return cls.from_registry(registry, identifier)
 
     def to_spec(self, flatten: bool = False) -> Dict:
         spec = {self.identifier: self.attributes_as_strings}

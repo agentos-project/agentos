@@ -251,7 +251,7 @@ look like the following::
 
 Note that the ``agent.ini`` contains both the location of the primary
 components of the agent as well as various configuration variables and
-hyperparameters.  This file will be managed by the AgentOS Component Registry
+hyperparameters.  This file will be managed by the AgentOS Module Registry
 (ACR) to allow for easy composition and reuse of AgentOS components.  It is
 also human readable and editable, if the developer wants to directly modify
 it.

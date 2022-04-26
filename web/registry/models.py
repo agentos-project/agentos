@@ -59,7 +59,7 @@ class ComponentDependency(TimeStampedModel):
         return dependencies
 
 
-class Component(TimeStampedModel):
+class Module(TimeStampedModel):
     identifier = models.CharField(max_length=200, primary_key=True)
     name = models.CharField(max_length=200)
     version = models.CharField(max_length=200)
@@ -84,7 +84,7 @@ class Component(TimeStampedModel):
 
     def __str__(self):
         return (
-            f"<Component {self.pk}, identifier: {self.identifier}, "
+            f"<Module {self.pk}, identifier: {self.identifier}, "
             f"repo: {self.repo}>, file_path: {self.file_path}, "
             f"class_name: {self.class_name}, instantiate: {self.instantiate}, "
             f"dependencies: {self.dependencies}"
@@ -155,13 +155,13 @@ class Component(TimeStampedModel):
             "instantiate": flat_spec["instantiate"],
         }
         # TODO - When we have accounts, we need to check the the user
-        #        has permission to create a new version of this Component
+        #        has permission to create a new version of this Module
         #        (i.e. if the name already exists but not the version).
         component, created = Component.objects.get_or_create(
             identifier=identifier,
             defaults=default_kwargs,
         )
-        # If not created and not equal, prevent Component redefinition
+        # If not created and not equal, prevent Module redefinition
         if not created:
             component._check_equals(flat_spec)
         # Add the component's dependencies.
@@ -173,7 +173,7 @@ class Component(TimeStampedModel):
             )
         return component
 
-    # TODO - check versions in here once we have Component owners
+    # TODO - check versions in here once we have Module owners
     def _check_equals(self, other_spec):
         error_str = []
         other_repo = Repo.objects.get(identifier=other_spec["repo"])
@@ -215,8 +215,8 @@ class Component(TimeStampedModel):
 
         if error_str:
             error_str = (
-                f"Component with id {self.identifier} already exists and "
-                "differs from uploaded spec. Try renaming your Component. "
+                f"Module with id {self.identifier} already exists and "
+                "differs from uploaded spec. Try renaming your Module. "
             ) + "; ".join(error_str)
             raise ValidationError(error_str)
 

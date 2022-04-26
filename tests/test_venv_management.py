@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from pcs.component import Component
+from pcs.component import Module
 from pcs.repo import LocalRepo, Repo
 from pcs.specs import RepoSpecKeys
 from pcs.virtual_env import VirtualEnv, auto_revert_venv
@@ -106,7 +106,7 @@ def test_setup_py_agent():
         }
         base_dir = Path(__file__).parent
         agent_repo = Repo.from_spec(local_repo_spec, base_dir=base_dir)
-        agent_c = Component.from_repo(
+        agent_c = Module.from_repo(
             repo=agent_repo,
             identifier="BasicAgent",
             file_path="./agent.py",
@@ -125,7 +125,7 @@ def test_only_activate_venv_once():
             "random_agent_repo", local_dir=RANDOM_AGENT_DIR
         )
         print(random_agent_repo)
-        random_agent_component = Component.from_repo(
+        random_agent_component = Module.from_repo(
             repo=random_agent_repo,
             identifier="BasicAgent",
             file_path="./agent.py",
@@ -134,19 +134,19 @@ def test_only_activate_venv_once():
             requirements_path="./requirements.txt",
         )
         random_agent_component.get_object()
-        env_component_no_reqs = Component.from_repo(
+        env_component_no_reqs = Module.from_repo(
             repo=random_agent_repo,
             identifier="Corridor1",
             file_path="./environment.py",
             class_name="Corridor",
             instantiate=True,
         )
-        # OK to add a dependency without reqs to a Component with active venv
+        # OK to add a dependency without reqs to a Module with active venv
         random_agent_component.add_dependency(
             env_component_no_reqs, attribute_name="env1"
         )
         random_agent_component.get_object()
-        env_component_reqs = Component.from_repo(
+        env_component_reqs = Module.from_repo(
             repo=random_agent_repo,
             identifier="Corridor2",
             file_path="./environment.py",

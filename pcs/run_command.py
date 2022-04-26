@@ -9,13 +9,13 @@ from pcs.specs import RunCommandSpec, RunCommandSpecKeys, unflatten_spec
 # Avoids circular imports
 if TYPE_CHECKING:
     from pcs.argument_set import ArgumentSet
-    from pcs.component import Component
+    from pcs.component import Module
 
 
 class RunCommand:
     """
     A RunCommand contains everything required to reproducibly execute a
-    Component Entry Point. Unlike a Run, a RunCommand is not concerned with the
+    Module Entry Point. Unlike a Run, a RunCommand is not concerned with the
     outputs of the execution (see :py:func:`pcs.run.Run` for more on that.)
 
     You can think of a RunCommand as a glorified dictionary containing the
@@ -41,7 +41,7 @@ class RunCommand:
 
     def __init__(
         self,
-        component: "Component",
+        component: "Module",
         entry_point: str,
         argument_set: "ArgumentSet",
         log_return_value: bool,
@@ -49,16 +49,16 @@ class RunCommand:
         """
         RunCommand constructor.
 
-        :param component: The Component whose entry point is being run.
+        :param component: The Module whose entry point is being run.
         :param entry_point: The Entry Point being run.
         :param argument_set: Dictionary of arguments that will be used to
-            initialize the Component plus any of its dependencies and
+            initialize the Module plus any of its dependencies and
             run the specified Entry Point.
         :param log_return_value: Whether or not to log the return value
             of the Entry point as part of this run. If True, the return
             value will be serialized to a file per the default value of
             the `return_value_log_format` parameter of
-            `Component.run_with_arg_set()`. If the return value is a type
+            `Module.run_with_arg_set()`. If the return value is a type
             that is not trivially serializable, you may want to set this
             to False.
         """
@@ -137,9 +137,9 @@ class RunCommand:
             inner_spec = value
         component_id = inner_spec[RunCommandSpecKeys.COMPONENT_ID]
         from pcs.argument_set import ArgumentSet
-        from pcs.component import Component
+        from pcs.component import Module
 
-        component = Component.from_registry(registry, component_id)
+        component = Module.from_registry(registry, component_id)
         arg_set = ArgumentSet.from_spec(
             inner_spec[RunCommandSpecKeys.ARGUMENT_SET]
         )
@@ -182,7 +182,7 @@ class RunCommand:
         passing the given registry arg as well as the recurse and force args
         through to that call.
 
-        For details on those flags, see :py:func:`pcs.Component.to_registry`
+        For details on those flags, see :py:func:`pcs.Module.to_registry`
         """
         if not registry:
             from pcs.registry import InMemoryRegistry

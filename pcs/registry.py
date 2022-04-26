@@ -35,7 +35,7 @@ from pcs.specs import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from pcs.component import Component
+    from pcs.component import Module
     from pcs.repo import Repo
     from pcs.run import Run
     from pcs.spec_object import Component as NewComponent
@@ -94,7 +94,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from pcs.component import Component  # Avoid circular ref.
+        from pcs.component import Module  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo
@@ -122,7 +122,7 @@ class Registry(abc.ABC):
                 component_init_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )
-            mod_component = Component(**component_init_kwargs)
+            mod_component = Module(**component_init_kwargs)
             # TODO: add dependencies to component for every import
             #       statement in the file (or just the ones at the
             #       module level?)
@@ -165,8 +165,8 @@ class Registry(abc.ABC):
         Return dictionary of component specs in this Registry, optionally
         filtered by name and/or version; or None if none are found.
 
-        Each Component Spec is itself a dict mapping ComponentIdentifier to a
-        dict of properties that define the Component.
+        Each Module Spec is itself a dict mapping ComponentIdentifier to a
+        dict of properties that define the Module.
 
         Optionally, filter the list to match all filter strings provided.
         Filters can be provided on name, version, or both.
@@ -195,7 +195,7 @@ class Registry(abc.ABC):
         identifier: str,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> Optional["Component"]:
+    ) -> Optional["Module"]:
         """
         Returns the spec dict with ``identifier`` if it exists, or raise an
         Error if it does not. Registries are not allowed to contain multiple
@@ -205,8 +205,8 @@ class Registry(abc.ABC):
         :param flatten: If True, flatten the outermost 2 layers of nested
             dicts into a single dict. In an unflattened component spec, the
             outermost dict is from identifier (which is a string in the format
-            of name[==version]) Component component properties (class_name,
-            repo, etc.). In a flattened Component spec, the name and version
+            of name[==version]) Module component properties (class_name,
+            repo, etc.). In a flattened Module spec, the name and version
             are included in the same dictionary as the class_name, repo,
             dependencies, etc.
         :param error_if_not_found: Set to False to return an empty dict in

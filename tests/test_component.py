@@ -1,11 +1,11 @@
-"""Test suite for AgentOS Component."""
+"""Test suite for AgentOS Module."""
 from unittest.mock import DEFAULT, patch
 
 import pytest
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
-from pcs.component import Component
+from pcs.component import Module
 from pcs.component_run import ComponentRun
 from pcs.repo import Repo
 from pcs.run_command import RunCommand
@@ -43,15 +43,15 @@ class GenericDependency:
 
 def test_component_repl_demo():
     # Generate Components from Classes
-    agent_comp = Component.from_class(SimpleAgent, instantiate=True)
-    environment_comp = Component.from_class(
+    agent_comp = Module.from_class(SimpleAgent, instantiate=True)
+    environment_comp = Module.from_class(
         SimpleEnvironment, instantiate=True
     )
-    instance_comp = Component.from_class(GenericDependency, instantiate=True)
-    class_comp_with_same_name = Component.from_class(
+    instance_comp = Module.from_class(GenericDependency, instantiate=True)
+    class_comp_with_same_name = Module.from_class(
         GenericDependency, instantiate=False
     )
-    class_comp_with_diff_name = Component.from_class(
+    class_comp_with_diff_name = Module.from_class(
         GenericDependency,
         identifier="ClassDependency",
         instantiate=False,
@@ -95,7 +95,7 @@ def test_component_repl_demo():
 def test_component_freezing(tmpdir):
     with run_in_dir(tmpdir):
         run_test_command(init)
-        c = Component.from_registry_file("components.yaml", "agent")
+        c = Module.from_registry_file("components.yaml", "agent")
         with patch.multiple(
             "pcs.repo.Repo",
             get_version_from_git=DEFAULT,
@@ -120,7 +120,7 @@ def test_component_from_github_with_venv():
             "https://github.com/agentos-project/agentos/"
             f"blob/{TESTING_BRANCH_NAME}/example_agents/random/components.yaml"
         )
-        random_component = Component.from_github_registry(
+        random_component = Module.from_github_registry(
             random_url, "agent", use_venv=True
         )
         random_component.run_with_arg_set("run_episodes")
@@ -132,7 +132,7 @@ def test_component_from_github_no_venv():  # noqa: F811
             "https://github.com/agentos-project/agentos/blob/"
             f"{TESTING_BRANCH_NAME}/example_agents/sb3_agent/components.yaml"
         )
-        random_component = Component.from_github_registry(
+        random_component = Module.from_github_registry(
             sb3_url, "sb3_agent", use_venv=False
         )
         random_component.run_with_arg_set("evaluate")
@@ -142,10 +142,10 @@ def test_module_component_from_agentos_github_repo():
     repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
     c_suff = f"=={TESTING_BRANCH_NAME}"
     f_pref = "example_agents/random/"
-    ag_c = Component.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
-    env_c = Component.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
-    pol_c = Component.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
-    ds_c = Component.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
+    ag_c = Module.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
+    env_c = Module.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
+    pol_c = Module.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
+    ds_c = Module.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
 
     ag_c.instantiate = True
     ag_c.class_name = "BasicAgent"

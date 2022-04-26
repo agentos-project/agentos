@@ -16,7 +16,7 @@ from .serializers import (
 )
 
 # TODO: This used to be a member of ComponentViewSet that also called a static
-#       method of the Component model ingest_registry_dict(), but it should be
+#       method of the Module model ingest_registry_dict(), but it should be
 #       refactored to be its own stand-alone view, since ingest_registry view
 #       is not specific to a model but potentially creates objects across all
 #       model types.
@@ -33,7 +33,7 @@ from .serializers import (
 #    repo_reg_dict = reg_dict.get("repos", {})
 #    component_reg_dict = reg_dict.get("components", {})
 #    repos = Repo.create_from_dict(repo_reg_dict)
-#    components = Component.create_from_dict(component_reg_dict)
+#    components = Module.create_from_dict(component_reg_dict)
 #    ComponentDependency.create_from_dict(component_reg_dict)
 #    serialized = ComponentSerializer(components, many=True)
 #    return Response(serialized.data)

@@ -12,6 +12,7 @@ from rich import print as rich_print
 from rich.tree import Tree
 
 from pcs.argument_set import ArgumentSet
+from pcs.spec_object import Component
 from pcs.component_run import ComponentRun
 from pcs.exceptions import RegistryException
 from pcs.identifiers import ComponentIdentifier
@@ -28,17 +29,17 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Component:
+class Module(Component):
     """
-    A Component is an object manager. Objects can be Python Modules, Python
-    Classes, or Python Class Instances. The Component abstraction provides a
+    A Module is an object manager. Objects can be Python Modules, Python
+    Classes, or Python Class Instances. The Module abstraction provides a
     standard programmatic mechanism for managing dependencies between these
     objects, reproducibly creating/initializing them and executing their
     methods. You can think of methods on a managed object as "managed methods"
     which we call "Entry Points". We call the execution of an Entry Point a
     "Run". Components provide reproducibility by automatically tracking (i.e.,
     logging) all of the parts that make up a Run, including: (1) the code of
-    the object being run (i.e., the Component and its Entry Point), (2) the
+    the object being run (i.e., the Module and its Entry Point), (2) the
     full DAG of other objects it depends on (i.e., DAG of other Components),
     (3) the set of arguments (literally a
     :py:func:`pcs.argument_set.ArgumentSet`) used during initialization of
@@ -49,7 +50,6 @@ class Component:
     def __init__(
         self,
         repo: Repo,
-        identifier: ComponentIdentifier,
         file_path: str,
         class_name: str = None,
         instantiate: bool = False,
@@ -59,31 +59,28 @@ class Component:
         dunder_name: str = None,
     ):
         """
-        :param repo: Repo where this component's module file can be found. The
+        :param repo: Repo where this Module's source file can be found. The
             ``file_path`` argument is relative to the root this Repo.
-        :param identifier: Used to identify the Component.
-        :param file_path: Path to Python module file this Component manages.
+        :param file_path: Path to Python module file this Module manages.
         :param class_name: Optionally, the name of the class that is being
-            managed. If none provided, then by default this component is a
+            managed. If none provided, then by default this is a
             managed Python Module.
-        :param instantiate: Optional. If True, this Component is a managed
+        :param instantiate: Optional. If True, this Module is a managed
             Python Class Instance, ``class_name`` must also be passed, and
             ``get_object()`` returns an instance of the class with name
             ``class_name``. If False and ``class_name`` is provided, then
-            this Component is a managed Python Class and ``get_object()``
+            this Module is a managed Python Class and ``get_object()``
             returns a Python Class object specified by ``class_name``.
-            If False and ``class_name`` is not provided, this Component is
+            If False and ``class_name`` is not provided, this Module is
             a managed Python Module and ``get_object()`` returns a
             Python Module object.
         :param requirements_path: Optional path to a pip installable file.
-        :param dependencies: List of other components that self depends on.
-        :param use_venv: Whether to create a VM when setting up the object
-            this component manages.
-        :param dunder_name: Name used for the pointer to this Component on any
-            managed objects created by this Component.
+        :param dependencies: List of other Modules that self depends on.
+        :param use_venv: Whether to create a VM when setting up this Module.
+        :param dunder_name: Name used for the pointer to this Module on any
+            managed objects created by this Module.
         """
         self.repo = repo
-        self.identifier = identifier
         self.class_name = class_name
         self.file_path = file_path
         self.requirements_path = requirements_path
@@ -97,22 +94,21 @@ class Component:
         self._venv = None
         self._dunder_name = dunder_name or "__component__"
         self._requirements = []
-        self._parent_components = set()
+        self._parent_modules = set()
         self.active_run = None
 
     @classmethod
     def from_github_registry(
         cls,
         github_url: str,
-        name: str,
-        version: str = None,
+        identifier: str,
         use_venv: bool = True,
-    ) -> "Component":
+    ) -> "Module":
         """
-        This method gets a Component from a registry file found on GitHub.  If
+        This method gets a Module from a registry file found on GitHub.  If
         the registry file contains a LocalRepo, this method automatically
         translates that LocalRepo into a GitHubRepo.  Pass ``use_venv=False``
-        if you want to import and run the Component in your existing Python
+        if you want to import and run the Module in your existing Python
         environment.
 
         The ``github_url`` argument can be found by navigating to the
@@ -124,21 +120,17 @@ class Component:
         project, repo, branch, reg_file_path = parse_github_web_ui_url(
             github_url
         )
-        version = version or branch
         repo = Repo.from_github(project, repo)
-        registry = Registry.from_file_in_repo(repo, reg_file_path, version)
-        c_version = None
-        if registry.has_component_by_name(name=name, version=version):
-            c_version = version
-        component = cls.from_registry(
-            registry, name, c_version, use_venv=use_venv
+        registry = Registry.from_file_in_repo(repo, reg_file_path, branch)
+        module = cls.from_registry(
+            registry, identifier, use_venv=use_venv
         )
-        return component
+        return module
 
     @classmethod
     def from_default_registry(
         cls, name: str, version: str = None, use_venv: bool = True
-    ) -> "Component":
+    ) -> "Module":
         return cls.from_registry(
             Registry.from_default(), name, version, use_venv=use_venv
         )
@@ -147,65 +139,57 @@ class Component:
     def from_registry(
         cls,
         registry: Registry,
-        name: str,
-        version: str = None,
+        identifier: str,
         use_venv: bool = True,
-    ) -> "Component":
+    ) -> "Module":
         """
-        Returns a Component Object from the provided registry, including
-        its full dependency tree of other Component Objects.
+        Returns a Module Object from the provided registry, including
+        its full dependency tree of other Module Objects.
         If no Registry is provided, use the default registry.
         """
-        if version:
-            identifier = ComponentIdentifier(name, version)
-        else:
-            identifier = ComponentIdentifier(name)
-        component_specs, repo_specs = registry.get_specs_transitively_by_id(
+        module_specs, repo_specs = registry.get_specs_transitively_by_id(
             identifier, flatten=True
         )
         repos = {
-            repo_spec["identifier"]: Repo.from_spec(
+            repo_spec[Component.IDENTIFIER_ATTR_NAME]: Repo.from_spec(
                 unflatten_spec(repo_spec), registry.base_dir
             )
             for repo_spec in repo_specs
         }
-        components = {}
+        modules = {}
         dependencies = {}
-        for component_spec in component_specs:
-            component_id = ComponentIdentifier(
-                component_spec["name"], component_spec["version"]
-            )
+        for module_spec in module_specs:
             from_repo_args = {
-                "repo": repos[component_spec["repo"]],
-                "identifier": component_id,
-                "file_path": component_spec["file_path"],
+                "repo": repos[module_spec["repo"]],
+                "identifier": module_spec["identifier"],
+                "file_path": module_spec["file_path"],
                 "use_venv": use_venv,
             }
-            if "class_name" in component_spec:
-                from_repo_args["class_name"] = component_spec["class_name"]
-            if "requirements_path" in component_spec:
-                from_repo_args["requirements_path"] = component_spec[
+            if "class_name" in module_spec:
+                from_repo_args["class_name"] = module_spec["class_name"]
+            if "requirements_path" in module_spec:
+                from_repo_args["requirements_path"] = module_spec[
                     "requirements_path"
                 ]
-            if "instantiate" in component_spec.keys():
-                from_repo_args["instantiate"] = component_spec["instantiate"]
+            if "instantiate" in module_spec.keys():
+                from_repo_args["instantiate"] = module_spec["instantiate"]
             component = cls.from_repo(**from_repo_args)
-            components[component_id] = component
-            dependencies[component_id] = component_spec.get("dependencies", {})
+            modules[module_spec["identifier"]] = component
+            dependencies[module_spec["identifier"]] = module_spec.get("dependencies", {})
 
         # Wire up the dependency graph
-        for c_name, component in components.items():
+        for c_name, component in modules.items():
             for attr_name, dependency_name in dependencies[c_name].items():
-                dependency = components[dependency_name]
+                dependency = modules[dependency_name]
                 component.add_dependency(dependency, attribute_name=attr_name)
 
         try:
-            return components[identifier]
+            return modules[identifier]
         except KeyError:
             # Try name without the version
             unversioned_components = {
                 ComponentIdentifier(c_id.name): c_obj
-                for c_id, c_obj in components.items()
+                for c_id, c_obj in modules.items()
             }
             return unversioned_components[identifier]
 
@@ -216,7 +200,7 @@ class Component:
         name: str,
         version: str = None,
         use_venv: bool = True,
-    ) -> "Component":
+    ) -> "Module":
         registry = Registry.from_yaml(yaml_file)
         return cls.from_registry(registry, name, version, use_venv=use_venv)
 
@@ -229,7 +213,7 @@ class Component:
         instantiate: bool = False,
         use_venv: bool = True,
         dunder_name: str = None,
-    ) -> "Component":
+    ) -> "Module":
         name = identifier if identifier else class_obj.__name__
         if (
             class_obj.__module__ == "__main__"
@@ -287,7 +271,7 @@ class Component:
         requirements_path: str = None,
         use_venv: bool = True,
         dunder_name: str = None,
-    ) -> "Component":
+    ) -> "Module":
         # For convenience, optionally allow 'identifier' to be passed as str.
         identifier = ComponentIdentifier(identifier)
         full_path = repo.get_local_file_path(file_path, identifier.version)
@@ -347,7 +331,7 @@ class Component:
         return_value_log_format: str = "yaml",
     ) -> ComponentRun:
         """
-        Run the specified entry point a new instance of this Component's
+        Run the specified entry point a new instance of this Module's
         managed object given the specified args, log the results
         and return the Run object.
 
@@ -366,7 +350,7 @@ class Component:
             is True.
         """
         assert not self.active_run, (
-            f"Component {self.identifier} already has an active_run, so a "
+            f"Module {self.identifier} already has an active_run, so a "
             "new run is not allowed."
         )
         if args:
@@ -401,24 +385,24 @@ class Component:
         return result
 
     def add_dependency(
-        self, component: "Component", attribute_name: str = None
+        self, module: "Module", attribute_name: str = None
     ) -> None:
-        if self._venv and component.requirements_path:
+        if self._venv and module.requirements_path:
             raise Exception(
                 "You cannot add a dependency with a requirements_path after a "
                 "virtual env has already been constructed and activated. Try "
                 "restarting Python and rebuilding your dependency graph"
             )
-        if type(component) is not type(self):
-            raise Exception("add_dependency() must be passed a Component")
+        if type(module) is not type(self):
+            raise Exception("add_dependency() must be passed a Module")
         if attribute_name is None:
-            attribute_name = component.name
+            attribute_name = module.name
         assert attribute_name not in self.dependencies, (
             f"{self.identifier} already has a dependency with attribute "
             f"{attribute_name}. Please use a different attribute name."
         )
-        self.dependencies[attribute_name] = component
-        component._parent_components.add(self)
+        self.dependencies[attribute_name] = module
+        module._parent_modules.add(self)
 
     def get_object(self, arg_set: ArgumentSet = None) -> T:
         collected = {}
@@ -436,9 +420,9 @@ class Component:
         else:
             print(f"getting {imported_obj} w/o instantiating ")
             obj = imported_obj
-        for dep_attr_name, dep_component in self.dependencies.items():
+        for dep_attr_name, dep_module in self.dependencies.items():
             print(f"Adding {dep_attr_name} to {self.name}")
-            dep_obj = dep_component._get_object(
+            dep_obj = dep_module._get_object(
                 arg_set=arg_set, collected=collected
             )
             setattr(obj, dep_attr_name, dep_obj)
@@ -470,8 +454,8 @@ class Component:
         return managed_obj
 
     def _build_virtual_env(self) -> VirtualEnv:
-        # Only the root Component will setup and activate the VirtualEnv
-        if not self._use_venv or self._parent_components:
+        # Only the root Module will setup and activate the VirtualEnv
+        if not self._use_venv or self._parent_modules:
             return NoOpVirtualEnv()
         req_paths = set()
         for c in self.dependency_list(include_parents=True):
@@ -491,9 +475,9 @@ class Component:
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def to_versioned_component(self, force: bool = False) -> "Component":
+    def to_versioned_component(self, force: bool = False) -> "Module":
         repo_url, version = self.repo.get_version_from_git(
-            self.identifier, self.file_path, force
+            self.file_path, version=self.version, force=force
         )
         old_identifier = ComponentIdentifier(self.identifier)
         new_identifier = ComponentIdentifier(old_identifier.name, version)
@@ -505,7 +489,7 @@ class Component:
             prefixed_reqs_path = self.repo.get_prefixed_path_from_repo_root(
                 new_identifier, self.requirements_path
             )
-        clone = Component(
+        clone = Module(
             repo=GitHubRepo(identifier=self.repo.identifier, url=repo_url),
             identifier=new_identifier,
             class_name=self.class_name,
@@ -578,7 +562,7 @@ class Component:
             spec_diff = DeepDiff(existing_spec, self.to_spec())
             if spec_diff:
                 raise RegistryException(
-                    f"Component {self.identifier} already exists in registry "
+                    f"Module {self.identifier} already exists in registry "
                     f"{registry} and differs from the one you're trying to "
                     f"add. Specify force=True to overwrite it. Diff:\n"
                     f"{spec_diff}"
@@ -617,7 +601,7 @@ class Component:
 
     def dependency_list(
         self, include_root: bool = True, include_parents: bool = False
-    ) -> Sequence["Component"]:
+    ) -> Sequence["Module"]:
         """
         Return a normalized (i.e. flat) Sequence containing all transitive
         dependencies of this component and (optionally) this component.
@@ -626,27 +610,27 @@ class Component:
                              If True, self is included in the list returned.
         :param include_parents: If True, then recursively include all parents
                                 of this component (and their parents, etc).
-                                A parent of this Component is a Component
-                                which depends on this Component.  Ultimately,
+                                A parent of this Module is a Module
+                                which depends on this Module.  Ultimately,
                                 if True, all Components in the DAG will be
                                 returned.
 
         :return: a list containing all all of the transitive dependencies
                  of this component (optionally  including the root component).
         """
-        component_queue = [self]
+        module_queue = [self]
         ret_val = set()
-        while component_queue:
-            component = component_queue.pop()
-            if include_root or component is not self:
-                ret_val.add(component)
-            for dependency in component.dependencies.values():
+        while module_queue:
+            module = module_queue.pop()
+            if include_root or module is not self:
+                ret_val.add(module)
+            for dependency in module.dependencies.values():
                 if dependency not in ret_val:
-                    component_queue.append(dependency)
+                    module_queue.append(dependency)
             if include_parents:
-                for parent in component._parent_components:
+                for parent in module._parent_modules:
                     if parent not in ret_val:
-                        component_queue.append(parent)
+                        module_queue.append(parent)
         return list(ret_val)
 
     def print_status_tree(self) -> None:
@@ -654,9 +638,9 @@ class Component:
         rich_print(tree)
 
     def get_status_tree(self, parent_tree: Tree = None) -> Tree:
-        self_tree = Tree(f"Component: {self.identifier}")
+        self_tree = Tree(f"Module: {self.identifier}")
         if parent_tree is not None:
             parent_tree.add(self_tree)
-        for dep_attr_name, dep_component in self.dependencies.items():
-            dep_component.get_status_tree(parent_tree=self_tree)
+        for dep_attr_name, dep_module in self.dependencies.items():
+            dep_module.get_status_tree(parent_tree=self_tree)
         return self_tree

@@ -19,7 +19,7 @@ T = TypeVar("T")
 
 class Repo(abc.ABC, Component):
     """
-    Base class used to encapsulate information about where a Component
+    Base class used to encapsulate information about where a Module
     is located.
     """
     ATTRIBUTES = ["default_version"]  # default_version is an @property
@@ -44,12 +44,9 @@ class Repo(abc.ABC, Component):
 
     @classmethod
     def from_github(
-        cls, github_account: str, repo_name: str, identifier: str = None
-    ) -> "GitHubRepo":
-        if not identifier:
-            identifier = f"{github_account}__{repo_name}"
+        cls, github_account: str, repo_name: str) -> "GitHubRepo":
         url = f"https://github.com/{github_account}/{repo_name}"
-        return GitHubRepo(identifier, url)
+        return GitHubRepo(url)
 
     @classmethod
     def clear_repo_cache(
@@ -72,34 +69,31 @@ class Repo(abc.ABC, Component):
 
     def get_version_from_git(
         self,
-        component_identifier: ComponentIdentifier,
         file_path: str,
+        version: str = None,
         force: bool = False,
     ) -> Tuple[str, str]:
         """
-        Given a ComponentIdentifier and a path, this returns a GitHub repo
-        URL and a git hash.  This URL and hash is where the version (specified
-        by the ComponentIdentifier) of the file at ``file_path`` is publicly
+        Given a python Module file, and optionally a version, return a git hash
+        and GitHub repo URL where the current version of the Module is publicly
         accessible.
 
         A number of checks are performed during the course of this operation.
         Pass ``force=True`` to make failure of optional checks non-fatal.  see
         ``GitManager.get_public_url_and_hash()`` for more details.
         """
-        full_path = self.get_local_file_path(
-            file_path, component_identifier.version
-        )
+        full_path = self.get_local_file_path(file_path, version)
         assert full_path.exists(), f"Path {full_path} does not exist"
         return self.GIT.get_public_url_and_hash(full_path, force)
 
     def get_prefixed_path_from_repo_root(
-        self, identifier: ComponentIdentifier, file_path: str
+        self, identifier: str, file_path: str
     ) -> Path:
         """
-        Finds the ``component_path`` relative to the repo containing the
-        Component.  For example, if ``component_path`` is::
+        Finds the 'module_path' relative to the repo containing the
+        Module.  For example, if ``module_path`` is::
 
-            /foo/bar/baz/my_component.py
+            /foo/bar/baz/my_module.py
 
         and a git repo lives in::
 
@@ -107,7 +101,7 @@ class Repo(abc.ABC, Component):
 
         then this would return::
 
-            baz/my_component.py
+            baz/my_module.py
         """
         full_path = self.get_local_file_path(file_path, identifier.version)
         return self.GIT.get_prefixed_path_from_repo_root(full_path)
@@ -115,7 +109,7 @@ class Repo(abc.ABC, Component):
 
 class GitHubRepo(Repo):
     """
-    A Component with an GitHubRepo can be found on GitHub.
+    A Module with an GitHubRepo can be found on GitHub.
     """
     ATTRIBUTES = ["url"]
 
@@ -156,7 +150,7 @@ class GitHubRepo(Repo):
 #       github.com/my_username/pcs_repo.
 class LocalRepo(Repo):
     """
-    A Component with a LocalRepo can be found on your local drive.
+    A Module with a LocalRepo can be found on your local drive.
     """
     ATTRIBUTES = ["path"]
 

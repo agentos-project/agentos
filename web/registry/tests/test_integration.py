@@ -4,7 +4,7 @@ from registry.models import Repo as RepoModel
 from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
-from pcs.component import Component
+from pcs.component import Module
 from pcs.component_run import ComponentRun
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
@@ -36,7 +36,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
 
     def test_web_registry_top_down(self):
         web_registry = WebRegistry(f"{self.live_server_url}/api/v1")
-        simple_component = Component.from_repo(
+        simple_component = Module.from_repo(
             agentos_repo,
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
             file_path="web/registry/tests/test_integration.py",
@@ -65,7 +65,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         wr_run_cmd = RunCommand.from_registry(
             web_registry, wr_comp_run.run_command.identifier
         )
-        wr_comp = Component.from_registry(
+        wr_comp = Module.from_registry(
             web_registry, wr_run_cmd.component.identifier, use_venv=False
         )
         wr_repo = Repo.from_registry(web_registry, wr_comp.repo.identifier)
@@ -95,7 +95,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(repo.identifier, "AgentOSRepo")
 
         # Test adding a component that we generate from the repo.
-        simple_component = Component.from_repo(
+        simple_component = Module.from_repo(
             repo,
             identifier=f"SimpleComponent=={TESTING_BRANCH_NAME}",
             file_path="web/registry/tests/test_integration.py",
@@ -104,7 +104,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             use_venv=False,
         )
         self.assertEqual(simple_component.repo.identifier, "AgentOSRepo")
-        simple_dependency = Component.from_repo(
+        simple_dependency = Module.from_repo(
             agentos_repo,
             identifier=f"SimpleDependency=={TESTING_BRANCH_NAME}",
             file_path="web/registry/tests/test_integration.py",
@@ -114,7 +114,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         )
         simple_component.add_dependency(simple_dependency, "dep")
 
-        another_dependency = Component.from_repo(
+        another_dependency = Module.from_repo(
             agentos_repo,
             identifier=f"AnotherDependency=={TESTING_BRANCH_NAME}",
             file_path="web/registry/tests/test_integration.py",
@@ -200,7 +200,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             )
         )
 
-    # TODO: add a test that publishes a ComponentRun or Component from the CLI.
+    # TODO: add a test that publishes a ComponentRun or Module from the CLI.
     # def test_web_registry_integration_from_cli():
     #     from tests.utils import run_test_command
     #     run_test_command(...)

@@ -412,7 +412,7 @@ Revision History
 
 * Discussion Thread:
 
-  * `AgentOS Component Registry <https://github.com/agentos-project/design_docs/discussions/7>`_
+  * `AgentOS Module Registry <https://github.com/agentos-project/design_docs/discussions/7>`_
 
 * Important pull requests:
 
@@ -429,7 +429,7 @@ Revision History
   * `v5 <https://github.com/agentos-project/design_docs/blob/886f5a0eb960c398cc57d7cd5ec97956c528cca4/registry.rst>`_
   * `v6 <https://github.com/agentos-project/design_docs/blob/2ec8b7f231330119d153a24725537a7c4e71084d/registry.rst>`_
 
-    * Rename AgentOS Component System (ACS) to AgentOS Component Registry (ACR)
+    * Rename AgentOS Module System (ACS) to AgentOS Module Registry (ACR)
 
     * Rename ``components.ini`` to ``agent.ini``
 

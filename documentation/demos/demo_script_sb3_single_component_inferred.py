@@ -1,5 +1,5 @@
 from pcs.argument_set import ArgumentSet
-from pcs.component import Component
+from pcs.component import Module
 from pcs.component_run import ComponentRun
 from pcs.registry import Registry, WebRegistry
 from pcs.repo import Repo
@@ -8,7 +8,7 @@ sb3_repo = Repo.from_github("DLR-RM", "stable-baselines3")
 sb3_reg = Registry.from_repo(sb3_repo)
 # sb3_reg = Registry.from_yaml("/tmp/sb3_registry_inferred.yaml")
 
-sb3_comp = Component.from_registry(
+sb3_comp = Module.from_registry(
     sb3_reg, "module:stable_baselines3____init__.py"
 )
 sb3_comp.class_name = "PPO"

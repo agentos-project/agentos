@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="Component",
+            name="Module",
             fields=[
                 ("created", models.DateTimeField(auto_now_add=True)),
                 ("updated", models.DateTimeField(auto_now=True)),
@@ -164,7 +164,7 @@ class Migration(migrations.Migration):
             model_name="component",
             name="dependencies",
             field=models.ManyToManyField(
-                through="registry.ComponentDependency", to="registry.Component"
+                through="registry.ComponentDependency", to="registry.Module"
             ),
         ),
         migrations.AddField(

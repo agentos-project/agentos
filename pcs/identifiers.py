@@ -1,6 +1,6 @@
 class ComponentIdentifier(str):
     """
-    A Component Identifier is an immutable string-like construct that encodes a
+    A Module Identifier is an immutable string-like construct that encodes a
     name and, optionally, a version as a string using the '==' separator. It
     allows referring to Components both as [name] and [name]==[version] (e.g.,
     in registries or the command line).

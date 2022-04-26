@@ -2,7 +2,7 @@
 import pytest
 
 from pcs.argument_set import ArgumentSet
-from pcs.component import Component
+from pcs.component import Module
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.utils import generate_dummy_dev_registry
@@ -77,7 +77,7 @@ def test_registry_integration(venv):
         },
     }
     registry = Registry.from_dict(generate_dummy_dev_registry())
-    component = Component.from_registry(
+    component = Module.from_registry(
         registry, "acme_r2d2_agent", use_venv=False
     )
     component.run_with_arg_set("evaluate", ArgumentSet(args))
@@ -116,7 +116,7 @@ def test_registry_from_file():
     from pcs.exceptions import RegistryException
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
-    random_local_ag = Component.from_registry(r, "agent")
+    random_local_ag = Module.from_registry(r, "agent")
     assert random_local_ag.name == "agent"
     assert not random_local_ag.version
     assert random_local_ag.identifier == "agent"
@@ -130,7 +130,7 @@ def test_registry_from_file():
     )
 
     # Test publishing a component to an InMemoryRegistry
-    chatbot_agent = Component.from_registry_file(
+    chatbot_agent = Module.from_registry_file(
         CHATBOT_AGENT_DIR / "components.yaml", "chatbot"
     )
     assert chatbot_agent.class_name == "ChatBot"

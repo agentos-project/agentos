@@ -40,7 +40,7 @@ class Run:
     RunData contains metrics, params, and tags; each of which is a dict.
 
     AgentOS Run related abstractions are encoded into an MLflowRun as follows:
-    - Component Registry -> MLflow artifact file
+    - Module Registry -> MLflow artifact file
     - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
     - ArgumentSet -> MLflow artifact file
 

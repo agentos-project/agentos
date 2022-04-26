@@ -14,7 +14,7 @@ T = TypeVar("T")
 class ArgumentSet:
     """
     This object is used to encapsulate a set of arguments that are used to
-    initialize a Component dependency DAG and to run methods on this DAG.
+    initialize a Module dependency DAG and to run methods on this DAG.
     """
 
     def __init__(self, arguments: Dict = None):

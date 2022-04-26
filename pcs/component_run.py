@@ -18,7 +18,7 @@ def active_component_run(
     """
     A helper function, returns the currently active ComponentRun, if it exists,
     else None. More specifically, if the caller is an object that is managed by
-    a Component (i.e. if it has a __component__ attribute) that itself has an
+    a Module (i.e. if it has a __component__ attribute) that itself has an
     active_run, return that Run.
 
     :param caller: the managed object to fetch the active component run for.
@@ -26,9 +26,9 @@ def active_component_run(
         instead of returning None.
     :return: the active component run if it exists, else None.
     """
-    from pcs.component import Component
+    from pcs.component import Module
 
-    if isinstance(caller, Component):
+    if isinstance(caller, Module):
         component = caller
     else:
         try:
@@ -36,13 +36,13 @@ def active_component_run(
         except AttributeError:
             raise PythonComponentSystemException(
                 "active_run() was called on an object that is not "
-                "managed by a Component. Specifically, the object passed "
+                "managed by a Module. Specifically, the object passed "
                 "to active_run() must have a ``__component__`` attribute."
             )
     if not component.active_run:
         if fail_if_none:
             raise PythonComponentSystemException(
-                "active_run() was passed an object managed by a Component "
+                "active_run() was passed an object managed by a Module "
                 "with no active_run, and fail_if_no_active_run flag was "
                 "True."
             )
@@ -59,7 +59,7 @@ class ComponentRun(Run):
     RUN_COMMAND_REGISTRY_FILENAME = "pcs.run_command_registry.yaml"
     """
     A ComponentRun represents the execution of a specific entry point of a
-    specific Component with a specific ArgumentSet.
+    specific Module with a specific ArgumentSet.
     """
 
     def __init__(
@@ -85,7 +85,7 @@ class ComponentRun(Run):
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
-            f"PCS Component '{self.run_command.component.identifier}' "
+            f"PCS Module '{self.run_command.component.identifier}' "
             f"at Entry Point '{self.run_command.entry_point}'",
         )
         self._return_value = None
@@ -182,7 +182,7 @@ class ComponentRun(Run):
         each component in the root component's dependency graph. Note that a
         Run object contains a component object and thus the root component's
         full dependency graph of other components, and as such does not depend
-        on a Registry to provide reproducibility. Like a Component, a Run
+        on a Registry to provide reproducibility. Like a Module, a Run
         (including its entry point, argument_set, root component, and the root
         component's full dependency graph) can be dumped into a Registry for
         sharing purposes, which essentially normalizes the Run's root

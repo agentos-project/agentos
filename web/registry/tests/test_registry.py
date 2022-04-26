@@ -41,19 +41,19 @@ class RegistryTestCases(TestCase):
         self.static_dir = Path(__file__).parent / "static"
 
     # TODO: update these test once we've finished reworking ingest_spec
-    #       to be ingest_registry (it is moving out from under the Component
+    #       to be ingest_registry (it is moving out from under the Module
     #       model/view).
     # def test_registry_ingest(self):
-    #     self.assertEqual(Component.objects.count(), 1)
+    #     self.assertEqual(Module.objects.count(), 1)
     #     self.assertEqual(ComponentDependency.objects.count(), 0)
     #     self.assertEqual(Repo.objects.count(), 1)
-    #     # the ingest registry functionality doesn't live under the Component
+    #     # the ingest registry functionality doesn't live under the Module
     #     # model/viewset anymore so this URL will be different.
     #     url = reverse("component-ingest-registry")
     #     yaml_file = open(self.static_dir / "test_spec_ingest.yaml")
     #     response = self.client.post(url, {"components.yaml": yaml_file})
     #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(Component.objects.count(), 7)
+    #     self.assertEqual(Module.objects.count(), 7)
     #     self.assertEqual(ComponentDependency.objects.count(), 6)
     #     self.assertEqual(Repo.objects.count(), 2)
     #
@@ -91,18 +91,18 @@ class RegistryTestCases(TestCase):
         self.assertIn("Content-Disposition", response.headers)
 
     # TODO: update this test once we've finished reworking ingest_spec
-    #       to be ingest_registry (it is moving out from under the Component
+    #       to be ingest_registry (it is moving out from under the Module
     #       model/view).
     # def test_component_replace(self):
-    #     self.assertEqual(Component.objects.count(), 1)
+    #     self.assertEqual(Module.objects.count(), 1)
     #     url = reverse("component-ingest-spec")
     #     fail_path = self.static_dir / "test_component_replace_fail.yaml"
     #     fail_response = self.client.post(
     #         url, {"components.yaml": open(fail_path)}
     #     )
     #     self.assertEqual(fail_response.status_code, 400)
-    #     self.assertEqual(Component.objects.count(), 1)
-    #     component = Component.objects.get(id=self.component.id)
+    #     self.assertEqual(Module.objects.count(), 1)
+    #     component = Module.objects.get(id=self.component.id)
     #     self.assertEqual(self.component.repo.id, component.repo.id)
     #     self.assertEqual(self.component.file_path, component.file_path)
     #     self.assertEqual(self.component.class_name, component.class_name)
@@ -114,4 +114,4 @@ class RegistryTestCases(TestCase):
     #         url, {"components.yaml": open(success_path)}
     #     )
     #     self.assertEqual(success_response.status_code, 200)
-    #     self.assertEqual(Component.objects.count(), 2)
+    #     self.assertEqual(Module.objects.count(), 2)

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pcs.component import Component
+from pcs.component import Module
 from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -12,14 +12,14 @@ from tests.utils import (
 def test_repo_from_github():
     aos_repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
     print(aos_repo.to_spec())
-    #agent_component = Component.from_repo(
-    #    aos_repo,
-    #    identifier=f"agent=={TESTING_BRANCH_NAME}",
-    #    file_path="agentos/core.py",
-    #    class_name="Agent",
-    #    instantiate=True,
-    #)
-    #assert hasattr(agent_component.get_object(), "evaluate")
+    agent_mod = Module.from_repo(
+        aos_repo,
+        identifier=f"agent=={TESTING_BRANCH_NAME}",
+        file_path="agentos/core.py",
+        class_name="Agent",
+        instantiate=True,
+    )
+    assert hasattr(agent_mod.get_object(), "evaluate")
     #assert agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
     #assert agent_component.repo.identifier == (
     #    f"{TESTING_GITHUB_ACCOUNT}__{TESTING_GITHUB_REPO}"
@@ -28,7 +28,7 @@ def test_repo_from_github():
     #aos_repo_w_custom_id = Repo.from_github(
     #    "agentos-project", "agentos", identifier="custom_ident"
     #)
-    #diff_agent_component = Component.from_repo(
+    #diff_agent_component = Module.from_repo(
     #    aos_repo_w_custom_id,
     #    identifier=f"agent=={TESTING_BRANCH_NAME}",
     #    file_path="agentos/core.py",

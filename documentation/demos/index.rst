@@ -13,9 +13,9 @@ AgentOS WebRegistry django server app, which you can start via::
 
 AgentOS example SB3 agent from registry file in Github
 ======================================================
-In this demo, we create an agent Component from a registry file that
+In this demo, we create an agent Module from a registry file that
 exists in our local clone of the AgentOS github repo. Then we auto-convert
-the agent Component from an unversioned Component to a versioned Component.
+the agent Module from an unversioned Module to a versioned Module.
 Then we run that agent and publish the run to a local WebRegistry.
 
 Assuming you have the WebRegistry server running, try the following code:
@@ -37,12 +37,12 @@ Assuming you have the WebRegistry server running, try the following code:
 .. include:: demo_script_agentos_github_random_agent.py
    :literal:
 
-Component from registry auto-inferred directly from Stable Baselines 3 Github
+Module from registry auto-inferred directly from Stable Baselines 3 Github
 =============================================================================
 In this demo, we infer a Registry automatically from the github repo
 of a popular open source RL framework
 (`Stable Baselines 3 <https://github.com/DLR-RM/stable-baselines3>`_, a fork of
-OpenAI Baselines) and then create, run, and share a PPO agent Component from
+OpenAI Baselines) and then create, run, and share a PPO agent Module from
 that registry.
 
 Assuming you have the WebRegistry server running, try the following code:

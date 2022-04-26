@@ -12,7 +12,7 @@ import yaml
 
 from agentos.agent_run import AgentRun
 from pcs.argument_set import ArgumentSet
-from pcs.component import Component
+from pcs.component import Module
 from pcs.component_run import ComponentRun
 from pcs.registry import Registry
 from pcs.repo import Repo
@@ -61,9 +61,9 @@ _option_use_venv = click.option(
     default=True,
     help=(
         "If --use-auto-venv is passed, then AgentOS will automatically "
-        "create a virtual environment under which the Component DAG "
+        "create a virtual environment under which the Module DAG "
         "will be run. If --use-outer-env is passed, AgentOS will not "
-        "create a new virtual environment for the Component DAG, instead "
+        "create a new virtual environment for the Module DAG, instead "
         "running it in the existing outer Python environment."
     ),
 )
@@ -180,7 +180,7 @@ def run(
     use_venv,
 ):
     cli_arg_dict = _user_args_to_dict(arg_set_list)
-    component = Component.from_registry_file(
+    component = Module.from_registry_file(
         registry_file, component_name, use_venv=use_venv
     )
     arg_set = ArgumentSet.from_yaml(arg_set_file)
@@ -198,7 +198,7 @@ def run(
 @_option_use_venv
 def status(entity_id, registry_file, use_venv):
     """
-    ENTITY_ID can be a Component name or a Run ID.
+    ENTITY_ID can be a Module name or a Run ID.
     """
     print(f"entity_id is {entity_id}")
     if not entity_id:
@@ -207,7 +207,7 @@ def status(entity_id, registry_file, use_venv):
         Run.from_existing_run_id(entity_id).print_status(detailed=True)
     else:  # assume entity_id is a ComponentIdentifier
         try:
-            c = Component.from_registry_file(
+            c = Module.from_registry_file(
                 registry_file, entity_id, use_venv=use_venv
             )
             c.print_status_tree()
@@ -240,19 +240,19 @@ def rerun(run_id):
 @_option_output_file
 def freeze(component_name, registry_file, force, use_venv, output_file):
     """
-    Creates a version of ``registry_file`` for Component
+    Creates a version of ``registry_file`` for Module
     ``component_name`` where all Components in the dependency tree are
     associated with a specific git commit.  The resulting
     ``registry_file`` can be run on any machine with AgentOS installed.
 
-    The requirements for pinning a Component spec are as follows:
+    The requirements for pinning a Module spec are as follows:
         * All Components in the dependency tree must be in git repos
         * Those git repos must have GitHub as their origin
         * The current local branch and its counterpart on origin are at
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    component = Component.from_registry_file(
+    component = Module.from_registry_file(
         registry_file, component_name, use_venv=use_venv
     )
     frozen_reg = component.to_frozen_registry(force=force)
@@ -274,9 +274,9 @@ def publish_component(
     """
     This command pushes the spec for component ``component_name`` (and all its
     sub-Components) to the AgentOS server.  This command will fail if any
-    Component in the dependency tree cannot be frozen.
+    Module in the dependency tree cannot be frozen.
     """
-    component = Component.from_registry_file(
+    component = Module.from_registry_file(
         registry_file, component_name, use_venv=use_venv
     )
     frozen_component = component.to_versioned_component()
@@ -289,7 +289,7 @@ def clear_env_cache(assume_yes):
     """
     This command clears all virtual environments that have been cached by
     AgentOS in your local file system.  All the virtual environments can be
-    automatically recreated when re-running a Component that has
+    automatically recreated when re-running a Module that has
     ``requirements_path`` specified.
     """
     VirtualEnv.clear_env_cache(assume_yes=assume_yes)
