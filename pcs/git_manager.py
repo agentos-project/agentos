@@ -4,6 +4,7 @@ import re
 import time
 from json.decoder import JSONDecodeError
 from pathlib import Path
+from typing import Optional
 
 from dulwich import porcelain
 from dulwich.errors import NotGitRepository
@@ -25,6 +26,8 @@ class GitManager:
     """
 
     FULL_GIT_SHA1_RE = re.compile(r"\b[0-9a-f]{40}\b")
+    REPO_INFO_PROC_KEY = "process_id"
+    REPO_INFO_TIME_KEY = "last_fetch_time"
 
     def get_public_url_and_hash(
         self, full_path: Path, force: bool
@@ -111,6 +114,18 @@ class GitManager:
         )
         raise BadGitStateException(error_msg)
 
+    def _get_remote_url(
+        self, porcelain_repo: PorcelainRepo, force: bool
+    ) -> str:
+        url_or_path = self._get_remote_uri(porcelain_repo, force)
+        # If path, assume cloned from default repo and find default repo URL.
+        if Path(url_or_path).exists():
+            with porcelain.open_repo_closing(url_or_path) as local_repo:
+                url = self._get_remote_uri(local_repo, force)
+        else:
+            url = url_or_path
+        return url
+
     def _check_for_github_url(
         self, porcelain_repo: PorcelainRepo, force: bool
     ) -> str:
@@ -123,17 +138,17 @@ class GitManager:
                 raise BadGitStateException(error_msg)
         return url
 
-    def _get_remote_url(
+    def _get_remote_uri(
         self,
         porcelain_repo: PorcelainRepo,
         force: bool,
         remote_name: str = "origin",
     ) -> str:
+        """Can return a local path string or a URL."""
         url = None
         try:
             REMOTE_KEY = (b"remote", remote_name.encode())
             url = porcelain_repo.get_config()[REMOTE_KEY][b"url"].decode()
-            # remote, url = porcelain.get_remote_repo(porcelain_repo)
         except KeyError:
             error_msg = "Could not find remote repo"
             if force:
@@ -204,10 +219,31 @@ class GitManager:
         global_default_path = AOS_GLOBAL_REPOS_DIR / "_default"
         default_repo_path = global_default_path / org_name / project_name
         url = f"https://github.com/{org_name}/{project_name}.git"
-        cloned = self._clone_repo(url=url, clone_destination=default_repo_path)
+        cloned = self._clone_repo(src=url, clone_destination=default_repo_path)
         if not cloned:
             self._maybe_fetch(default_repo_path)
         return default_repo_path
+
+    def _write_repo_info(self, repo_path: Path) -> dict:
+        default_info_path = self._get_repo_info_path(repo_path)
+        repo_info = {
+            self.REPO_INFO_PROC_KEY: os.getpid(),
+            self.REPO_INFO_TIME_KEY: time.time(),
+        }
+        with open(default_info_path, "w") as fout:
+            json.dump(repo_info, fout)
+        return repo_info
+
+    def _read_repo_info(self, repo_path: Path) -> Optional[dict]:
+        default_info_path = self._get_repo_info_path(repo_path)
+        with open(default_info_path) as fin:
+            try:
+                return json.load(fin)
+            except JSONDecodeError:
+                return None
+
+    def _get_repo_info_path(self, repo_path: Path) -> Path:
+        return Path(str(repo_path) + "-info.json")
 
     def _maybe_fetch(self, default_repo_path: Path) -> None:
         """
@@ -215,28 +251,24 @@ class GitManager:
         to map ref names to sha1 hashes.  We only update if we're a new
         process or if we haven't updated in the last half hour.
         """
-        PROC_KEY = "process_id"
-        TIME_KEY = "last_fetch_time"
-        default_info_path = Path(str(default_repo_path) + "-info.json")
 
         def _do_fetch():
-            with open(default_info_path, "w") as fout:
-                json.dump({PROC_KEY: os.getpid(), TIME_KEY: time.time()}, fout)
             print(f"GitManager: fetching {default_repo_path}...")
             with porcelain.open_repo_closing(default_repo_path) as repo:
                 porcelain.fetch(repo)
+            self._write_repo_info(default_repo_path)
 
-        if not default_info_path.exists():
+        info_path = self._get_repo_info_path(default_repo_path)
+        assert info_path.exists()
+        repo_info = self._read_repo_info(default_repo_path)
+        if repo_info is None:
             _do_fetch()
             return
-        with open(default_info_path) as fin:
-            try:
-                info = json.load(fin)
-            except JSONDecodeError:
-                _do_fetch()
-                return
-        sec_since_last_fetch = time.time() - info[TIME_KEY]
-        if info[PROC_KEY] != os.getpid() or sec_since_last_fetch > 1800:
+        if repo_info[self.REPO_INFO_PROC_KEY] != os.getpid():
+            _do_fetch()
+            return
+        sec_since_last_fetch = time.time() - repo_info[self.REPO_INFO_TIME_KEY]
+        if sec_since_last_fetch > 1800:
             _do_fetch()
             return
         print(f"GitManager: NOT fetching {default_repo_path}...")
@@ -261,29 +293,35 @@ class GitManager:
         into the PCS/AOS cache.
         """
         sha1 = self.get_sha1_from_version(org_name, project_name, version)
+        default_repo_path = self._get_default_repo_path(org_name, project_name)
         clone_destination = (
             AOS_GLOBAL_REPOS_DIR / org_name / project_name / sha1
         )
-        url = f"https://github.com/{org_name}/{project_name}.git"
         self._clone_repo(
-            url=url, clone_destination=clone_destination, version=sha1
+            src=default_repo_path,
+            clone_destination=clone_destination,
+            version=sha1,
         )
         return clone_destination
 
     def _clone_repo(
-        self, url: str, clone_destination: Path, version: str = None
+        self, src: str, clone_destination: Path, version: str = None
     ) -> bool:
+        """``src`` can be a local file path or a GitHub URL."""
         cloned = False
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
-            print(f"GitManager: cloning {url} to {str(clone_destination)}")
+            print(f"GitManager: cloning {src} to {str(clone_destination)}")
             porcelain.clone(
-                source=url, target=str(clone_destination), checkout=True
+                source=str(src), target=str(clone_destination), checkout=True
             )
+            self._write_repo_info(clone_destination)
             if version:
                 self._checkout_version(clone_destination, version)
             cloned = True
-        assert clone_destination.exists(), f"Unable to clone {url}"
+        assert clone_destination.exists(), f"Unable to clone {src}"
+        info_path = self._get_repo_info_path(clone_destination)
+        assert info_path.exists()
         return cloned
 
     def _checkout_version(self, local_repo_path: Path, version: str) -> None:
