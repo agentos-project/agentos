@@ -134,18 +134,14 @@ class Repo(abc.ABC):
         force: bool = False,
     ) -> Tuple[str, str]:
         """
-        Given a path to a Component, this returns the GitHub repo URL where the
-        current version of the Component is publicly accessible and the git
-        hash of the current version of the Component.  This will raise an
-        exception if any of the following checks are true:
+        Given a ComponentIdentifier and a path, this returns a GitHub repo
+        URL and a git hash.  This URL and hash is where the version (specified
+        by the ComponentIdentifier) of the file at ``file_path`` is publicly
+        accessible.
 
-        1. The Component is not in a git repo.
-        2. The origin of this repo is not GitHub.
-        3. The current local branch and corresponding remote branch are not at
-           the same commit.
-        4. There are uncommitted changes locally
-
-        If ''force'' is True, checks 2, 3, and 4 above are ignored.
+        A number of checks are performed during the course of this operation.
+        Pass ``force=True`` to make failure of optional checks non-fatal.  see
+        ``GitManager.get_public_url_and_hash()`` for more details.
         """
         full_path = self.get_local_file_path(
             file_path, component_identifier.version

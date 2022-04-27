@@ -37,8 +37,7 @@ class GitManager:
 
         1. The file/directory is not in a git repo.
         2. The origin of this repo is not GitHub.
-        3. The current local branch and corresponding remote branch are not at
-           the same commit.
+        3. The current local commit is not in the remote repo.
         4. There are uncommitted changes locally
 
         If ''force'' is True, checks 2, 3, and 4 above are ignored.
@@ -224,7 +223,8 @@ class GitManager:
             with open(default_info_path, "w") as fout:
                 json.dump({PROC_KEY: os.getpid(), TIME_KEY: time.time()}, fout)
             print(f"GitManager: fetching {default_repo_path}...")
-            porcelain.fetch(porcelain.open_repo(default_repo_path))
+            with porcelain.open_repo_closing(default_repo_path) as repo:
+                porcelain.fetch(repo)
 
         if not default_info_path.exists():
             _do_fetch()
@@ -260,12 +260,13 @@ class GitManager:
         branch name, or tag name), this will clone the repo at the version
         into the PCS/AOS cache.
         """
+        sha1 = self.get_sha1_from_version(org_name, project_name, version)
         clone_destination = (
-            AOS_GLOBAL_REPOS_DIR / org_name / project_name / version
+            AOS_GLOBAL_REPOS_DIR / org_name / project_name / sha1
         )
         url = f"https://github.com/{org_name}/{project_name}.git"
         self._clone_repo(
-            url=url, clone_destination=clone_destination, version=version
+            url=url, clone_destination=clone_destination, version=sha1
         )
         return clone_destination
 
@@ -288,11 +289,11 @@ class GitManager:
     def _checkout_version(self, local_repo_path: Path, version: str) -> None:
         curr_dir = os.getcwd()
         os.chdir(local_repo_path)
-        repo = porcelain.open_repo(local_repo_path)
-        treeish = parse_commit(repo, version).sha().hexdigest()
-        # Checks for a clean working directory were failing on Windows, so
-        # force the checkout since this should be a clean clone anyway.
-        self._checkout(repo=repo, target=treeish, force=True)
+        with porcelain.open_repo_closing(local_repo_path) as repo:
+            treeish = parse_commit(repo, version).sha().hexdigest()
+            # Checks for a clean working directory were failing on Windows, so
+            # force the checkout since this should be a clean clone anyway.
+            self._checkout(repo=repo, target=treeish, force=True)
         os.chdir(curr_dir)
 
     def get_branches(self, org_name: str, project_name: str) -> list:
@@ -458,18 +459,18 @@ class GitManager:
         self, org_name: str, project_name: str, prefix: str
     ) -> list:
         default_repo_path = self._get_default_repo_path(org_name, project_name)
-        repo = porcelain.open_repo(default_repo_path)
-        refs = repo.get_refs()
-        results = []
-        for ref, sha1_hash in refs.items():
-            ref = ref.decode()
-            if not ref.startswith(prefix):
-                continue
-            name = ref.replace(prefix, "", 1)
-            results.append(
-                {"name": name, "commit": {"sha": sha1_hash.decode()}}
-            )
-        return results
+        with porcelain.open_repo_closing(default_repo_path) as repo:
+            refs = repo.get_refs()
+            results = []
+            for ref, sha1_hash in refs.items():
+                ref = ref.decode()
+                if not ref.startswith(prefix):
+                    continue
+                name = ref.replace(prefix, "", 1)
+                results.append(
+                    {"name": name, "commit": {"sha": sha1_hash.decode()}}
+                )
+            return results
 
     def sha1_hash_exists(
         self, org_name: str, project_name: str, sha1_hash: str
@@ -480,9 +481,9 @@ class GitManager:
         https://github.com/<org_name>/<project_name>
         """
         default_repo_path = self._get_default_repo_path(org_name, project_name)
-        repo = porcelain.open_repo(default_repo_path)
-        try:
-            repo[sha1_hash.encode()]
-        except KeyError:
-            return False
-        return True
+        with porcelain.open_repo_closing(default_repo_path) as repo:
+            try:
+                repo[sha1_hash.encode()]
+            except KeyError:
+                return False
+            return True
