@@ -44,7 +44,7 @@ def test_local_to_from_registry():
     reg = repo.to_registry()
     repo_from_reg = Repo.from_registry(reg, "test_id")
     assert repo.identifier == repo_from_reg.identifier
-    assert repo.local_dir == repo_from_reg.local_dir
+    assert repo.local_repo_path == repo_from_reg.local_repo_path
 
 
 def test_repo_checkout_bug():

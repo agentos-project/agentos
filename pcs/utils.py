@@ -1,13 +1,11 @@
-import os
 import pprint
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
 
 import yaml
-from dulwich import porcelain
-from dulwich.refs import LOCAL_BRANCH_PREFIX
 
+AOS_ROOT = Path(__file__).parent.absolute()
 AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
@@ -51,6 +49,8 @@ def parse_github_web_ui_url(
     assert len(split_url) >= 2, f" No project or repo in url: {github_url}"
     project_name = split_url[0]
     repo_name = split_url[1]
+    if repo_name.endswith(".git"):
+        repo_name = repo_name[:-4]
 
     # Check if URL is just a link to a GitHub project root
     if len(split_url) == 2:
@@ -164,115 +164,6 @@ def _handle_acme_r2d2(version_string):
         "trainer": f"acme_r2d2_trainer=={version_string}",
     }
     return _handle_agent(r2d2_path_prefix, r2d2_rename_map)
-
-
-# https://github.com/jelmer/dulwich/pull/898
-def dulwich_checkout(repo, target: bytes, force: bool = False):
-    """
-    This code is taken from the currently unmerged (but partially
-    cherry-picked) code in https://github.com/jelmer/dulwich/pull/898
-    that adds checkout() functionality to the dulwich code base.
-
-    Switch branches or restore working tree files
-    Args:
-      repo: dulwich Repo object
-      target: branch name or commit sha to checkout
-    """
-    # check repo status
-    if not force:
-        index = repo.open_index()
-        for file in porcelain.get_tree_changes(repo)["modify"]:
-            if file in index:
-                raise Exception(
-                    "trying to checkout when working directory not clean"
-                )
-
-        normalizer = repo.get_blob_normalizer()
-        filter_callback = normalizer.checkin_normalize
-
-        unstaged_changes = list(
-            porcelain.get_unstaged_changes(index, repo.path, filter_callback)
-        )
-        for file in unstaged_changes:
-            if file in index:
-                raise Exception(
-                    "Trying to checkout when working directory not clean"
-                )
-
-    current_tree = porcelain.parse_tree(repo, repo.head())
-    target_tree = porcelain.parse_tree(repo, target)
-
-    # update head
-    if (
-        target == b"HEAD"
-    ):  # do not update head while trying to checkout to HEAD
-        target = repo.head()
-    elif target in repo.refs.keys(base=LOCAL_BRANCH_PREFIX):
-        porcelain.update_head(repo, target)
-        target = repo.refs[LOCAL_BRANCH_PREFIX + target]
-    else:
-        porcelain.update_head(repo, target, detached=True)
-
-    # unstage files in the current_tree or target_tree
-    tracked_changes = []
-    for change in repo.open_index().changes_from_tree(
-        repo.object_store, target_tree.id
-    ):
-        file = (
-            change[0][0] or change[0][1]
-        )  # no matter the file is added, modified or deleted.
-        try:
-            current_entry = current_tree.lookup_path(
-                repo.object_store.__getitem__, file
-            )
-        except KeyError:
-            current_entry = None
-        try:
-            target_entry = target_tree.lookup_path(
-                repo.object_store.__getitem__, file
-            )
-        except KeyError:
-            target_entry = None
-
-        if current_entry or target_entry:
-            tracked_changes.append(file)
-    tracked_changes = [tc.decode("utf-8") for tc in tracked_changes]
-    repo.unstage(tracked_changes)
-
-    # reset tracked and unstaged file to target
-    normalizer = repo.get_blob_normalizer()
-    filter_callback = normalizer.checkin_normalize
-    unstaged_files = porcelain.get_unstaged_changes(
-        repo.open_index(), repo.path, filter_callback
-    )
-    saved_repo_path = repo.path
-    repo.path = str(repo.path)
-    for file in unstaged_files:
-        file_path = Path(repo.path) / file.decode()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        porcelain.reset_file(repo, file.decode(), b"HEAD")
-    repo.path = saved_repo_path
-
-    # remove the untracked file which in the current_file_set
-    for file in porcelain.get_untracked_paths(
-        repo.path, repo.path, repo.open_index(), exclude_ignored=True
-    ):
-        # TODO: Code below is from the original dulwich PR; had trouble
-        # getting this to work on Windows; Untracked files sitting in repo
-        # weren't being properly removed.  Went with a more direct approach.
-        #
-        # try:
-        #     current_tree.lookup_path(
-        #         repo.object_store.__getitem__, file.encode()
-        #     )
-        # except KeyError:
-        #     pass
-        # else:
-        #     os.remove(os.path.join(repo.path, file))
-
-        full_path = Path(repo.path) / Path(file)
-        if full_path.exists():
-            os.remove(full_path)
 
 
 if __name__ == "__main__":
