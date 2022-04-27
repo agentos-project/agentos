@@ -103,14 +103,7 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
 
         from pcs.spec_object import Component as NewComponent  # Avoid circular import.
 
-        flat_spec[NewComponent.IDENTIFIER_ATTR_NAME] = identifier
-        id_parts = identifier.split(VersionedSpec.SEPARATOR)
-        assert 0 < len(id_parts) <= 2, f"invalid identifier {identifier}"
-        flat_spec[ComponentSpecKeys.NAME] = id_parts[0]
-        if len(id_parts) == 2:
-            flat_spec[ComponentSpecKeys.VERSION] = id_parts[1]
-        else:
-            flat_spec[ComponentSpecKeys.VERSION] = None
+        flat_spec[NewComponent.IDENTIFIER_KEY] = identifier
     return flat_spec
 
 

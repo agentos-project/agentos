@@ -314,7 +314,7 @@ class InMemoryRegistry(Registry):
         from pcs.spec_object import Component as NewComponent  # Avoid circular import.
 
         flat_spec = flatten_spec(spec)
-        identifier = flat_spec[NewComponent.IDENTIFIER_ATTR_NAME]
+        identifier = flat_spec[NewComponent.IDENTIFIER_KEY]
         if identifier in self._registry:
             spec_diff = DeepDiff(spec[identifier], self._registry[identifier])
             assert not spec_diff, (

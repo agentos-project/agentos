@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Tuple, TypeVar
 
 from pcs.git_manager import GitManager
-from pcs.identifiers import ComponentIdentifier
+from pcs.registry import Registry
 from pcs.spec_object import Component
 from pcs.specs import NestedRepoSpec, RepoSpecKeys, flatten_spec
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
@@ -43,8 +43,7 @@ class Repo(abc.ABC, Component):
         self._default_version = value
 
     @classmethod
-    def from_github(
-        cls, github_account: str, repo_name: str) -> "GitHubRepo":
+    def from_github(cls, github_account: str, repo_name: str) -> "GitHubRepo":
         url = f"https://github.com/{github_account}/{repo_name}"
         return GitHubRepo(url)
 
@@ -87,7 +86,7 @@ class Repo(abc.ABC, Component):
         return self.GIT.get_public_url_and_hash(full_path, force)
 
     def get_prefixed_path_from_repo_root(
-        self, identifier: str, file_path: str
+        self, version: str, file_path: str
     ) -> Path:
         """
         Finds the 'module_path' relative to the repo containing the
@@ -103,7 +102,7 @@ class Repo(abc.ABC, Component):
 
             baz/my_module.py
         """
-        full_path = self.get_local_file_path(file_path, identifier.version)
+        full_path = self.get_local_file_path(file_path, version)
         return self.GIT.get_prefixed_path_from_repo_root(full_path)
 
 
@@ -155,10 +154,10 @@ class LocalRepo(Repo):
     ATTRIBUTES = ["path"]
 
     def __init__(self, path: str = None):
-        super().__init__()
         if not path:
             path = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.path = path
+        super().__init__()
         actually_a_path = Path(path).absolute()
         if actually_a_path.exists():
             assert actually_a_path.is_dir(), (
@@ -174,13 +173,13 @@ class LocalRepo(Repo):
 
     @classmethod
     def from_spec(
-        cls, spec: NestedRepoSpec, base_dir: str = None
+        cls, spec: NestedRepoSpec, registry: Registry, base_dir: str = None
     ) -> "LocalRepo":
         flat_spec = flatten_spec(spec)
         local_path = flat_spec[RepoSpecKeys.PATH]
         if base_dir and not Path(local_path).is_absolute():
             local_path = f"{base_dir}/{local_path}"
-        spec_obj = super.from_spec(spec)
+        spec_obj = super().from_spec(spec)
         spec_obj.path = local_path
         return spec_obj
 

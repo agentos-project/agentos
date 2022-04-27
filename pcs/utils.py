@@ -1,4 +1,5 @@
 import pprint
+import regex
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
@@ -10,6 +11,14 @@ AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
+
+
+def is_identifier(token: str) -> bool:
+    return (
+        regex.match('^[a-fA-F0-9]{32}$', token) is not None or
+        regex.match('^[a-fA-F0-9]{40}$', token) is not None or
+        regex.match('^[a-fA-F0-9]{64}$', token) is not None
+    )
 
 
 def parse_github_web_ui_url(

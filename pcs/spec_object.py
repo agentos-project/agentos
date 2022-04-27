@@ -4,8 +4,10 @@ import logging
 import yaml
 from deepdiff import DeepDiff, DeepHash
 
+import pcs
 from pcs.registry import InMemoryRegistry, Registry
-from pcs.specs import flatten_spec
+from pcs.specs import flatten_spec, unflatten_spec
+from pcs.utils import is_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class Component:
     This represents a causal dependency between the two Specs.
     """
 
-    IDENTIFIER_ATTR_NAME = "identifier"
+    IDENTIFIER_KEY = "identifier"
     TYPE_ATTR_NAME = "type"
 
     def __init__(self):
@@ -35,7 +37,7 @@ class Component:
             "All Component Types must have a class member called 'ATTRIBUTES' "
             "of type List[str]"
         )
-        assert Component.IDENTIFIER_ATTR_NAME not in self.ATTRIBUTES
+        assert Component.IDENTIFIER_KEY not in self.ATTRIBUTES
         assert Component.TYPE_ATTR_NAME not in self.ATTRIBUTES
         self._identifier = ""  # Is updated by self.register_attributes()
         self._spec_attr_names: List[str] = []  # Managed by register_attribute
@@ -64,14 +66,24 @@ class Component:
         ]
 
     def register_attribute(self, attribute_name: str):
-        assert attribute_name != self.IDENTIFIER_ATTR_NAME, (
-            f"{self.IDENTIFIER_ATTR_NAME} cannot be registered as an "
+        assert attribute_name != self.IDENTIFIER_KEY, (
+            f"{self.IDENTIFIER_KEY} cannot be registered as an "
             "attribute since it is a function of all attributes."
         )
         assert attribute_name not in self._spec_attr_names
-        assert hasattr(self, attribute_name)
+        assert hasattr(self, attribute_name), (
+            f"{self.type} Component ({self}) does not have attribute "
+            f"{attribute_name}"
+        )
         attr = getattr(self, attribute_name)
-        assert isinstance(attr, str) or isinstance(attr, Component)
+        assert (
+            attr is None or
+            isinstance(attr, str) or
+            isinstance(attr, Component)
+        ), (
+            f"'{attribute_name}' with value {attr} must be either type str, "
+            f"None, or inherit from Component. type({attr}) = {type(attr)}."
+        )
         self._spec_attr_names.append(attribute_name)
         self._identifier = self.sha1()
 
@@ -97,7 +109,12 @@ class Component:
         attr_strings = {}
         for name in self._spec_attr_names:
             v = getattr(self, name)
-            attr_val_as_str = v if isinstance(v, str) else v.identifier
+            if isinstance(v, str):
+                attr_val_as_str = v
+            elif v is None:
+                attr_val_as_str = "None"
+            else:
+                attr_val_as_str = v.identifier
             attr_strings[name] = attr_val_as_str
         return attr_strings
 
@@ -154,7 +171,7 @@ class Component:
 
     @classmethod
     def from_registry(cls, registry: Registry, identifier: str):
-        return cls.from_spec(registry.get_spec(identifier))
+        return cls.from_spec(registry.get_spec(identifier), registry)
 
     @classmethod
     def from_default_registry(cls, identifier: str) -> "Module":
@@ -178,13 +195,35 @@ class Component:
 
     @classmethod
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
-        raise NotImplementedError
-        #flat_spec = flatten_spec(spec)
-        #kwargs = [attr_name: flat_spec[attr_name] for attr_name in cls.
-        #return cls(
-        #    flat_spec[cls.IDENTIFIER_ATTR_NAME],
-        #    url=flat_spec[RepoSpecKeys.URL],
-        #)
+        flat_spec = flatten_spec(spec)
+        print(f"loading {flat_spec}")
+        kwargs = {}
+        for k, v in flat_spec.items():
+            print(f"handling {k}: {v}")
+            # get instances of any dependencies in this spec.
+            if k == cls.IDENTIFIER_KEY or k == cls.TYPE_ATTR_NAME:
+                continue
+            if v and is_identifier(v):
+                assert registry, (
+                    f"{cls.__name__}.to_spec() requires a registry to be "
+                    "passed in order to create a Component from the provided "
+                    f"spec that has dependencies: {spec}"
+                )
+                dep_spec = flatten_spec(registry.get_spec(v))
+                assert hasattr(pcs, dep_spec[cls.TYPE_ATTR_NAME])
+                dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_ATTR_NAME])
+                assert issubclass(dep_comp_cls, Component)
+                kwargs[k] = dep_comp_cls.from_spec(
+                    unflatten_spec(dep_spec), registry=registry
+                )
+            else:
+                kwargs[k] = v
+        assert hasattr(pcs, flat_spec[cls.TYPE_ATTR_NAME])
+        comp_cls = getattr(pcs, flat_spec[cls.TYPE_ATTR_NAME])
+        print(f"creating cls {comp_cls} with kwargs {kwargs}")
+        comp_class = comp_cls(**kwargs)
+        assert comp_class.identifier == flat_spec[cls.IDENTIFIER_KEY]
+        return comp_class
 
     def publish(self) -> Registry:
         self.to_registry(Registry.from_default())

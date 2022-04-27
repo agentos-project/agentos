@@ -1,6 +1,8 @@
 from pathlib import Path
+import pprint
 
 from pcs.component import Module
+from pcs.spec_object import Component
 from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -14,38 +16,24 @@ def test_repo_from_github():
     print(aos_repo.to_spec())
     agent_mod = Module.from_repo(
         aos_repo,
-        identifier=f"agent=={TESTING_BRANCH_NAME}",
+        version=TESTING_BRANCH_NAME,
         file_path="agentos/core.py",
         class_name="Agent",
-        instantiate=True,
     )
+    print("===============")
+    print(pprint.pprint(agent_mod.to_registry().to_dict()))
     assert hasattr(agent_mod.get_object(), "evaluate")
-    #assert agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
-    #assert agent_component.repo.identifier == (
-    #    f"{TESTING_GITHUB_ACCOUNT}__{TESTING_GITHUB_REPO}"
-    #)
-
-    #aos_repo_w_custom_id = Repo.from_github(
-    #    "agentos-project", "agentos", identifier="custom_ident"
-    #)
-    #diff_agent_component = Module.from_repo(
-    #    aos_repo_w_custom_id,
-    #    identifier=f"agent=={TESTING_BRANCH_NAME}",
-    #    file_path="agentos/core.py",
-    #    class_name="Agent",
-    #    instantiate=True,
-    #)
-    #assert hasattr(diff_agent_component.get_object(), "evaluate")
-    #assert diff_agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
-    #assert diff_agent_component.repo.identifier == "custom_ident"
+    assert agent_mod.version == TESTING_BRANCH_NAME
+    assert agent_mod.repo.identifier == aos_repo.identifier
 
 
 def test_local_to_from_registry():
-    repo = LocalRepo("test_id")
+    repo = LocalRepo("test_path")
     reg = repo.to_registry()
-    repo_from_reg = Repo.from_registry(reg, repo.identifier)
+    repo_from_reg = Component.from_registry(reg, repo.identifier)
+    print(pprint.pprint(repo.to_registry().to_dict()))
     assert repo.identifier == repo_from_reg.identifier
-    assert repo.local_repo_path == repo_from_reg.local_repo_path
+    assert repo.path == repo_from_reg.path
 
 
 def test_repo_checkout_bug():

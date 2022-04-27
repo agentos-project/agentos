@@ -46,17 +46,16 @@ class Module(Component):
     the managed object and all objects it transitively depends on, and
     (4) the arguments passed to the Entry Point being run.
     """
+    DUNDER_NAME = "__component__"
+    ATTRIBUTES = ["repo", "file_path", "version", "requirements_path"]
 
     def __init__(
         self,
         repo: Repo,
         file_path: str,
-        class_name: str = None,
-        instantiate: bool = False,
+        version: str,
         requirements_path: str = None,
-        dependencies: Dict = None,
-        use_venv: bool = True,
-        dunder_name: str = None,
+        **module_dependencies,
     ):
         """
         :param repo: Repo where this Module's source file can be found. The
@@ -65,51 +64,37 @@ class Module(Component):
         :param class_name: Optionally, the name of the class that is being
             managed. If none provided, then by default this is a
             managed Python Module.
-        :param instantiate: Optional. If True, this Module is a managed
-            Python Class Instance, ``class_name`` must also be passed, and
-            ``get_object()`` returns an instance of the class with name
-            ``class_name``. If False and ``class_name`` is provided, then
-            this Module is a managed Python Class and ``get_object()``
-            returns a Python Class object specified by ``class_name``.
-            If False and ``class_name`` is not provided, this Module is
-            a managed Python Module and ``get_object()`` returns a
-            Python Module object.
         :param requirements_path: Optional path to a pip installable file.
         :param dependencies: List of other Modules that self depends on.
-        :param use_venv: Whether to create a VM when setting up this Module.
-        :param dunder_name: Name used for the pointer to this Module on any
-            managed objects created by this Module.
         """
         self.repo = repo
-        self.class_name = class_name
         self.file_path = file_path
+        self.version = version
         self.requirements_path = requirements_path
-        if not class_name:
-            assert (
-                not instantiate
-            ), "instantiate can only be True if a class_name is provided"
-        self.instantiate = instantiate
-        self.dependencies = dependencies if dependencies else {}
-        self._use_venv = use_venv
         self._venv = None
-        self._dunder_name = dunder_name or "__component__"
         self._requirements = []
         self._parent_modules = set()
         self.active_run = None
+        super().__init__()
+        for name, dep in module_dependencies.items():
+            assert not hasattr(self, name)
+            setattr(self, name, dep)
+            self.register_attributes(module_dependencies.keys())
+        # TODO: Delete these when we factor out the code for instantiating
+        #  into its own separate Component type.
+        self.instantiate = False
+        self._use_venv = True
 
     @classmethod
     def from_github_registry(
         cls,
         github_url: str,
         identifier: str,
-        use_venv: bool = True,
     ) -> "Module":
         """
         This method gets a Module from a registry file found on GitHub.  If
         the registry file contains a LocalRepo, this method automatically
-        translates that LocalRepo into a GitHubRepo.  Pass ``use_venv=False``
-        if you want to import and run the Module in your existing Python
-        environment.
+        translates that LocalRepo into a GitHubRepo.
 
         The ``github_url`` argument can be found by navigating to the
         registry file on the GitHub web UI.  It should look like the
@@ -117,92 +102,13 @@ class Module(Component):
 
             https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
         """
-        project, repo, branch, reg_file_path = parse_github_web_ui_url(
+        project, repo_name, branch, reg_file_path = parse_github_web_ui_url(
             github_url
         )
-        repo = Repo.from_github(project, repo)
+        repo = Repo.from_github(project, repo_name)
         registry = Registry.from_file_in_repo(repo, reg_file_path, branch)
-        module = cls.from_registry(
-            registry, identifier, use_venv=use_venv
-        )
+        module = cls.from_registry(registry, identifier)
         return module
-
-    @classmethod
-    def from_default_registry(
-        cls, name: str, version: str = None, use_venv: bool = True
-    ) -> "Module":
-        return cls.from_registry(
-            Registry.from_default(), name, version, use_venv=use_venv
-        )
-
-    @classmethod
-    def from_registry(
-        cls,
-        registry: Registry,
-        identifier: str,
-        use_venv: bool = True,
-    ) -> "Module":
-        """
-        Returns a Module Object from the provided registry, including
-        its full dependency tree of other Module Objects.
-        If no Registry is provided, use the default registry.
-        """
-        module_specs, repo_specs = registry.get_specs_transitively_by_id(
-            identifier, flatten=True
-        )
-        repos = {
-            repo_spec[Component.IDENTIFIER_ATTR_NAME]: Repo.from_spec(
-                unflatten_spec(repo_spec), registry.base_dir
-            )
-            for repo_spec in repo_specs
-        }
-        modules = {}
-        dependencies = {}
-        for module_spec in module_specs:
-            from_repo_args = {
-                "repo": repos[module_spec["repo"]],
-                "identifier": module_spec["identifier"],
-                "file_path": module_spec["file_path"],
-                "use_venv": use_venv,
-            }
-            if "class_name" in module_spec:
-                from_repo_args["class_name"] = module_spec["class_name"]
-            if "requirements_path" in module_spec:
-                from_repo_args["requirements_path"] = module_spec[
-                    "requirements_path"
-                ]
-            if "instantiate" in module_spec.keys():
-                from_repo_args["instantiate"] = module_spec["instantiate"]
-            component = cls.from_repo(**from_repo_args)
-            modules[module_spec["identifier"]] = component
-            dependencies[module_spec["identifier"]] = module_spec.get("dependencies", {})
-
-        # Wire up the dependency graph
-        for c_name, component in modules.items():
-            for attr_name, dependency_name in dependencies[c_name].items():
-                dependency = modules[dependency_name]
-                component.add_dependency(dependency, attribute_name=attr_name)
-
-        try:
-            return modules[identifier]
-        except KeyError:
-            # Try name without the version
-            unversioned_components = {
-                ComponentIdentifier(c_id.name): c_obj
-                for c_id, c_obj in modules.items()
-            }
-            return unversioned_components[identifier]
-
-    @classmethod
-    def from_registry_file(
-        cls,
-        yaml_file: str,
-        name: str,
-        version: str = None,
-        use_venv: bool = True,
-    ) -> "Module":
-        registry = Registry.from_yaml(yaml_file)
-        return cls.from_registry(registry, name, version, use_venv=use_venv)
 
     @classmethod
     def from_class(
@@ -210,21 +116,13 @@ class Module(Component):
         class_obj: Type[T],
         repo: Repo = None,
         identifier: str = None,
-        instantiate: bool = False,
-        use_venv: bool = True,
-        dunder_name: str = None,
     ) -> "Module":
         name = identifier if identifier else class_obj.__name__
         if (
             class_obj.__module__ == "__main__"
         ):  # handle classes defined in REPL.
             file_contents = dill_getsource(class_obj)
-            if repo:
-                assert repo.type == RepoType.LOCAL, (
-                    f"Repo '{repo.identifier}' is type {repo.type}, but must "
-                    f"be {RepoType.LOCAL.value}."
-                )
-            else:
+            if not repo:
                 repo = LocalRepo(identifier)
             sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
             src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
@@ -255,45 +153,26 @@ class Module(Component):
             identifier=ComponentIdentifier(name),
             file_path=src_file.name,
             class_name=class_obj.__name__,
-            instantiate=instantiate,
-            use_venv=use_venv,
-            dunder_name=dunder_name,
         )
 
     @classmethod
     def from_repo(
         cls,
         repo: Repo,
-        identifier: str,
+        version: str,
         file_path: str,
         class_name: str = None,
-        instantiate: bool = False,
         requirements_path: str = None,
-        use_venv: bool = True,
-        dunder_name: str = None,
     ) -> "Module":
-        # For convenience, optionally allow 'identifier' to be passed as str.
-        identifier = ComponentIdentifier(identifier)
-        full_path = repo.get_local_file_path(file_path, identifier.version)
+        full_path = repo.get_local_file_path(file_path, version)
         assert full_path.is_file(), f"{full_path} does not exist"
         return cls(
             repo=repo,
-            identifier=identifier,
             class_name=class_name,
             file_path=file_path,
+            version=version,
             requirements_path=requirements_path,
-            instantiate=instantiate,
-            use_venv=use_venv,
-            dunder_name=dunder_name,
         )
-
-    @property
-    def name(self) -> str:
-        return self.identifier.name
-
-    @property
-    def version(self):
-        return self.identifier.version
 
     def get_default_entry_point(self):
         try:
@@ -314,7 +193,7 @@ class Module(Component):
             function called entry-point.
         :return: the return value of the entry point called.
         """
-        arg_set = ArgumentSet({self.name: {entry_point: kwargs}})
+        arg_set = ArgumentSet({self.identifier: {entry_point: kwargs}})
         run = self.run_with_arg_set(
             entry_point,
             args=arg_set,
@@ -379,8 +258,8 @@ class Module(Component):
     ) -> Any:
         fn = getattr(instance, function_name)
         assert fn is not None, f"{instance} has no attr {function_name}"
-        fn_args = arg_set.get_function_args(self.name, function_name)
-        print(f"Calling {self.name}.{function_name}(**{fn_args})")
+        fn_args = arg_set.get_function_args(self.identifier, function_name)
+        print(f"Calling {self.identifier}.{function_name}(**{fn_args})")
         result = fn(**fn_args)
         return result
 
@@ -410,8 +289,8 @@ class Module(Component):
         return self._get_object(arg_set, collected)
 
     def _get_object(self, arg_set: ArgumentSet, collected: dict) -> T:
-        if self.name in collected:
-            return collected[self.name]
+        if self.identifier in collected:
+            return collected[self.identifier]
         imported_obj = self._import_object()
         if self.instantiate:
             save_init = imported_obj.__init__
@@ -421,16 +300,18 @@ class Module(Component):
             print(f"getting {imported_obj} w/o instantiating ")
             obj = imported_obj
         for dep_attr_name, dep_module in self.dependencies.items():
-            print(f"Adding {dep_attr_name} to {self.name}")
+            if not isinstance(dep_module, Module):
+                continue
+            print(f"Adding {dep_attr_name} to {self.identifier}")
             dep_obj = dep_module._get_object(
                 arg_set=arg_set, collected=collected
             )
             setattr(obj, dep_attr_name, dep_obj)
-        setattr(obj, self._dunder_name, self)
+        setattr(obj, self.DUNDER_NAME, self)
         if self.instantiate:
             imported_obj.__init__ = save_init
             self.call_function_with_arg_set(obj, "__init__", arg_set)
-        collected[self.name] = obj
+        collected[self.identifier] = obj
         return obj
 
     def _import_object(self):
@@ -439,7 +320,7 @@ class Module(Component):
             self._venv = self._build_virtual_env()
             self._venv.activate()
         full_path = self.repo.get_local_file_path(
-            self.file_path, self.identifier.version
+            self.file_path, self.version
         )
         assert full_path.is_file(), f"{full_path} does not exist"
         suffix = f"_{self.class_name.upper()}" if self.class_name else ""
@@ -459,11 +340,13 @@ class Module(Component):
             return NoOpVirtualEnv()
         req_paths = set()
         for c in self.dependency_list(include_parents=True):
+            if not isinstance(c, Module):
+                continue  # Only process dependencies that are other Modules
             if c.requirements_path is None:
                 continue
             for req_path in str(c.requirements_path).split(";"):
                 full_req_path = self.repo.get_local_file_path(
-                    req_path, c.identifier.version
+                    req_path, c.version
                 ).absolute()
                 req_paths.add(full_req_path)
         return VirtualEnv.from_requirements_paths(req_paths)
@@ -479,121 +362,24 @@ class Module(Component):
         repo_url, version = self.repo.get_version_from_git(
             self.file_path, version=self.version, force=force
         )
-        old_identifier = ComponentIdentifier(self.identifier)
-        new_identifier = ComponentIdentifier(old_identifier.name, version)
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
-            new_identifier, self.file_path
+            version, self.file_path
         )
         prefixed_reqs_path = None
         if self.requirements_path:
             prefixed_reqs_path = self.repo.get_prefixed_path_from_repo_root(
-                new_identifier, self.requirements_path
+                version, self.requirements_path
             )
         clone = Module(
-            repo=GitHubRepo(identifier=self.repo.identifier, url=repo_url),
-            identifier=new_identifier,
-            class_name=self.class_name,
+            repo=GitHubRepo(url=repo_url),
             file_path=prefixed_file_path,
+            version=version,
             requirements_path=prefixed_reqs_path,
-            instantiate=self.instantiate,
-            dunder_name=self._dunder_name,
         )
         for attr_name, dependency in self.dependencies.items():
             frozen_dependency = dependency.to_versioned_component(force=force)
             clone.add_dependency(frozen_dependency, attribute_name=attr_name)
         return clone
-
-    def to_spec(self, flatten: bool = False) -> ComponentSpec:
-        dependencies = {
-            k: str(v.identifier) for k, v in self.dependencies.items()
-        }
-        component_spec_content = {
-            "repo": self.repo.identifier,
-            "file_path": str(self.file_path),
-            "dependencies": dependencies,
-            "class_name": self.class_name,
-            "instantiate": self.instantiate,
-        }
-        if self.requirements_path:
-            component_spec_content["requirements_path"] = str(
-                self.requirements_path
-            )
-        if flatten:
-            component_spec_content.update(
-                {ComponentSpecKeys.IDENTIFIER: str(self.identifier)}
-            )
-            return component_spec_content
-        else:
-            return {str(self.identifier): component_spec_content}
-
-    def to_registry(
-        self,
-        registry: Registry = None,
-        recurse: bool = True,
-        force: bool = False,
-    ) -> Registry:
-        """
-        Returns a registry containing specs for this component, all of its
-        transitive dependents, and the repos of all of them. Throws an
-        exception if any of them already exist in the Registry that are
-        different unless ``force`` is set to True.
-
-        :param registry: Optionally, add the component spec for this component
-                         and each of its transitive dependencies (which are
-                         themselves components) to the specified registry.
-        :param recurse: If True, check that all transitive dependencies
-                        exist in the registry already, and if they don't, then
-                        add them. This includes dependencies on other
-                        Components as well as dependencies a repo.
-                        If they do, ensure that they are equal to
-                        this component's dependencies (unless ``force`` is
-                        specified).
-        :param force: Optionally, if a component with the same identifier
-                      already exists and is different than the current one,
-                      attempt to overwrite the registered one with this one.
-        """
-        if not registry:
-            registry = InMemoryRegistry()
-        # Make sure this identifier does not exist in registry yet.
-        existing_spec = registry.get_component_spec(
-            self.identifier, error_if_not_found=False
-        )
-        if existing_spec and not force:
-            spec_diff = DeepDiff(existing_spec, self.to_spec())
-            if spec_diff:
-                raise RegistryException(
-                    f"Module {self.identifier} already exists in registry "
-                    f"{registry} and differs from the one you're trying to "
-                    f"add. Specify force=True to overwrite it. Diff:\n"
-                    f"{spec_diff}"
-                )
-        # handle dependencies on other components
-        if recurse:
-            for c in self.dependency_list(include_root=False):
-                existing_c_spec = registry.get_component_spec(
-                    name=c.name,
-                    version=c.version,
-                    error_if_not_found=False,
-                )
-                if existing_c_spec and not force:
-                    dep_spec_diff = DeepDiff(existing_c_spec, c.to_spec())
-                    if dep_spec_diff:
-                        raise RegistryException(
-                            f"Trying to register a component {c.identifier} "
-                            f"that already exists in a different form. Diff:\n"
-                            f"{dep_spec_diff}"
-                        )
-                # Either component dependency not in registry already or we are
-                # force adding it.
-                logger.debug(
-                    f"recursively adding dependent component '{c.name}'"
-                )
-                c.to_registry(registry, recurse=recurse, force=force)
-
-            # Either repo not in registry already or we are force adding it.
-            self.repo.to_registry(registry, recurse=recurse, force=force)
-        registry.add_component_spec(self.to_spec())
-        return registry
 
     def to_frozen_registry(self, force: bool = False) -> Registry:
         versioned = self.to_versioned_component(force)
@@ -627,7 +413,7 @@ class Module(Component):
             for dependency in module.dependencies.values():
                 if dependency not in ret_val:
                     module_queue.append(dependency)
-            if include_parents:
+            if include_parents and hasattr(module, "_parent_modules"):
                 for parent in module._parent_modules:
                     if parent not in ret_val:
                         module_queue.append(parent)
@@ -644,3 +430,20 @@ class Module(Component):
         for dep_attr_name, dep_module in self.dependencies.items():
             dep_module.get_status_tree(parent_tree=self_tree)
         return self_tree
+
+
+class ClassComponent(Component):
+    ATTRIBUTES = ["module", "class_name"]
+
+    def __init__(self, module: Module, class_name: str):
+        self.module = module
+        self.class_name = class_name
+        super().__init__()
+
+
+class Instance(Component):
+    ATTRIBUTES = ["class_component"]
+
+    def __init__(self, class_component: ClassComponent):
+        self.class_component = class_component
+        super().__init__()
