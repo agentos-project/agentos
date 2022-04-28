@@ -143,7 +143,7 @@ def _handle_random_agent(version_string):
 
 def _handle_sb3_agent(version_string):
     sb3_path_prefix = Path("example_agents") / Path("sb3_agent")
-    atari_env = "AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1"
+    atari_env = "AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f"
     cartpole_env = "CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1"
     ppo_algo = "PPO==21f6a474a4755996709efee8c0aab309df905cbf"
     sb3_rename_map = {

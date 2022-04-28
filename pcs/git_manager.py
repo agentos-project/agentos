@@ -6,6 +6,7 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Optional
 
+import urllib3
 from dulwich import porcelain
 from dulwich.errors import NotGitRepository
 from dulwich.objectspec import parse_commit
@@ -255,7 +256,15 @@ class GitManager:
         def _do_fetch():
             print(f"GitManager: fetching {default_repo_path}...")
             with porcelain.open_repo_closing(default_repo_path) as repo:
-                porcelain.fetch(repo)
+                try:
+                    porcelain.fetch(repo)
+                except urllib3.exceptions.MaxRetryError:
+                    error_msg = (
+                        "GitManager: couldn't contact GitHub "
+                        f"to fetch {default_repo_path}..."
+                    )
+                    print(error_msg)
+                    return
             self._write_repo_info(default_repo_path)
 
         info_path = self._get_repo_info_path(default_repo_path)

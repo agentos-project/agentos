@@ -33,6 +33,24 @@ def run_test_command(cmd, cli_args=None, cli_kwargs=None):
     runner = CliRunner()
     print(f"Running the following: {cmd.name} {call_list}")
     result = runner.invoke(cmd, call_list, catch_exceptions=False)
+    if result.stdout_bytes:
+        print()
+        print("-" * 79)
+        print(f"stdout from {cmd.name} {call_list}")
+        try:
+            print(result.stdout)
+        except UnicodeEncodeError:
+            print("\tError printing stdout")
+
+    if result.stderr_bytes:
+        print()
+        print("-" * 79)
+        print(f"STDERR from {cmd.name} {call_list}")
+        try:
+            print(result.stderr)
+        except UnicodeEncodeError:
+            print("\tError printing stderr")
+
     assert result.exit_code == 0, result.output
 
 

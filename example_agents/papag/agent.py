@@ -525,6 +525,10 @@ def _papag_make_env(env_creator_fn, seed, rank, log_dir, allow_early_resets):
         is_atari = env.unwrapped.__class__.__name__ == "AtariEnv"
         if is_atari:
             env = NoopResetEnv(env, noop_max=30)
+            # stable_baselines blows up if you don't override num_noops bc
+            # it tries to use a function that no longer exists in numpy:
+            #   numpy.random._generator.Generator.randint()
+            env.override_num_noops = 30
             env = MaxAndSkipEnv(env, skip=4)
 
         env.seed(seed + rank)

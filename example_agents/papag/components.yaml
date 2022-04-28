@@ -11,6 +11,10 @@ repos:
         type: github
         url: git@github.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
 
+    mgbellemare_ale:
+        type: github
+        url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
+
 components:
     agent:
         repo: papag_agent_dir
@@ -20,7 +24,7 @@ components:
         requirements_path: ./requirements.txt
         dependencies:
             PAPAGRun: PAPAGRun
-            AtariEnv: AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
+            AtariEnv: AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f
             CartPoleEnv: CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
             A2C_ACKTR: A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60
             PPO: PPO==41332b78dfb50321c29bade65f9d244387f68a60
@@ -31,9 +35,9 @@ components:
         class_name: PAPAGRun
         instantiate: False
 
-    AtariEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
-        repo: openai_gym
-        file_path: ./gym/envs/atari/atari_env.py
+    AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f:
+        repo: mgbellemare_ale
+        file_path: ./src/gym/envs/atari/environment.py
         class_name: AtariEnv
         instantiate: False
 
