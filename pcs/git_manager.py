@@ -162,7 +162,11 @@ class GitManager:
         self, porcelain_repo: PorcelainRepo, force: bool
     ) -> str:
         curr_head_hash = porcelain_repo.head().decode()
-        url = self._get_remote_url(porcelain_repo, force)
+        try:
+            remote = porcelain.get_branch_remote(porcelain_repo)
+        except IndexError:
+            remote = b'origin'
+        url = self._get_remote_url(porcelain_repo, force, remote.decode())
         project_name, repo_name, _, _ = parse_github_web_ui_url(url)
         remote_commit_exists = self.sha1_hash_exists(
             project_name, repo_name, curr_head_hash
