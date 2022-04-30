@@ -119,7 +119,7 @@ class GitManager:
         self,
         porcelain_repo: PorcelainRepo,
         force: bool,
-        remote: str = "origin"
+        remote: str = "origin",
     ) -> str:
         url_or_path = self._get_remote_uri(porcelain_repo, force, remote)
         # If path, assume cloned from default repo and find default repo URL.
@@ -168,7 +168,7 @@ class GitManager:
         try:
             remote = porcelain.get_branch_remote(porcelain_repo)
         except IndexError:
-            remote = b'origin'
+            remote = b"origin"
         url = self._get_remote_url(porcelain_repo, force, remote.decode())
         project_name, repo_name, _, _ = parse_github_web_ui_url(url)
         remote_commit_exists = self.sha1_hash_exists(
