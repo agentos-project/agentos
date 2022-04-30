@@ -116,9 +116,12 @@ class GitManager:
         raise BadGitStateException(error_msg)
 
     def _get_remote_url(
-        self, porcelain_repo: PorcelainRepo, force: bool
+        self,
+        porcelain_repo: PorcelainRepo,
+        force: bool,
+        remote: str = "origin"
     ) -> str:
-        url_or_path = self._get_remote_uri(porcelain_repo, force)
+        url_or_path = self._get_remote_uri(porcelain_repo, force, remote)
         # If path, assume cloned from default repo and find default repo URL.
         if Path(url_or_path).exists():
             with porcelain.open_repo_closing(url_or_path) as local_repo:
