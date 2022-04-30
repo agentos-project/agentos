@@ -133,7 +133,13 @@ class GitManager:
     def _check_for_github_url(
         self, porcelain_repo: PorcelainRepo, force: bool
     ) -> str:
-        url = self._get_remote_url(porcelain_repo, force)
+        try:
+            remote = porcelain.get_branch_remote(porcelain_repo)
+        except IndexError:
+            remote = b"origin"
+        url = self._get_remote_url(
+            porcelain_repo, force, remote=remote.decode()
+        )
         if url is None or "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
@@ -169,7 +175,9 @@ class GitManager:
             remote = porcelain.get_branch_remote(porcelain_repo)
         except IndexError:
             remote = b"origin"
-        url = self._get_remote_url(porcelain_repo, force, remote.decode())
+        url = self._get_remote_url(
+            porcelain_repo, force, remote=remote.decode()
+        )
         project_name, repo_name, _, _ = parse_github_web_ui_url(url)
         remote_commit_exists = self.sha1_hash_exists(
             project_name, repo_name, curr_head_hash
