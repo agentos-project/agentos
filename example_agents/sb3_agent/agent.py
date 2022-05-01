@@ -93,7 +93,7 @@ class SB3PPOAgent:
         with self.SB3AgentRun.evaluate_run(
             outer_run=self.active_run,
             model_input_run=self.model_input_run,
-            agent_identifier=self.PPO.__component__.identifier,
+            agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
         ) as eval_run:
             evaluate_policy(
@@ -113,7 +113,7 @@ class SB3PPOAgent:
         with self.SB3AgentRun.learn_run(
             outer_run=self.active_run,
             model_input_run=self.model_input_run,
-            agent_identifier=self.PPO.__component__.identifier,
+            agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
         ) as learn_run:
             self.sb3_ppo.learn(

@@ -6,8 +6,8 @@ PAPAG_DIR=./example_agents/papag
 SB3_DIR=./example_agents/sb3_agent
 
 # Run PAPAG using Pong environment
-agentos freeze agent --registry-file $PAPAG_DIR/components.yaml --output-file /tmp/papag-components.yaml
-agentos run agent --registry-file /tmp/papag-components.yaml --entry-point learn --arg-set-file $PAPAG_DIR/ppo_pong_args.yaml > papag_output.txt
+agentos freeze papag_agent --registry-file $PAPAG_DIR/components.yaml --output-file /tmp/papag-components.yaml
+agentos run papag_agent --registry-file /tmp/papag-components.yaml --entry-point learn --arg-set-file $PAPAG_DIR/ppo_pong_args.yaml > papag_output.txt
 AGENT_RUN_ID=$(grep -Eo 'AgentRun ([0-9,a-f]+)' papag_output.txt|grep -o ' [0-9,a-f]\+')
 USE_LOCAL_SERVER=True agentos publish-run $AGENT_RUN_ID
 

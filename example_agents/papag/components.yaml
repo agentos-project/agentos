@@ -16,7 +16,7 @@ repos:
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
 components:
-    agent:
+    papag_agent:
         repo: papag_agent_dir
         file_path: agent.py
         class_name: PAPAGAgent
