@@ -8,7 +8,7 @@ from registry.models import Component, ComponentDependency, Repo, Run
 
 
 def index(request):
-    run_obj_by_id, env_obj_by_id, _, terminals, _ = Run.agent_run_dags()
+    run_obj_by_id, env_obj_by_id, _, terminals, _, _ = Run.agent_run_dags()
     env_dict = defaultdict(list)
     for env_id, run_list in terminals.items():
         runs = sorted(
