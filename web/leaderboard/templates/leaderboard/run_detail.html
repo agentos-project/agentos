@@ -11,21 +11,42 @@
 <script type="text/javascript">
 $(document).ready( function () {
     $('#LineageTable').DataTable();
-    $("#run_info_header").click(function () {
+    $("#run_info_show").click(function () {
         $("#run_info_content").slideToggle("slow", function () {
             // Animation complete.
         });
         $("#run_info_show").toggleClass('hide')
         $("#run_info_hide").toggleClass('hide')
     });
-    $("#run_metrics_header").click(function () {
+    $("#run_info_hide").click(function () {
+        $("#run_info_content").slideToggle("slow", function () {
+            // Animation complete.
+        });
+        $("#run_info_show").toggleClass('hide')
+        $("#run_info_hide").toggleClass('hide')
+    });
+    $("#run_metrics_show").click(function () {
         $("#run_metrics_content").slideToggle("slow", function () {
             // Animation complete.
         });
         $("#run_metrics_show").toggleClass('hide')
         $("#run_metrics_hide").toggleClass('hide')
     });
-    $("#run_tags_header").click(function () {
+    $("#run_metrics_hide").click(function () {
+        $("#run_metrics_content").slideToggle("slow", function () {
+            // Animation complete.
+        });
+        $("#run_metrics_show").toggleClass('hide')
+        $("#run_metrics_hide").toggleClass('hide')
+    });
+    $("#run_tags_show").click(function () {
+        $("#run_tags_content").slideToggle("slow", function () {
+            // Animation complete.
+        });
+        $("#run_tags_show").toggleClass('hide')
+        $("#run_tags_hide").toggleClass('hide')
+    });
+    $("#run_tags_hide").click(function () {
         $("#run_tags_content").slideToggle("slow", function () {
             // Animation complete.
         });
