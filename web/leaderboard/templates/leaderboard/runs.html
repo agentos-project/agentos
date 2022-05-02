@@ -29,10 +29,10 @@
         <thead>
           <tr>
             <th>Start Time</th>
-            <th>Agent</th>
-            <th>Environment</th>
             <th>Run ID</th>
             <th>Run Description</th>
+            <th>Agent</th>
+            <th>Environment</th>
             <th>Avg. Reward</th>
             <th># Training Episodes</th>
             <th>#Training Steps</th>
@@ -44,16 +44,6 @@
             <td>
               <span class="start_time">{{ start_time }}</span>
             </td>
-            <td>
-              {% if run.agent %}
-                <a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a>
-              {% endif %}
-            </td>
-            <td>
-              {% if run.environment %}
-                <a href="{% url 'component-detail' run.environment.identifier %}">{{ run.environment.name }}</a>
-              {% endif %}
-            </td>
             <td><a href="run/{{ run.identifier }}">{{ run.identifier|truncatechars:7 }}</a></td>
             <td>
               <a href="run/{{ run.identifier }}">
@@ -63,6 +53,12 @@
                   {% endif %}
                 {% endfor %}
               </a>
+            </td>
+            <td>
+              <a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a>
+            </td>
+            <td>
+              <a href="{% url 'component-detail' run.environment.identifier %}">{{ run.environment.name }}</a>
             </td>
             {% if run.data.metrics %}
               {%  for metric_name, metric_val in run.data.metrics.items %}
