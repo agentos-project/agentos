@@ -25,21 +25,21 @@ def index(request):
 
 def run_list(request):
     agent_runs = Run.objects.filter(
-        data__tags__contains={'pcs.is_agent_run': 'True'}
+        data__tags__contains={"pcs.is_agent_run": "True"}
     )
     component_runs = Run.objects.filter(
-        data__tags__contains={'pcs.is_component_run': 'True'}
+        data__tags__contains={"pcs.is_component_run": "True"}
     )
     component_runs_with_starttimes = {}
     for run in component_runs:
-        start_time_str = run.info['start_time']
+        start_time_str = run.info["start_time"]
         start_time = datetime.fromtimestamp(int(start_time_str) / 1000)
         start_time = start_time.strftime("%d/%m/%y %H:%m")
         component_runs_with_starttimes[run] = start_time
 
     agent_runs_with_starttimes = {}
     for run in agent_runs:
-        start_time_str = run.info['start_time']
+        start_time_str = run.info["start_time"]
         start_time = datetime.fromtimestamp(int(start_time_str) / 1000)
         start_time = start_time.strftime("%d/%m/%y %H:%m")
         agent_runs_with_starttimes[run] = start_time
@@ -47,7 +47,8 @@ def run_list(request):
     context = {
         "agent_runs": agent_runs_with_starttimes,
         "component_runs": component_runs_with_starttimes,
-        "is_debug": settings.DEBUG}
+        "is_debug": settings.DEBUG,
+    }
     return render(request, "leaderboard/runs.html", context)
 
 
