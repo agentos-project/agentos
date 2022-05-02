@@ -3,7 +3,7 @@
 
 
 
-agent:
+papag_agent:
     __init__:
         env_name: CartPole-v1
         algo_name: ppo
