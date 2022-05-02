@@ -404,12 +404,10 @@ class Run(TimeStampedModel):
                 for root_id in root_id_list:
                     terminal_id = root_id
                     node_to_root[root_id] = root_id
-                    print(f"set node_to_root[{root_id}] = {root_id}")
                     while terminal_id in run_graph:
                         terminal_id = run_graph[terminal_id]
                         assert terminal_id not in node_to_root
                         node_to_root[terminal_id] = root_id
-                        print(f"set node_to_root[{terminal_id}] = {root_id}")
                     env_id = run_to_env_id[terminal_id]
                     terminals[env_id].append(terminal_id)
         return (
@@ -426,7 +424,7 @@ class Run(TimeStampedModel):
         run_map, env_map, root_ids, term_ids, n2r, graph = Run.agent_run_dags()
         print(f"run_id_map.keys(): {run_map.keys()}")
         ident = n2r[identifier]
-        res = [ident]
+        res = [run_map[ident]]
         while ident in graph:
             ident = graph[ident]
             res.append(run_map[ident])
