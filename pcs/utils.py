@@ -1,9 +1,9 @@
 import pprint
-import regex
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
 
+import regex
 import yaml
 
 AOS_ROOT = Path(__file__).parent.absolute()
@@ -15,9 +15,9 @@ AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
 def is_identifier(token: str) -> bool:
     return (
-        regex.match('^[a-fA-F0-9]{32}$', token) is not None or
-        regex.match('^[a-fA-F0-9]{40}$', token) is not None or
-        regex.match('^[a-fA-F0-9]{64}$', token) is not None
+        regex.match("^[a-fA-F0-9]{32}$", token) is not None
+        or regex.match("^[a-fA-F0-9]{40}$", token) is not None
+        or regex.match("^[a-fA-F0-9]{64}$", token) is not None
     )
 
 

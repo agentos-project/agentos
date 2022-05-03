@@ -101,7 +101,8 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
                 "nested spec, its value must match the spec's identifier."
             )
 
-        from pcs.spec_object import Component as NewComponent  # Avoid circular import.
+        from pcs.spec_object import \
+            Component as NewComponent  # Avoid circular import.
 
         flat_spec[NewComponent.IDENTIFIER_KEY] = identifier
     return flat_spec

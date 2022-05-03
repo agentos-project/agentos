@@ -1,9 +1,9 @@
-from pathlib import Path
 import pprint
+from pathlib import Path
 
 from pcs.component import Module
-from pcs.spec_object import Component
 from pcs.repo import LocalRepo, Repo
+from pcs.spec_object import Component
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,

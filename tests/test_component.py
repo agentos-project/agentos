@@ -44,9 +44,7 @@ class GenericDependency:
 def test_component_repl_demo():
     # Generate Components from Classes
     agent_comp = Module.from_class(SimpleAgent, instantiate=True)
-    environment_comp = Module.from_class(
-        SimpleEnvironment, instantiate=True
-    )
+    environment_comp = Module.from_class(SimpleEnvironment, instantiate=True)
     instance_comp = Module.from_class(GenericDependency, instantiate=True)
     class_comp_with_same_name = Module.from_class(
         GenericDependency, instantiate=False

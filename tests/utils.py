@@ -1,9 +1,9 @@
 import os
 import sys
-
-from click.testing import CliRunner
 from contextlib import contextmanager
 from pathlib import Path
+
+from click.testing import CliRunner
 
 ROOT_DIR = Path(__file__).parent.parent
 EXAMPLE_AGENT_DIR = ROOT_DIR / "example_agents"

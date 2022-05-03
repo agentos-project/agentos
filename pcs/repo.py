@@ -22,6 +22,7 @@ class Repo(abc.ABC, Component):
     Base class used to encapsulate information about where a Module
     is located.
     """
+
     ATTRIBUTES = ["default_version"]  # default_version is an @property
 
     GIT = GitManager()
@@ -110,6 +111,7 @@ class GitHubRepo(Repo):
     """
     A Module with an GitHubRepo can be found on GitHub.
     """
+
     ATTRIBUTES = ["url"]
 
     def __init__(self, url: str, default_version: str = "master"):
@@ -151,6 +153,7 @@ class LocalRepo(Repo):
     """
     A Module with a LocalRepo can be found on your local drive.
     """
+
     ATTRIBUTES = ["path"]
 
     def __init__(self, path: str = None):

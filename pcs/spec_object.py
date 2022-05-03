@@ -1,5 +1,5 @@
-from typing import Collection, Dict, List, Mapping
 import logging
+from typing import TYPE_CHECKING, Collection, Dict, List, Mapping
 
 import yaml
 from deepdiff import DeepDiff, DeepHash
@@ -8,6 +8,9 @@ import pcs
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import flatten_spec, unflatten_spec
 from pcs.utils import is_identifier
+
+if TYPE_CHECKING:
+    from pcs.component import Module
 
 logger = logging.getLogger(__name__)
 
@@ -77,9 +80,9 @@ class Component:
         )
         attr = getattr(self, attribute_name)
         assert (
-            attr is None or
-            isinstance(attr, str) or
-            isinstance(attr, Component)
+            attr is None
+            or isinstance(attr, str)
+            or isinstance(attr, Component)
         ), (
             f"'{attribute_name}' with value {attr} must be either type str, "
             f"None, or inherit from Component. type({attr}) = {type(attr)}."
@@ -243,7 +246,9 @@ def test_spec_object():
     class ModuleComponent(Component):
         ATTRIBUTES = ["repo", "version", "module_path"]
 
-        def __init__(self, repo: GitHubComponent, version: str, module_path: str):
+        def __init__(
+            self, repo: GitHubComponent, version: str, module_path: str
+        ):
             self.repo = repo
             self.version = version
             self.module_path = module_path

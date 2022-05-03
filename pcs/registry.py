@@ -38,7 +38,6 @@ if TYPE_CHECKING:
     from pcs.component import Module
     from pcs.repo import Repo
     from pcs.run import Run
-    from pcs.spec_object import Component as NewComponent
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -311,7 +310,8 @@ class InMemoryRegistry(Registry):
         return self._registry["registries"]
 
     def add_spec(self, spec: Dict) -> None:
-        from pcs.spec_object import Component as NewComponent  # Avoid circular import.
+        from pcs.spec_object import \
+            Component as NewComponent  # Avoid circular import.
 
         flat_spec = flatten_spec(spec)
         identifier = flat_spec[NewComponent.IDENTIFIER_KEY]

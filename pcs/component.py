@@ -6,20 +6,17 @@ from hashlib import sha1
 from pathlib import Path
 from typing import Any, Dict, Sequence, Type, TypeVar, Union
 
-from deepdiff import DeepDiff
 from dill.source import getsource as dill_getsource
 from rich import print as rich_print
 from rich.tree import Tree
 
 from pcs.argument_set import ArgumentSet
-from pcs.spec_object import Component
 from pcs.component_run import ComponentRun
-from pcs.exceptions import RegistryException
 from pcs.identifiers import ComponentIdentifier
-from pcs.registry import InMemoryRegistry, Registry
+from pcs.registry import Registry
 from pcs.repo import GitHubRepo, LocalRepo, Repo
 from pcs.run_command import RunCommand
-from pcs.specs import ComponentSpec, ComponentSpecKeys, unflatten_spec
+from pcs.spec_object import Component
 from pcs.utils import parse_github_web_ui_url
 from pcs.virtual_env import NoOpVirtualEnv, VirtualEnv
 
@@ -46,6 +43,7 @@ class Module(Component):
     the managed object and all objects it transitively depends on, and
     (4) the arguments passed to the Entry Point being run.
     """
+
     DUNDER_NAME = "__component__"
     ATTRIBUTES = ["repo", "file_path", "version", "requirements_path"]
 
@@ -319,9 +317,7 @@ class Module(Component):
         if not self._venv:
             self._venv = self._build_virtual_env()
             self._venv.activate()
-        full_path = self.repo.get_local_file_path(
-            self.file_path, self.version
-        )
+        full_path = self.repo.get_local_file_path(self.file_path, self.version)
         assert full_path.is_file(), f"{full_path} does not exist"
         suffix = f"_{self.class_name.upper()}" if self.class_name else ""
         spec = importlib.util.spec_from_file_location(

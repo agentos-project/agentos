@@ -59,47 +59,17 @@ class ComponentDependency(TimeStampedModel):
         return dependencies
 
 
-class Module(TimeStampedModel):
+class Component(TimeStampedModel):
     identifier = models.CharField(max_length=200, primary_key=True)
-    name = models.CharField(max_length=200)
-    version = models.CharField(max_length=200)
-    repo = models.ForeignKey(
-        "Repo",
-        on_delete=models.CASCADE,
-        related_name="repos",
-        to_field="identifier",
-    )
-    file_path = models.TextField()
-    class_name = models.CharField(max_length=200)
-    instantiate = models.BooleanField()
-
+    body = models.JSONField(default=dict)
     dependencies = models.ManyToManyField(
         "Component",
         through="ComponentDependency",
         through_fields=("depender", "dependee"),
     )
 
-    class Meta:
-        unique_together = [("name", "version")]
-
     def __str__(self):
-        return (
-            f"<Module {self.pk}, identifier: {self.identifier}, "
-            f"repo: {self.repo}>, file_path: {self.file_path}, "
-            f"class_name: {self.class_name}, instantiate: {self.instantiate}, "
-            f"dependencies: {self.dependencies}"
-        )
-
-    @property
-    def short_version(self):
-        display_version = self.version
-        if len(display_version) == 40:
-            display_version = display_version[:7]
-        return display_version
-
-    @property
-    def full_name(self):
-        return f"{self.name}=={self.version}"
+        return f"<Component {self.identifier}>"
 
     def top_five_runs(self):
         return (
