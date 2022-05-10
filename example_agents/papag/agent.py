@@ -95,7 +95,7 @@ class PAPAGAgent:
         with self.PAPAGRun.evaluate_run(
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
-            agent_identifier=self.Algo.__component__.identifier,
+            agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
         ) as eval_run:
             torch.manual_seed(seed)
@@ -179,7 +179,7 @@ class PAPAGAgent:
         with self.PAPAGRun.learn_run(
             outer_run=active_component_run(self),
             model_input_run=self.model_input_run,
-            agent_identifier=self.Algo.__component__.identifier,
+            agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
         ) as learn_run:
             torch.manual_seed(seed)

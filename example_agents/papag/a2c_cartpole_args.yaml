@@ -1,7 +1,7 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c with CartPole
 # python main.py --env-name "CartPole-v1"
 
-agent:
+papag_agent:
     __init__:
         env_name: CartPole-v1
         algo_name: a2c
