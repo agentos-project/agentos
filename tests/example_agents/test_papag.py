@@ -3,7 +3,7 @@ from tests.utils import PAPAG_AGENT_DIR, run_test_command
 
 # Use CartPole because Atari ROM licensing issues break tests on Windows.
 test_args = [
-    "agent",
+    "papag_agent",
     "--use-outer-env",
     "-Anum_env_steps=1",
     "-Anum_processes=1",

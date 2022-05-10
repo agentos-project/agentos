@@ -1,10 +1,10 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c
 # python main.py --env-name "PongNoFrameskip-v4"
 
-agent:
+papag_agent:
     __init__:
         env_name: PongNoFrameskip-v4
-        algo: a2c
+        algo_name: a2c
     evaluate:
         lr: .0007
         clip_param: 0.2

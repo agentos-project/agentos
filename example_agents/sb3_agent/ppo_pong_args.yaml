@@ -1,0 +1,5 @@
+# Runs SB3 PPO against Pong environment
+
+sb3_agent:
+    __init__:
+        env_name: PongNoFrameskip-v4

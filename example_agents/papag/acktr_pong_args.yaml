@@ -1,10 +1,10 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#acktr
 # python main.py --env-name "PongNoFrameskip-v4" --algo acktr --num-processes 32 --num-steps 20
 
-agent:
+papag_agent:
     __init__:
         env_name: PongNoFrameskip-v4
-        algo: acktr
+        algo_name: acktr
     evaluate:
         lr: .0007
         clip_param: 0.2

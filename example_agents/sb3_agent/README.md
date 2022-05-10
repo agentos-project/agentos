@@ -1,5 +1,13 @@
 ## Stable Baselines3 PPO Agent port
 
+By default, this agent runs against environment `CartPole-v1`.  To run against
+environment `PongNoFrameskip-v4`, add the following flag to the commands below:
+
+```bash
+--arg-set-file ppo_pong_args.yaml
+```
+
+
 ### Agent Training
 
 Train the agent by running the following from the command-line:

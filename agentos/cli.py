@@ -93,6 +93,13 @@ _option_force = click.option(
     default=False,
     help="Force freeze even if repo is in a bad state.",
 )
+_option_output_file = click.option(
+    "--output-file",
+    "-o",
+    metavar="OUTPUT_FILE",
+    default=None,
+    help="Write the output to a file.",
+)
 
 
 @agentos_cmd.command()
@@ -230,7 +237,8 @@ def rerun(run_id):
 @_option_registry_file
 @_option_force
 @_option_use_venv
-def freeze(component_name, registry_file, force, use_venv):
+@_option_output_file
+def freeze(component_name, registry_file, force, use_venv, output_file):
     """
     Creates a version of ``registry_file`` for Component
     ``component_name`` where all Components in the dependency tree are
@@ -248,7 +256,11 @@ def freeze(component_name, registry_file, force, use_venv):
         registry_file, component_name, use_venv=use_venv
     )
     frozen_reg = component.to_frozen_registry(force=force)
-    print(yaml.dump(frozen_reg.to_dict()))
+    if output_file:
+        with open(output_file, "w") as f:
+            yaml.dump(frozen_reg.to_dict(), f)
+    else:
+        print(yaml.dump(frozen_reg.to_dict()))
 
 
 @agentos_cmd.command()

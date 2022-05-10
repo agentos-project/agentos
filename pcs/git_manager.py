@@ -6,6 +6,7 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Optional
 
+import urllib3
 from dulwich import porcelain
 from dulwich.errors import NotGitRepository
 from dulwich.objectspec import parse_commit
@@ -115,9 +116,12 @@ class GitManager:
         raise BadGitStateException(error_msg)
 
     def _get_remote_url(
-        self, porcelain_repo: PorcelainRepo, force: bool
+        self,
+        porcelain_repo: PorcelainRepo,
+        force: bool,
+        remote: str = "origin",
     ) -> str:
-        url_or_path = self._get_remote_uri(porcelain_repo, force)
+        url_or_path = self._get_remote_uri(porcelain_repo, force, remote)
         # If path, assume cloned from default repo and find default repo URL.
         if Path(url_or_path).exists():
             with porcelain.open_repo_closing(url_or_path) as local_repo:
@@ -129,7 +133,13 @@ class GitManager:
     def _check_for_github_url(
         self, porcelain_repo: PorcelainRepo, force: bool
     ) -> str:
-        url = self._get_remote_url(porcelain_repo, force)
+        try:
+            remote = porcelain.get_branch_remote(porcelain_repo)
+        except IndexError:
+            remote = b"origin"
+        url = self._get_remote_url(
+            porcelain_repo, force, remote=remote.decode()
+        )
         if url is None or "github.com" not in url:
             error_msg = f"Remote must be on github, not {url}"
             if force:
@@ -161,7 +171,13 @@ class GitManager:
         self, porcelain_repo: PorcelainRepo, force: bool
     ) -> str:
         curr_head_hash = porcelain_repo.head().decode()
-        url = self._get_remote_url(porcelain_repo, force)
+        try:
+            remote = porcelain.get_branch_remote(porcelain_repo)
+        except IndexError:
+            remote = b"origin"
+        url = self._get_remote_url(
+            porcelain_repo, force, remote=remote.decode()
+        )
         project_name, repo_name, _, _ = parse_github_web_ui_url(url)
         remote_commit_exists = self.sha1_hash_exists(
             project_name, repo_name, curr_head_hash
@@ -255,7 +271,15 @@ class GitManager:
         def _do_fetch():
             print(f"GitManager: fetching {default_repo_path}...")
             with porcelain.open_repo_closing(default_repo_path) as repo:
-                porcelain.fetch(repo)
+                try:
+                    porcelain.fetch(repo)
+                except urllib3.exceptions.MaxRetryError:
+                    error_msg = (
+                        "GitManager: couldn't contact GitHub "
+                        f"to fetch {default_repo_path}..."
+                    )
+                    print(error_msg)
+                    return
             self._write_repo_info(default_repo_path)
 
         info_path = self._get_repo_info_path(default_repo_path)

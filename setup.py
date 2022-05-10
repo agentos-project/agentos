@@ -28,6 +28,7 @@ setup(
         "requests>=2.21.0",
         "python-dotenv>=0.19.1",
         "rich>=10.15.2",
+        "deepdiff>=5.8.0",
         "dill>=0.3.4",
     ],
     entry_points="""

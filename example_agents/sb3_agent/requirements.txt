@@ -2,9 +2,12 @@
 #   linux:
 #       "--extra-index-url": "https://download.pytorch.org/whl/cpu"
 
-stable_baselines3==1.4.0
+ale-py==0.7.5
+gym[accept-rom-license]==0.21.0
+pygame==2.1.2
+stable-baselines3==1.5.0
 dm-env==1.5
-mlflow==1.23.1
+mlflow==1.25.1
 torch==1.11.0+cpu; sys_platform == 'linux'
 torch==1.11.0; sys_platform == 'win32'
 torch==1.11.0; sys_platform == 'darwin'
