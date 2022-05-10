@@ -271,7 +271,6 @@ class GitManager:
         if sec_since_last_fetch > 1800:
             _do_fetch()
             return
-        print(f"GitManager: NOT fetching {default_repo_path}...")
 
     def clear_repo_cache(
         self, repo_cache_path: Path = None, assume_yes: bool = False
