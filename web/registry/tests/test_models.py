@@ -34,10 +34,10 @@ class ModelTests(LiveServerTestCase):
         cd = ComponentDependency(
             depender=component, dependee=component_two, attribute_name="x"
         )
-        self.assertIsNotNone(component_two.dependencies.all())
+        self.assertIsNotNone(component_two.dependencies().all())
         cd.save()
         self.assertEqual(component.depender_set.count(), 1)
         self.assertEqual(component.dependee_set.count(), 0)
-        self.assertEqual(component.dependencies.count(), 1)
+        self.assertEqual(component.dependencies().count(), 1)
         c_ser = ComponentSerializer(component)
         self.assertEqual(c_ser.data["identifier"], "x")

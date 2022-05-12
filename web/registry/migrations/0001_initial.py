@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="RunCommand",
+            name="Command",
             fields=[
                 ("created", models.DateTimeField(auto_now_add=True)),
                 ("updated", models.DateTimeField(auto_now=True)),
@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
                         max_length=200, primary_key=True, serialize=False
                     ),
                 ),
-                ("entry_point", models.CharField(max_length=200)),
+                ("function_name", models.CharField(max_length=200)),
                 ("argument_set", models.JSONField(default=dict)),
                 (
                     "component",

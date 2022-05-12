@@ -6,9 +6,7 @@ from pathlib import Path
 from typing import Tuple, TypeVar
 
 from pcs.git_manager import GitManager
-from pcs.registry import Registry
 from pcs.spec_object import Component
-from pcs.specs import NestedRepoSpec, RepoSpecKeys, flatten_spec
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
 
 logger = logging.getLogger(__name__)
@@ -17,31 +15,21 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Repo(abc.ABC, Component):
+class Repo(Component, abc.ABC):
     """
     Base class used to encapsulate information about where a Module
     is located.
     """
 
-    ATTRIBUTES = ["default_version"]  # default_version is an @property
-
     GIT = GitManager()
 
     def __init__(self, default_version: str = None):
-        self._default_version = default_version  # see self.default_version()
-        super().__init__()
+        Component.__init__(self)
+        self.default_version = default_version
+        self.register_attribute("default_version")
 
     def __contains__(self, item):
         return self.get_local_file_path(str(item)).exists()
-
-    @property
-    def default_version(self):
-        return self._default_version
-
-    @default_version.setter
-    def default_version(self, value: str):
-        assert value, "default_version cannot be None or ''"
-        self._default_version = value
 
     @classmethod
     def from_github(cls, github_account: str, repo_name: str) -> "GitHubRepo":
@@ -111,15 +99,13 @@ class GitHubRepo(Repo):
     """
     A Module with an GitHubRepo can be found on GitHub.
     """
-
-    ATTRIBUTES = ["url"]
-
     def __init__(self, url: str, default_version: str = "master"):
+        super().__init__(default_version)
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
+        self.register_attribute("url")
         self.org_name, self.project_name, _, _ = parse_github_web_ui_url(url)
-        super().__init__(default_version)
         self.local_repo_path = None
         self.porcelain_repo = None
 
@@ -153,14 +139,12 @@ class LocalRepo(Repo):
     """
     A Module with a LocalRepo can be found on your local drive.
     """
-
-    ATTRIBUTES = ["path"]
-
-    def __init__(self, path: str = None):
+    def __init__(self, path: str = None, default_version: str = None):
+        super().__init__(default_version=default_version)
         if not path:
             path = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.path = path
-        super().__init__()
+        self.register_attribute("path")
         actually_a_path = Path(path).absolute()
         if actually_a_path.exists():
             assert actually_a_path.is_dir(), (
@@ -173,18 +157,6 @@ class LocalRepo(Repo):
                 f"Created path {self.path} for "
                 f"LocalRepo {self.identifier}."
             )
-
-    @classmethod
-    def from_spec(
-        cls, spec: NestedRepoSpec, registry: Registry, base_dir: str = None
-    ) -> "LocalRepo":
-        flat_spec = flatten_spec(spec)
-        local_path = flat_spec[RepoSpecKeys.PATH]
-        if base_dir and not Path(local_path).is_absolute():
-            local_path = f"{base_dir}/{local_path}"
-        spec_obj = super().from_spec(spec)
-        spec_obj.path = local_path
-        return spec_obj
 
     def get_local_repo_dir(self, version: str = None) -> Path:
         assert version is None, "LocalRepos don't support versioning."

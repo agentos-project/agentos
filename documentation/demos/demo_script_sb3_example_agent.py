@@ -7,7 +7,7 @@ from pcs import Module
 requests.get("http://localhost:8000/empty_database")
 random_agent = Module.from_registry_file(
     "example_agents/sb3_agent/components.yaml", "sb3_agent"
-).to_versioned_component()
+).to_versioned_module()
 
 # This first run will be start training an agent from stractch.
 learning_run = random_agent.run_with_arg_set(
@@ -28,7 +28,7 @@ learning_run = random_agent.run_with_arg_set("learn", {})
 # run = random_agent.run_with_arg_set("evaluate", {})
 # wr = WebRegistry("http://localhost:8000/api/v1")
 
-# You can publish the ComponentRun to locally running WebRegistry server
+# You can publish the Output to locally running WebRegistry server
 # via the following command:
 # run.to_registry(wr)
 

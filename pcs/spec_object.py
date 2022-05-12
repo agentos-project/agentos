@@ -1,5 +1,9 @@
+import copy
 import logging
-from typing import TYPE_CHECKING, Collection, Dict, List, Mapping
+from collections import UserDict
+from typing import (
+    Collection, Dict, List, Mapping, Sequence, Type, TypeVar, TYPE_CHECKING
+)
 
 import yaml
 from deepdiff import DeepDiff, DeepHash
@@ -13,6 +17,73 @@ if TYPE_CHECKING:
     from pcs.component import Module
 
 logger = logging.getLogger(__name__)
+
+C = TypeVar('C', bound='Component')
+
+
+class Spec(UserDict):
+    """
+    A Specs is a Mapping of the form::
+
+        {
+            identifier:
+                {
+                    type: some_type_here
+                    <optional other key->val attributes>
+                }
+        }
+
+    A spec is always a nested dict, i.e.: a dict inside a dict.
+    The inner dict is called the 'body'. There must be
+    exactly one key in the outer dict: the identifier of the spec, which
+    is a hash of the inner dict.
+
+    Any Spec can also be represented as a flat dict, of the form::
+
+        {identifier: <str>, type: <str>, <other key->val flat_spec>}
+    """
+    def __init__(self, input_dict: Dict = None):
+        assert len(input_dict) == 1
+        for ident, body in input_dict.items():
+            assert Component.spec_body_to_identifier(body) == ident
+            self.data = input_dict
+
+    @property
+    def identifier(self):
+        assert len(self.data) == 1
+        for ident, body in self.data.items():
+            assert Component.spec_body_to_identifier(body) == ident
+            return ident
+        raise Exception(f"{self} is a malformed")
+
+    @property
+    def body(self):
+        for ident, body in self.data.items():
+            assert Component.spec_body_to_identifier(body) == ident
+            return body
+
+    @classmethod
+    def from_flat(cls, flat_spec: Dict) -> "Spec":
+        assert Component.TYPE_KEY in flat_spec
+        identifier_in = None
+        if Component.IDENTIFIER_KEY in flat_spec:
+            flat_spec_copy = copy.deepcopy(flat_spec)
+            ident_in = flat_spec_copy.pop(Component.IDENTIFIER_KEY)
+            ident_computed = Component.spec_spec_to_identifier(flat_spec_copy)
+            assert ident_computed == ident_in, (
+                "The identifier in the provided dict does not match the "
+                "hash of the other contents (i.e. the attributes) of the "
+                "dict provided."
+            )
+        else:
+            identifier
+        new_spec = cls({identifier_in: })
+        flat_spec = copy.deepcopy(self.attributes)
+        flat_spec.update({Component.IDENTIFIER_KEY: self.identifier()})
+        return flat_spec
+
+    def to_flat(self):
+        return flatten_spec(self.data)
 
 
 class Component:
@@ -29,26 +100,14 @@ class Component:
     """
 
     IDENTIFIER_KEY = "identifier"
-    TYPE_ATTR_NAME = "type"
+    TYPE_KEY = "type"
 
     def __init__(self):
-        """
-        Assume this is called by child types after they have assigned values
-        to all attributes they declared via their class 'ATTRIBUTES' variable.
-        """
-        assert hasattr(type(self), "ATTRIBUTES"), (
-            "All Component Types must have a class member called 'ATTRIBUTES' "
-            "of type List[str]"
-        )
-        assert Component.IDENTIFIER_KEY not in self.ATTRIBUTES
-        assert Component.TYPE_ATTR_NAME not in self.ATTRIBUTES
         self._identifier = ""  # Is updated by self.register_attributes()
         self._spec_attr_names: List[str] = []  # Managed by register_attribute
-        # While this Component's identifier is not considered an attribute,
-        # since it is a function of all attributes, it is included in this
-        # Component's spec.
-        self.register_attribute(self.TYPE_ATTR_NAME)
-        self.register_attributes(self.ATTRIBUTES)
+        # A Component's identifier is not considered a spec_attribute. # Rather,
+        # it is a function of all spec_attributes.
+        self.register_attribute(self.TYPE_KEY)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
@@ -62,11 +121,13 @@ class Component:
     def __hash__(self) -> int:
         return int(self.sha1(), 16)
 
+    @staticmethod
+    def spec_body_to_identifier(spec_body: Dict) -> str:
+        return DeepHash(spec_body, hasher=DeepHash.sha1hex)[spec_body]
+
     def sha1(self) -> str:
-        attrs_as_strings = self.attributes_as_strings
-        return DeepHash(attrs_as_strings, hasher=DeepHash.sha1hex)[
-            attrs_as_strings
-        ]
+        attributes = self.attributes(dependencies_as_strings=True)
+        return self.spec_body_to_identifier(attributes)
 
     def register_attribute(self, attribute_name: str):
         assert attribute_name != self.IDENTIFIER_KEY, (
@@ -79,14 +140,6 @@ class Component:
             f"{attribute_name}"
         )
         attr = getattr(self, attribute_name)
-        assert (
-            attr is None
-            or isinstance(attr, str)
-            or isinstance(attr, Component)
-        ), (
-            f"'{attribute_name}' with value {attr} must be either type str, "
-            f"None, or inherit from Component. type({attr}) = {type(attr)}."
-        )
         self._spec_attr_names.append(attribute_name)
         self._identifier = self.sha1()
 
@@ -103,35 +156,29 @@ class Component:
     def identifier(self) -> str:
         return self._identifier
 
-    @property
-    def attributes(self) -> Dict:
-        return {name: getattr(self, name) for name in self._spec_attr_names}
-
-    @property
-    def attributes_as_strings(self) -> Dict:
-        attr_strings = {}
+    def attributes(self, dependencies_as_strings=False) -> Dict:
+        attributes = {}
         for name in self._spec_attr_names:
-            v = getattr(self, name)
-            if isinstance(v, str):
-                attr_val_as_str = v
-            elif v is None:
-                attr_val_as_str = "None"
+            v = getattr(self, name, None)
+            if dependencies_as_strings and isinstance(v, Component):
+                assert hasattr(v, "identifier")
+                attributes[name] = v.identifier
             else:
-                attr_val_as_str = v.identifier
-            attr_strings[name] = attr_val_as_str
-        return attr_strings
+                attributes[name] = v
+        return attributes
 
-    @property
-    def dependencies(self) -> List:
+    def dependencies(self, filter_by_types: Sequence[Type[C]] = None) -> Dict:
         """
         Returns the subset of ``self.attributes`` that are references to
-        other SpecObjects.
+        other Components, optionally filtered to only those of any of the
+        list of Component types provided in 'filter_by_types'.
         """
-        return {
-            name: value
-            for name, value in self.attributes.items()
-            if isinstance(value, Component)
-        }
+        deps = {}
+        for name, value in self.attributes().items():
+            if isinstance(value, Component):
+                if not filter_by_types or type(value) in filter_by_types:
+                    deps.update({name: value})
+        return deps
 
     def to_registry(
         self,
@@ -159,7 +206,7 @@ class Component:
         return registry
 
     def _all_dependencies_to_registry(self, registry: Registry, dry_run: bool):
-        dep_objs = self.dependencies.values()
+        dep_objs = self.dependencies().values()
         dry_run_text = "Dry running " if dry_run else "Actually "
         logger.debug(
             f"{dry_run_text}pushing dependencies of {self.identifier} "
@@ -190,21 +237,16 @@ class Component:
         return cls.from_registry(registry, identifier)
 
     def to_spec(self, flatten: bool = False) -> Dict:
-        spec = {self.identifier: self.attributes_as_strings}
+        spec = {self.identifier: self.attributes(dependencies_as_strings=True)}
         return flatten_spec(spec) if flatten else spec
-
-    def to_yaml(self) -> str:
-        return yaml.dump(self.to_spec())
 
     @classmethod
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
         flat_spec = flatten_spec(spec)
-        print(f"loading {flat_spec}")
         kwargs = {}
         for k, v in flat_spec.items():
-            print(f"handling {k}: {v}")
             # get instances of any dependencies in this spec.
-            if k == cls.IDENTIFIER_KEY or k == cls.TYPE_ATTR_NAME:
+            if k == cls.IDENTIFIER_KEY or k == cls.TYPE_KEY:
                 continue
             if v and is_identifier(v):
                 assert registry, (
@@ -213,23 +255,79 @@ class Component:
                     f"spec that has dependencies: {spec}"
                 )
                 dep_spec = flatten_spec(registry.get_spec(v))
-                assert hasattr(pcs, dep_spec[cls.TYPE_ATTR_NAME])
-                dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_ATTR_NAME])
+                assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
+                dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
                 assert issubclass(dep_comp_cls, Component)
                 kwargs[k] = dep_comp_cls.from_spec(
                     unflatten_spec(dep_spec), registry=registry
                 )
             else:
                 kwargs[k] = v
-        assert hasattr(pcs, flat_spec[cls.TYPE_ATTR_NAME])
-        comp_cls = getattr(pcs, flat_spec[cls.TYPE_ATTR_NAME])
+        assert hasattr(pcs, flat_spec[cls.TYPE_KEY]), (
+            f"No Component type '{flat_spec[cls.TYPE_KEY]}' found in "
+            "module 'pcs'."
+        )
+        comp_cls = getattr(pcs, flat_spec[cls.TYPE_KEY])
         print(f"creating cls {comp_cls} with kwargs {kwargs}")
         comp_class = comp_cls(**kwargs)
-        assert comp_class.identifier == flat_spec[cls.IDENTIFIER_KEY]
         return comp_class
 
+    @classmethod
+    def from_yaml_str(cls, yaml_str: str):
+        return cls(yaml.load(yaml_str))
+
+    @classmethod
+    def from_yaml_file(cls, filename: str):
+        with open(filename, "r") as f:
+            return cls(yaml.load(f))
+
+    def to_yaml_str(self) -> str:
+        return yaml.dump(self.to_spec())
+
+    def to_yaml_file(self, filename: str) -> None:
+        with open(filename, "w") as f:
+            yaml.dump(self.to_spec(), f)
     def publish(self) -> Registry:
         self.to_registry(Registry.from_default())
+
+    def dependency_list(
+        self,
+        include_root: bool = True,
+        include_parents: bool = False,
+        filter_by_types: Sequence[Type[C]] = None,
+    ) -> Sequence["Component"]:
+        """
+        Return a normalized (i.e. flat) Sequence containing all transitive
+        dependencies of this component and (optionally) this component.
+
+        :param include_root: Whether to include root component in the list.
+            If True, self is included in the list returned.
+        :param include_parents: If True, then recursively include all parents
+            of this component (and their parents, etc). A parent of this Module
+            is a Module which depends on this Module.  Ultimately, if True, all
+            Components in the DAG will be returned.
+        :param filter_by_types: list of classes whose type is 'type'.
+
+        :return: a list containing all all of the transitive dependencies
+                 of this component (optionally  including the root component).
+        """
+        module_queue = [self]
+        ret_val = set()
+        while module_queue:
+            module = module_queue.pop()
+            if include_root or module is not self:
+                ret_val.add(module)
+            for dependency in module.dependencies(
+                filter_by_types=filter_by_types
+            ).values():
+                if dependency not in ret_val:
+                    module_queue.append(dependency)
+            if include_parents and hasattr(module, "_parent_modules"):
+                for parent in module._parent_modules:
+                    if parent not in ret_val:
+                        module_queue.append(parent)
+        return list(ret_val)
+
 
 
 def test_spec_object():

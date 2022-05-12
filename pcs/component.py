@@ -1,21 +1,21 @@
+import abc
 import importlib
 import logging
 import sys
 import uuid
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Dict, Sequence, Type, TypeVar, Union
+from typing import Any, Type, TypeVar
 
 from dill.source import getsource as dill_getsource
 from rich import print as rich_print
 from rich.tree import Tree
 
 from pcs.argument_set import ArgumentSet
-from pcs.component_run import ComponentRun
-from pcs.identifiers import ComponentIdentifier
+from pcs.component_run import Output
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, LocalRepo, Repo
-from pcs.run_command import RunCommand
+from pcs.run_command import Command
 from pcs.spec_object import Component
 from pcs.utils import parse_github_web_ui_url
 from pcs.virtual_env import NoOpVirtualEnv, VirtualEnv
@@ -26,7 +26,104 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Module(Component):
+class ObjectManager(abc.ABC, Component):
+    """
+    ObjectManagers manage an underlying Python object (i.e. a module, class,
+    or class instance). They can also run a method that is an attribute on
+    their underlying object. Runs can take an argument set.
+    """
+    def __init__(self):
+        Component.__init__(self)
+        self.active_output = None
+
+    def get_default_function_name(self):
+        try:
+            imported_obj = self.get_object()
+            entry_point = imported_obj.DEFAULT_ENTRY_POINT
+        except AttributeError:
+            entry_point = "run"
+        return entry_point
+
+    def run(self, entry_point: str, *args, **kwargs):
+        """
+        Run an entry point with provided arguments. If you need to specify
+        arguments to the init function of the managed object or any of
+        its dependency components, use :py:func:`run_with_arg_set`.
+
+        :param entry_point: name of function to call on manage object.
+        :param kwargs: keyword-only args to pass through to managed object
+            function called entry-point.
+        :return: the return value of the entry point called.
+        """
+        run = self.run_with_arg_set(
+            entry_point,
+            args=ArgumentSet(args, kwargs),
+            log_return_value=True,
+        )
+        return run.return_value
+
+    def run_with_arg_set(
+        self,
+        function_name: str,
+        arg_set: ArgumentSet = None,
+        publish_to: Registry = None,
+        log_return_value: bool = True,
+        return_value_log_format: str = "yaml",
+    ) -> Output:
+        """
+        Run the specified entry point a new instance of this Module's
+        managed object given the specified arg_set, log the results
+        and return the Run object.
+
+        :param function_name: Name of a function to be called on a new
+            instance of this component's managed object.
+        :param arg_set: A :py:func:`pcs.argument_set.ArgumentSet` or
+            ArgumentSet-like dict containing the entry-point arguments, and/or
+            arguments to be passed to the __init__() functions of this
+            component's dependents during managed object initialization.
+        :param publish_to: Optionally, publish the resulting Run object
+            to the provided registry.
+        :param log_return_value: If True, log the return value of the entry
+            point being run.
+        :param return_value_log_format: Specify which format to use when
+            serializing the return value. Only used if ``log_return_value``
+            is True.
+        """
+        assert not self.active_output, (
+            f"Module {self.identifier} already has an active_output, so a "
+            "new run is not allowed."
+        )
+        arg_set = arg_set if arg_set else ArgumentSet()
+        command = Command(self, function_name, arg_set, log_return_value)
+        with Output.from_command(command) as output:
+            for c in self.dependency_list():
+                c.active_output = output
+            obj = self.get_object()
+            res = self.call_function_with_arg_set(obj, function_name, arg_set)
+            if log_return_value:
+                output.log_return_value(res, return_value_log_format)
+            for c in self.dependency_list():
+                c.active_output = None
+            if publish_to:
+                output.to_registry(publish_to)
+            return output
+
+    def call_function_with_arg_set(
+        self, instance: Any, function_name: str, arg_set: ArgumentSet
+    ) -> Any:
+        fn = getattr(instance, function_name)
+        assert fn is not None, f"{instance} has no attr {function_name}"
+        print(f"Calling {self.identifier}.{function_name} with "
+              f"args: {arg_set.args} and kwargs: {arg_set.kwargs})")
+        result = fn(*arg_set.args, **arg_set.kwargs)
+        return result
+
+    @abc.abstractmethod
+    def get_object(self) -> Any:
+        raise NotImplementedError
+
+
+class Module(ObjectManager):
     """
     A Module is an object manager. Objects can be Python Modules, Python
     Classes, or Python Class Instances. The Module abstraction provides a
@@ -45,15 +142,14 @@ class Module(Component):
     """
 
     DUNDER_NAME = "__component__"
-    ATTRIBUTES = ["repo", "file_path", "version", "requirements_path"]
 
     def __init__(
         self,
         repo: Repo,
         file_path: str,
-        version: str,
+        version: str = None,
         requirements_path: str = None,
-        **module_dependencies,
+        **other_dependencies,
     ):
         """
         :param repo: Repo where this Module's source file can be found. The
@@ -63,24 +159,22 @@ class Module(Component):
             managed. If none provided, then by default this is a
             managed Python Module.
         :param requirements_path: Optional path to a pip installable file.
-        :param dependencies: List of other Modules that self depends on.
+        :param other_dependencies: List of other Components this depends on.
         """
+        super().__init__()
+        for k, v in other_dependencies.items():
+            setattr(self, k, v)
+        self.register_attributes(other_dependencies.keys())
         self.repo = repo
         self.file_path = file_path
         self.version = version
         self.requirements_path = requirements_path
+        self.register_attributes(
+            ["repo", "file_path", "version", "requirements_path"]
+        )
         self._venv = None
         self._requirements = []
         self._parent_modules = set()
-        self.active_run = None
-        super().__init__()
-        for name, dep in module_dependencies.items():
-            assert not hasattr(self, name)
-            setattr(self, name, dep)
-            self.register_attributes(module_dependencies.keys())
-        # TODO: Delete these when we factor out the code for instantiating
-        #  into its own separate Component type.
-        self.instantiate = False
         self._use_venv = True
 
     @classmethod
@@ -109,51 +203,6 @@ class Module(Component):
         return module
 
     @classmethod
-    def from_class(
-        cls,
-        class_obj: Type[T],
-        repo: Repo = None,
-        identifier: str = None,
-    ) -> "Module":
-        name = identifier if identifier else class_obj.__name__
-        if (
-            class_obj.__module__ == "__main__"
-        ):  # handle classes defined in REPL.
-            file_contents = dill_getsource(class_obj)
-            if not repo:
-                repo = LocalRepo(identifier)
-            sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
-            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
-            if src_file.exists():
-                print(f"Re-using existing source file {src_file}.")
-            else:
-                with open(src_file, "x") as f:
-                    f.write(file_contents)
-                print(f"Wrote new source file {src_file}.")
-        else:
-            managed_obj_module = sys.modules[class_obj.__module__]
-            assert hasattr(managed_obj_module, class_obj.__name__), (
-                "Components can only be created from classes that are "
-                "available as an attribute of their module."
-            )
-            src_file = Path(managed_obj_module.__file__)
-            logger.debug(
-                f"Handling class_obj {class_obj.__name__} from existing "
-                f"source file {src_file}."
-            )
-            repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
-            logger.debug(
-                f"Created LocalRepo {repo.identifier} from existing source "
-                f"file {src_file}."
-            )
-        return cls(
-            repo=repo,
-            identifier=ComponentIdentifier(name),
-            file_path=src_file.name,
-            class_name=class_obj.__name__,
-        )
-
-    @classmethod
     def from_repo(
         cls,
         repo: Repo,
@@ -172,162 +221,35 @@ class Module(Component):
             requirements_path=requirements_path,
         )
 
-    def get_default_entry_point(self):
-        try:
-            imported_obj = self._import_object()
-            entry_point = imported_obj.DEFAULT_ENTRY_POINT
-        except AttributeError:
-            entry_point = "run"
-        return entry_point
-
-    def run(self, entry_point: str, **kwargs):
-        """
-        Run an entry point with provided arguments. If you need to specify
-        arguments to the init function of the managed object or any of
-        its dependency components, use :py:func:`run_with_arg_set`.
-
-        :param entry_point: name of function to call on manage object.
-        :param kwargs: keyword-only args to pass through to managed object
-            function called entry-point.
-        :return: the return value of the entry point called.
-        """
-        arg_set = ArgumentSet({self.identifier: {entry_point: kwargs}})
-        run = self.run_with_arg_set(
-            entry_point,
-            args=arg_set,
-            log_return_value=True,
-        )
-        return run.return_value
-
-    def run_with_arg_set(
-        self,
-        entry_point: str,
-        args: Union[ArgumentSet, Dict] = None,
-        publish_to: Registry = None,
-        log_return_value: bool = True,
-        return_value_log_format: str = "yaml",
-    ) -> ComponentRun:
-        """
-        Run the specified entry point a new instance of this Module's
-        managed object given the specified args, log the results
-        and return the Run object.
-
-        :param entry_point: Name of a function to be called on a new
-            instance of this component's managed object.
-        :param args: A :py:func:`pcs.argument_set.ArgumentSet` or
-            ArgumentSet-like dict containing the entry-point arguments, and/or
-            arguments to be passed to the __init__() functions of this
-            component's dependents during managed object initialization.
-        :param publish_to: Optionally, publish the resulting Run object
-            to the provided registry.
-        :param log_return_value: If True, log the return value of the entry
-            point being run.
-        :param return_value_log_format: Specify which format to use when
-            serializing the return value. Only used if ``log_return_value``
-            is True.
-        """
-        assert not self.active_run, (
-            f"Module {self.identifier} already has an active_run, so a "
-            "new run is not allowed."
-        )
-        if args:
-            if not isinstance(args, ArgumentSet):
-                args = ArgumentSet(args)
-        else:
-            args = ArgumentSet()
-        run_command = RunCommand(self, entry_point, args, log_return_value)
-        with ComponentRun.from_run_command(run_command) as run:
-            for c in self.dependency_list():
-                c.active_run = run
-            # Note: get_object() adds the dunder component attribute before
-            # calling __init__ on the instance.
-            obj = self.get_object(arg_set=args)
-            res = self.call_function_with_arg_set(obj, entry_point, args)
-            if log_return_value:
-                run.log_return_value(res, return_value_log_format)
-            for c in self.dependency_list():
-                c.active_run = None
-            if publish_to:
-                run.to_registry(publish_to)
-            return run
-
-    def call_function_with_arg_set(
-        self, instance: Any, function_name: str, arg_set: ArgumentSet
-    ) -> Any:
-        fn = getattr(instance, function_name)
-        assert fn is not None, f"{instance} has no attr {function_name}"
-        fn_args = arg_set.get_function_args(self.identifier, function_name)
-        print(f"Calling {self.identifier}.{function_name}(**{fn_args})")
-        result = fn(**fn_args)
-        return result
-
-    def add_dependency(
-        self, module: "Module", attribute_name: str = None
-    ) -> None:
-        if self._venv and module.requirements_path:
-            raise Exception(
-                "You cannot add a dependency with a requirements_path after a "
-                "virtual env has already been constructed and activated. Try "
-                "restarting Python and rebuilding your dependency graph"
-            )
-        if type(module) is not type(self):
-            raise Exception("add_dependency() must be passed a Module")
-        if attribute_name is None:
-            attribute_name = module.name
-        assert attribute_name not in self.dependencies, (
-            f"{self.identifier} already has a dependency with attribute "
-            f"{attribute_name}. Please use a different attribute name."
-        )
-        self.dependencies[attribute_name] = module
-        module._parent_modules.add(self)
-
-    def get_object(self, arg_set: ArgumentSet = None) -> T:
+    def get_object(self):
         collected = {}
-        arg_set = arg_set if arg_set else ArgumentSet({})
-        return self._get_object(arg_set, collected)
+        return self._get_object(collected)
 
-    def _get_object(self, arg_set: ArgumentSet, collected: dict) -> T:
+    def _get_object(self, collected: dict) -> T:
         if self.identifier in collected:
             return collected[self.identifier]
-        imported_obj = self._import_object()
-        if self.instantiate:
-            save_init = imported_obj.__init__
-            imported_obj.__init__ = lambda self: None
-            obj = imported_obj()
-        else:
-            print(f"getting {imported_obj} w/o instantiating ")
-            obj = imported_obj
-        for dep_attr_name, dep_module in self.dependencies.items():
-            if not isinstance(dep_module, Module):
-                continue
-            print(f"Adding {dep_attr_name} to {self.identifier}")
-            dep_obj = dep_module._get_object(
-                arg_set=arg_set, collected=collected
-            )
-            setattr(obj, dep_attr_name, dep_obj)
-        setattr(obj, self.DUNDER_NAME, self)
-        if self.instantiate:
-            imported_obj.__init__ = save_init
-            self.call_function_with_arg_set(obj, "__init__", arg_set)
-        collected[self.identifier] = obj
-        return obj
+        mod = self._import_module()
+        #mod_deps = self.dependencies(filter_by_types=[Module]).items()
+        #for dep_attr_name, dep_module in mod_deps:
+        #    print(f"Adding {dep_attr_name} to {self.identifier}")
+        #    dep_mod = dep_module._get_object(
+        #        arg_set=arg_set, collected=collected
+        #    )
+        return mod
 
-    def _import_object(self):
+    def _import_module(self):
         """Return managed module, or class if ``self.class_name`` is set."""
         if not self._venv:
             self._venv = self._build_virtual_env()
             self._venv.activate()
         full_path = self.repo.get_local_file_path(self.file_path, self.version)
         assert full_path.is_file(), f"{full_path} does not exist"
-        suffix = f"_{self.class_name.upper()}" if self.class_name else ""
         spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE{suffix}", str(full_path)
+            f"AOS_MODULE", str(full_path)
         )
         managed_obj = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(full_path.parent))
         spec.loader.exec_module(managed_obj)
-        if self.class_name:
-            managed_obj = getattr(managed_obj, self.class_name)
         return managed_obj
 
     def _build_virtual_env(self) -> VirtualEnv:
@@ -354,7 +276,7 @@ class Module(Component):
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def to_versioned_component(self, force: bool = False) -> "Module":
+    def to_versioned_module(self, force: bool = False) -> "Module":
         repo_url, version = self.repo.get_version_from_git(
             self.file_path, version=self.version, force=force
         )
@@ -372,48 +294,14 @@ class Module(Component):
             version=version,
             requirements_path=prefixed_reqs_path,
         )
-        for attr_name, dependency in self.dependencies.items():
-            frozen_dependency = dependency.to_versioned_component(force=force)
+        for attr_name, dependency in self.dependencies().items():
+            frozen_dependency = dependency.to_versioned_module(force=force)
             clone.add_dependency(frozen_dependency, attribute_name=attr_name)
         return clone
 
     def to_frozen_registry(self, force: bool = False) -> Registry:
-        versioned = self.to_versioned_component(force)
+        versioned = self.to_versioned_module(force)
         return versioned.to_registry()
-
-    def dependency_list(
-        self, include_root: bool = True, include_parents: bool = False
-    ) -> Sequence["Module"]:
-        """
-        Return a normalized (i.e. flat) Sequence containing all transitive
-        dependencies of this component and (optionally) this component.
-
-        :param include_root: Whether to include root component in the list.
-                             If True, self is included in the list returned.
-        :param include_parents: If True, then recursively include all parents
-                                of this component (and their parents, etc).
-                                A parent of this Module is a Module
-                                which depends on this Module.  Ultimately,
-                                if True, all Components in the DAG will be
-                                returned.
-
-        :return: a list containing all all of the transitive dependencies
-                 of this component (optionally  including the root component).
-        """
-        module_queue = [self]
-        ret_val = set()
-        while module_queue:
-            module = module_queue.pop()
-            if include_root or module is not self:
-                ret_val.add(module)
-            for dependency in module.dependencies.values():
-                if dependency not in ret_val:
-                    module_queue.append(dependency)
-            if include_parents and hasattr(module, "_parent_modules"):
-                for parent in module._parent_modules:
-                    if parent not in ret_val:
-                        module_queue.append(parent)
-        return list(ret_val)
 
     def print_status_tree(self) -> None:
         tree = self.get_status_tree()
@@ -423,23 +311,83 @@ class Module(Component):
         self_tree = Tree(f"Module: {self.identifier}")
         if parent_tree is not None:
             parent_tree.add(self_tree)
-        for dep_attr_name, dep_module in self.dependencies.items():
+        for dep_attr_name, dep_module in self.dependencies().items():
             dep_module.get_status_tree(parent_tree=self_tree)
         return self_tree
 
 
-class ClassComponent(Component):
-    ATTRIBUTES = ["module", "class_name"]
-
-    def __init__(self, module: Module, class_name: str):
+class Class(ObjectManager):
+    def __init__(self, module: Module, class_name: str, **other_dependencies):
+        super().__init__()
+        for k, v in other_dependencies.items():
+            setattr(self, k, v)
+        self.register_attributes(other_dependencies.keys())
         self.module = module
         self.class_name = class_name
+        self.register_attributes(["module", "class_name"])
+
+    @classmethod
+    def from_class(
+        cls,
+        class_obj: Type[T],
+        repo: Repo = None,
+    ) -> "Module":
+        if class_obj.__module__ == "__main__":
+            # handle classes defined in REPL.
+            file_contents = dill_getsource(class_obj)
+            if not repo:
+                repo = LocalRepo()
+            sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
+            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
+            if src_file.exists():
+                print(f"Re-using existing source file {src_file}.")
+            else:
+                with open(src_file, "x") as f:
+                    f.write(file_contents)
+                print(f"Wrote new source file {src_file}.")
+        else:
+            managed_obj_module = sys.modules[class_obj.__module__]
+            assert hasattr(managed_obj_module, class_obj.__name__), (
+                "Components can only be created from classes that are "
+                "available as an attribute of their module."
+            )
+            src_file = Path(managed_obj_module.__file__)
+            logger.debug(
+                f"Handling class_obj {class_obj.__name__} from existing "
+                f"source file {src_file}."
+            )
+            repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
+            logger.debug(
+                f"Created LocalRepo {repo.identifier} from existing source "
+                f"file {src_file}."
+            )
+        return cls(
+            repo=repo,
+            file_path=src_file.name,
+            class_name=class_obj.__name__,
+        )
+
+    def get_object(self):
+        module = self.module.get_object()
+        return getattr(module, self.class_name)
+
+
+class Instance(ObjectManager):
+    """
+    An Instance Component is very similar to a Class Component. The difference
+    is that for an Instance, the underlying class is instantiated during
+    initialization of the component.
+    """
+    def __init__(
+        self,
+        instance_of: Class,
+        argument_set: ArgumentSet,
+    ):
         super().__init__()
+        self.instance_of = instance_of
+        self.argument_set = argument_set
+        self.register_attributes(["instance_of", "argument_set"])
 
-
-class Instance(Component):
-    ATTRIBUTES = ["class_component"]
-
-    def __init__(self, class_component: ClassComponent):
-        self.class_component = class_component
-        super().__init__()
+    def get_object(self):
+        cls = self.instance_of.get_object()
+        return cls(*self.argument_set.args, **self.argument_set.kwargs)

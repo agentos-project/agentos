@@ -123,7 +123,7 @@ class SB3Run(AgentRun):
         :param name: the filename of the artifact to restore.
         :return: ID of the Run found in MLflow, or None if none were found.
         """
-        mlflow_runs = cls._mlflow_client.search_runs(
+        mlflow_runs = cls.MLFLOW_CLIENT.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.SB3_RUN_TAG_KEY} ILIKE "%"',
@@ -133,7 +133,7 @@ class SB3Run(AgentRun):
             # for the first run that contains a policy by the name provided.
             for run in mlflow_runs:
                 try:
-                    cls._mlflow_client.download_artifacts(
+                    cls.MLFLOW_CLIENT.download_artifacts(
                         run.info.run_id, name
                     )
                 except OSError:

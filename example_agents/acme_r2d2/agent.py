@@ -1,6 +1,6 @@
 import acme
 
-from pcs import active_component_run
+from pcs import active_output
 
 
 class AcmeR2D2Agent:
@@ -11,7 +11,7 @@ class AcmeR2D2Agent:
 
     def evaluate(self, num_episodes):
         with self.AcmeRun.evaluate_run(
-            outer_run=active_component_run(self),
+            outer_run=active_output(self),
             agent_identifier=self.__component__.identifier,
             environment_identifier=self.environment.__component__.identifier,
         ) as run:
@@ -25,7 +25,7 @@ class AcmeR2D2Agent:
 
     def learn(self, num_episodes):
         with self.AcmeRun.learn_run(
-            outer_run=active_component_run(self),
+            outer_run=active_output(self),
             agent_identifier=self.__component__.identifier,
             environment_identifier=self.environment.__component__.identifier,
         ) as run:

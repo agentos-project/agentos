@@ -4,7 +4,7 @@ from pcs import ArgumentSet, Component
 
 papag_agent = Component.from_registry_file(
     "example_agents/papag/components.yaml", "agent"
-).to_versioned_component()
+).to_versioned_module()
 
 a2c_pong_arg_set = ArgumentSet.from_yaml(
     "./example_agents/papag/a2c_pong_args.yaml"

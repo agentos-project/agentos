@@ -2,30 +2,26 @@ import pprint
 from functools import partial
 from pathlib import Path
 from typing import Sequence
-from urllib.parse import urlparse
 
-from deepdiff import DeepDiff
 from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context import registry as context_registry
 
-from pcs.identifiers import RunIdentifier
-from pcs.registry import Registry
-from pcs.specs import RunSpec, unflatten_spec
+from pcs.spec_object import Component
 
 
-class Run:
+class MLflowRun(Component):
     """
     Conceptually, a Run represents code execution. More specifically, a Run has
     two distinct uses. First, a Run is used to document an instance of code
     execution and record output associated with it (similar to a logger).
     Second, a Run allows for reproducibility. For this a Run can optionally
-    hold a RunCommand that can be used to recreate this run, i.e., to
+    hold a Command that can be used to recreate this run, i.e., to
     perform a "re-run".
 
-    We implement a Run that records its RunCommand as a special type of Run
-    called a :py.func.pcs.run_command.ComponentRun: which is a subclass
+    We implement a Run that records its Command as a special type of Run
+    called a :py.func.pcs.run_command.Output: which is a subclass
     of ``Run``.
 
     A Run is similar to a logger but provides a bit more structure than loggers
@@ -44,7 +40,7 @@ class Run:
     - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
     - ArgumentSet -> MLflow artifact file
 
-    A Run can also contain a [pointer to a] RunCommand.
+    A Run can also contain a [pointer to a] Command.
 
     A Run can also have pointers to other runs. These pointers can have
     different semantic meanings. They could have an "inner-outer" relationship,
@@ -56,7 +52,7 @@ class Run:
 
     # TODO: Decide if pointers to other runs should be special some how.
 
-    _mlflow_client = MlflowClient()
+    MLFLOW_CLIENT = MlflowClient()
 
     DEFAULT_EXPERIMENT_ID = "0"
     PCS_RUN_TAG = "pcs.is_run"
@@ -73,66 +69,50 @@ class Run:
         "download_artifacts",
     ]
 
-    def __init__(
-        self,
-        experiment_id: str = None,
-        existing_run_id: str = None,
-    ) -> None:
-        """
-        Run initialization can either create a new underlying MLflowRun
-        or be be based on an existing underlying MLflowRun.
+    def __init__(self, experiment_id: str = None) -> None:
+        if experiment_id:
+            exp_id = experiment_id
+        else:
+            exp_id = self.DEFAULT_EXPERIMENT_ID
+        new_run = self.MLFLOW_CLIENT.create_run(exp_id)
+        self._mlflow_run_id = new_run.info.run_id
+        self.set_tag(self.PCS_RUN_TAG, "True")
+        resolved_tags = context_registry.resolve_tags()
+        for tag_k, tag_v in resolved_tags.items():
+            self.set_tag(tag_k, tag_v)
 
-        If Python gracefully supported overloading constructors, it would
-        make this code a lot more easy to comprehend, but as it is
-        __init__() handles both cases by inspecting which arguments are
-        provided.
-
-        Because of this, we recommend using class factory methods instead
-        of directly using __init__(). For example: Run.from_run_command(),
-        Run.from_existing_run_id().
-
-        :param experiment_id: Optional Experiment ID.
-        :param existing_run_id: Optional Run ID.
-        """
-        self._return_value = None
-        if existing_run_id:
-            assert (
-                not experiment_id
-            ), "`existing_run_id` cannot be passed with `experiment_id`"
-            try:
-                self._mlflow_client.get_run(existing_run_id)
-            except MlflowException as mlflow_exception:
-                print(
-                    "Error: When creating an AgentOS Run using an "
-                    "existing MLflow Run ID, an MLflow run with that ID must "
-                    "be available at the current tracking URI, and "
-                    f"run_id {existing_run_id} is not."
-                )
-                raise mlflow_exception
-            self._mlflow_run_id = existing_run_id
-        else:  # new run
-            if experiment_id:
-                exp_id = experiment_id
-            else:
-                exp_id = self.DEFAULT_EXPERIMENT_ID
-            new_run = self._mlflow_client.create_run(exp_id)
-            self._mlflow_run_id = new_run.info.run_id
-            self.set_tag(self.PCS_RUN_TAG, "True")
-            resolved_tags = context_registry.resolve_tags()
-            for tag_k, tag_v in resolved_tags.items():
-                self.set_tag(tag_k, tag_v)
+    @classmethod
+    def from_existing_run_id(cls, run_id: str) -> "Run":
+        try:
+            cls.MLFLOW_CLIENT.get_run(run_id)
+        except MlflowException as mlflow_exception:
+            print(
+                "Error: When creating an AgentOS Run using an "
+                "existing MLflow Run ID, an MLflow run with that ID must "
+                "be available at the current tracking URI, and "
+                f"run_id {run_id} is not."
+            )
+            raise mlflow_exception
+        orig_init = cls.__init__
+        cls.__init__ = lambda x: None
+        try:
+            run = cls()
+            run._mlflow_run_id = run_id
+        finally:
+            cls.__init__ = orig_init
+        return run
 
     @classmethod
     def run_exists(cls, run_id) -> bool:
         try:
-            cls._mlflow_client.get_run(run_id)
+            cls.MLFLOW_CLIENT.get_run(run_id)
             return True
         except MlflowException:
             return False
 
     @classmethod
     def get_all_runs(cls):
-        mlflow_runs = cls._mlflow_client.search_runs(
+        mlflow_runs = cls.MLFLOW_CLIENT.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.PCS_RUN_TAG} ILIKE "%"',
@@ -143,16 +123,12 @@ class Run:
             res.append(r)
         return res
 
-    @classmethod
-    def from_existing_run_id(cls, run_id: RunIdentifier) -> "Run":
-        return cls(existing_run_id=run_id)
-
     @property
     def _mlflow_run(self):
-        return self._mlflow_client.get_run(self._mlflow_run_id)
+        return self.MLFLOW_CLIENT.get_run(self._mlflow_run_id)
 
     @property
-    def identifier(self) -> str:
+    def run_id(self) -> str:
         return self._mlflow_run.info.run_id
 
     @property
@@ -169,7 +145,7 @@ class Run:
         ]
         if any(prefix_matches):
             try:
-                mlflow_client_fn = getattr(self._mlflow_client, attr_name)
+                mlflow_client_fn = getattr(self.MLFLOW_CLIENT, attr_name)
                 return partial(mlflow_client_fn, self._mlflow_run_id)
             except AttributeError as e:
                 raise AttributeError(
@@ -207,65 +183,17 @@ class Run:
                 for k, v in self.data.tags.items()
                 if not k.startswith("mlflow.")
             }
-            print(f"    Run {self.identifier}: {filtered_tags}")
+            print(f"    Run {self.run_id}: {filtered_tags}")
         else:
             pprint.pprint(self.to_spec())
 
-    @staticmethod
-    def print_all_status() -> None:
-        runs = Run.get_all_runs()
+    @classmethod
+    def print_all_status(cls) -> None:
+        runs = cls.get_all_runs()
         print("\nRuns:")
         for run in runs:
             run.print_status()
         print()
-
-    @classmethod
-    def from_registry(
-        cls,
-        registry: Registry,
-        run_id: RunIdentifier,
-    ) -> "Run":
-        run_spec = registry.get_run_spec(run_id)
-        return cls.from_existing_run_id(run_spec["identifier"])
-
-    def to_registry(
-        self,
-        registry: Registry = None,
-        force: bool = False,
-        include_artifacts: bool = False,
-    ) -> Registry:
-        if not registry:
-            from pcs.registry import InMemoryRegistry
-
-            registry = InMemoryRegistry()
-        spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
-        if spec and not force:
-            diff = DeepDiff(self.to_spec(), spec)
-            assert not diff, (
-                f"A run spec with identifier '{self.identifier}' already "
-                f"exists in registry '{registry}' and differs from the one "
-                "being added. Use force=True to overwrite the existing one. "
-                f"Diff of new spec vs existing:\n\n {diff}"
-            )
-
-        registry.add_run_spec(self.to_spec())
-        # If we are writing to a WebRegistry, have local artifacts, and
-        # include_artifacts is True, try uploading the artifact files to the
-        # registry.
-        if (
-            include_artifacts
-            and hasattr(registry, "add_run_artifacts")
-            and urlparse(self.info.artifact_uri).scheme == "file"
-        ):
-            local_artifact_path = self.get_artifacts_dir_path()
-            registry.add_run_artifacts(self.identifier, local_artifact_path)
-        return registry
-
-    def to_spec(self, flatten: bool = False) -> RunSpec:
-        mlflow_dict = self._mlflow_run.to_dictionary()
-        assert "identifier" not in mlflow_dict
-        mlflow_dict["identifier"] = self.identifier
-        return unflatten_spec(mlflow_dict) if not flatten else mlflow_dict
 
     def __enter__(self) -> "Run":
         return self

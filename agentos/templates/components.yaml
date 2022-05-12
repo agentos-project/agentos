@@ -1,36 +1,56 @@
-repos:
+specs:
     local_dir:
-        type: local
+        type: LocalRepo
         path: .
 
-components:
-    agent:
+    agent_module:
+        type: Module
         repo: local_dir
         file_path: ./agent.py
-        class_name: {agent_name}
         requirements_path: ./requirements.txt
-        instantiate: True
-        dependencies:
-            environment: environment
-            policy: policy
-            dataset: dataset
 
-    environment:
+    agent_class:
+        type: Class
+        module: agent_module
+        class_name: BasicAgent
+
+    agent:
+        type: Instance
+        instance_of: agent_class
+        argument_set:
+            type: ArgumentSet
+            kwargs:
+                environment: environment
+                policy: policy
+                dataset: dataset
+
+    environment_module:
+        type: Module
         repo: local_dir
         file_path: ./environment.py
-        class_name: Corridor
-        instantiate: True
 
-    policy:
+    environment:
+        type: Instance
+        module: environment_module
+        class_name: Corridor
+
+    policy_module:
+        type: Module
         repo: local_dir
         file_path: ./policy.py
+
+    policy:
+        type: Instance
+        module: policy_module
         class_name: RandomPolicy
-        instantiate: True
-        dependencies:
-            environment: environment
+        environment: environment
     
-    dataset:
+    dataset_module:
+        type: Module
         repo: local_dir
         file_path: ./dataset.py
+
+    dataset:
+        type: Instance
+        module: dataset_module
         class_name: BasicDataset
-        instantiate: True

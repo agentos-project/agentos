@@ -1,7 +1,7 @@
 from gym.wrappers import TimeLimit
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from pcs.component_run import active_component_run
+from pcs.component_run import active_output
 
 
 # A basic agent.
@@ -78,7 +78,7 @@ class SB3PPOAgent:
 
     @property
     def active_run(self):
-        return active_component_run(self)
+        return active_output(self)
 
     def evaluate(
         self,

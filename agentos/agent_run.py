@@ -5,9 +5,9 @@ from typing import Optional
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
-from pcs.component_run import ComponentRun
+from pcs.component_run import Output
 from pcs.registry import InMemoryRegistry, Registry
-from pcs.run import Run
+from pcs.run import MLflowRun
 
 _EPISODE_KEY = "episode_count"
 _STEP_KEY = "step_count"
@@ -26,7 +26,7 @@ _RUN_STATS_MEMBERS = [
 RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 
 
-class AgentRun(Run):
+class AgentRun(MLflowRun):
     """
     An AgentRun provides an API that agents can use to log agent related
     data/stats/tags/etc. AgentRun can be one of two flavors (which we call
@@ -63,8 +63,8 @@ class AgentRun(Run):
     def __init__(
         self,
         run_type: str = None,
-        outer_run: Run = None,
-        model_input_run: Run = None,
+        outer_run: MLflowRun = None,
+        model_input_run: MLflowRun = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
@@ -99,7 +99,7 @@ class AgentRun(Run):
             super().__init__(existing_run_id=existing_run_id)
             if MLFLOW_PARENT_RUN_ID in self.data.tags:
                 outer_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
-                self.outer_run = ComponentRun.from_existing_run_id(
+                self.outer_run = Output.from_existing_run_id(
                     outer_run_id
                 )
             else:
@@ -149,8 +149,8 @@ class AgentRun(Run):
     @classmethod
     def evaluate_run(
         cls,
-        outer_run: Run = None,
-        model_input_run: Run = None,
+        outer_run: MLflowRun = None,
+        model_input_run: MLflowRun = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
@@ -167,8 +167,8 @@ class AgentRun(Run):
     @classmethod
     def learn_run(
         cls,
-        outer_run: Run = None,
-        model_input_run: Run = None,
+        outer_run: MLflowRun = None,
+        model_input_run: MLflowRun = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,

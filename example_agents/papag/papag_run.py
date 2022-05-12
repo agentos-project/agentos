@@ -50,11 +50,11 @@ class PAPAGRun(AgentRun):
 
     @classmethod
     def _get_artifact_path(cls, run, name: str) -> Path:
-        return cls._mlflow_client.download_artifacts(run.info.run_id, name)
+        return cls.MLFLOW_CLIENT.download_artifacts(run.info.run_id, name)
 
     @classmethod
     def get_last_logged_model_run(cls, name: str) -> AgentRun:
-        runs = cls._mlflow_client.search_runs(
+        runs = cls.MLFLOW_CLIENT.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.PAPAG_RUN_TAG_KEY} ILIKE "%"',

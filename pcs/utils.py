@@ -1,7 +1,7 @@
 import pprint
 import shutil
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Mapping
 
 import regex
 import yaml
@@ -13,11 +13,22 @@ AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
 
-def is_identifier(token: str) -> bool:
+def is_spec_body(item: Any) -> bool:
+    if not isinstance(item, Mapping):
+        return False
+    from pcs.spec_object import Component  # Avoid circular import
+
+    type_attr = item.get(Component.TYPE_KEY, None)
+    import pcs
+
+    return type_attr and hasattr(pcs, type_attr)
+
+
+def is_identifier(token: Any) -> bool:
     return (
-        regex.match("^[a-fA-F0-9]{32}$", token) is not None
-        or regex.match("^[a-fA-F0-9]{40}$", token) is not None
-        or regex.match("^[a-fA-F0-9]{64}$", token) is not None
+        regex.match("^[a-fA-F0-9]{32}$", str(token)) is not None
+        or regex.match("^[a-fA-F0-9]{40}$", str(token)) is not None
+        or regex.match("^[a-fA-F0-9]{64}$", str(token)) is not None
     )
 
 
@@ -179,6 +190,8 @@ def _handle_acme_r2d2(version_string):
         "trainer": f"acme_r2d2_trainer=={version_string}",
     }
     return _handle_agent(r2d2_path_prefix, r2d2_rename_map)
+
+
 
 
 if __name__ == "__main__":

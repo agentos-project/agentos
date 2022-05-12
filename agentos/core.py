@@ -128,12 +128,12 @@ class Agent(MemberInitializer):
             total_episodes += run_size
 
     def start_agent_run(self, run_type: str, outer_run: AgentRun) -> None:
-        from pcs import active_component_run  # avoid circular import
+        from pcs import active_output  # avoid circular import
 
         agent_comp = self.__component__
         env_comp = self.environment.__component__
         if not outer_run:
-            outer_run = active_component_run(self)
+            outer_run = active_output(self)
             if outer_run:
                 assert env_comp in (
                     outer_run.run_command.component.dependency_list()

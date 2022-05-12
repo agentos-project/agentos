@@ -5,10 +5,10 @@ from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
 from pcs.component import Module
-from pcs.component_run import ComponentRun
+from pcs.component_run import Output
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
-from pcs.run_command import RunCommand
+from pcs.run_command import Command
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 
@@ -58,11 +58,11 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         self.assertEqual(RunModel.objects.count(), 1)
 
         # Test fetching all of the specs that were recursively added.
-        wr_comp_run = ComponentRun.from_registry(
+        wr_comp_run = Output.from_registry(
             web_registry,
             comp_run.identifier,
         )
-        wr_run_cmd = RunCommand.from_registry(
+        wr_run_cmd = Command.from_registry(
             web_registry, wr_comp_run.run_command.identifier
         )
         wr_comp = Module.from_registry(
@@ -155,7 +155,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         )
         self.assertEqual(flat_comp_spec[full_id]["repo"], "AgentOSRepo")
 
-        # Test adding a RunCommand
+        # Test adding a Command
         arg_set = {"SimpleComponent": {"add_to_init_member": {"i": 10}}}
         comp_run = simple_component.run_with_arg_set(
             "add_to_init_member", arg_set
@@ -163,12 +163,12 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
         run_cmd = comp_run.run_command
         web_registry.add_run_command_spec(run_cmd.to_spec())
 
-        # Test getting a RunCommand (i.e., the one we just added)
+        # Test getting a Command (i.e., the one we just added)
         run_command_spec = web_registry.get_run_command_spec(
             comp_run.run_command.identifier, flatten=False
         )
         self.assertEqual(
-            run_command_spec[run_cmd.identifier]["entry_point"],
+            run_command_spec[run_cmd.identifier]["function_name"],
             "add_to_init_member",
         )
 
@@ -200,7 +200,7 @@ class WebRegistryIntegrationTestCases(LiveServerTestCase):
             )
         )
 
-    # TODO: add a test that publishes a ComponentRun or Module from the CLI.
+    # TODO: add a test that publishes a Output or Module from the CLI.
     # def test_web_registry_integration_from_cli():
     #     from tests.utils import run_test_command
     #     run_test_command(...)

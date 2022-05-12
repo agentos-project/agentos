@@ -6,9 +6,9 @@ from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
 from pcs.component import Module
-from pcs.component_run import ComponentRun
+from pcs.component_run import Output
 from pcs.repo import Repo
-from pcs.run_command import RunCommand
+from pcs.run_command import Command
 from pcs.virtual_env import auto_revert_venv
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -63,14 +63,14 @@ def test_component_repl_demo():
         agent_comp.add_dependency(class_comp_with_same_name)
     agent_comp.add_dependency(class_comp_with_diff_name)
 
-    assert "GenericDependency" in agent_comp.dependencies.keys()
-    inst_dep_obj = agent_comp.dependencies["GenericDependency"].get_object()
+    assert "GenericDependency" in agent_comp.dependencies().keys()
+    inst_dep_obj = agent_comp.dependencies()["GenericDependency"].get_object()
     assert inst_dep_obj.__class__.__name__ == "GenericDependency"
     assert inst_dep_obj.class_member == "class_member_val"
     assert inst_dep_obj.x == "x_val"
 
-    assert "ClassDependency" in agent_comp.dependencies.keys()
-    class_dep_obj = agent_comp.dependencies["ClassDependency"].get_object()
+    assert "ClassDependency" in agent_comp.dependencies().keys()
+    class_dep_obj = agent_comp.dependencies()["ClassDependency"].get_object()
     assert type(class_dep_obj) == type
     assert class_dep_obj.class_member == "class_member_val"
     assert not hasattr(class_dep_obj, "x")
@@ -78,14 +78,14 @@ def test_component_repl_demo():
 
     # Instantiate a SimpleAgent and run reset_env() method
     r = agent_comp.run_with_arg_set("reset_env")
-    assert type(r) == ComponentRun
-    assert type(r.run_command) == RunCommand
+    assert type(r) == Output
+    assert type(r.run_command) == Command
     assert r.run_command.component == agent_comp
     assert r.run_command.entry_point == "reset_env"
     for args in r.run_command.argument_set.to_spec().values():
         assert args == {}
 
-    copy = ComponentRun(existing_run_id=r.identifier)
+    copy = Output(existing_run_id=r.identifier)
     assert copy.run_command == r.run_command
     assert copy._mlflow_run.to_dictionary() == r._mlflow_run.to_dictionary()
 

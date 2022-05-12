@@ -5,6 +5,7 @@ from pcs.argument_set import ArgumentSet
 from pcs.component import Module
 from pcs.registry import Registry
 from pcs.repo import Repo
+from pcs.spec_object import Component
 from pcs.utils import generate_dummy_dev_registry
 from tests.utils import (
     CHATBOT_AGENT_DIR,
@@ -14,6 +15,37 @@ from tests.utils import (
     TESTING_GITHUB_REPO,
     is_linux,
 )
+
+
+def test_resolve_inline_specs():
+    outer_spec_body = {
+        "argument_set":
+            {
+                "type": "Module",
+                "key": "val"
+           }
+        }
+    outer_spec_id = Component.spec_body_to_identifier(outer_spec_body)
+    r = Registry.from_dict({"specs": {outer_spec_id: outer_spec_body}})
+    arg_set_id = r.get_spec(outer_spec_id, flatten=True)["argument_set"]
+    assert r.get_spec(arg_set_id, flatten=True)["type"] == "Module"
+
+
+def test_resolve_inline_aliases():
+    test_reg_dict = {
+        "specs":
+            {
+                "inline_alias":
+                    {
+                        "type": "Module",
+                        "k": "v"
+                    }
+            }
+    }
+    r = Registry.from_dict(test_reg_dict)
+    spec_id = r.aliases["inline_alias"]
+    assert r.get_spec(spec_id, flatten=True)["k"] == "v"
+    assert r.get_spec("inline_alias", flatten=True)["k"] == "v"
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
@@ -120,9 +152,9 @@ def test_registry_from_file():
     assert random_local_ag.name == "agent"
     assert not random_local_ag.version
     assert random_local_ag.identifier == "agent"
-    assert "environment" in random_local_ag.dependencies.keys()
+    assert "environment" in random_local_ag.dependencies().keys()
     assert (
-        random_local_ag.dependencies["environment"].identifier == "environment"
+        random_local_ag.dependencies()["environment"].identifier == "environment"
     )
     random_local_ag.run_with_arg_set(
         "run_episodes",

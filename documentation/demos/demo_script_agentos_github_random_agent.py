@@ -1,5 +1,5 @@
 from pcs.component import Module
-from pcs.component_run import ComponentRun
+from pcs.component_run import Output
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
 
@@ -37,5 +37,5 @@ wr = WebRegistry("http://localhost:8000/api/v1")
 r.to_registry(wr)
 
 # Now load it back in from the WebRegistry and run it.
-loaded_run = ComponentRun.from_registry(wr, r.identifier)
+loaded_run = Output.from_registry(wr, r.identifier)
 loaded_run.run_command.run()

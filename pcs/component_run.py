@@ -1,98 +1,52 @@
 import tempfile
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Optional
 
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
 from pcs.exceptions import PythonComponentSystemException
-from pcs.identifiers import RunIdentifier
-from pcs.registry import InMemoryRegistry, Registry
-from pcs.run import Run
-from pcs.run_command import RunCommand
-from pcs.specs import RunSpec, flatten_spec, unflatten_spec
+from pcs.run import MLflowRun
+from pcs.run_command import Command
+from pcs.specs import unflatten_spec
 
 
-def active_component_run(
-    caller: Any, fail_if_none: bool = False
-) -> Optional[Run]:
-    """
-    A helper function, returns the currently active ComponentRun, if it exists,
-    else None. More specifically, if the caller is an object that is managed by
-    a Module (i.e. if it has a __component__ attribute) that itself has an
-    active_run, return that Run.
-
-    :param caller: the managed object to fetch the active component run for.
-    :param fail_if_none: if no active component run found, throw an exception
-        instead of returning None.
-    :return: the active component run if it exists, else None.
-    """
-    from pcs.component import Module
-
-    if isinstance(caller, Module):
-        component = caller
-    else:
-        try:
-            component = caller.__component__
-        except AttributeError:
-            raise PythonComponentSystemException(
-                "active_run() was called on an object that is not "
-                "managed by a Module. Specifically, the object passed "
-                "to active_run() must have a ``__component__`` attribute."
-            )
-    if not component.active_run:
-        if fail_if_none:
-            raise PythonComponentSystemException(
-                "active_run() was passed an object managed by a Module "
-                "with no active_run, and fail_if_no_active_run flag was "
-                "True."
-            )
-        else:
-            return None
-    else:
-        return component.active_run
-
-
-class ComponentRun(Run):
+class Output(MLflowRun):
     IS_FROZEN_KEY = "agentos.spec_is_frozen"
     IS_COMPONENT_RUN_TAG = "pcs.is_component_run"
-    RUN_COMMAND_ID_KEY = "pcs.run_command_id"
-    RUN_COMMAND_REGISTRY_FILENAME = "pcs.run_command_registry.yaml"
+    RUN_COMMAND_ID_KEY = "pcs.command_id"
+    RUN_COMMAND_REGISTRY_FILENAME = "pcs.command_registry.yaml"
     """
-    A ComponentRun represents the execution of a specific entry point of a
-    specific Module with a specific ArgumentSet.
+    Output from running a Command.
     """
 
     def __init__(
         self,
-        run_command: RunCommand = None,
+        command: Command,
         experiment_id: str = None,
-        existing_run_id: str = None,
     ) -> None:
-        assert (
-            run_command or existing_run_id
-        ), "One of 'run_command' or 'existing_run_id' must be provided."
-        assert not (
-            run_command and existing_run_id
-        ), "`run_command` cannot be passed with `existing_run_id`."
-        super().__init__(
-            experiment_id=experiment_id, existing_run_id=existing_run_id
-        )
-        self._run_command = None
-        if run_command:
-            self.set_and_log_run_command(run_command)
-        else:
-            self._run_command = self._fetch_run_command()
+        super().__init__(experiment_id=experiment_id)
+        self._setup_local_state(command)
+
+    def _setup_local_state(self, command: Command):
+        self._return_value = None
+        self._command = None
+        self.set_and_log_command(command)
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
-            f"PCS Module '{self.run_command.component.identifier}' "
-            f"at Entry Point '{self.run_command.entry_point}'",
+            f"PCS Module '{self.command.component.identifier}' "
+            f"at Entry Point '{self.command.function_name}'",
         )
-        self._return_value = None
+
+    @classmethod
+    def from_existing_run_id(cls, run_id: str) -> "Run":
+        run = super().from_existing_run_id(run_id)
+        command = run._fetch_command()
+        run._setup_local_state(command)
 
     @property
-    def run_command(self) -> "RunCommand":
-        return self._run_command
+    def command(self) -> "Command":
+        return self._command
 
     @property
     def return_value(self) -> str:
@@ -100,82 +54,34 @@ class ComponentRun(Run):
 
     @property
     def is_reproducible(self) -> bool:
-        return bool(self.run_command)
+        return bool(self.command)
 
     @classmethod
-    def from_run_command(
-        cls, run_command: RunCommand, experiment_id: str = None
-    ) -> "ComponentRun":
-        return cls(run_command=run_command, experiment_id=experiment_id)
+    def from_command(
+        cls, command: Command, experiment_id: str = None
+    ) -> "Output":
+        return cls(command=command, experiment_id=experiment_id)
 
-    def to_registry(
-        self,
-        registry: Registry = None,
-        recurse: bool = True,
-        force: bool = False,
-        include_artifacts: bool = False,
-    ) -> Registry:
-        if not registry:
-            registry = InMemoryRegistry()
-        spec = registry.get_run_spec(self.identifier, error_if_not_found=False)
-        if spec and not force:
-            assert spec == self.to_spec(), (
-                f"A component run spec with identifier '{self.identifier}' "
-                f"already exists in registry '{registry}' and differs from "
-                "the one being added. Use force=True to overwrite the "
-                "existing one.:\n\n"
-                f"{spec}\n\n"
-                f"{self.to_spec()}"
-            )
-        if recurse:
-            self.run_command.to_registry(
-                registry=registry, recurse=recurse, force=force
-            )
-        return super().to_registry(
-            registry=registry, force=force, include_artifacts=include_artifacts
-        )
-
-    @classmethod
-    def from_registry(
-        cls, registry: Registry, identifier: RunIdentifier
-    ) -> "ComponentRun":
-        spec = registry.get_run_spec(identifier)
-        return cls.from_spec(spec, registry)
-
-    @classmethod
-    def from_spec(cls, spec: Mapping, registry: Registry) -> "ComponentRun":
-        flat_spec = flatten_spec(spec)
-        run_command = RunCommand.from_registry(
-            registry, flat_spec["run_command"]
-        )
-        w_run_cmd_from_mlflow = cls(existing_run_id=flat_spec["identifier"])
-        assert w_run_cmd_from_mlflow.run_command == run_command, (
-            "The RunCommand object created from the MLflow Run "
-            f"'{flat_spec['identifier']}' is different from the one fetched"
-            f"from the registry provided '{registry}'."
-        )
-        return w_run_cmd_from_mlflow
-
-    def _fetch_run_command(self) -> RunCommand:
+    def _fetch_command(self) -> Command:
         try:
             path = self.download_artifacts(self.RUN_COMMAND_REGISTRY_FILENAME)
         except OSError as e:
             raise OSError(
-                f"RunCommand registry artifact not found in Run with id "
+                f"Command registry artifact not found in Run with id "
                 f"{self._mlflow_run_id}. {repr(e)}"
             )
         assert self.RUN_COMMAND_ID_KEY in self._mlflow_run.data.tags, (
             f"{self.RUN_COMMAND_ID_KEY} not found in the tags of MLflow "
             f"run with id {self._mlflow_run_id}."
         )
-        run_command_id = self._mlflow_run.data.tags[self.RUN_COMMAND_ID_KEY]
+        command_id = self._mlflow_run.data.tags[self.RUN_COMMAND_ID_KEY]
         registry = Registry.from_yaml(path)
-        return RunCommand.from_registry(registry, run_command_id)
+        return Command.from_registry(registry, command_id)
 
-    def set_and_log_run_command(self, run_command: RunCommand) -> None:
+    def set_and_log_command(self, command: Command) -> None:
         """
-        Log a Registry YAML file for the RunCommand of this run, including
-        the ArgumentSet, entry_point (i.e., function name), component ID,
+        Log a Registry YAML file for the Command of this run, including
+        the ArgumentSet, function_name (i.e., function name), component ID,
         as well as the root component being run and its full
         transitive dependency graph of other components as part of this Run.
         This registry file will contain the component spec and repo spec for
@@ -188,24 +94,24 @@ class ComponentRun(Run):
         sharing purposes, which essentially normalizes the Run's root
         component's dependency graph into flat component specs.
         """
-        assert not self._run_command
-        self._run_command = run_command
-        self._validate_no_run_command_logged()
-        self.set_tag(self.RUN_COMMAND_ID_KEY, run_command.identifier)
-        run_command_dict = run_command.to_registry().to_dict()
-        self.log_dict(run_command_dict, self.RUN_COMMAND_REGISTRY_FILENAME)
+        assert not self._command
+        self._command = command
+        self._validate_no_command_logged()
+        self.set_tag(self.RUN_COMMAND_ID_KEY, command.identifier)
+        command_dict = command.to_registry().to_dict()
+        self.log_dict(command_dict, self.RUN_COMMAND_REGISTRY_FILENAME)
 
-    def _validate_no_run_command_logged(self):
+    def _validate_no_command_logged(self):
         assert self.RUN_COMMAND_ID_KEY not in self._mlflow_run.data.tags, (
             f"{self.RUN_COMMAND_ID_KEY} already found tags of MLflow run "
-            f"with id {self._mlflow_run_id}. A run_command can only be logged "
+            f"with id {self._mlflow_run_id}. A command can only be logged "
             "once per a Run."
         )
         artifact_paths = [a.path for a in self.list_artifacts()]
         assert self.RUN_COMMAND_REGISTRY_FILENAME not in artifact_paths, (
             f"An artifact with name {self.RUN_COMMAND_REGISTRY_FILENAME} "
             "has already been logged to the MLflow run with id "
-            f"{self._mlflow_run_id}. A run_command can only be logged "
+            f"{self._mlflow_run_id}. A command can only be logged "
             "once per a Run."
         )
 
@@ -215,7 +121,7 @@ class ComponentRun(Run):
         format: str = "pickle",
     ):
         """
-        Logs the return value of an entry_point run using the specified
+        Logs the return value of an function_name run using the specified
         serialization format.
 
         :param ret_val: The Python object returned by this Run to be logged.
@@ -260,10 +166,48 @@ class ComponentRun(Run):
         except KeyError:
             return False
 
-    def to_spec(self, flatten: bool = False) -> RunSpec:
+    def to_spec(self, flatten: bool = False) -> Dict:
         flat_spec = super().to_spec(flatten=True)
-        assert (
-            self.run_command
-        ), "Every ComponentRun instance must have a run_command."
-        flat_spec["run_command"] = self.run_command.identifier
+        assert self.command, "Every Output instance must have a command."
+        flat_spec["command"] = self.command.identifier
         return flat_spec if flatten else unflatten_spec(flat_spec)
+
+
+def active_output(
+    caller: Any, fail_if_none: bool = False
+) -> Optional[Output]:
+    """
+    A helper function, returns the currently active Output, if it exists,
+    else None. More specifically, if the caller is an object that is managed by
+    a Module (i.e. if it has a __component__ attribute) that itself has an
+    active_run, return that Run.
+
+    :param caller: the managed object to fetch the active component run for.
+    :param fail_if_none: if no active component run found, throw an exception
+        instead of returning None.
+    :return: the active component run if it exists, else None.
+    """
+    from pcs.component import Module
+
+    if isinstance(caller, Module):
+        component = caller
+    else:
+        try:
+            component = caller.__component__
+        except AttributeError:
+            raise PythonComponentSystemException(
+                "active_run() was called on an object that is not "
+                "managed by a Module. Specifically, the object passed "
+                "to active_run() must have a ``__component__`` attribute."
+            )
+    if not component.active_run:
+        if fail_if_none:
+            raise PythonComponentSystemException(
+                "active_run() was passed an object managed by a Module "
+                "with no active_run, and fail_if_no_active_run flag was "
+                "True."
+            )
+        else:
+            return None
+    else:
+        return component.active_run

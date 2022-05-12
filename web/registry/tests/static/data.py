@@ -38,7 +38,7 @@ RUN_CREATE_DATA = {
             }
         },
     },
-    "entry_point": "evaluate",
+    "function_name": "evaluate",
     "id": "39be22d7ff9848bd9545988ff15f578f",
     "is_publishable": True,
     "metrics": {
@@ -65,7 +65,7 @@ RUN_CREATE_DATA = {
         "params": {
             "agent_exists": "True",
             "agent_name": "agent",
-            "entry_point": "evaluate",
+            "function_name": "evaluate",
             "environment_exists": "True",
             "environment_name": "environment",
             "root_name": "agent",
