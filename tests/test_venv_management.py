@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from pcs.component import Module
+from pcs.component import Module, Class, Instance
 from pcs.repo import LocalRepo, Repo
-from pcs.specs import RepoSpecKeys
+from pcs.spec_object import Component
 from pcs.virtual_env import VirtualEnv, auto_revert_venv
 from tests.utils import RANDOM_AGENT_DIR, TEST_VENV_AGENT_DIR, run_test_command
 
@@ -100,21 +100,23 @@ def test_setup_py_agent():
         _confirm_modules_not_in_env()
         local_repo_spec = {
             "local__setup_py_agent__repo": {
-                RepoSpecKeys.TYPE: "local",
-                RepoSpecKeys.PATH: "test_agents/setup_py_agent/",
+                Component.TYPE_KEY: "LocalRepo",
+                "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
             }
         }
-        base_dir = Path(__file__).parent
-        agent_repo = Repo.from_spec(local_repo_spec, base_dir=base_dir)
-        agent_c = Module.from_repo(
+        agent_repo = Repo.from_spec(local_repo_spec)
+        agent_module = Module.from_repo(
             repo=agent_repo,
-            identifier="BasicAgent",
+            version=None,
             file_path="./agent.py",
-            class_name="BasicAgent",
-            instantiate=True,
             requirements_path="./setup.py",
         )
-        agent_c.run("evaluate")
+        agent_class = Class(
+            module=agent_module,
+            class_name="BasicAgent",
+        )
+        agent_instance = Instance(instance_of=agent_class)
+        agent_instance.run("evaluate")
 
 
 def test_only_activate_venv_once():

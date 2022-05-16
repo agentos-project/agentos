@@ -81,6 +81,6 @@ class Command(Component):
         """
         return self.component.run_with_arg_set(
             self.function_name,
-            args=self.argument_set,
+            arg_set=self.argument_set,
             log_return_value=self.log_return_value,
         )

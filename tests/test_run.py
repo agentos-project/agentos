@@ -17,8 +17,8 @@ def test_component_instance_run():
     i = Class.from_class(Simple).instantiate(simple_arg_set)
     output = i.run_with_arg_set("fn", fn_arg_set)
     assert output.command.component == i
-    assert output.command.entry_point == "fn"
-    new_output = output.command.output()
+    assert output.command.function_name == "fn"
+    new_output = output.command.run()
     assert new_output.command.component == i
 
     registry = InMemoryRegistry()
@@ -34,10 +34,9 @@ def test_component_instance_run():
 
 
 def test_run_tracking():
-    from pcs.run import Run
+    from pcs.run import MLflowRun
 
-    run = Run()
-    assert run.identifier == run._mlflow_run.info.run_id
+    run = MLflowRun()
     run.log_metric("test_metric", 1)
     assert run.data.metrics["test_metric"] == 1
     run.set_tag("test_tag", "tag_val")
