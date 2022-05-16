@@ -13,34 +13,22 @@ from pcs.spec_object import Component
 
 class MLflowRun(Component):
     """
-    Conceptually, a Run represents code execution. More specifically, a Run has
-    two distinct uses. First, a Run is used to document an instance of code
-    execution and record output associated with it (similar to a logger).
-    Second, a Run allows for reproducibility. For this a Run can optionally
-    hold a Command that can be used to recreate this run, i.e., to
-    perform a "re-run".
+    A wrapper around MLflow Run.
 
-    We implement a Run that records its Command as a special type of Run
-    called a :py.func.pcs.run_command.Output: which is a subclass
-    of ``Run``.
+    An MLflowRun is similar to a logger but provides a bit more structure than
+    loggers traditionally do. For example, instead of just a log-level and some
+    free text, which is the typical interface for a logger, a Run allows
+    recording of tags, parameters, and metrics. These each have their own
+    semantics and each is represented as a key-value pair.
 
-    A Run is similar to a logger but provides a bit more structure than loggers
-    traditionally do. For example, instead of just a log-level and some free
-    text, which is the typical interface for a logger, a Run allows recording
-    of tags, parameters, and metrics. These each have their own semantics and
-    each is represented as a key-value pair. Currently, an AgentOS Run is a
-    wrapper around an MLflow Run.
-
-    An MLflow Run is a thin container that holds an RunData and RunInfo object.
+    An MLflowRun is a thin container that holds an RunData and RunInfo object.
     RunInfo contains the run metadata (id, user, timestamp, etc.)
     RunData contains metrics, params, and tags; each of which is a dict.
 
-    AgentOS Run related abstractions are encoded into an MLflowRun as follows:
-    - Module Registry -> MLflow artifact file
-    - Entry point string -> MLflow run tag (MlflowRun.data.tags entry)
+    PCS related abstractions are encoded into an MLflowRun as follows:
+    - Registry -> MLflow artifact file
+    - Function Name (string) -> MLflow run tag (MlflowRun.data.tags entry)
     - ArgumentSet -> MLflow artifact file
-
-    A Run can also contain a [pointer to a] Command.
 
     A Run can also have pointers to other runs. These pointers can have
     different semantic meanings. They could have an "inner-outer" relationship,
@@ -70,6 +58,7 @@ class MLflowRun(Component):
     ]
 
     def __init__(self, experiment_id: str = None) -> None:
+        super().__init__()
         if experiment_id:
             exp_id = experiment_id
         else:
@@ -80,9 +69,10 @@ class MLflowRun(Component):
         resolved_tags = context_registry.resolve_tags()
         for tag_k, tag_v in resolved_tags.items():
             self.set_tag(tag_k, tag_v)
+        self.register_attribute("experiment_id")
 
     @classmethod
-    def from_existing_run_id(cls, run_id: str) -> "Run":
+    def from_existing_mlflow_run(cls, run_id: str) -> "Run":
         try:
             cls.MLFLOW_CLIENT.get_run(run_id)
         except MlflowException as mlflow_exception:
@@ -100,6 +90,8 @@ class MLflowRun(Component):
             run._mlflow_run_id = run_id
         finally:
             cls.__init__ = orig_init
+        super().__init__(run)
+        run.register_attribute("experiment_id")
         return run
 
     @classmethod
@@ -119,7 +111,7 @@ class MLflowRun(Component):
         )
         res = []
         for mlflow_run in mlflow_runs:
-            r = Run.from_existing_run_id(mlflow_run.info.run_id)
+            r = cls.from_existing_mlflow_run(mlflow_run.info.run_id)
             res.append(r)
         return res
 
@@ -138,6 +130,10 @@ class MLflowRun(Component):
     @property
     def info(self) -> dict:
         return self._mlflow_run.info
+
+    @property
+    def experiment_id(self):
+        return self._mlflow_run.info.experiment_id
 
     def __getattr__(self, attr_name):
         prefix_matches = [

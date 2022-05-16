@@ -7,7 +7,80 @@ the spec identifier at the same level as the rest of the spec properties.
 """
 
 import copy
-from typing import Mapping
+from collections import UserDict
+from typing import Dict, Mapping
+from pcs.utils import nested_dict_list_replace
+
+
+class Spec(UserDict):
+    """
+    A Specs is a Mapping of the form::
+
+        {
+            identifier:
+                {
+                    type: some_type_here
+                    <optional other key->val attributes>
+                }
+        }
+
+    A spec is always a nested dict, i.e.: a dict inside a dict.
+    The inner dict is called the 'body'. There must be
+    exactly one key in the outer dict: the identifier of the spec, which
+    is a hash of the inner dict.
+
+    Any Spec can also be represented as a flat dict, of the form::
+
+        {identifier: <str>, type: <str>, <other key->val flat_spec>}
+    """
+    def __init__(self, input_dict: Dict):
+        self.data = input_dict
+        self._check_format()
+
+    @property
+    def identifier(self):
+        self._check_format()
+        for ident, body in self.data.items():
+            return ident
+        raise Exception(f"{self} is a malformed")
+
+    @property
+    def body(self):
+        self._check_format()
+        for ident, body in self.data.items():
+            return body
+
+    def _check_format(self):
+        assert len(self.data) == 1, (
+            f"len(self.data) must be 1, but is {len(self.data)}. self.data "
+            f"is:\n{self.data}"
+        )
+        from pcs.spec_object import Component  # Avoid circular import.
+
+        for ident, body in self.data.items():
+            assert Component.spec_body_to_identifier(body) == ident
+
+    def replace_key(self, regex_str: str, replace_with) -> None:
+        nested_dict_list_replace(self.body, regex_str, replace_with)
+
+    @classmethod
+    def from_flat(cls, flat_spec: Dict) -> "Spec":
+        from pcs.spec_object import Component  # Avoid circular import.
+
+        assert Component.TYPE_KEY in flat_spec
+        ident_computed = Component.spec_spec_to_identifier(flat_spec)
+        flat_spec_copy = copy.deepcopy(flat_spec)
+        if Component.IDENTIFIER_KEY in flat_spec:
+            ident_in = flat_spec_copy.pop(Component.IDENTIFIER_KEY)
+            assert ident_computed == ident_in, (
+                "The identifier in the provided dict does not match the "
+                "hash of the other contents (i.e. the attributes) of the "
+                "dict provided."
+            )
+        return cls({ident_computed: flat_spec_copy})
+
+    def to_flat(self):
+        return flatten_spec(self.data)
 
 
 def flatten_spec(nested_spec: Mapping) -> Mapping:

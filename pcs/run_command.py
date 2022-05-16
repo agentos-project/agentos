@@ -74,13 +74,13 @@ class Command(Component):
 
     def run(self) -> "Output":
         """
-        Create a new run using the same root component, entry point, and
+        Create a new run using the same root component, function name, and
         params as this Command.
 
         :return: a new Command object representing the rerun.
         """
         return self.component.run_with_arg_set(
-            self.entry_point,
+            self.function_name,
             args=self.argument_set,
             log_return_value=self.log_return_value,
         )

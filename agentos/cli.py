@@ -17,6 +17,7 @@ from pcs.component_run import Output
 from pcs.registry import Registry, InMemoryRegistry
 from pcs.repo import Repo
 from pcs.run import MLflowRun
+from pcs.spec_object import Component
 from pcs.virtual_env import VirtualEnv
 
 
@@ -174,16 +175,16 @@ def run(
 @_option_registry_file
 def status(identifier, registry_file):
     """
-    ENTITY_ID can be a Module name or a Run ID.
+    ENTITY_ID can be a Component ID or an MLflow Run ID.
     """
     print(f"identifier is {identifier}")
     if not identifier:
         MLflowRun.print_all_status()
     elif MLflowRun.run_exists(identifier):
-        MLflowRun.from_existing_run_id(identifier).print_status(detailed=True)
+        MLflowRun.from_existing_mlflow_run(identifier).print_status(detailed=True)
     else:  # assume identifier is a Component identifier
         try:
-            c = Module.from_registry_file(registry_file, identifier)
+            c = Component.from_registry_file(registry_file, identifier)
             c.print_status_tree()
         except LookupError:
             print(f"No Run or component found with Identifier {identifier}.")
@@ -229,11 +230,11 @@ def freeze(identifier, registry_file, force, output_file):
 @_option_force
 def publish(identifier, registry_file, force):
     # If identifier is a Run.
-    r = MLflowRun.from_existing_run_id(run_id=identifier)
+    r = MLflowRun.from_existing_mlflow_run(run_id=identifier)
     if AgentRun.IS_AGENT_RUN_TAG in r.data.tags:
-        r = AgentRun.from_existing_run_id(run_id=identifier)
+        r = AgentRun.from_existing_mlflow_run(run_id=identifier)
     if Output.IS_COMPONENT_RUN_TAG in r.data.tags:
-        r = Output.from_existing_run_id(run_id=identifier)
+        r = Output.from_existing_mlflow_run(run_id=identifier)
     r.to_registry(Registry.from_default(), force=force)
 
     # If identifier is a Module

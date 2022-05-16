@@ -23,34 +23,54 @@ specs:
                 environment: environment
                 policy: policy
                 dataset: dataset
+        name: None
 
     environment_module:
         type: Module
         repo: local_dir
         file_path: ./environment.py
 
-    environment:
-        type: Instance
+    environment_class:
+        type: Class
         module: environment_module
         class_name: Corridor
+
+    environment:
+        type: Instance
+        instance_of: environment_class
+        argument_set: None
+        name: None
 
     policy_module:
         type: Module
         repo: local_dir
         file_path: ./policy.py
 
-    policy:
-        type: Instance
+    policy_class:
+        type: Class
         module: policy_module
         class_name: RandomPolicy
-        environment: environment
-    
+
+    policy:
+        type: Instance
+        instance_of: policy_class
+        argument_set:
+            kwargs:
+                environment: environment
+        name: None
+
     dataset_module:
         type: Module
         repo: local_dir
         file_path: ./dataset.py
 
-    dataset:
-        type: Instance
+    dataset_class:
+        type: Class
         module: dataset_module
         class_name: BasicDataset
+
+    dataset:
+        type: Instance
+        instance_of: dataset_class
+        argument_set: None
+        name: None

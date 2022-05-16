@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
 from pcs.exceptions import PythonComponentSystemException
+from pcs.registry import Registry
 from pcs.run import MLflowRun
 from pcs.run_command import Command
 from pcs.specs import unflatten_spec
@@ -17,6 +18,17 @@ class Output(MLflowRun):
     RUN_COMMAND_REGISTRY_FILENAME = "pcs.command_registry.yaml"
     """
     Output from running a Command.
+     
+    As its name implies, an Output documents an instance of code execution
+    and records output associated with it (similar to a logger). This is also
+    called "tracking" by the MLflow project (and this class's parent is
+    MLflowRun, which is a wrapper around the the MLflowRun abstraction).
+    
+    In addition to tracking the output of a code that was run, an Output
+    can also be used for reproducibility: an Output has a member called a
+    `command` that can be used to perform a "re-run" of the the same function
+    with the same inputs (function/code, arguments, versioned dependency graph,
+    etc.).
     """
 
     def __init__(
@@ -39,8 +51,8 @@ class Output(MLflowRun):
         )
 
     @classmethod
-    def from_existing_run_id(cls, run_id: str) -> "Run":
-        run = super().from_existing_run_id(run_id)
+    def from_existing_mlflow_run(cls, run_id: str) -> "Run":
+        run = super().from_existing_mlflow_run(run_id)
         command = run._fetch_command()
         run._setup_local_state(command)
 

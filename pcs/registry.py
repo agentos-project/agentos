@@ -6,17 +6,16 @@ import pprint
 import shutil
 import tarfile
 import tempfile
-from collections.abc import Hashable
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
 
 import requests
 import yaml
-from deepdiff import DeepDiff, grep
+from deepdiff import DeepDiff
 from dotenv import load_dotenv
 
 from pcs.specs import flatten_spec, is_flat_spec, unflatten_spec
-from pcs.utils import is_identifier, is_spec_body
+from pcs.utils import nested_dict_list_replace, is_identifier, is_spec_body
 
 logger = logging.getLogger(__name__)
 
@@ -330,7 +329,10 @@ class InMemoryRegistry(Registry):
         new_specs = {}
         new_aliases = self.aliases if self.aliases else {}
         for id_or_alias, body in self.specs.items():
-            assert is_spec_body(body)
+            assert is_spec_body(body), (
+                "Trying to resolve aliases in something that is not spec "
+                f"body: {body}"
+            )
             from pcs.spec_object import Component  # Avoid circular import.
 
             hash = Component.spec_body_to_identifier(body)
@@ -344,16 +346,14 @@ class InMemoryRegistry(Registry):
                     new_aliases[id_or_alias] = hash
                 new_specs[hash] = body
         # replace uses of aliases within the body of the spec.
-        root = new_specs
-        print(root)
         for alias in new_aliases.keys():
-            results = root | grep(f"^{alias}$", use_regexp=True)
-            if results:
-                for dict_as_str in results['matched_values']:
-                    # This is ugly and maybe unsafe and should be done in a more
-                    # same way.
-                    exec(dict_as_str + " = new_aliases[alias]")
-        self._registry[self.SPECS_KEY] = root
+            for spec in new_specs:
+                print(
+                    f"replace '{alias}' with {new_aliases[alias]}, in spec: "
+                    f"{spec}"
+                )
+                nested_dict_list_replace(new_specs, f"^{alias}$", new_aliases[alias])
+        self._registry[self.SPECS_KEY] = new_specs
         if new_aliases:
             self._registry[self.ALIASES_KEY] = new_aliases
 

@@ -5,7 +5,8 @@ import pytest
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init
-from pcs.component import Module
+from pcs.argument_set import ArgumentSet
+from pcs.component import Module, Class, Instance
 from pcs.component_run import Output
 from pcs.repo import Repo
 from pcs.run_command import Command
@@ -21,12 +22,16 @@ from tests.utils import (
 # we can create components from them. Components cannot be
 # created from classes that are defined within a function.
 class SimpleAgent:
-    def __init__(self):
-        env_name = self.env.__class__.__name__
-        print(f"SimpleAgent: AgentOS added self.env: {env_name}")
+    def __init__(self, env, gen_class, gen_inst):
+        self.env = env
+        self.gen_class = gen_class
+        self.gen_inst = gen_inst
 
     def reset_env(self):
         self.env.reset()
+
+    def do_something(self, z):
+        return self.gen_inst.do_something(z)
 
 
 class SimpleEnvironment:
@@ -35,58 +40,58 @@ class SimpleEnvironment:
 
 
 class GenericDependency:
-    class_member = "class_member_val"
+    x = 1
 
     def __init__(self):
-        self.x = "x_val"
+        self.y = 10
+
+    def do_something(self, z):
+        return self.x + self.y + z
 
 
 def test_component_repl_demo():
     # Generate Components from Classes
-    agent_comp = Module.from_class(SimpleAgent, instantiate=True)
-    environment_comp = Module.from_class(SimpleEnvironment, instantiate=True)
-    instance_comp = Module.from_class(GenericDependency, instantiate=True)
-    class_comp_with_same_name = Module.from_class(
-        GenericDependency, instantiate=False
+    environment_comp = Class.from_class(SimpleEnvironment)
+    env_inst = Instance(environment_comp)
+    agent_class = Class.from_class(SimpleAgent)
+    gen_class = Class.from_class(GenericDependency)
+    gen_inst = Instance(gen_class)
+    inst_args = ArgumentSet(
+        kwargs={
+            "env": env_inst, "gen_class": gen_class, "gen_inst": gen_inst
+        }
     )
-    class_comp_with_diff_name = Module.from_class(
-        GenericDependency,
-        identifier="ClassDependency",
-        instantiate=False,
-    )
+    agent_inst = Instance(instance_of=agent_class, argument_set=inst_args)
 
-    # Add dependencies to SimpleAgent
-    agent_comp.add_dependency(environment_comp, attribute_name="env")
-    agent_comp.add_dependency(instance_comp)
-    with pytest.raises(Exception):
-        # Ensure adding a dependency with same identifier raises exception.
-        agent_comp.add_dependency(class_comp_with_same_name)
-    agent_comp.add_dependency(class_comp_with_diff_name)
-
-    assert "GenericDependency" in agent_comp.dependencies().keys()
-    inst_dep_obj = agent_comp.dependencies()["GenericDependency"].get_object()
-    assert inst_dep_obj.__class__.__name__ == "GenericDependency"
-    assert inst_dep_obj.class_member == "class_member_val"
-    assert inst_dep_obj.x == "x_val"
-
-    assert "ClassDependency" in agent_comp.dependencies().keys()
-    class_dep_obj = agent_comp.dependencies()["ClassDependency"].get_object()
+    assert "gen_class" in agent_inst.argument_set.kwargs.keys()
+    class_dep_obj = agent_inst.get_object().gen_class
     assert type(class_dep_obj) == type
-    assert class_dep_obj.class_member == "class_member_val"
-    assert not hasattr(class_dep_obj, "x")
-    assert class_dep_obj().x == "x_val"
+    assert class_dep_obj.x == 1
+    assert not hasattr(class_dep_obj, "y")
+    assert class_dep_obj().y == 10
 
-    # Instantiate a SimpleAgent and run reset_env() method
-    r = agent_comp.run_with_arg_set("reset_env")
+    assert "gen_inst" in agent_inst.argument_set.kwargs.keys()
+    agent = agent_inst.get_object()
+    inst_dep_obj = agent.gen_inst
+    assert inst_dep_obj.__class__.__name__ == "GenericDependency", (
+        inst_dep_obj.__class__.__name__
+    )
+    assert inst_dep_obj.x == 1
+    assert inst_dep_obj.y == 10
+
+    # run simpleagent's reset_env() method.
+    r = agent_inst.run_with_arg_set("reset_env")
     assert type(r) == Output
-    assert type(r.run_command) == Command
-    assert r.run_command.component == agent_comp
-    assert r.run_command.entry_point == "reset_env"
-    for args in r.run_command.argument_set.to_spec().values():
-        assert args == {}
+    assert type(r.command) == Command
+    assert r.command.component == agent_inst
+    assert r.command.function_name == "reset_env"
 
-    copy = Output(existing_run_id=r.identifier)
-    assert copy.run_command == r.run_command
+    # run gen_class's v() method, which has a return value.
+    r2 = agent_inst.run_do_something(100)
+    assert r2 == 111
+
+    copy = Output.from_existing_mlflow_run(r.run_id)
+    assert copy.command == r.command
     assert copy._mlflow_run.to_dictionary() == r._mlflow_run.to_dictionary()
 
 

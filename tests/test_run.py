@@ -1,5 +1,5 @@
 from pcs.argument_set import ArgumentSet
-from pcs.component import Module
+from pcs.component import Class, Instance
 from pcs.registry import InMemoryRegistry
 
 
@@ -12,26 +12,25 @@ class Simple:
 
 
 def test_component_instance_run():
-    arg_set = ArgumentSet(
-        {"Simple": {"__init__": {"x": 1}, "fn": {"input": "hi"}}}
-    )
-    c = Module.from_class(Simple, instantiate=True)
-    run = c.run_with_arg_set("fn", arg_set)
-    assert run.run_command.component == c
-    assert run.run_command.entry_point == "fn"
-    new_run = run.run_command.run()
-    assert new_run.run_command.component == c
+    simple_arg_set = ArgumentSet(kwargs={"x": 1})
+    fn_arg_set = ArgumentSet(kwargs={"input": "hi"})
+    i = Class.from_class(Simple).instantiate(simple_arg_set)
+    output = i.run_with_arg_set("fn", fn_arg_set)
+    assert output.command.component == i
+    assert output.command.entry_point == "fn"
+    new_output = output.command.output()
+    assert new_output.command.component == i
 
     registry = InMemoryRegistry()
-    run.run_command.to_registry(registry)
+    output.command.to_registry(registry)
     assert (
-        registry.get_run_command_spec(run.run_command.identifier)
-        == run.run_command.to_spec()
+        registry.get_spec(output.command.identifier)
+        == output.command.to_spec()
     )
 
-    registry.add_run_spec(run.to_spec())
-    fetched_run_spec = registry.get_run_spec(run.identifier)
-    assert fetched_run_spec == run.to_spec()
+    registry.add_spec(output.to_spec())
+    fetched_output_spec = registry.get_spec(output.identifier)
+    assert fetched_output_spec == output.to_spec()
 
 
 def test_run_tracking():

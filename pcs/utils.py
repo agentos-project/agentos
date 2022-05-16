@@ -1,7 +1,9 @@
 import pprint
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional, Mapping
+from typing import Any, Dict, Callable, List, Optional, Mapping
+
+from deepdiff import grep
 
 import regex
 import yaml
@@ -11,6 +13,10 @@ AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
+
+IDENTIFIER_REGEXES = [
+    "^[a-fA-F0-9]{32}$", "^[a-fA-F0-9]{40}$", "^[a-fA-F0-9]{64}$"
+]
 
 
 def is_spec_body(item: Any) -> bool:
@@ -25,11 +31,10 @@ def is_spec_body(item: Any) -> bool:
 
 
 def is_identifier(token: Any) -> bool:
-    return (
-        regex.match("^[a-fA-F0-9]{32}$", str(token)) is not None
-        or regex.match("^[a-fA-F0-9]{40}$", str(token)) is not None
-        or regex.match("^[a-fA-F0-9]{64}$", str(token)) is not None
-    )
+    is_id = False
+    for rx in IDENTIFIER_REGEXES:
+        is_id = is_id or (regex.match(rx, str(token)) is not None)
+    return is_id
 
 
 def parse_github_web_ui_url(
@@ -192,6 +197,66 @@ def _handle_acme_r2d2(version_string):
     return _handle_agent(r2d2_path_prefix, r2d2_rename_map)
 
 
+def nested_dict_list_replace(
+    d: Dict, regex_str: str, replace_with: Any
+) -> None:
+    root = d
+    results = root | grep(f"^{regex_str}$", use_regexp=True)
+    if results:
+        for dict_as_str in results['matched_values']:
+            # This is ugly and maybe unsafe and should be done in a more
+            # sane way.
+            assert isinstance(replace_with, str)
+            exec(f"{dict_as_str} = '{replace_with}'")
+
+
+def leaf_replace(data_struct: Any, leaf_list: List, replacement_fn: Callable):
+    if not isinstance(data_struct, Dict) and not isinstance(data_struct, List):
+        return
+    next_inner = data_struct[leaf_list[0]]
+    if isinstance(next_inner, Dict) or isinstance(next_inner, List):
+        leaf_replace(next_inner, leaf_list[1:], replacement_fn)
+    else:
+        # This is the leaf we're looking for.
+        assert len(leaf_list) == 2
+        assert next_inner == leaf_list[-1]
+        data_struct[leaf_list[0]] = replacement_fn(next_inner)
+
+
+# From https://stackoverflow.com/a/12507546
+def leaf_lists(data_struct: Any, pre: List = None):
+    if not data_struct:
+        return []
+    pre = pre[:] if pre else []
+    if isinstance(data_struct, dict):
+        for key, value in data_struct.items():
+            if isinstance(value, dict):
+                for d in leaf_lists(value, pre + [key]):
+                    yield d
+            elif isinstance(value, list) or isinstance(value, tuple):
+                for i, v in enumerate(value):
+                    for d in leaf_lists(v, pre + [key, i]):
+                        yield d
+            else:
+                yield pre + [key, value]
+    elif isinstance(data_struct, list):
+        for i, v in enumerate(data_struct):
+            for d in leaf_lists(v, pre + [i]):
+                yield d
+    else:
+        yield pre + [data_struct]
+
+
+def find_and_replace_leaves(
+    data_struct: Any, filter_fn: Callable, replace_fn: Callable
+):
+    assert isinstance(data_struct, (list, dict)), (
+        f"data_struct must be a list or dict, but is type "
+        f"{type(data_struct)} (value: '{data_struct}')."
+    )
+    for x in leaf_lists(data_struct):
+        if filter_fn(x[-1]):
+            leaf_replace(data_struct, x, replace_fn)
 
 
 if __name__ == "__main__":

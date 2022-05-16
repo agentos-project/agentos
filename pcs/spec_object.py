@@ -1,17 +1,28 @@
 import copy
 import logging
-from collections import UserDict
+import numbers
+from rich import print as rich_print
+from rich.tree import Tree
 from typing import (
-    Collection, Dict, List, Mapping, Sequence, Type, TypeVar, TYPE_CHECKING
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    TYPE_CHECKING
 )
-
 import yaml
-from deepdiff import DeepDiff, DeepHash
+from deepdiff import DeepDiff, DeepHash, grep
 
-import pcs
+import pcs  # for hasattr(pcs, ...)
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import flatten_spec, unflatten_spec
-from pcs.utils import is_identifier
+from pcs.utils import (
+    IDENTIFIER_REGEXES, is_identifier, find_and_replace_leaves
+)
 
 if TYPE_CHECKING:
     from pcs.component import Module
@@ -19,71 +30,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 C = TypeVar('C', bound='Component')
-
-
-class Spec(UserDict):
-    """
-    A Specs is a Mapping of the form::
-
-        {
-            identifier:
-                {
-                    type: some_type_here
-                    <optional other key->val attributes>
-                }
-        }
-
-    A spec is always a nested dict, i.e.: a dict inside a dict.
-    The inner dict is called the 'body'. There must be
-    exactly one key in the outer dict: the identifier of the spec, which
-    is a hash of the inner dict.
-
-    Any Spec can also be represented as a flat dict, of the form::
-
-        {identifier: <str>, type: <str>, <other key->val flat_spec>}
-    """
-    def __init__(self, input_dict: Dict = None):
-        assert len(input_dict) == 1
-        for ident, body in input_dict.items():
-            assert Component.spec_body_to_identifier(body) == ident
-            self.data = input_dict
-
-    @property
-    def identifier(self):
-        assert len(self.data) == 1
-        for ident, body in self.data.items():
-            assert Component.spec_body_to_identifier(body) == ident
-            return ident
-        raise Exception(f"{self} is a malformed")
-
-    @property
-    def body(self):
-        for ident, body in self.data.items():
-            assert Component.spec_body_to_identifier(body) == ident
-            return body
-
-    @classmethod
-    def from_flat(cls, flat_spec: Dict) -> "Spec":
-        assert Component.TYPE_KEY in flat_spec
-        identifier_in = None
-        if Component.IDENTIFIER_KEY in flat_spec:
-            flat_spec_copy = copy.deepcopy(flat_spec)
-            ident_in = flat_spec_copy.pop(Component.IDENTIFIER_KEY)
-            ident_computed = Component.spec_spec_to_identifier(flat_spec_copy)
-            assert ident_computed == ident_in, (
-                "The identifier in the provided dict does not match the "
-                "hash of the other contents (i.e. the attributes) of the "
-                "dict provided."
-            )
-        else:
-            identifier
-        new_spec = cls({identifier_in: })
-        flat_spec = copy.deepcopy(self.attributes)
-        flat_spec.update({Component.IDENTIFIER_KEY: self.identifier()})
-        return flat_spec
-
-    def to_flat(self):
-        return flatten_spec(self.data)
 
 
 class Component:
@@ -101,6 +47,7 @@ class Component:
 
     IDENTIFIER_KEY = "identifier"
     TYPE_KEY = "type"
+    OK_LEAF_ATTR_TYPES = (numbers.Number, str, bool)
 
     def __init__(self):
         self._identifier = ""  # Is updated by self.register_attributes()
@@ -126,8 +73,8 @@ class Component:
         return DeepHash(spec_body, hasher=DeepHash.sha1hex)[spec_body]
 
     def sha1(self) -> str:
-        attributes = self.attributes(dependencies_as_strings=True)
-        return self.spec_body_to_identifier(attributes)
+        body = self.body(dependencies_as_strings=True)
+        return self.spec_body_to_identifier(body)
 
     def register_attribute(self, attribute_name: str):
         assert attribute_name != self.IDENTIFIER_KEY, (
@@ -139,7 +86,6 @@ class Component:
             f"{self.type} Component ({self}) does not have attribute "
             f"{attribute_name}"
         )
-        attr = getattr(self, attribute_name)
         self._spec_attr_names.append(attribute_name)
         self._identifier = self.sha1()
 
@@ -156,15 +102,27 @@ class Component:
     def identifier(self) -> str:
         return self._identifier
 
-    def attributes(self, dependencies_as_strings=False) -> Dict:
+    def body(self, dependencies_as_strings=False) -> Dict:
         attributes = {}
         for name in self._spec_attr_names:
-            v = getattr(self, name, None)
-            if dependencies_as_strings and isinstance(v, Component):
-                assert hasattr(v, "identifier")
-                attributes[name] = v.identifier
-            else:
-                attributes[name] = v
+            attr = {name: copy.deepcopy(getattr(self, name, None))}
+
+            def not_allowed(i):
+                allowed = (
+                    isinstance(i, Component) or
+                    isinstance(i, self.OK_LEAF_ATTR_TYPES)
+                )
+                return not allowed
+            # Stringify all non-allowed types.
+            find_and_replace_leaves(attr, not_allowed, lambda leaf: str(leaf))
+            # Per 'dependencies_as_strings' flag, stringify dependencies
+            if dependencies_as_strings:
+                find_and_replace_leaves(
+                    attr,
+                    lambda leaf: isinstance(leaf, Component),
+                    lambda leaf: leaf.identifier
+                )
+            attributes.update(attr)
         return attributes
 
     def dependencies(self, filter_by_types: Sequence[Type[C]] = None) -> Dict:
@@ -174,7 +132,7 @@ class Component:
         list of Component types provided in 'filter_by_types'.
         """
         deps = {}
-        for name, value in self.attributes().items():
+        for name, value in self.body().items():
             if isinstance(value, Component):
                 if not filter_by_types or type(value) in filter_by_types:
                     deps.update({name: value})
@@ -237,32 +195,43 @@ class Component:
         return cls.from_registry(registry, identifier)
 
     def to_spec(self, flatten: bool = False) -> Dict:
-        spec = {self.identifier: self.attributes(dependencies_as_strings=True)}
+        spec = {self.identifier: self.body(dependencies_as_strings=True)}
         return flatten_spec(spec) if flatten else spec
 
     @classmethod
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
         flat_spec = flatten_spec(spec)
         kwargs = {}
+        #TODO: make this also find and replace references to specs
+        # that are buried at arbitrary depths inside the spec body, e.g.,
+        # the value of an ArgumentSet's body["kwargs"]["arg_name"].
         for k, v in flat_spec.items():
             # get instances of any dependencies in this spec.
             if k == cls.IDENTIFIER_KEY or k == cls.TYPE_KEY:
                 continue
             if v and is_identifier(v):
-                assert registry, (
-                    f"{cls.__name__}.to_spec() requires a registry to be "
-                    "passed in order to create a Component from the provided "
-                    f"spec that has dependencies: {spec}"
-                )
-                dep_spec = flatten_spec(registry.get_spec(v))
-                assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
-                dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
-                assert issubclass(dep_comp_cls, Component)
-                kwargs[k] = dep_comp_cls.from_spec(
-                    unflatten_spec(dep_spec), registry=registry
-                )
+                kwargs[k] = cls._resolve_dep_class(v, registry)
+            elif isinstance(v, List) or isinstance(v, Tuple) or isinstance(v, Dict):
+                for rx in IDENTIFIER_REGEXES:
+                    root = v  # Necessary for the exec magic below.
+                    results = v | grep(
+                        rx, use_regexp=True, verbose_level=2
+                    )
+                    if results:
+                        items = results['matched_values'].items()
+                        for dict_as_str, ident in items:
+                            # This is ugly and maybe unsafe and should be
+                            # done in a more sane way.
+                            assert isinstance(ident, str)
+                            exec(
+                                f"{dict_as_str} = "
+                                "cls._resolve_dep_class(ident, registry)"
+                            )
+                        break
+                kwargs[k] = root
             else:
                 kwargs[k] = v
+
         assert hasattr(pcs, flat_spec[cls.TYPE_KEY]), (
             f"No Component type '{flat_spec[cls.TYPE_KEY]}' found in "
             "module 'pcs'."
@@ -271,6 +240,21 @@ class Component:
         print(f"creating cls {comp_cls} with kwargs {kwargs}")
         comp_class = comp_cls(**kwargs)
         return comp_class
+
+    @classmethod
+    def _resolve_dep_class(cls, identifier: str, registry: Registry):
+        assert registry, (
+            f"{cls.__name__} requires a registry to be "
+            "passed in order to create a Component from the provided "
+            "spec that has dependencies."
+        )
+        dep_spec = flatten_spec(registry.get_spec(identifier))
+        assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
+        dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
+        assert issubclass(dep_comp_cls, Component)
+        return dep_comp_cls.from_spec(
+            unflatten_spec(dep_spec), registry=registry
+        )
 
     @classmethod
     def from_yaml_str(cls, yaml_str: str):
@@ -327,6 +311,18 @@ class Component:
                     if parent not in ret_val:
                         module_queue.append(parent)
         return list(ret_val)
+
+    def print_status_tree(self) -> None:
+        tree = self.get_status_tree()
+        rich_print(tree)
+
+    def get_status_tree(self, parent_tree: Tree = None) -> Tree:
+        self_tree = Tree(f"Module: {self.identifier}")
+        if parent_tree is not None:
+            parent_tree.add(self_tree)
+        for dep_attr_name, dep_module in self.dependencies().items():
+            dep_module.get_status_tree(parent_tree=self_tree)
+        return self_tree
 
 
 

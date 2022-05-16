@@ -3,13 +3,12 @@ import importlib
 import logging
 import sys
 import uuid
+from functools import partial
 from hashlib import sha1
 from pathlib import Path
 from typing import Any, Type, TypeVar
 
 from dill.source import getsource as dill_getsource
-from rich import print as rich_print
-from rich.tree import Tree
 
 from pcs.argument_set import ArgumentSet
 from pcs.component_run import Output
@@ -39,25 +38,35 @@ class ObjectManager(abc.ABC, Component):
     def get_default_function_name(self):
         try:
             imported_obj = self.get_object()
-            entry_point = imported_obj.DEFAULT_ENTRY_POINT
+            function_name = imported_obj.DEFAULT_ENTRY_POINT
         except AttributeError:
-            entry_point = "run"
-        return entry_point
+            function_name = "run"
+        return function_name
 
-    def run(self, entry_point: str, *args, **kwargs):
+    def __getattr__(self, attr_name):
+        if attr_name != "run_with_arg_set" and attr_name.startswith("run_"):
+            function_name = attr_name[4:]
+            return partial(self.run, function_name)
+        else:
+            raise AttributeError(
+                f"type object '{self.__class__}' has no attribute "
+                f"'{attr_name}'"
+            )
+
+    def run(self, function_name: str, *args, **kwargs):
         """
         Run an entry point with provided arguments. If you need to specify
         arguments to the init function of the managed object or any of
         its dependency components, use :py:func:`run_with_arg_set`.
 
-        :param entry_point: name of function to call on manage object.
+        :param function_name: name of function to call on manage object.
         :param kwargs: keyword-only args to pass through to managed object
             function called entry-point.
         :return: the return value of the entry point called.
         """
         run = self.run_with_arg_set(
-            entry_point,
-            args=ArgumentSet(args, kwargs),
+            function_name,
+            arg_set=ArgumentSet(args, kwargs),
             log_return_value=True,
         )
         return run.return_value
@@ -115,7 +124,7 @@ class ObjectManager(abc.ABC, Component):
         assert fn is not None, f"{instance} has no attr {function_name}"
         print(f"Calling {self.identifier}.{function_name} with "
               f"args: {arg_set.args} and kwargs: {arg_set.kwargs})")
-        result = fn(*arg_set.args, **arg_set.kwargs)
+        result = fn(*arg_set.get_arg_objs(), **arg_set.get_kwarg_objs())
         return result
 
     @abc.abstractmethod
@@ -303,18 +312,6 @@ class Module(ObjectManager):
         versioned = self.to_versioned_module(force)
         return versioned.to_registry()
 
-    def print_status_tree(self) -> None:
-        tree = self.get_status_tree()
-        rich_print(tree)
-
-    def get_status_tree(self, parent_tree: Tree = None) -> Tree:
-        self_tree = Tree(f"Module: {self.identifier}")
-        if parent_tree is not None:
-            parent_tree.add(self_tree)
-        for dep_attr_name, dep_module in self.dependencies().items():
-            dep_module.get_status_tree(parent_tree=self_tree)
-        return self_tree
-
 
 class Class(ObjectManager):
     def __init__(self, module: Module, class_name: str, **other_dependencies):
@@ -332,6 +329,7 @@ class Class(ObjectManager):
         class_obj: Type[T],
         repo: Repo = None,
     ) -> "Module":
+        name = class_obj.__name__
         if class_obj.__module__ == "__main__":
             # handle classes defined in REPL.
             file_contents = dill_getsource(class_obj)
@@ -347,29 +345,32 @@ class Class(ObjectManager):
                 print(f"Wrote new source file {src_file}.")
         else:
             managed_obj_module = sys.modules[class_obj.__module__]
-            assert hasattr(managed_obj_module, class_obj.__name__), (
+            assert hasattr(managed_obj_module, name), (
                 "Components can only be created from classes that are "
                 "available as an attribute of their module."
             )
             src_file = Path(managed_obj_module.__file__)
             logger.debug(
-                f"Handling class_obj {class_obj.__name__} from existing "
+                f"Handling class_obj {name} from existing "
                 f"source file {src_file}."
             )
-            repo = LocalRepo(f"{name}_repo", local_dir=src_file.parent)
+            repo = LocalRepo(path=src_file.parent)
             logger.debug(
                 f"Created LocalRepo {repo.identifier} from existing source "
                 f"file {src_file}."
             )
+
         return cls(
-            repo=repo,
-            file_path=src_file.name,
-            class_name=class_obj.__name__,
+            module=Module(repo=repo, file_path=src_file.name),
+            class_name=name,
         )
 
     def get_object(self):
         module = self.module.get_object()
         return getattr(module, self.class_name)
+
+    def instantiate(self, argument_set: ArgumentSet, name: str = None):
+        return Instance(self, argument_set=argument_set, name=name)
 
 
 class Instance(ObjectManager):
@@ -381,13 +382,23 @@ class Instance(ObjectManager):
     def __init__(
         self,
         instance_of: Class,
-        argument_set: ArgumentSet,
+        argument_set: ArgumentSet = None,
+        name: str = None,
     ):
         super().__init__()
         self.instance_of = instance_of
-        self.argument_set = argument_set
-        self.register_attributes(["instance_of", "argument_set"])
+        self.argument_set = argument_set if argument_set else ArgumentSet()
+        self.name = name
+        self.register_attributes(["instance_of", "argument_set", "name"])
+        self._instance = None
 
     def get_object(self):
-        cls = self.instance_of.get_object()
-        return cls(*self.argument_set.args, **self.argument_set.kwargs)
+        if self._instance:
+            return self._instance
+        else:
+            cls = self.instance_of.get_object()
+            self._instance = cls(
+                *self.argument_set.get_arg_objs(),
+                **self.argument_set.get_kwarg_objs()
+            )
+            return self._instance

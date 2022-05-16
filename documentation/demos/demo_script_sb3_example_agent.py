@@ -39,6 +39,6 @@ learning_run = random_agent.run_with_arg_set("learn", {})
 # from agentos import AgentRun
 # agent_run_id = XXXXXXXXXXXXXXXXXXXXXXX
 # from pcs.registry import WebRegistry
-# sb3_agent_run = AgentRun.from_existing_run_id(agent_run_id)
+# sb3_agent_run = AgentRun.from_existing_mlflow_run(agent_run_id)
 # wr = WebRegistry("http://localhost:8000/api/v1")
 # sb3_agent_run.to_registry(wr)

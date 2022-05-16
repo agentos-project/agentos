@@ -143,5 +143,5 @@ class SB3Run(AgentRun):
                     f"in {run.info.run_id}."
                 )
                 # Create and return an SB3Run out of this MLflow run.
-                return cls.from_existing_run_id(run.info.run_id)
+                return cls.from_existing_mlflow_run(run.info.run_id)
         print(f"SB3Run: No SB3 policy with name '{name}' found.")
