@@ -1,3 +1,4 @@
+import datetime
 import json
 from collections import defaultdict
 from typing import Dict, List, Tuple
@@ -324,6 +325,12 @@ class Run(TimeStampedModel):
             f"Mean Reward: {self.mean_reward_metric}"
         )
 
+    @property
+    def start_time(self):
+        start_time_str = self.info["start_time"]
+        start_time = datetime.date.fromtimestamp(int(start_time_str) / 1000)
+        return start_time.strftime("%m/%d/%y %H:%m")
+
     @staticmethod
     def create_from_request_data(request_data: QueryDict):
         # Set up RunCommand FK if one was specified.
@@ -420,12 +427,14 @@ class Run(TimeStampedModel):
         )
 
     @staticmethod
-    def agent_run_dag(identifier) -> List:
+    def agent_run_dag(identifier, learn_only=False) -> List:
         run_map, env_map, root_ids, term_ids, n2r, graph = Run.agent_run_dags()
         print(f"run_id_map.keys(): {run_map.keys()}")
         ident = n2r[identifier]
         res = [run_map[ident]]
         while ident in graph:
             ident = graph[ident]
-            res.append(run_map[ident])
+            run_type = run_map[ident].data.get("tags", {}).get("run_type", "")
+            if not learn_only or run_type == "learn":
+                res.append(run_map[ident])
         return res
