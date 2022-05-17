@@ -105,7 +105,7 @@ class RegistryTestCases(TestCase):
     #     component = Module.objects.get(id=self.component.id)
     #     self.assertEqual(self.component.repo.id, component.repo.id)
     #     self.assertEqual(self.component.file_path, component.file_path)
-    #     self.assertEqual(self.component.class_name, component.class_name)
+    #     self.assertEqual(self.component.name, component.name)
     #     self.assertEqual(self.component.instantiate, component.instantiate)
     #     success_path = (
     #        self.static_dir / "test_component_replace_success.yaml"

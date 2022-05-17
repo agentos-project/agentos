@@ -118,7 +118,7 @@ def test_registry_integration(venv):
 def test_registry_from_dict():
     reg_dict = generate_dummy_dev_registry("test_key")
     reg_dict["components"]["acme_cartpole==master"] = {
-        "class_name": "CartPole",
+        "name": "CartPole",
         "dependencies": {},
         "repo": "dev_repo",
     }
@@ -139,7 +139,7 @@ def test_registry_from_dict():
     )
     assert agent_component_flat_spec["name"] == "acme_r2d2_agent"
     assert agent_component_flat_spec["version"] == "test_key"
-    assert agent_component_flat_spec["class_name"] == "AcmeR2D2Agent"
+    assert agent_component_flat_spec["name"] == "AcmeR2D2Agent"
     assert agent_component_flat_spec["repo"] == "local_dir"
 
 
@@ -176,7 +176,7 @@ def test_registry_from_file():
     updated = r.get_component_spec(
         chatbot_agent.name, chatbot_agent.version, flatten=True
     )
-    assert updated["class_name"] == "NewClassName"
+    assert updated["name"] == "NewClassName"
 
     reg_from_component = chatbot_agent.to_registry()
     assert reg_from_component.get_component_spec("chatbot")

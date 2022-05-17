@@ -14,7 +14,7 @@ from registry.models import Component, ComponentRelease
 #                    'hash': 'a0d0451eff8da9f239b94db1ba7804274452cf79',
 #                    'github_url': 'https://github.com/nickjalbert/2048',
 #                    'file_path': 'agentos_2048.py',
-#                    'class_name': 'AgentOS2048',
+#                    'name': 'AgentOS2048',
 #                    'requirements_path': 'requirements.txt'
 #                }
 #            ]

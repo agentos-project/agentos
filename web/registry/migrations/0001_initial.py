@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=200)),
                 ("version", models.CharField(max_length=200)),
                 ("file_path", models.TextField()),
-                ("class_name", models.CharField(max_length=200)),
+                ("name", models.CharField(max_length=200)),
                 ("instantiate", models.BooleanField()),
             ],
         ),

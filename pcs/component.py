@@ -164,7 +164,7 @@ class Module(ObjectManager):
         :param repo: Repo where this Module's source file can be found. The
             ``file_path`` argument is relative to the root this Repo.
         :param file_path: Path to Python module file this Module manages.
-        :param class_name: Optionally, the name of the class that is being
+        :param name: Optionally, the name of the class that is being
             managed. If none provided, then by default this is a
             managed Python Module.
         :param requirements_path: Optional path to a pip installable file.
@@ -217,14 +217,12 @@ class Module(ObjectManager):
         repo: Repo,
         version: str,
         file_path: str,
-        class_name: str = None,
         requirements_path: str = None,
     ) -> "Module":
         full_path = repo.get_local_file_path(file_path, version)
         assert full_path.is_file(), f"{full_path} does not exist"
         return cls(
             repo=repo,
-            class_name=class_name,
             file_path=file_path,
             version=version,
             requirements_path=requirements_path,
@@ -237,17 +235,10 @@ class Module(ObjectManager):
     def _get_object(self, collected: dict) -> T:
         if self.identifier in collected:
             return collected[self.identifier]
-        mod = self._import_module()
-        #mod_deps = self.dependencies(filter_by_types=[Module]).items()
-        #for dep_attr_name, dep_module in mod_deps:
-        #    print(f"Adding {dep_attr_name} to {self.identifier}")
-        #    dep_mod = dep_module._get_object(
-        #        arg_set=arg_set, collected=collected
-        #    )
-        return mod
+        return self._import_module()
 
     def _import_module(self):
-        """Return managed module, or class if ``self.class_name`` is set."""
+        """Return managed module, or class if ``self.name`` is set."""
         if not self._venv:
             self._venv = self._build_virtual_env()
             self._venv.activate()
@@ -314,14 +305,14 @@ class Module(ObjectManager):
 
 
 class Class(ObjectManager):
-    def __init__(self, module: Module, class_name: str, **other_dependencies):
+    def __init__(self, module: Module, name: str, **other_dependencies):
         super().__init__()
         for k, v in other_dependencies.items():
             setattr(self, k, v)
         self.register_attributes(other_dependencies.keys())
         self.module = module
-        self.class_name = class_name
-        self.register_attributes(["module", "class_name"])
+        self.name = name
+        self.register_attributes(["module", "name"])
 
     @classmethod
     def from_class(
@@ -362,12 +353,12 @@ class Class(ObjectManager):
 
         return cls(
             module=Module(repo=repo, file_path=src_file.name),
-            class_name=name,
+            name=name,
         )
 
     def get_object(self):
         module = self.module.get_object()
-        return getattr(module, self.class_name)
+        return getattr(module, self.name)
 
     def instantiate(self, argument_set: ArgumentSet, name: str = None):
         return Instance(self, argument_set=argument_set, name=name)

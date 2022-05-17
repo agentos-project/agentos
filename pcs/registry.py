@@ -243,7 +243,8 @@ class InMemoryRegistry(Registry):
             for key in input_dict.keys():
                 assert key == self.SPECS_KEY or key == self.ALIASES_KEY, (
                     f"'input_dict' can not have top level level keys besides "
-                    f"'{self.SPECS_KEY}' and '{self.ALIASES_KEY}'."
+                    f"'{self.SPECS_KEY}' and '{self.ALIASES_KEY}', but this "
+                    f"has '{key}'."
                 )
             self._registry.update(input_dict)
             self._resolve_aliases()
@@ -282,7 +283,7 @@ class InMemoryRegistry(Registry):
         new_specs = {}
         for identifier, body in self.specs.items():
             new_specs[identifier] = {}
-            for attr_key, attr_val in body.items():
+            specs_to_handle = [attr_key, attr_val for item in body.items()]
                 if is_spec_body(attr_val):
                     inner_spec = attr_val
                     from pcs.spec_object import Component
@@ -299,10 +300,10 @@ class InMemoryRegistry(Registry):
         """
         To make it easier for developers to write specs, we allow for
         the input dictionary to have specs where the identifier is an
-        arbitrary string. We assume that any identifier that is not
-        currently a valid hash is an alias for the hash of the contents
-        of the spec, and we resolve the dictionary by replacing the
-        string provided with the correct hash identifier of the underlying
+        arbitrary string. We assume that any spec identifier that is not
+        currently a valid hash is an alias (i.e a 1-1 mapping for the hash
+        of the contents of the spec) and we resolve the dictionary by replacing
+        the string provided with the correct hash identifier of the underlying
         spec contents dict and then updating the aliases section of the
         registry with the string provided. E.g.,::
 
