@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_title %}
+  Runs
+{% endblock head_title %}
+
+{% block head_code %}
+  <script type="text/javascript" src="static/leaderboard/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" href="{% static 'leaderboard/jquery.dataTables.min.css' %}"/>
+  <script type="text/javascript" src="{% static 'leaderboard/jquery.dataTables.min.js' %}"></script>
+  <script>
+      $(document).ready( function () {
+          $('#agentRunsTable').DataTable( {
+              "order": [[0, "desc"]]
+          } )
+          $('#componentRunsTable').DataTable( {
+              "order": [[0, "desc"]]
+          } )
+      } );
+  </script>
+  <style>
+  .start_time {
+      font-size: 0.85em;
+  }
+  </style>
+{% endblock head_code %}
+
+{% block content %}
+  <div class="box" style="padding: 15px">
+    <h1>Agent Runs</h1>
+    <div class="content">
+      <table id="agentRunsTable" class="display table">
+        <thead>
+          <tr>
+            <th>Start Time</th>
+            <th>Run ID</th>
+            <th>Run Description</th>
+            <th>Agent</th>
+            <th>Environment</th>
+            <th>Avg. Reward</th>
+            <th># Training Episodes</th>
+            <th>#Training Steps</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for run in agent_runs %}
+          <tr>
+            <td>
+              <span class="start_time">{{ run.start_time }}</span>
+            </td>
+            <td><a href="run/{{ run.identifier }}">{{ run.identifier|truncatechars:7 }}</a></td>
+            <td>
+              <a href="run/{{ run.identifier }}">
+                {% for k, v in run.data.tags.items %}
+                  {% if k == "mlflow.runName" %}
+                    {{ v|truncatechars:40 }}
+                  {% endif %}
+                {% endfor %}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a>
+            </td>
+            <td>
+              <a href="{% url 'component-detail' run.environment.identifier %}">{{ run.environment.name }}</a>
+            </td>
+            {% if run.data.metrics %}
+              {%  for metric_name, metric_val in run.data.metrics.items %}
+                {% if metric_name == "mean_reward" %}
+                  <td>{{ metric_val|floatformat:"g" }}</td>
+                {% endif %}
+                {% if metric_name == "training_episode_count" %}
+                  <td>{{ metric_val|floatformat:"g" }}</td>
+                {% endif %}
+                {% if metric_name == "training_step_count" %}
+                  <td>{{ metric_val|floatformat:"g" }}</td>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              <td></td>
+              <td></td>
+              <td></td>
+            {%  endif %}
+          </tr>
+        {%  endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="box" style="padding: 15px">
+    <h1>PCS Component Runs</h1>
+    <div class="content">
+      <table id="componentRunsTable" class="display table">
+        <thead>
+        <tr>
+          <th>Start Time</th>
+          <th>Run ID</th>
+          <th>Run Description</th>
+          <th>Run Command</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for run in component_runs %}
+          <tr>
+            <td>
+              <span class="start_time">{{ run.start_time }}</span>
+            </td>
+            <td><a href="{% url 'run-detail' run.identifier %}">{{ run.identifier|truncatechars:7 }}</a></td>
+            <td>
+              <a href="{% url 'run-detail' run.identifier %}">
+                {% for k, v in run.data.tags.items %}
+                  {% if k == "mlflow.runName" %}
+                    {{ v|truncatechars:40 }}
+                  {% endif %}
+                {% endfor %}
+              </a>
+            </td>
+              <td>
+                <a href="{% url 'runcommand-detail' run.run_command.identifier %}">
+                  {{ run.run_command.identifier }}
+                </a>
+              </td>
+          </tr>
+        {%  endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock content %}

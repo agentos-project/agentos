@@ -1,3 +1,4 @@
+import datetime
 import json
 from collections import defaultdict
 from typing import Dict, List, Tuple
@@ -324,6 +325,12 @@ class Run(TimeStampedModel):
             f"Mean Reward: {self.mean_reward_metric}"
         )
 
+    @property
+    def start_time(self):
+        start_time_str = self.info["start_time"]
+        start_time = datetime.date.fromtimestamp(int(start_time_str) / 1000)
+        return start_time.strftime("%m/%d/%y %H:%m")
+
     @staticmethod
     def create_from_request_data(request_data: QueryDict):
         # Set up RunCommand FK if one was specified.
@@ -376,9 +383,10 @@ class Run(TimeStampedModel):
         run_obj_by_id = {}
         env_obj_by_id = {}
         run_to_env_id = {}
+        node_to_root = {}
 
-        # {env_id: {agent_id: [runs_without_input_parents]}}
-        root_runs = defaultdict(lambda: defaultdict(list))
+        # {env_id: {agent_id: [ids_of_runs_without_input_parents]}}
+        root_run_ids = defaultdict(lambda: defaultdict(list))
         run_graph = {}  # {parent_id: child_id}
         for run in run_objs:
             run_obj_by_id[run.identifier] = run
@@ -390,7 +398,7 @@ class Run(TimeStampedModel):
             run_to_env_id[run_id] = env_id
             # Store our roots, which we'll use to for traversal later
             if "model_input_run_id" not in tags:
-                root_runs[env_id][agent_id].append(run_id)
+                root_run_ids[env_id][agent_id].append(run_id)
             # store graph edges from parent to child (opposite of how they are)
             else:
                 parent_id = tags["model_input_run_id"]
@@ -398,20 +406,35 @@ class Run(TimeStampedModel):
 
         # find the terminal node for every root_run (might be itself)
         terminals = defaultdict(list)
-        for env_id in root_runs.values():
-            for root_list in env_id.values():
-                for root in root_list:
-                    terminal = root
-                    while terminal in run_graph:
-                        terminal = run_graph[terminal]
-                    env_id = run_to_env_id[terminal]
-                    terminals[env_id].append(terminal)
-        return run_obj_by_id, env_obj_by_id, root_runs, terminals, run_graph
+        for env_id in root_run_ids.values():
+            for root_id_list in env_id.values():
+                for root_id in root_id_list:
+                    terminal_id = root_id
+                    node_to_root[root_id] = root_id
+                    while terminal_id in run_graph:
+                        terminal_id = run_graph[terminal_id]
+                        assert terminal_id not in node_to_root
+                        node_to_root[terminal_id] = root_id
+                    env_id = run_to_env_id[terminal_id]
+                    terminals[env_id].append(terminal_id)
+        return (
+            run_obj_by_id,
+            env_obj_by_id,
+            root_run_ids,
+            terminals,
+            node_to_root,
+            run_graph,
+        )
 
     @staticmethod
-    def agent_run_dag(identifier) -> List:
-        run_id_map, env_id_map, roots, terms, graph = Run.agent_run_dags()
-        res = []
-        for ident, obj in run_id_map.items():
-            res.append(obj)
+    def agent_run_dag(identifier, learn_only=False) -> List:
+        run_map, env_map, root_ids, term_ids, n2r, graph = Run.agent_run_dags()
+        print(f"run_id_map.keys(): {run_map.keys()}")
+        ident = n2r[identifier]
+        res = [run_map[ident]]
+        while ident in graph:
+            ident = graph[ident]
+            run_type = run_map[ident].data.get("tags", {}).get("run_type", "")
+            if not learn_only or run_type == "learn":
+                res.append(run_map[ident])
         return res
