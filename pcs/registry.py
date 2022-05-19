@@ -262,37 +262,75 @@ class InMemoryRegistry(Registry):
     def _resolve_inline_specs(self):
         """
         Allow developers to specify specs in-line. This will rewrite those
-        in a more normalized form. So, for example, resolve the following:
+        in a more normalized form. So, for example, resolve the following::
 
             specs:
                 c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
-                    argument_set:  # Must be a spec, i.e.: have 'type' attr.
-                        type: MyComponentType
-                        key: val
+                    nested_spec1:  # nested spec
+                        type: ComponentType1
+                        nested_spec2:  # nested spec
+                            type: ComponentType2
+                            key2: val2
+                    non_spec_dict:
+                        - nested_spec3:  # nested spec
+                            type: ComponentType3
+                            key3: val3
+                        - "a string"
 
-        ...into:
+        ...into::
+
             specs:
                 c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
-                    argument_set: 271dfe754c6af7bc9d0729adfdc4338c8ee34398
+                    nested_spec1: 271dfe754c6af7bc9d0729adfdc4338c8ee34398
+                    non_spec_dict:
+                        - 64d0729adf2e75caf7bc971d4398dc43cf883e3e
+                        - "a string"
 
                 271dfe754c6af7bc9d0729adfdc4338c8ee34398:
-                    type: MyComponentType
-                    key: val
+                    type: ComponentType1
+                    nested_spec2: e75caf7bc964d0729adf271df838ee34398dc43c
+
+                e75caf7bc964d0729adf271df838ee34398dc43c:
+                    type: ComponentType2
+                    key2: val2
+
+                64d0729adf2e75caf7bc971d4398dc43cf883e3e:
+                    type: ComponentType3
+                    key3: val3
 
         """
         new_specs = {}
-        for identifier, body in self.specs.items():
-            new_specs[identifier] = {}
-            specs_to_handle = [attr_key, attr_val for item in body.items()]
-                if is_spec_body(attr_val):
-                    inner_spec = attr_val
-                    from pcs.spec_object import Component
+        for ident, body in self.specs.items():
+            new_specs[ident] = {}
+            to_handle = [(new_specs, ident, {k: v}) for k, v in body.items()]
+        while to_handle:
+            struct, key, elt = to_handle.pop()
+            if isinstance(elt, dict):  # handling dict
+                for attr_key, attr_val in elt.items():
+                    if is_spec_body(attr_val):  # normalize nested_spec
+                        inner_spec = attr_val
+                        from pcs.spec_object import Component
 
-                    inner_id = Component.spec_body_to_identifier(inner_spec)
-                    new_specs[inner_id] = inner_spec
-                    new_specs[identifier][attr_key] = inner_id
-                else:
-                    new_specs[identifier][attr_key] = attr_val
+                        inner_id = Component.spec_body_to_identifier(inner_spec)
+                        struct[key][attr_key] = inner_id
+                        new_specs[inner_id] = {}
+                        to_handle.append((new_specs, inner_id, inner_spec))
+                    else:
+                        try:
+                            struct[key]
+                        except KeyError:
+                            struct[key] = {}
+                        to_handle.append((struct[key], attr_key, attr_val))
+            elif isinstance(elt, list):  # handling dict
+                try:
+                    struct[key]
+                except IndexError:
+                    struct[key] = []
+                for i, sub_elt in enumerate(elt):
+                    to_handle.append((struct[key], i, sub_elt))
+            else:  # elt must be leaf
+               struct[key] = elt
+
         self._registry[self.SPECS_KEY] = new_specs
 
     #TODO: This function probably belongs in the Registry class.

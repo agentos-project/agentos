@@ -14,21 +14,28 @@ specs:
         module: agent_module
         class_name: BasicAgent
 
+    agent_argument_set:
+        type: ArgumentSet
+        kwargs:
+            environment: environment
+            policy: policy
+            dataset: dataset
+
     agent:
         type: Instance
         instance_of: agent_class
-        argument_set:
-            type: ArgumentSet
-            kwargs:
-                environment: environment
-                policy: policy
-                dataset: dataset
         name: None
+        argument_set: agent_argument_set
 
     environment_module:
         type: Module
         repo: local_dir
         file_path: ./environment.py
+        other_dependencies:
+            some_other_mod:  # must be referenced in an import statement in other.py
+                type: Module
+                repo: some_other_repo
+                file_path: ./other.py
 
     environment_class:
         type: Class
