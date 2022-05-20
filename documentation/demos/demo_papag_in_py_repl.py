@@ -3,7 +3,7 @@ from pcs import ArgumentSet, Component
 # from pcs.registry import WebRegistry
 
 papag_agent = Component.from_registry_file(
-    "example_agents/papag/components.yaml", "agent"
+    "example_agents/papag/components.yaml", "papag_agent"
 ).to_versioned_component()
 
 a2c_pong_arg_set = ArgumentSet.from_yaml(
