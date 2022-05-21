@@ -113,8 +113,8 @@ def init(dir_names):
 @agentos_cmd.command()
 @_arg_identifier
 @click.option(
-    "--entry-point",
-    metavar="ENTRY_POINT",
+    "--function-name",
+    metavar="FUNCTION_NAME",
     type=str,
     default=None,
     help="A function of the component that AgentOS Runtime will call with "
@@ -138,7 +138,7 @@ def init(dir_names):
 @_option_registry_string
 def run(
     identifier,
-    entry_point,
+    function_name,
     arg_set_string,
     arg_set_id,
     registry_file,
@@ -153,7 +153,7 @@ def run(
     print(registry.to_dict())
     from pcs.spec_object import Component
     comp = Component.from_registry(registry, identifier)
-    entry_point = entry_point or comp.get_default_function_name()
+    function_name = function_name or comp.get_default_function_name()
     assert not (arg_set_id and arg_set_string), (
         "Cannot pass both 'arg_set_string' and 'arg_set_id'."
     )
@@ -164,7 +164,7 @@ def run(
         arg_set = ArgumentSet.from_spec(arg_set_spec)
     else:
         arg_set = ArgumentSet()
-    output = comp.run_with_arg_set(entry_point, arg_set)
+    output = comp.run_with_arg_set(function_name, arg_set)
     print(f"Output {output.identifier} recorded.", end=" ")
     print("Execute the following for details:")
     print(f"\n  agentos status {output.identifier}\n")

@@ -257,9 +257,9 @@ class Module(ObjectManager):
         if not self._use_venv or self._parent_modules:
             return NoOpVirtualEnv()
         req_paths = set()
-        for c in self.dependency_list(include_parents=True):
-            if not isinstance(c, Module):
-                continue  # Only process dependencies that are other Modules
+        for c in self.dependency_list(
+            include_parents=True, filter_by_types=[Module]
+        ):
             if c.requirements_path is None:
                 continue
             for req_path in str(c.requirements_path).split(";"):

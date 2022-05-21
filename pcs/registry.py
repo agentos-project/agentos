@@ -6,7 +6,7 @@ import pprint
 import shutil
 import tarfile
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
 
 import requests
@@ -44,14 +44,20 @@ class Registry(abc.ABC):
     def from_yaml(file_path: str) -> "Registry":
         with open(file_path) as file_in:
             config = yaml.safe_load(file_in)
-        return InMemoryRegistry(input_dict=config)
+        reg = InMemoryRegistry(input_dict=config)
+        for spec_id, spec_body in reg.specs.items():
+            if spec_body["type"] == "LocalRepo":
+                p = PurePath(spec_body["path"])
+                if not p.is_absolute():
+                    reg.specs[spec_id]["path"] = Path(file_path).parent / p
+        return reg
 
     @classmethod
     def from_file_in_repo(
         cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
     ) -> "Registry":
         """
-        Read in a registry file from an repo.
+        Read in a registry file from a repo.
 
         :param repo: Repo to load registry file from.
         :param file_path: Path within Repo that registry is located, relative

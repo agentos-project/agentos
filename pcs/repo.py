@@ -3,11 +3,14 @@ import logging
 import sys
 import uuid
 from pathlib import Path
-from typing import Tuple, TypeVar
+from typing import Mapping, Tuple, TypeVar, TYPE_CHECKING
 
 from pcs.git_manager import GitManager
 from pcs.spec_object import Component
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
+
+if TYPE_CHECKING:
+    from pcs.registry import Registry
 
 logger = logging.getLogger(__name__)
 
@@ -138,8 +141,17 @@ class GitHubRepo(Repo):
 class LocalRepo(Repo):
     """
     A Module with a LocalRepo can be found on your local drive.
+    The optional ``relative_path_prefix`` arg allows for relative paths to
+    be used. When relative paths are used, they will be relative
+    to the value in ``relative_path_prefix``. This allows the registries to
+    be loaded from files and the path of the file can be stored
+    in ``relative_path_prefix``.
     """
-    def __init__(self, path: str = None, default_version: str = None):
+    def __init__(
+        self,
+        path: str = None,
+        default_version: str = None,
+    ):
         super().__init__(default_version=default_version)
         if not path:
             path = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
