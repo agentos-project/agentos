@@ -306,9 +306,10 @@ class InMemoryRegistry(Registry):
 
         """
         new_specs = {}
+        to_handle = []
         for ident, body in self.specs.items():
             new_specs[ident] = {}
-            to_handle = [(new_specs, ident, {k: v}) for k, v in body.items()]
+            to_handle += [(new_specs, ident, {k: v}) for k, v in body.items()]
         while to_handle:
             struct, key, elt = to_handle.pop()
             if isinstance(elt, dict):  # handling dict

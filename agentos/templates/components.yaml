@@ -12,7 +12,7 @@ specs:
     agent_class:
         type: Class
         module: agent_module
-        class_name: BasicAgent
+        name: BasicAgent
 
     agent_argument_set:
         type: ArgumentSet
@@ -24,29 +24,24 @@ specs:
     agent:
         type: Instance
         instance_of: agent_class
-        name: None
+        name: null
         argument_set: agent_argument_set
 
     environment_module:
         type: Module
         repo: local_dir
         file_path: ./environment.py
-        other_dependencies:
-            some_other_mod:  # must be referenced in an import statement in other.py
-                type: Module
-                repo: some_other_repo
-                file_path: ./other.py
 
     environment_class:
         type: Class
         module: environment_module
-        class_name: Corridor
+        name: Corridor
 
     environment:
         type: Instance
         instance_of: environment_class
-        argument_set: None
-        name: None
+        argument_set: null
+        name: null
 
     policy_module:
         type: Module
@@ -56,15 +51,16 @@ specs:
     policy_class:
         type: Class
         module: policy_module
-        class_name: RandomPolicy
+        name: RandomPolicy
 
     policy:
         type: Instance
         instance_of: policy_class
         argument_set:
+            type: ArgumentSet
             kwargs:
                 environment: environment
-        name: None
+        name: null
 
     dataset_module:
         type: Module
@@ -74,10 +70,10 @@ specs:
     dataset_class:
         type: Class
         module: dataset_module
-        class_name: BasicDataset
+        name: BasicDataset
 
     dataset:
         type: Instance
         instance_of: dataset_class
-        argument_set: None
-        name: None
+        argument_set: null
+        name: null

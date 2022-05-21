@@ -129,17 +129,24 @@ def init(dir_names):
          "If None is provided, then the empty ArgumentSet will be used."
 )
 @click.option(
-    "--arg-set-string",
+    "--arg-set-args",
     "-A",
-    metavar="REGISTRY_STRING",
-    help="a Python dict that is a valid pcs.Registry."
+    metavar="ARG_SET_ARGS_STRING",
+    help="a string in Python list format that contains args."
+)
+@click.option(
+    "--arg-set-kwargs",
+    "-K",
+    metavar="ARG_SET_KWARGS_STRING",
+    help="a string in Python dict format that contains keyword args."
 )
 @_option_registry_file
 @_option_registry_string
 def run(
     identifier,
     function_name,
-    arg_set_string,
+    arg_set_args,
+    arg_set_kwargs,
     arg_set_id,
     registry_file,
     registry_string,
@@ -154,16 +161,15 @@ def run(
     from pcs.spec_object import Component
     comp = Component.from_registry(registry, identifier)
     function_name = function_name or comp.get_default_function_name()
-    assert not (arg_set_id and arg_set_string), (
-        "Cannot pass both 'arg_set_string' and 'arg_set_id'."
+    assert not (arg_set_id and (arg_set_args or arg_set_kwargs)), (
+        "Cannot pass both arg_set_id and (arg_set_args or arg_set_kwargs)."
     )
     if arg_set_id:
         arg_set = ArgumentSet.from_registry(registry, arg_set_id)
-    elif arg_set_string:
-        arg_set_spec = literal_eval(arg_set_string)
-        arg_set = ArgumentSet.from_spec(arg_set_spec)
     else:
-        arg_set = ArgumentSet()
+        args = literal_eval(arg_set_args) if arg_set_args else None
+        kwargs = literal_eval(arg_set_kwargs) if arg_set_kwargs else None
+        arg_set = ArgumentSet(args=args, kwargs=kwargs)
     output = comp.run_with_arg_set(function_name, arg_set)
     print(f"Output {output.identifier} recorded.", end=" ")
     print("Execute the following for details:")

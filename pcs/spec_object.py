@@ -202,9 +202,6 @@ class Component:
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
         flat_spec = flatten_spec(spec)
         kwargs = {}
-        #TODO: make this also find and replace references to specs
-        # that are buried at arbitrary depths inside the spec body, e.g.,
-        # the value of an ArgumentSet's body["kwargs"]["arg_name"].
         for k, v in flat_spec.items():
             # get instances of any dependencies in this spec.
             if k == cls.IDENTIFIER_KEY or k == cls.TYPE_KEY:
