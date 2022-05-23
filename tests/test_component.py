@@ -123,12 +123,11 @@ def test_component_freezing(tmpdir):
 def test_component_from_github_with_venv():
     with auto_revert_venv():
         random_url = (
-            "https://github.com/agentos-project/agentos/"
-            f"blob/{TESTING_BRANCH_NAME}/example_agents/random/components.yaml"
+            f"https://github.com/{TESTING_GITHUB_ACCOUNT}/"
+            f"{TESTING_GITHUB_REPO}/blob/{TESTING_BRANCH_NAME}/"
+            "example_agents/random/components.yaml"
         )
-        random_component = Module.from_github_registry(
-            random_url, "agent", use_venv=True
-        )
+        random_component = Module.from_github_registry(random_url, "agent")
         random_component.run_with_arg_set("run_episodes")
 
 
