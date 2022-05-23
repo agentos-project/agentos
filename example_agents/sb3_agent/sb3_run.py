@@ -134,14 +134,14 @@ class SB3Run(AgentRun):
             for run in mlflow_runs:
                 try:
                     cls.MLFLOW_CLIENT.download_artifacts(
-                        run.info.run_id, name
+                        run.info.mlflow_run_id, name
                     )
                 except OSError:
                     continue  # No policy was logged in this run, keep trying.
                 print(
                     f"SB3Run: Found last_logged SB3 policy '{name}' "
-                    f"in {run.info.run_id}."
+                    f"in {run.info.mlflow_run_id}."
                 )
                 # Create and return an SB3Run out of this MLflow run.
-                return cls.from_existing_mlflow_run(run.info.run_id)
+                return cls.from_existing_mlflow_run(run.info.mlflow_run_id)
         print(f"SB3Run: No SB3 policy with name '{name}' found.")

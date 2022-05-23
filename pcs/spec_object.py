@@ -19,9 +19,9 @@ from deepdiff import DeepDiff, DeepHash, grep
 
 import pcs  # for hasattr(pcs, ...)
 from pcs.registry import InMemoryRegistry, Registry
-from pcs.specs import flatten_spec, unflatten_spec
+from pcs.specs import flatten_spec, Spec, unflatten_spec
 from pcs.utils import (
-    IDENTIFIER_REGEXES, is_identifier, find_and_replace_leaves
+    IDENTIFIER_REGEXES, is_identifier, filter_leaves, find_and_replace_leaves
 )
 
 if TYPE_CHECKING:
@@ -34,14 +34,15 @@ C = TypeVar('C', bound='Component')
 
 class Component:
     """
-    A Component is a Python class whose instances can serialize themselves
-    to and from spec YAML strings and registry objects.
+    Conceptually, a Component is a graph node with edges and attributes, that
+    can serialize itself to and from spec YAML strings and registries.
 
     A Component is the Python object version of a PCS Spec, which itself
     is a YAML dictionary that maps a content hash identifier string to
-    "spec contents". The contents of a spec are, in turn, a str->str map.
+    its body. The body is, in turn, a map from str to attribute. Attributes
+    can be type str, bool, None, number, dict, list, or Component.
 
-    A value in the spec contents map can be another Spec's identifier.
+    A value in the spec body map can be another Spec's identifier.
     This represents a causal dependency between the two Specs.
     """
 
@@ -50,7 +51,6 @@ class Component:
     OK_LEAF_ATTR_TYPES = (numbers.Number, str, bool)
 
     def __init__(self):
-        self._identifier = ""  # Is updated by self.register_attributes()
         self._spec_attr_names: List[str] = []  # Managed by register_attribute
         # A Component's identifier is not considered a spec_attribute. # Rather,
         # it is a function of all spec_attributes.
@@ -87,7 +87,6 @@ class Component:
             f"{attribute_name}"
         )
         self._spec_attr_names.append(attribute_name)
-        self._identifier = self.sha1()
 
     def register_attributes(self, attribute_names: Collection[str]):
         for name in attribute_names:
@@ -100,7 +99,7 @@ class Component:
 
     @property
     def identifier(self) -> str:
-        return self._identifier
+        return self.sha1()
 
     def body(self, dependencies_as_strings=False) -> Dict:
         attributes = {}
@@ -131,12 +130,16 @@ class Component:
         other Components, optionally filtered to only those of any of the
         list of Component types provided in 'filter_by_types'.
         """
-        deps = {}
-        for name, value in self.body().items():
-            if isinstance(value, Component):
-                if not filter_by_types or type(value) in filter_by_types:
-                    deps.update({name: value})
-        return deps
+
+        def filter_fn(leaf):
+            return (
+                isinstance(leaf, Component) and
+                (not filter_by_types or type(leaf) in filter_by_types)
+            )
+        return {
+            k: v
+            for k, v in filter_leaves(self.body(), filter_fn=filter_fn).items()
+        }
 
     def to_registry(
         self,
@@ -195,47 +198,22 @@ class Component:
         return cls.from_registry(registry, identifier)
 
     def to_spec(self, flatten: bool = False) -> Dict:
-        spec = {self.identifier: self.body(dependencies_as_strings=True)}
+        spec = Spec({self.identifier: self.body(dependencies_as_strings=True)})
         return flatten_spec(spec) if flatten else spec
 
     @classmethod
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
-        flat_spec = flatten_spec(spec)
-        kwargs = {}
-        for k, v in flat_spec.items():
-            # get instances of any dependencies in this spec.
-            if k == cls.IDENTIFIER_KEY or k == cls.TYPE_KEY:
-                continue
-            if v and is_identifier(v):
-                kwargs[k] = cls._resolve_dep_class(v, registry)
-            elif isinstance(v, List) or isinstance(v, Tuple) or isinstance(v, Dict):
-                for rx in IDENTIFIER_REGEXES:
-                    root = v  # Necessary for the exec magic below.
-                    results = v | grep(
-                        rx, use_regexp=True, verbose_level=2
-                    )
-                    if results:
-                        items = results['matched_values'].items()
-                        for dict_as_str, ident in items:
-                            # This is ugly and maybe unsafe and should be
-                            # done in a more sane way.
-                            assert isinstance(ident, str)
-                            exec(
-                                f"{dict_as_str} = "
-                                "cls._resolve_dep_class(ident, registry)"
-                            )
-                        break
-                kwargs[k] = root
-            else:
-                kwargs[k] = v
-
-        assert hasattr(pcs, flat_spec[cls.TYPE_KEY]), (
-            f"No Component type '{flat_spec[cls.TYPE_KEY]}' found in "
+        spec = Spec(copy.deepcopy(spec))
+        spec.replace_in_body(
+            is_identifier, lambda leaf: cls._resolve_dep_class(leaf, registry)
+        )
+        assert hasattr(pcs, spec.type), (
+            f"No Component type '{spec.type}' found in "
             "module 'pcs'."
         )
-        comp_cls = getattr(pcs, flat_spec[cls.TYPE_KEY])
-        print(f"creating cls {comp_cls} with kwargs {kwargs}")
-        comp_class = comp_cls(**kwargs)
+        comp_cls = getattr(pcs, spec.type)
+        print(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
+        comp_class = comp_cls(**spec.as_kwargs)
         return comp_class
 
     @classmethod

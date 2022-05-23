@@ -8,8 +8,8 @@ the spec identifier at the same level as the rest of the spec properties.
 
 import copy
 from collections import UserDict
-from typing import Dict, Mapping
-from pcs.utils import nested_dict_list_replace
+from typing import Callable, Dict, Mapping
+from pcs.utils import find_and_replace_leaves
 
 
 class Spec(UserDict):
@@ -50,6 +50,16 @@ class Spec(UserDict):
         for ident, body in self.data.items():
             return body
 
+    @property
+    def type(self) -> str:
+        from pcs.spec_object import Component  # Avoid circular import.
+
+        return self.body[Component.TYPE_KEY]
+
+    @property
+    def as_kwargs(self):
+        return {k: v for k, v in self.body.items() if k != "type"}
+
     def _check_format(self):
         assert len(self.data) == 1, (
             f"len(self.data) must be 1, but is {len(self.data)}. self.data "
@@ -58,17 +68,35 @@ class Spec(UserDict):
         from pcs.spec_object import Component  # Avoid circular import.
 
         for ident, body in self.data.items():
-            assert Component.spec_body_to_identifier(body) == ident
+            assert Component.spec_body_to_identifier(body) == ident, (
+                f"{Component.spec_body_to_identifier(body)} != {ident}.\n"
+                f"body is:\n{body}"
+            )
 
-    def replace_key(self, regex_str: str, replace_with) -> None:
-        nested_dict_list_replace(self.body, regex_str, replace_with)
+    def _update_identifier(self):
+        from pcs.spec_object import Component  # Avoid circular import.
+
+        for ident, body in self.data.items():
+            self.data = {Component.spec_body_to_identifier(body): body}
+        self._check_format()
+
+    def update_body(self, update_dict: Dict) -> None:
+        self.data[self.identifier].update(update_dict)
+        self._update_identifier()
+
+    def replace_in_body(
+            self, filter_fn: Callable, replace_fn: Callable
+    ) -> bool:
+        found = find_and_replace_leaves(self.body, filter_fn, replace_fn)
+        self._update_identifier()
+        return found
 
     @classmethod
     def from_flat(cls, flat_spec: Dict) -> "Spec":
         from pcs.spec_object import Component  # Avoid circular import.
 
         assert Component.TYPE_KEY in flat_spec
-        ident_computed = Component.spec_spec_to_identifier(flat_spec)
+        ident_computed = Component.spec_body_to_identifier(flat_spec)
         flat_spec_copy = copy.deepcopy(flat_spec)
         if Component.IDENTIFIER_KEY in flat_spec:
             ident_in = flat_spec_copy.pop(Component.IDENTIFIER_KEY)

@@ -1,4 +1,5 @@
 import abc
+import copy
 import importlib
 import logging
 import sys
@@ -6,7 +7,7 @@ import uuid
 from functools import partial
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Type, TypeVar
+from typing import Any, Dict, Type, TypeVar
 
 from dill.source import getsource as dill_getsource
 
@@ -16,7 +17,7 @@ from pcs.registry import Registry
 from pcs.repo import GitHubRepo, LocalRepo, Repo
 from pcs.run_command import Command
 from pcs.spec_object import Component
-from pcs.utils import parse_github_web_ui_url
+from pcs.utils import find_and_replace_leaves, parse_github_web_ui_url
 from pcs.virtual_env import NoOpVirtualEnv, VirtualEnv
 
 logger = logging.getLogger(__name__)
@@ -131,6 +132,14 @@ class ObjectManager(abc.ABC, Component):
     def get_object(self) -> Any:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def freeze(self: T, force: bool = False) -> T:
+        """
+        Return a copy of self whose parent Module (or self if this is a Module)
+        is versioned.
+        """
+        raise NotImplementedError
+
 
 class Module(ObjectManager):
     """
@@ -158,7 +167,7 @@ class Module(ObjectManager):
         file_path: str,
         version: str = None,
         requirements_path: str = None,
-        **other_dependencies,
+        imported_modules: Dict[str, "Module"] = None,
     ):
         """
         :param repo: Repo where this Module's source file can be found. The
@@ -168,18 +177,24 @@ class Module(ObjectManager):
             managed. If none provided, then by default this is a
             managed Python Module.
         :param requirements_path: Optional path to a pip installable file.
-        :param other_dependencies: List of other Components this depends on.
+        :param imported_modules: Dict from modules found in import statements
+            in self's managed_object (i.e. the Python Module that this
+            Module Component represents) to a `pcs.Module`.
         """
         super().__init__()
-        for k, v in other_dependencies.items():
-            setattr(self, k, v)
-        self.register_attributes(other_dependencies.keys())
         self.repo = repo
         self.file_path = file_path
         self.version = version
         self.requirements_path = requirements_path
+        self.imported_modules = imported_modules if imported_modules else {}
         self.register_attributes(
-            ["repo", "file_path", "version", "requirements_path"]
+            [
+                "repo",
+                 "file_path",
+                 "version",
+                 "requirements_path",
+                 "imported_modules",
+             ]
         )
         self._venv = None
         self._requirements = []
@@ -294,14 +309,18 @@ class Module(ObjectManager):
             version=version,
             requirements_path=prefixed_reqs_path,
         )
-        for attr_name, dependency in self.dependencies().items():
-            frozen_dependency = dependency.to_versioned_module(force=force)
-            clone.add_dependency(frozen_dependency, attribute_name=attr_name)
+        frozen_imported_mods = {}
+        for name, mod in self.imported_modules.items():
+            frozen_imported_mods.update[name] = mod.freeze(force=force)
+        self.imported_modules.update(frozen_imported_mods)
         return clone
 
-    def to_frozen_registry(self, force: bool = False) -> Registry:
-        versioned = self.to_versioned_module(force)
-        return versioned.to_registry()
+    def freeze(self: T, force: bool = False) -> T:
+        """
+        Return a copy of self whose parent Module (or self if this is a Module)
+        is versioned.
+        """
+        return self.to_versioned_module(force)
 
 
 class Class(ObjectManager):
@@ -363,6 +382,11 @@ class Class(ObjectManager):
     def instantiate(self, argument_set: ArgumentSet, name: str = None):
         return Instance(self, argument_set=argument_set, name=name)
 
+    def freeze(self: T, force: bool = False) -> T:
+        self_copy = copy.deepcopy(self)
+        self_copy.module = self.module.freeze(force)
+        return self_copy
+
 
 class Instance(ObjectManager):
     """
@@ -393,3 +417,14 @@ class Instance(ObjectManager):
                 **self.argument_set.get_kwarg_objs()
             )
             return self._instance
+
+    def freeze(self: T, force: bool = False) -> T:
+        self_copy = copy.deepcopy(self)
+        self_copy.instance_of = self.instance_of.freeze(force)
+        for i in [self_copy.argument_set.args, self_copy.argument_set.kwargs]:
+            find_and_replace_leaves(
+                i,
+                lambda x: isinstance(x, ObjectManager),
+                lambda x: x.freeze(force)
+            )
+        return self_copy

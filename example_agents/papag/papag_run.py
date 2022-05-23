@@ -50,7 +50,7 @@ class PAPAGRun(AgentRun):
 
     @classmethod
     def _get_artifact_path(cls, run, name: str) -> Path:
-        return cls.MLFLOW_CLIENT.download_artifacts(run.info.run_id, name)
+        return cls.MLFLOW_CLIENT.download_artifacts(run.mlflow_run_id, name)
 
     @classmethod
     def get_last_logged_model_run(cls, name: str) -> AgentRun:

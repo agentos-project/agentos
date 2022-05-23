@@ -80,19 +80,19 @@ def test_component_repl_demo():
     assert inst_dep_obj.y == 10
 
     # run simpleagent's reset_env() method.
-    r = agent_inst.run_with_arg_set("reset_env")
-    assert type(r) == Output
-    assert type(r.command) == Command
-    assert r.command.component == agent_inst
-    assert r.command.function_name == "reset_env"
+    output = agent_inst.run_with_arg_set("reset_env")
+    assert type(output) == Output
+    assert type(output.command) == Command
+    assert output.command.component == agent_inst
+    assert output.command.function_name == "reset_env"
 
     # run gen_class's v() method, which has a return value.
-    r2 = agent_inst.run_do_something(100)
-    assert r2 == 111
+    output2 = agent_inst.run_do_something(100)
+    assert output2 == 111
 
-    copy = Output.from_existing_mlflow_run(r.run_id)
-    assert copy.command == r.command
-    assert copy._mlflow_run.to_dictionary() == r._mlflow_run.to_dictionary()
+    copy = Output.from_existing_mlflow_run(output.mlflow_run_id)
+    assert copy.command == output.command
+    assert copy._mlflow_run.to_dictionary() == output._mlflow_run.to_dictionary()
 
 
 def test_component_freezing(tmpdir):
@@ -111,10 +111,13 @@ def test_component_freezing(tmpdir):
             mocks[
                 "get_prefixed_path_from_repo_root"
             ].return_value = "freeze/test.py"
-            reg = c.to_frozen_registry()
-            agent_spec = reg.get_component_spec("agent", flatten=True)
-            assert agent_spec["repo"] == "local_dir"
-            assert agent_spec["version"] == "test_freezing_version"
+            frozen_inst = c.freeze()
+            reg = frozen_inst.to_registry()
+            agent_spec = reg.get_spec(frozen_inst.identifier, flatten=True)
+            class_id = agent_spec["instance_of"]
+            mod_id = reg.get_spec(class_id, flatten=True)["module"]
+            version = reg.get_spec(mod_id, flatten=True)["version"]
+            assert version == "test_freezing_version"
 
 
 def test_component_from_github_with_venv():

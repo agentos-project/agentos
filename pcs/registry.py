@@ -1,4 +1,5 @@
 import abc
+import copy
 import json
 import logging
 import os
@@ -14,7 +15,9 @@ import yaml
 from deepdiff import DeepDiff
 from dotenv import load_dotenv
 
-from pcs.specs import flatten_spec, is_flat_spec, unflatten_spec
+from pcs.specs import (
+    find_and_replace_leaves, flatten_spec, is_flat_spec, Spec, unflatten_spec
+)
 from pcs.utils import nested_dict_list_replace, is_identifier, is_spec_body
 
 logger = logging.getLogger(__name__)
@@ -45,11 +48,17 @@ class Registry(abc.ABC):
         with open(file_path) as file_in:
             config = yaml.safe_load(file_in)
         reg = InMemoryRegistry(input_dict=config)
+        updated_specs = []
         for spec_id, spec_body in reg.specs.items():
             if spec_body["type"] == "LocalRepo":
                 p = PurePath(spec_body["path"])
                 if not p.is_absolute():
-                    reg.specs[spec_id]["path"] = Path(file_path).parent / p
+                    abs_path = (Path(file_path).parent / p).resolve()
+                    updated_spec = Spec.from_flat(copy.deepcopy(spec_body))
+                    updated_spec.update_body({"path": str(abs_path)})
+                    updated_specs.append((spec_id, updated_spec))
+        for old_id, updated in updated_specs:
+            reg.replace_spec(old_id, updated)
         return reg
 
     @classmethod
@@ -191,7 +200,7 @@ class Registry(abc.ABC):
             )
         else:
             return None
-        spec = {identifier: body}
+        spec = Spec({identifier: copy.deepcopy(body)})
         return flatten_spec(spec) if flatten else spec
 
     def get_specs_transitively_by_id(
@@ -234,6 +243,25 @@ class Registry(abc.ABC):
             if alias in self.aliases:
                 assert self.aliases[alias] == i
             self.add_alias(alias, i)
+
+    def replace_spec(self, identifier, new_spec):
+        replacements_to_do = [(identifier, new_spec)]
+        while replacements_to_do:
+            ident_to_replace, new_spec = replacements_to_do.pop()
+            self.add_spec(new_spec)
+            for ident, spec_body in self.specs.items():
+                spec_copy = Spec.from_flat(spec_body)  # Makes deepcopy
+                found = spec_copy.replace_in_body(
+                    lambda x: x == ident_to_replace, lambda x: new_spec.identifier
+                )
+                if found:
+                   replacements_to_do.append((ident, spec_copy))
+            aliases_to_update = [
+                alias for alias, ident in self.aliases.items()
+                if ident == ident_to_replace
+            ]
+            for alias in aliases_to_update:
+                self.aliases[alias] = new_spec.identifier
 
 
 class InMemoryRegistry(Registry):
@@ -312,7 +340,7 @@ class InMemoryRegistry(Registry):
             to_handle += [(new_specs, ident, {k: v}) for k, v in body.items()]
         while to_handle:
             struct, key, elt = to_handle.pop()
-            if isinstance(elt, dict):  # handling dict
+            if elt and isinstance(elt, dict):  # handling dict
                 for attr_key, attr_val in elt.items():
                     if is_spec_body(attr_val):  # normalize nested_spec
                         inner_spec = attr_val
@@ -325,13 +353,13 @@ class InMemoryRegistry(Registry):
                     else:
                         try:
                             struct[key]
-                        except KeyError:
+                        except (IndexError, KeyError):
                             struct[key] = {}
                         to_handle.append((struct[key], attr_key, attr_val))
-            elif isinstance(elt, list):  # handling dict
+            elif elt and isinstance(elt, list):  # handling list
                 try:
                     struct[key]
-                except IndexError:
+                except (IndexError, KeyError):
                     struct[key] = []
                 for i, sub_elt in enumerate(elt):
                     to_handle.append((struct[key], i, sub_elt))

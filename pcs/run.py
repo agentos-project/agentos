@@ -45,7 +45,7 @@ class MLflowRun(Component):
     DEFAULT_EXPERIMENT_ID = "0"
     PCS_RUN_TAG = "pcs.is_run"
     # Pass calls to the following functions through to this
-    # Run's mlflow_client. All of these take run_id as
+    # Run's mlflow_client. All of these take mlflow_run_id as
     # first arg, and so the pass-through logic also binds
     # self._mlflow_run_id as the first arg of the calls.
     PASS_THROUGH_FN_PREFIXES = [
@@ -80,7 +80,7 @@ class MLflowRun(Component):
                 "Error: When creating an AgentOS Run using an "
                 "existing MLflow Run ID, an MLflow run with that ID must "
                 "be available at the current tracking URI, and "
-                f"run_id {run_id} is not."
+                f"mlflow_run_id {run_id} is not."
             )
             raise mlflow_exception
         orig_init = cls.__init__
@@ -95,7 +95,7 @@ class MLflowRun(Component):
         return run
 
     @classmethod
-    def run_exists(cls, run_id) -> bool:
+    def run_exists(cls, mlflow_run_id) -> bool:
         try:
             cls.MLFLOW_CLIENT.get_run(run_id)
             return True
@@ -111,7 +111,7 @@ class MLflowRun(Component):
         )
         res = []
         for mlflow_run in mlflow_runs:
-            r = cls.from_existing_mlflow_run(mlflow_run.info.run_id)
+            r = cls.from_existing_mlflow_run(mlflow_run.info.mlflow_run_id)
             res.append(r)
         return res
 
@@ -120,8 +120,8 @@ class MLflowRun(Component):
         return self.MLFLOW_CLIENT.get_run(self._mlflow_run_id)
 
     @property
-    def run_id(self) -> str:
-        return self._mlflow_run.info.run_id
+    def mlflow_run_id(self) -> str:
+        return self._mlflow_run_id
 
     @property
     def data(self) -> dict:
@@ -179,7 +179,7 @@ class MLflowRun(Component):
                 for k, v in self.data.tags.items()
                 if not k.startswith("mlflow.")
             }
-            print(f"    Run {self.run_id}: {filtered_tags}")
+            print(f"    Run {self.mlflow_run_id}: {filtered_tags}")
         else:
             pprint.pprint(self.to_spec())
 

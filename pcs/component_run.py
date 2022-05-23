@@ -14,8 +14,8 @@ from pcs.specs import unflatten_spec
 class Output(MLflowRun):
     IS_FROZEN_KEY = "agentos.spec_is_frozen"
     IS_COMPONENT_RUN_TAG = "pcs.is_component_run"
-    RUN_COMMAND_ID_KEY = "pcs.command_id"
-    RUN_COMMAND_REGISTRY_FILENAME = "pcs.command_registry.yaml"
+    COMMAND_ID_KEY = "pcs.command_id"
+    COMMAND_REGISTRY_FILENAME = "pcs.command_registry.yaml"
     """
     Output from running a Command.
      
@@ -46,15 +46,15 @@ class Output(MLflowRun):
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
-            f"PCS Module '{self.command.component.identifier}' "
-            f"at Entry Point '{self.command.function_name}'",
+            f"Running function '{self.command.function_name}' on Component "
+            f"'{self.command.component.identifier[0:7]}'."
         )
 
     @classmethod
     def from_existing_mlflow_run(cls, run_id: str) -> "Run":
-        run = super().from_existing_mlflow_run(run_id)
-        command = run._fetch_command()
-        run._setup_local_state(command)
+        output = super().from_existing_mlflow_run(run_id)
+        output._command = output._fetch_command()
+        return output
 
     @property
     def command(self) -> "Command":
@@ -76,17 +76,17 @@ class Output(MLflowRun):
 
     def _fetch_command(self) -> Command:
         try:
-            path = self.download_artifacts(self.RUN_COMMAND_REGISTRY_FILENAME)
+            path = self.download_artifacts(self.COMMAND_REGISTRY_FILENAME)
         except OSError as e:
             raise OSError(
                 f"Command registry artifact not found in Run with id "
                 f"{self._mlflow_run_id}. {repr(e)}"
             )
-        assert self.RUN_COMMAND_ID_KEY in self._mlflow_run.data.tags, (
-            f"{self.RUN_COMMAND_ID_KEY} not found in the tags of MLflow "
+        assert self.COMMAND_ID_KEY in self.data.tags, (
+            f"{self.COMMAND_ID_KEY} not found in the tags of MLflow "
             f"run with id {self._mlflow_run_id}."
         )
-        command_id = self._mlflow_run.data.tags[self.RUN_COMMAND_ID_KEY]
+        command_id = self._mlflow_run.data.tags[self.COMMAND_ID_KEY]
         registry = Registry.from_yaml(path)
         return Command.from_registry(registry, command_id)
 
@@ -109,19 +109,19 @@ class Output(MLflowRun):
         assert not self._command
         self._command = command
         self._validate_no_command_logged()
-        self.set_tag(self.RUN_COMMAND_ID_KEY, command.identifier)
+        self.set_tag(self.COMMAND_ID_KEY, command.identifier)
         command_dict = command.to_registry().to_dict()
-        self.log_dict(command_dict, self.RUN_COMMAND_REGISTRY_FILENAME)
+        self.log_dict(command_dict, self.COMMAND_REGISTRY_FILENAME)
 
     def _validate_no_command_logged(self):
-        assert self.RUN_COMMAND_ID_KEY not in self._mlflow_run.data.tags, (
-            f"{self.RUN_COMMAND_ID_KEY} already found tags of MLflow run "
+        assert self.COMMAND_ID_KEY not in self._mlflow_run.data.tags, (
+            f"{self.COMMAND_ID_KEY} already found tags of MLflow run "
             f"with id {self._mlflow_run_id}. A command can only be logged "
             "once per a Run."
         )
         artifact_paths = [a.path for a in self.list_artifacts()]
-        assert self.RUN_COMMAND_REGISTRY_FILENAME not in artifact_paths, (
-            f"An artifact with name {self.RUN_COMMAND_REGISTRY_FILENAME} "
+        assert self.COMMAND_REGISTRY_FILENAME not in artifact_paths, (
+            f"An artifact with name {self.COMMAND_REGISTRY_FILENAME} "
             "has already been logged to the MLflow run with id "
             f"{self._mlflow_run_id}. A command can only be logged "
             "once per a Run."

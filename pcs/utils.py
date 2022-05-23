@@ -225,6 +225,17 @@ def leaf_replace(data_struct: Any, leaf_list: List, replacement_fn: Callable):
 
 # From https://stackoverflow.com/a/12507546
 def leaf_lists(data_struct: Any, pre: List = None):
+    """
+    Returns a list of lists, each inner list contains the sequence
+    of keys necessary to index into data_struct to get to the leaf,
+    followed by the value of the leaf itself.
+
+    Example::
+
+    >>> x = {1: [2, {3: 4}]}  # Has two leaves: 2 and 4.
+    >>> [i for i in leaf_lists(x)]
+    [[1, 0, 2], [1, 1, 3, 4]]
+    """
     if not data_struct:
         return []
     pre = pre[:] if pre else []
@@ -247,16 +258,38 @@ def leaf_lists(data_struct: Any, pre: List = None):
         yield pre + [data_struct]
 
 
-def find_and_replace_leaves(
-    data_struct: Any, filter_fn: Callable, replace_fn: Callable
-):
+def filter_leaves(data_struct: Any, filter_fn: Callable) -> Dict:
     assert isinstance(data_struct, (list, dict)), (
         f"data_struct must be a list or dict, but is type "
         f"{type(data_struct)} (value: '{data_struct}')."
     )
-    for x in leaf_lists(data_struct):
-        if filter_fn(x[-1]):
-            leaf_replace(data_struct, x, replace_fn)
+    return {
+        idx: leaf
+        for *_, idx, leaf in leaf_lists(data_struct)
+        if filter_fn(leaf)
+    }
+
+
+def find_and_replace_leaves(
+    data_struct: Any, filter_fn: Callable, replace_fn: Callable
+) -> bool:
+    """
+    :param data_struct: the list or dict to search
+    :param filter_fn: the function to use when filtering
+    :param replace_fn: a function that takes the existing leaf element
+        and returns an element that will replace the existing one.
+    :return: True if any matches were found
+    """
+    assert isinstance(data_struct, (list, dict)), (
+        f"data_struct must be a list or dict, but is type "
+        f"{type(data_struct)} (value: '{data_struct}')."
+    )
+    match_found = False
+    for leaf_list in leaf_lists(data_struct):
+        if filter_fn(leaf_list[-1]):
+            leaf_replace(data_struct, leaf_list, replace_fn)
+            match_found = True
+    return match_found
 
 
 if __name__ == "__main__":

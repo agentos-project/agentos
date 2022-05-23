@@ -79,7 +79,7 @@ PCS, a Module Run gets created.
 All Runs enforce semantics around the type of outputs and results they track,
 dividing the world into info, data, and artifacts:
 
-* Info is metadata (start-time, run_id)
+* Info is metadata (start-time, mlflow_run_id)
 * Data can be metrics, parameters, and tags
 * Artifacts are files or folders produced during the Run
   

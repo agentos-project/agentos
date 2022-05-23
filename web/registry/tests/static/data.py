@@ -89,7 +89,7 @@ RUN_CREATE_DATA = {
         "end_time": 1639001190864,
         "experiment_id": "0",
         "lifecycle_stage": "active",
-        "run_id": "39be22d7ff9848bd9545988ff15f578f",
+        "mlflow_run_id": "39be22d7ff9848bd9545988ff15f578f",
         "run_uuid": "39be22d7ff9848bd9545988ff15f578f",
         "start_time": 1639001190314,
         "status": "FINISHED",
