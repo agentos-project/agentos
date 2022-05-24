@@ -131,41 +131,48 @@ def test_component_from_github_with_venv():
         random_component.run_with_arg_set("run_episodes")
 
 
-def test_component_from_github_no_venv():  # noqa: F811
-    with auto_revert_venv():
-        sb3_url = (
-            "https://github.com/agentos-project/agentos/blob/"
-            f"{TESTING_BRANCH_NAME}/example_agents/sb3_agent/components.yaml"
-        )
-        random_component = Module.from_github_registry(
-            sb3_url, "sb3_agent", use_venv=False
-        )
-        random_component.run_with_arg_set("evaluate")
-
-
 def test_module_component_from_agentos_github_repo():
     repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
-    c_suff = f"=={TESTING_BRANCH_NAME}"
     f_pref = "example_agents/random/"
-    ag_c = Module.from_repo(repo, f"a{c_suff}", f"{f_pref}agent.py")
-    env_c = Module.from_repo(repo, f"e{c_suff}", f"{f_pref}environment.py")
-    pol_c = Module.from_repo(repo, f"p{c_suff}", f"{f_pref}policy.py")
-    ds_c = Module.from_repo(repo, f"d{c_suff}", f"{f_pref}dataset.py")
 
-    ag_c.instantiate = True
-    ag_c.class_name = "BasicAgent"
-
-    env_c.instantiate = True
-    env_c.class_name = "Corridor"
-    ag_c.add_dependency(env_c, "environment")
-
-    pol_c.instantiate = True
-    pol_c.class_name = "RandomPolicy"
-    ag_c.add_dependency(pol_c, "policy")
-    pol_c.add_dependency(env_c, "environment")
-
-    ds_c.instantiate = True
-    ds_c.class_name = "BasicDataset"
-    ag_c.add_dependency(ds_c, "dataset")
-
-    ag_c.run("run_episode")
+    env = Instance(
+        instance_of=Class(
+            name="Corridor",
+            module=Module.from_repo(
+                repo, TESTING_BRANCH_NAME, f"{f_pref}environment.py"
+            )
+        )
+    )
+    ds = Instance(
+        instance_of=Class(
+            name="BasicDataset",
+            module=Module.from_repo(
+                repo, TESTING_BRANCH_NAME, f"{f_pref}dataset.py"
+            )
+        )
+    )
+    pol = Instance(
+        instance_of=Class(
+            name="RandomPolicy",
+            module=Module.from_repo(
+                repo, TESTING_BRANCH_NAME, f"{f_pref}policy.py"
+            )
+        ),
+        argument_set=ArgumentSet(kwargs={
+            "environment": env,
+        })
+    )
+    agent = Instance(
+        instance_of=Class(
+            name="BasicAgent",
+            module=Module.from_repo(
+                repo, TESTING_BRANCH_NAME, f"{f_pref}agent.py"
+            )
+        ),
+        argument_set=ArgumentSet(kwargs={
+            "environment": env,
+            "policy": pol,
+            "dataset": ds,
+        })
+    )
+    agent.run("run_episode")
