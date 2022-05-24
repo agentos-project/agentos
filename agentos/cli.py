@@ -190,7 +190,10 @@ def status(identifier, registry_file):
         MLflowRun.from_existing_mlflow_run(identifier).print_status(detailed=True)
     else:  # assume identifier is a Component identifier
         try:
-            c = Component.from_registry_file(registry_file, identifier)
+            registry = InMemoryRegistry()
+            for reg in registry_file:
+                registry.update(Registry.from_yaml(reg))
+            c = Component.from_registry(registry, identifier)
             c.print_status_tree()
         except LookupError:
             print(f"No Run or component found with Identifier {identifier}.")
@@ -221,8 +224,11 @@ def freeze(identifier, registry_file, force, output_file):
           the same commit
         * There are no uncommitted changes in the local repo
     """
-    module = Module.from_registry_file(registry_file, identifier)
-    frozen_reg = module.to_frozen_registry(force=force)
+    registry = InMemoryRegistry()
+    for reg in registry_file:
+        registry.update(Registry.from_yaml(reg))
+    module = Module.from_registry(registry, identifier)
+    frozen_reg = module.freeze(force=force).to_registry()
     if output_file:
         with open(output_file, "w") as f:
             yaml.dump(frozen_reg.to_dict(), f)

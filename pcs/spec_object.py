@@ -9,19 +9,22 @@ from typing import (
     List,
     Mapping,
     Sequence,
-    Tuple,
     Type,
     TypeVar,
     TYPE_CHECKING
 )
 import yaml
-from deepdiff import DeepDiff, DeepHash, grep
+from deepdiff import DeepDiff, DeepHash
 
 import pcs  # for hasattr(pcs, ...)
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import flatten_spec, Spec, unflatten_spec
 from pcs.utils import (
-    IDENTIFIER_REGEXES, is_identifier, filter_leaves, find_and_replace_leaves
+    extract_identifier,
+    filter_leaves,
+    find_and_replace_leaves,
+    is_identifier_ref,
+    make_identifier_ref,
 )
 
 if TYPE_CHECKING:
@@ -119,7 +122,7 @@ class Component:
                 find_and_replace_leaves(
                     attr,
                     lambda leaf: isinstance(leaf, Component),
-                    lambda leaf: leaf.identifier
+                    lambda leaf: make_identifier_ref(leaf.identifier)
                 )
             attributes.update(attr)
         return attributes
@@ -205,7 +208,8 @@ class Component:
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
         spec = Spec(copy.deepcopy(spec))
         spec.replace_in_body(
-            is_identifier, lambda leaf: cls._resolve_dep_class(leaf, registry)
+            is_identifier_ref,
+            lambda leaf: cls._resolve_dep(extract_identifier(leaf), registry)
         )
         assert hasattr(pcs, spec.type), (
             f"No Component type '{spec.type}' found in "
@@ -217,13 +221,13 @@ class Component:
         return comp_class
 
     @classmethod
-    def _resolve_dep_class(cls, identifier: str, registry: Registry):
+    def _resolve_dep(cls, identifier: str, registry: Registry):
         assert registry, (
             f"{cls.__name__} requires a registry to be "
             "passed in order to create a Component from the provided "
             "spec that has dependencies."
         )
-        dep_spec = flatten_spec(registry.get_spec(identifier))
+        dep_spec = registry.get_spec(identifier, flatten=True)
         assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
         dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
         assert issubclass(dep_comp_cls, Component)

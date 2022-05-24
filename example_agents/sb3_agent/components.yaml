@@ -1,53 +1,69 @@
-repos:
+specs:
     sb3_agent_dir:
-        type: local
+        type: LocalRepo
         path: .
 
     openai_gym:
-        type: github
+        type: GitHubRepo
         url: git@github.com:openai/gym.git
 
     stable_baselines3:
-        type: github
+        type: GitHubRepo
         url: https://github.com/DLR-RM/stable-baselines3.git
 
     mgbellemare_ale:
-        type: github
+        type: GitHubRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
-components:
     sb3_agent:
-        repo: sb3_agent_dir
-        file_path: agent.py
-        class_name: SB3PPOAgent
-        instantiate: True
-        requirements_path: ./requirements.txt
-        dependencies:
-            AtariEnv: AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f
-            CartPoleEnv: CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
-            PPO: PPO==21f6a474a4755996709efee8c0aab309df905cbf
-            SB3AgentRun: SB3AgentRun
-    
-    AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f:
-        repo: mgbellemare_ale
-        file_path: ./src/gym/envs/atari/environment.py
-        class_name: AtariEnv
-        instantiate: False
+        type: Instance
+        argument_set:
+            type: ArgumentSet
+            kwargs:
+                AtariEnv: spec:AtariEnv
+                CartPoleEnv: spec:CartPoleEnv
+                PPO: spec:PPO
+                SB3AgentRun: spec:SB3AgentRun
+        instance_of:
+            type: Class
+            name: SB3PPOAgent
+            module:
+                type: Module
+                repo: spec:sb3_agent_dir
+                file_path: agent.py
+                requirements_path: ./requirements.txt
 
-    CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
-        repo: openai_gym
-        file_path: ./gym/envs/classic_control/cartpole.py
-        class_name: CartPoleEnv
-        instantiate: False
+    AtariEnv:
+        type: Class
+        name: AtariEnv
+        module:
+            type: Module
+            version: db3728264f382402120913d76c4fa0dc320ef59f
+            repo: spec:mgbellemare_ale
+            file_path: ./src/gym/envs/atari/environment.py
 
-    PPO==21f6a474a4755996709efee8c0aab309df905cbf:
-        repo: stable_baselines3
-        file_path: ./stable_baselines3/ppo/ppo.py
-        class_name: PPO
-        instantiate: False
+    CartPoleEnv:
+        type: Class
+        name: CartPoleEnv
+        module:
+            type: Module
+            version: 4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
+            repo: spec:openai_gym
+            file_path: ./gym/envs/classic_control/cartpole.py
+
+    PPO:
+        type: Class
+        name: PPO
+        module:
+            type: Module
+            version: 21f6a474a4755996709efee8c0aab309df905cbf
+            repo: spec:stable_baselines3
+            file_path: ./stable_baselines3/ppo/ppo.py
 
     SB3AgentRun:
-        repo: sb3_agent_dir
-        file_path: sb3_run.py
-        class_name: SB3Run
-        instantiate: False
+        type: Class
+        name: SB3Run
+        module:
+            type: Module
+            repo: spec:sb3_agent_dir
+            file_path: sb3_run.py

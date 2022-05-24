@@ -16,9 +16,16 @@ from deepdiff import DeepDiff
 from dotenv import load_dotenv
 
 from pcs.specs import (
-    find_and_replace_leaves, flatten_spec, is_flat_spec, Spec, unflatten_spec
+    flatten_spec, is_flat_spec, Spec, unflatten_spec
 )
-from pcs.utils import nested_dict_list_replace, is_identifier, is_spec_body
+from pcs.utils import (
+    IDENTIFIER_REF_PREFIX,
+    extract_identifier,
+    is_identifier,
+    is_spec_body,
+    make_identifier_ref,
+    nested_dict_list_replace,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +199,6 @@ class Registry(abc.ABC):
             body = self.specs[identifier]
         elif identifier in self.aliases:
             body = self.specs[self.aliases[identifier]]
-            identifier = self.aliases[identifier]
         elif error_if_not_found:
             raise LookupError(
                 f"'{identifier}' did not match any identifiers or aliases "
@@ -200,8 +206,8 @@ class Registry(abc.ABC):
             )
         else:
             return None
-        spec = Spec({identifier: copy.deepcopy(body)})
-        return flatten_spec(spec) if flatten else spec
+        spec = Spec.from_flat(body)
+        return spec.to_flat() if flatten else spec
 
     def get_specs_transitively_by_id(
         self,
@@ -252,7 +258,8 @@ class Registry(abc.ABC):
             for ident, spec_body in self.specs.items():
                 spec_copy = Spec.from_flat(spec_body)  # Makes deepcopy
                 found = spec_copy.replace_in_body(
-                    lambda x: x == ident_to_replace, lambda x: new_spec.identifier
+                    lambda x: x == make_identifier_ref(ident_to_replace),
+                    lambda x: make_identifier_ref(new_spec.identifier)
                 )
                 if found:
                    replacements_to_do.append((ident, spec_copy))
@@ -347,7 +354,7 @@ class InMemoryRegistry(Registry):
                         from pcs.spec_object import Component
 
                         inner_id = Component.spec_body_to_identifier(inner_spec)
-                        struct[key][attr_key] = inner_id
+                        struct[key][attr_key] = make_identifier_ref(inner_id)
                         new_specs[inner_id] = {}
                         to_handle.append((new_specs, inner_id, inner_spec))
                     else:
@@ -411,8 +418,9 @@ class InMemoryRegistry(Registry):
 
             hash = Component.spec_body_to_identifier(body)
             if is_identifier(id_or_alias):
-                assert id_or_alias == hash, f"{id_or_alias} != {hash}"
-                new_specs[id_or_alias] = body
+                ident = extract_identifier(id_or_alias)
+                assert ident == hash, f"{ident} != {hash}"
+                new_specs[ident] = body
             else:
                 if id_or_alias in new_aliases:
                     assert new_aliases[id_or_alias] == hash
@@ -426,7 +434,11 @@ class InMemoryRegistry(Registry):
                     f"replace '{alias}' with {new_aliases[alias]}, in spec: "
                     f"{spec}"
                 )
-                nested_dict_list_replace(new_specs, f"^{alias}$", new_aliases[alias])
+                nested_dict_list_replace(
+                    new_specs,
+                    f"^{make_identifier_ref(alias)}$",
+                    make_identifier_ref(new_aliases[alias])
+                )
         self._registry[self.SPECS_KEY] = new_specs
         if new_aliases:
             self._registry[self.ALIASES_KEY] = new_aliases

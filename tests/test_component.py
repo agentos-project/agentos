@@ -1,7 +1,6 @@
 """Test suite for AgentOS Module."""
 from unittest.mock import DEFAULT, patch
 
-import pytest
 from utils import run_in_dir, run_test_command
 
 from agentos.cli import init

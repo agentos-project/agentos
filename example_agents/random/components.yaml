@@ -8,15 +8,15 @@ specs:
         argument_set:
             type: ArgumentSet
             kwargs:
-                environment: environment
-                policy: policy
-                dataset: dataset
+                environment: spec:environment
+                policy: spec:policy
+                dataset: spec:dataset
         instance_of:
             type: Class
             name: BasicAgent
             module:
                 type: Module
-                repo: local_dir
+                repo: spec:local_dir
                 file_path: ./agent.py
                 requirements_path: ./requirements.txt
 
@@ -27,7 +27,7 @@ specs:
             name: Corridor
             module:
                 type: Module
-                repo: local_dir
+                repo: spec:local_dir
                 file_path: ./environment.py
 
     policy:
@@ -35,13 +35,13 @@ specs:
         argument_set:
             type: ArgumentSet
             kwargs:
-                environment: environment
+                environment: spec:environment
         instance_of:
             type: Class
             name: RandomPolicy
             module:
                 type: Module
-                repo: local_dir
+                repo: spec:local_dir
                 file_path: ./policy.py
 
     dataset:
@@ -51,5 +51,5 @@ specs:
             name: BasicDataset
             module:
                 type: Module
-                repo: local_dir
+                repo: spec:local_dir
                 file_path: ./dataset.py

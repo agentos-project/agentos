@@ -97,7 +97,7 @@ class MLflowRun(Component):
     @classmethod
     def run_exists(cls, mlflow_run_id) -> bool:
         try:
-            cls.MLFLOW_CLIENT.get_run(run_id)
+            cls.MLFLOW_CLIENT.get_run(mlflow_run_id)
             return True
         except MlflowException:
             return False
@@ -111,7 +111,7 @@ class MLflowRun(Component):
         )
         res = []
         for mlflow_run in mlflow_runs:
-            r = cls.from_existing_mlflow_run(mlflow_run.info.mlflow_run_id)
+            r = cls.from_existing_mlflow_run(mlflow_run.info.run_id)
             res.append(r)
         return res
 

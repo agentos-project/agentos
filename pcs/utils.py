@@ -14,8 +14,11 @@ AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
-IDENTIFIER_REGEXES = [
-    "^[a-fA-F0-9]{32}$", "^[a-fA-F0-9]{40}$", "^[a-fA-F0-9]{64}$"
+IDENTIFIER_REF_PREFIX = "spec:"
+HASH_REGEXES = [
+    "^" + IDENTIFIER_REF_PREFIX + "[a-fA-F0-9]{32}$",
+    "^" + IDENTIFIER_REF_PREFIX + "[a-fA-F0-9]{40}$",
+    "^" + IDENTIFIER_REF_PREFIX + "[a-fA-F0-9]{64}$"
 ]
 
 
@@ -32,9 +35,22 @@ def is_spec_body(item: Any) -> bool:
 
 def is_identifier(token: Any) -> bool:
     is_id = False
-    for rx in IDENTIFIER_REGEXES:
+    for rx in HASH_REGEXES:
         is_id = is_id or (regex.match(rx, str(token)) is not None)
     return is_id
+
+
+def is_identifier_ref(token: Any) -> bool:
+    return str(token).startswith(IDENTIFIER_REF_PREFIX)
+
+
+def extract_identifier(identifier_ref: str) -> str:
+    assert identifier_ref.startswith(IDENTIFIER_REF_PREFIX)
+    return identifier_ref[len(IDENTIFIER_REF_PREFIX):]
+
+
+def make_identifier_ref(identifier: str) -> str:
+    return IDENTIFIER_REF_PREFIX + identifier
 
 
 def parse_github_web_ui_url(
