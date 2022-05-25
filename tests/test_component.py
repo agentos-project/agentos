@@ -1,19 +1,20 @@
 """Test suite for AgentOS Module."""
 from unittest.mock import DEFAULT, patch
 
-from utils import run_in_dir, run_test_command
-
 from agentos.cli import init
 from pcs.argument_set import ArgumentSet
 from pcs.component import Module, Class, Instance
 from pcs.component_run import Output
 from pcs.repo import Repo
 from pcs.run_command import Command
+from pcs.utils import extract_identifier
 from pcs.virtual_env import auto_revert_venv
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
+    run_in_dir,
+    run_test_command,
 )
 
 
@@ -114,8 +115,12 @@ def test_component_freezing(tmpdir):
             reg = frozen_inst.to_registry()
             agent_spec = reg.get_spec(frozen_inst.identifier, flatten=True)
             class_id = agent_spec["instance_of"]
-            mod_id = reg.get_spec(class_id, flatten=True)["module"]
-            version = reg.get_spec(mod_id, flatten=True)["version"]
+            mod_id = reg.get_spec(
+                extract_identifier(class_id), flatten=True
+            )["module"]
+            version = reg.get_spec(
+                extract_identifier(mod_id), flatten=True
+            )["version"]
             assert version == "test_freezing_version"
 
 

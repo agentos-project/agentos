@@ -16,9 +16,9 @@ AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
 IDENTIFIER_REF_PREFIX = "spec:"
 HASH_REGEXES = [
-    "^" + IDENTIFIER_REF_PREFIX + "[a-fA-F0-9]{32}$",
-    "^" + IDENTIFIER_REF_PREFIX + "[a-fA-F0-9]{40}$",
-    "^" + IDENTIFIER_REF_PREFIX + "[a-fA-F0-9]{64}$"
+    "^[a-fA-F0-9]{32}$",
+    "^[a-fA-F0-9]{40}$",
+    "^[a-fA-F0-9]{64}$"
 ]
 
 

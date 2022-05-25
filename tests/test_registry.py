@@ -6,7 +6,7 @@ from pcs.component import Module
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.spec_object import Component
-from pcs.utils import generate_dummy_dev_registry
+from pcs.utils import generate_dummy_dev_registry, make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
@@ -18,17 +18,24 @@ from tests.utils import (
 
 
 def test_resolve_inline_specs():
-    outer_spec_body = {
-        "argument_set":
-            {
-                "type": "Module",
-                "key": "val"
-           }
+    inner_spec_body = {
+        "type": "Module",
+        "key": "val"
+    }
+
+    def get_outer_spec_body(what_to_inline):
+        return {
+            "type": "Class",
+            "some_module": what_to_inline
         }
-    outer_spec_id = Component.spec_body_to_identifier(outer_spec_body)
-    r = Registry.from_dict({"specs": {outer_spec_id: outer_spec_body}})
-    arg_set_id = r.get_spec(outer_spec_id, flatten=True)["argument_set"]
-    assert r.get_spec(arg_set_id, flatten=True)["type"] == "Module"
+    inner_spec_id = Component.spec_body_to_identifier(inner_spec_body)
+    normalized_outer = get_outer_spec_body(make_identifier_ref(inner_spec_id))
+    nested_outer = get_outer_spec_body(inner_spec_body)
+    normalized_outer_id = Component.spec_body_to_identifier(normalized_outer)
+    r = Registry.from_dict({"specs": {normalized_outer_id: nested_outer}})
+    outer_id = r.get_spec(normalized_outer_id, flatten=True)["some_module"]
+    assert outer_id == make_identifier_ref(inner_spec_id)
+    assert r.get_spec(inner_spec_id, flatten=True)["type"] == "Module"
 
 
 def test_resolve_inline_aliases():
@@ -145,42 +152,22 @@ def test_registry_from_dict():
 
 def test_registry_from_file():
     from pcs.argument_set import ArgumentSet
-    from pcs.exceptions import RegistryException
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
     random_local_ag = Module.from_registry(r, "agent")
-    assert random_local_ag.name == "agent"
-    assert not random_local_ag.version
-    assert random_local_ag.identifier == "agent"
-    assert "environment" in random_local_ag.dependencies().keys()
-    assert (
-        random_local_ag.dependencies()["environment"].identifier == "environment"
-    )
+    assert "environment" in random_local_ag.argument_set.kwargs
     random_local_ag.run_with_arg_set(
-        "run_episodes",
-        ArgumentSet({"agent": {"run_episodes": {"num_episodes": 5}}}),
+        "run_episodes", ArgumentSet(kwargs={"num_episodes": 5})
     )
 
     # Test publishing a component to an InMemoryRegistry
     chatbot_agent = Module.from_registry_file(
         CHATBOT_AGENT_DIR / "components.yaml", "chatbot"
     )
-    assert chatbot_agent.class_name == "ChatBot"
     r.add_component(chatbot_agent)
-    assert r.get_component_spec(chatbot_agent.name, chatbot_agent.version)
-    assert r.get_component_spec("env_class")  # ensure dependencies got added.
-    chatbot_agent.class_name = "NewClassName"
-    with pytest.raises(RegistryException):
-        r.add_component(chatbot_agent)
-    r.add_component(chatbot_agent, force=True)
-    updated = r.get_component_spec(
-        chatbot_agent.name, chatbot_agent.version, flatten=True
-    )
-    assert updated["name"] == "NewClassName"
 
     reg_from_component = chatbot_agent.to_registry()
-    assert reg_from_component.get_component_spec("chatbot")
-    assert reg_from_component.get_component_spec("env_class")
+    assert reg_from_component.get_spec(chatbot_agent.identifier)
 
 
 def test_registry_from_repo():

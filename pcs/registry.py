@@ -126,7 +126,7 @@ class Registry(abc.ABC):
             # TODO: add dependencies to component for every import
             #       statement in the file (or just the ones at the
             #       module level?)
-            reg.add_component(mod_component)
+            mod_component.to_registry()
         return reg
         # TODO: finish this, add class components & class instance components?
 
@@ -238,6 +238,11 @@ class Registry(abc.ABC):
     def add_spec(self, spec: Dict) -> None:
         raise NotImplementedError
 
+    def add_component(
+        self, component: "Component", recurse: bool = True
+    ) -> None:
+        component.to_registry(self, recurse=recurse)
+
     @abc.abstractmethod
     def add_alias(self, alias: str, identifier: str) -> None:
         raise NotImplementedError
@@ -288,8 +293,8 @@ class InMemoryRegistry(Registry):
                     f"has '{key}'."
                 )
             self._registry.update(input_dict)
-            self._resolve_aliases()
             self._resolve_inline_specs()
+            self._resolve_aliases()
 
     @property
     def specs(self) -> Mapping:
@@ -418,9 +423,7 @@ class InMemoryRegistry(Registry):
 
             hash = Component.spec_body_to_identifier(body)
             if is_identifier(id_or_alias):
-                ident = extract_identifier(id_or_alias)
-                assert ident == hash, f"{ident} != {hash}"
-                new_specs[ident] = body
+                new_specs[id_or_alias] = body
             else:
                 if id_or_alias in new_aliases:
                     assert new_aliases[id_or_alias] == hash

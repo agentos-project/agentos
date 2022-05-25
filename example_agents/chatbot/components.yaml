@@ -1,20 +1,27 @@
-repos:
+specs:
     local_repo:
-        type: local
+        type: LocalRepo
         path: .
 
-
-components:
     chatbot:
-        repo: local_repo
-        class_name: ChatBot
-        file_path: ./main.py
-        instantiate: True
-        dependencies:
-            env_class: env_class
-    
+        type: Instance
+        argument_set:
+            kwargs:
+                env_class: spec:env_class
+        instance_of:
+            type: Class
+            name: ChatBot
+            module:
+                type: Module
+                repo: spec:local_repo
+                file_path: ./main.py
+
     env_class:
-        repo: local_repo
-        class_name: MultiChatEnv
-        file_path: ./env.py
-        instantiate: True
+        type: Instance
+        instance_of:
+            type: Class
+            name: MultiChatEnv
+            module:
+                type: Module
+                repo: spec:local_repo
+                file_path: ./env.py

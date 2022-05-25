@@ -1,37 +1,40 @@
-repos:
+specs:
     aos_github:
-        type: github
+        type: GitHubRepo
         url: https://github.com/agentos-project/agentos.git
 
-
-components:
     agent==test_staging:
-        repo: aos_github
-        file_path: example_agents/sb3_agent/agent.py
-        class_name: SB3PPOAgent
-        instantiate: True
-        dependencies:
-            environment: environment==test_staging
-            SB3AgentRun: SB3AgentRun==test_staging
-            blah: agent==test_staging
-
-    agent==test_staging:
-        repo: aos_github
-        file_path: example_agents/sb3_agent/agent.py
-        class_name: SB3PPOAgent
-        instantiate: True
-        dependencies:
-            environment: environment==test_staging
-            SB3AgentRun: SB3AgentRun==test_staging
+        type: Instance
+        argument_set:
+            kwargs:
+                environment: spec:environment
+                SB3AgentRun: spec:SB3AgentRun
+                blah: spec:agent
+        instance_of:
+            type: Class
+            name: SB3PPOAgent
+            module:
+                type: Module
+                repo: spec:aos_github
+                file_path: example_agents/sb3_agent/agent.py
+                version: test_staging
 
     environment==test_staging:
-        repo: aos_github
-        file_path: example_agents/sb3_agent/environment.py
-        class_name: CartPole
-        instantiate: True
+        type: Instance
+        instance_of:
+            type: Class
+            name: CartPole
+            module:
+                type: Module
+                repo: spec:aos_github
+                file_path: example_agents/sb3_agent/environment.py
 
     SB3AgentRun==test_staging:
-        repo: aos_github
-        file_path: example_agents/sb3_agent/sb3_run.py
-        class_name: SB3Run
-        instantiate: False
+        type: Instance
+        instance_of:
+            type: Class
+            name: SB3Run
+            module:
+                type: Module
+                repo: spec:aos_github
+                file_path: example_agents/sb3_agent/sb3_run.py
