@@ -5,7 +5,7 @@
 Train the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point learn --arg-set-file arguments.yaml
+agentos run agent --function-name learn --arg-set-file arguments.yaml
 ```
 
 Optional command-line arguments:
@@ -18,7 +18,7 @@ Optional command-line arguments:
 Evaluate the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --entry-point evaluate --arg-set-file arguments.yaml
+agentos run agent --function-name evaluate --arg-set-file arguments.yaml
 ```
 
 Optional command-line arguments:
@@ -32,7 +32,7 @@ Reset agent (including the backing model) by running the following from the
 command-line:
 
 ```bash
-agentos run agent --entry-point reset --arg-set-file arguments.yaml
+agentos run agent --function-name reset --arg-set-file arguments.yaml
 ```
 
 

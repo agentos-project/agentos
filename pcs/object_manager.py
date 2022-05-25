@@ -51,7 +51,7 @@ class ObjectManager(abc.ABC, Component):
 
         :param function_name: name of function to call on manage object.
         :param kwargs: keyword-only args to pass through to managed object
-            function called entry-point.
+            function called function-name.
         :return: the return value of the entry point called.
         """
         run = self.run_with_arg_set(
@@ -77,7 +77,7 @@ class ObjectManager(abc.ABC, Component):
         :param function_name: Name of a function to be called on a new
             instance of this component's managed object.
         :param arg_set: A :py:func:`pcs.argument_set.ArgumentSet` or
-            ArgumentSet-like dict containing the entry-point arguments, and/or
+            ArgumentSet-like dict containing the function-name arguments, and/or
             arguments to be passed to the __init__() functions of this
             component's dependents during managed object initialization.
         :param publish_to: Optionally, publish the resulting Run object

@@ -14,12 +14,12 @@ test_kwargs = {
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_acme_dqn_agent_evaluate():
     kwargs = {k: v for k, v in test_kwargs.items()}
-    kwargs["--entry-point"] = "evaluate"
+    kwargs["--function-name"] = "evaluate"
     run_test_command(cmd=run, cli_args=test_args, cli_kwargs=kwargs)
 
 
 @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_acme_dqn_agent_learn():
     kwargs = {k: v for k, v in test_kwargs.items()}
-    kwargs["--entry-point"] = "learn"
+    kwargs["--function-name"] = "learn"
     run_test_command(cmd=run, cli_args=test_args, cli_kwargs=kwargs)

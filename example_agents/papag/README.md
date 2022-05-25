@@ -7,13 +7,13 @@
 AgentOS Train:
 
 ```
-agentos run agent --entry-point learn --arg-set-file a2c_pong_args.yaml
+agentos run agent --function-name learn --arg-set-file a2c_pong_args.yaml
 ```
 
 AgentOS Evaluate:
 
 ```
-agentos run agent --entry-point evaluate --arg-set-file a2c_pong_args.yaml
+agentos run agent --function-name evaluate --arg-set-file a2c_pong_args.yaml
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c).
@@ -23,13 +23,13 @@ Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 train:
 
 ```
-agentos run agent --entry-point learn --arg-set-file ppo_pong_args.yaml
+agentos run agent --function-name learn --arg-set-file ppo_pong_args.yaml
 ```
 
 evaluate:
 
 ```
-agentos run agent --entry-point evaluate --arg-set-file ppo_pong_args.yaml
+agentos run agent --function-name evaluate --arg-set-file ppo_pong_args.yaml
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#ppo).
@@ -40,13 +40,13 @@ Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 train:
 
 ```
-agentos run agent --entry-point learn --arg-set-file acktr_pong_args.yaml
+agentos run agent --function-name learn --arg-set-file acktr_pong_args.yaml
 ```
 
 evaluate:
 
 ```
-agentos run agent --entry-point evaluate --arg-set-file acktr_pong_args.yaml
+agentos run agent --function-name evaluate --arg-set-file acktr_pong_args.yaml
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#acktr).
