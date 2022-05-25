@@ -8,7 +8,7 @@ test_kwargs = {"--registry-file": str(GH_SB3_AGENT_DIR / "components.yaml")}
 def test_sb3_agent_evaluate():
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "evaluate"
-    kwargs["-K"] = "{n_eval_episodes: 1}"
+    kwargs["-K"] = '{"n_eval_episodes": 1}'
     run_test_command(cmd=run, cli_args=test_args, cli_kwargs=kwargs)
 
 

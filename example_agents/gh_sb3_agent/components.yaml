@@ -7,9 +7,8 @@ specs:
         type: Instance
         argument_set:
             kwargs:
-                environment: spec:environment
-                SB3AgentRun: spec:SB3AgentRun
-                blah: spec:agent
+                environment: spec:environment==test_staging
+                SB3AgentRun: spec:SB3AgentRun==test_staging
         instance_of:
             type: Class
             name: SB3PPOAgent
