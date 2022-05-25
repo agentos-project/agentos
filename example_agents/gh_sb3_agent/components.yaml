@@ -6,6 +6,7 @@ specs:
     agent==test_staging:
         type: Instance
         argument_set:
+            type: ArgumentSet
             kwargs:
                 environment: spec:environment==test_staging
                 SB3AgentRun: spec:SB3AgentRun==test_staging

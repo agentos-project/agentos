@@ -126,7 +126,7 @@ class GitHubRepo(Repo):
         return (local_repo_path / file_path).absolute()
 
     def _get_valid_version_sha1(self, version):
-        version = version if version else self._default_version
+        version = version if version else self.default_version
         return self.GIT.get_sha1_from_version(
             self.org_name, self.project_name, version
         )
