@@ -87,7 +87,6 @@ def test_venv_repl(tmpdir):
 
         venv.deactivate()
 
-fixes tests test_setup_py_agent(), test_component_instance_run(),  test_flatten_spec(), test_repo_from_github(), removes test_flatten_versioned_spec()
 
 def test_setup_py_agent():
     with auto_revert_venv():
