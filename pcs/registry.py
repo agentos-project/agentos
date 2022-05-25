@@ -94,7 +94,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from pcs.object_manager import Module  # Avoid circular ref.
+        from pcs.module_manager import Module  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo
@@ -107,26 +107,23 @@ class Registry(abc.ABC):
             relative_path = f.relative_to(
                 repo.get_local_repo_dir(version=version)
             )
-            c_name = str(relative_path).replace(os.sep, "__")
-            c_version = version if version else repo.default_version
-            c_identifier = f"{c_name}=={c_version}" if c_version else c_name
-            component_init_kwargs = {
+            mod_version = version if version else repo.default_version
+            module_kwargs = {
                 "repo": repo,
-                "identifier": (f"module:{c_identifier}"),
                 "file_path": str(relative_path),
-                "instantiate": False,
+                "version": mod_version,
             }
             if repo.get_local_file_path(
-                requirements_file, version=c_version
+                requirements_file, version=mod_version
             ).is_file():
-                component_init_kwargs.update(
+                module_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )
-            mod_component = Module(**component_init_kwargs)
+            mod_component = Module(**module_kwargs)
             # TODO: add dependencies to component for every import
             #       statement in the file (or just the ones at the
             #       module level?)
-            mod_component.to_registry()
+            mod_component.to_registry(reg)
         return reg
         # TODO: finish this, add class components & class instance components?
 

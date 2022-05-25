@@ -177,5 +177,6 @@ def test_registry_from_repo():
         requirements_file="dev-requirements.txt",
         version=TESTING_BRANCH_NAME,
     )
-    comp_name = f"module:pcs__component.py=={TESTING_BRANCH_NAME}"
-    assert comp_name in reg.to_dict()["components"]
+    assert "pcs/component.py" in [
+        body["file_path"] for body in reg.specs.values() if "file_path" in body
+    ]
