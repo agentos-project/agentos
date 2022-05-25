@@ -15,5 +15,5 @@ def test_sb3_agent_evaluate():
 def test_sb3_agent_learn():
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "learn"
-    kwargs["-K"] = "{total_timesteps: 100}"
+    kwargs["-K"] = '{"total_timesteps": 100}'
     run_test_command(cmd=run, cli_args=test_args, cli_kwargs=kwargs)

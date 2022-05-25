@@ -37,6 +37,7 @@ class Instance(ObjectManager):
                 *self.argument_set.get_arg_objs(),
                 **self.argument_set.get_kwarg_objs()
             )
+            setattr(self._instance, "__component__", self)
             return self._instance
 
     def freeze(self: T, force: bool = False) -> T:

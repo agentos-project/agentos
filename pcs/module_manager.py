@@ -113,16 +113,7 @@ class Module(ObjectManager):
         )
 
     def get_object(self):
-        collected = {}
-        return self._get_object(collected)
-
-    def _get_object(self, collected: dict) -> T:
-        if self.identifier in collected:
-            return collected[self.identifier]
-        return self._import_module()
-
-    def _import_module(self):
-        """Return managed module, or class if ``self.name`` is set."""
+        """Return managed Python Module."""
         if not self._venv:
             self._venv = self._build_virtual_env()
             self._venv.activate()
@@ -134,6 +125,7 @@ class Module(ObjectManager):
         managed_obj = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(full_path.parent))
         spec.loader.exec_module(managed_obj)
+        setattr(managed_obj, "__component__", self)
         return managed_obj
 
     def _build_virtual_env(self) -> VirtualEnv:

@@ -44,7 +44,7 @@ class AgentRun(MLflowRun):
     example::
 
          with AgentRun('evaluate',
-                       outer_run=self.__component__.active_run) as run:
+                       outer_run=self.__component__.active_output) as run:
               # run an episode
               run.log_episode(
                     # episode_data

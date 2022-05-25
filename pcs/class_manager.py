@@ -72,7 +72,9 @@ class Class(ObjectManager):
 
     def get_object(self):
         module = self.module.get_object()
-        return getattr(module, self.name)
+        cls = getattr(module, self.name)
+        setattr(cls, "__component__", self)
+        return cls
 
     def instantiate(self, argument_set: ArgumentSet, name: str = None):
         from pcs.instance_manager import Instance

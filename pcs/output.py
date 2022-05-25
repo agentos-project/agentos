@@ -181,7 +181,7 @@ def active_output(
     A helper function, returns the currently active Output, if it exists,
     else None. More specifically, if the caller is an object that is managed by
     a Module (i.e. if it has a __component__ attribute) that itself has an
-    active_run, return that Run.
+    active_output, return that Run.
 
     :param caller: the managed object to fetch the active component run for.
     :param fail_if_none: if no active component run found, throw an exception
@@ -197,18 +197,18 @@ def active_output(
             component = caller.__component__
         except AttributeError:
             raise PythonComponentSystemException(
-                "active_run() was called on an object that is not "
+                "active_output() was called on an object that is not "
                 "managed by a Module. Specifically, the object passed "
-                "to active_run() must have a ``__component__`` attribute."
+                "to active_output() must have a ``__component__`` attribute."
             )
-    if not component.active_run:
+    if not component.active_output:
         if fail_if_none:
             raise PythonComponentSystemException(
-                "active_run() was passed an object managed by a Module "
-                "with no active_run, and fail_if_no_active_run flag was "
+                "active_output() was passed an object managed by a Component "
+                "with no active_output, and fail_if_no_active_output flag was "
                 "True."
             )
         else:
             return None
     else:
-        return component.active_run
+        return component.active_output

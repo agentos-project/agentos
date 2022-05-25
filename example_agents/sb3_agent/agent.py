@@ -10,10 +10,18 @@ class SB3PPOAgent:
 
     def __init__(
         self,
+        AtariEnv,
+        CartPoleEnv,
+        PPO,
+        SB3AgentRun,
         env_name: str = "CartPole-v1",
         load_most_recent_run: bool = True,
         model_input_run_id: str = None,
     ):
+        self.AtariEnv = AtariEnv
+        self.CartPoleEnv = CartPoleEnv
+        self.PPO = PPO
+        self.SB3AgentRun = SB3AgentRun
         self.env_name = env_name
         self.model_name = f"{self.env_name}-ppo.zip"
         self.environment = self._get_environment()
@@ -77,7 +85,7 @@ class SB3PPOAgent:
             raise Exception(f"Unknown env_name: {self.env_name}")
 
     @property
-    def active_run(self):
+    def active_output(self):
         return active_output(self)
 
     def evaluate(
@@ -91,7 +99,7 @@ class SB3PPOAgent:
     ):
         env_cls = self._get_environment_cls()
         with self.SB3AgentRun.evaluate_run(
-            outer_run=self.active_run,
+            outer_run=self.active_output,
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
@@ -111,7 +119,7 @@ class SB3PPOAgent:
     def learn(self, total_timesteps=250):
         env_cls = self._get_environment_cls()
         with self.SB3AgentRun.learn_run(
-            outer_run=self.active_run,
+            outer_run=self.active_output,
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
