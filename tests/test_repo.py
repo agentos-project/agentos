@@ -1,9 +1,10 @@
 import pprint
 from pathlib import Path
 
-from pcs import Module
-from pcs.repo import LocalRepo, Repo
+from pcs.class_manager import Class
 from pcs.component import Component
+from pcs.module_manager import Module
+from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
@@ -14,17 +15,19 @@ from tests.utils import (
 def test_repo_from_github():
     aos_repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
     print(aos_repo.to_spec())
-    agent_mod = Module.from_repo(
-        aos_repo,
-        version=TESTING_BRANCH_NAME,
-        file_path="agentos/core.py",
-        class_name="Agent",
+    agent_class = Class(
+        name="Agent",
+        module=Module.from_repo(
+            aos_repo,
+            version=TESTING_BRANCH_NAME,
+            file_path="agentos/core.py",
+        )
     )
     print("===============")
-    print(pprint.pprint(agent_mod.to_registry().to_dict()))
-    assert hasattr(agent_mod.get_object(), "evaluate")
-    assert agent_mod.version == TESTING_BRANCH_NAME
-    assert agent_mod.repo.identifier == aos_repo.identifier
+    print(pprint.pprint(agent_class.to_registry().to_dict()))
+    assert hasattr(agent_class.get_object(), "evaluate")
+    assert agent_class.module.version == TESTING_BRANCH_NAME
+    assert agent_class.module.repo.identifier == aos_repo.identifier
 
 
 def test_local_to_from_registry():

@@ -171,11 +171,11 @@ class Registry(abc.ABC):
         identifier: str,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> Optional[Dict]:
+    ) -> Optional[Spec]:
         """
         Returns the spec dict with ``identifier`` if it exists, or raise an
-        Error if it does not. Registries are not allowed to contain multiple
-        specs with the same identifier.
+        Error (or optionally, return None) if it does not. Registries are not
+        allowed to contain multiple specs with the same identifier.
 
         :param identifier: The identifier of the component to fetch.
         :param flatten: If True, flatten the outermost 2 layers of nested

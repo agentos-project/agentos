@@ -34,6 +34,7 @@ class Spec(UserDict):
         {identifier: <str>, type: <str>, <other key->val flat_spec>}
     """
     def __init__(self, input_dict: Dict):
+        super().__init__()
         self.data = input_dict
         self._check_format()
 
@@ -125,9 +126,7 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
     return flat_spec
 
 
-def unflatten_spec(
-    flat_spec: Mapping, preserve_inner_identifier: bool = False
-) -> Mapping:
+def unflatten_spec(flat_spec: Mapping) -> Dict:
     """
     Takes a flat spec, and returns a nested spec. A nested spec is a map
     from the spec's identifier to a map of the specs other key->value
@@ -135,20 +134,14 @@ def unflatten_spec(
     essentially flattening the outer two dictionaries into a single dictionary.
 
     :param flat_spec: a flat spec to unflatten.
-    :param preserve_inner_identifier: if true, do not delete 'identifier',
-        'name', or 'version' keys (and their associated values) from the inner
-        part of the nested spec that is returned. Else, do remove them, i.e.,
-        normalize the spec.
     :return: Nested version of ``flat_spec``.
     """
     from pcs.component import Component  # Avoid circular import.
 
     assert Component.IDENTIFIER_KEY in flat_spec
     identifier = flat_spec[Component.IDENTIFIER_KEY]
-    dup_spec = copy.deepcopy(flat_spec)
-    if not preserve_inner_identifier:
-        if Component.IDENTIFIER_KEY in dup_spec:
-            dup_spec.pop(Component.IDENTIFIER_KEY)
+    dup_spec = dict(copy.deepcopy(flat_spec))
+    dup_spec.pop(Component.IDENTIFIER_KEY)
     return {identifier: dup_spec}
 
 

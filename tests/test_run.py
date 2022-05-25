@@ -24,8 +24,7 @@ def test_component_instance_run():
     registry = InMemoryRegistry()
     output.command.to_registry(registry)
     assert (
-        registry.get_spec(output.command.identifier)
-        == output.command.to_spec()
+        registry.get_spec(output.command.identifier) == output.command.to_spec()
     )
 
     registry.add_spec(output.to_spec())

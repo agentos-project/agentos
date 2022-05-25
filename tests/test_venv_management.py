@@ -8,6 +8,7 @@ from pcs import Module, Class, Instance
 from pcs.repo import Repo
 from pcs.component import Component
 from pcs.virtual_env import VirtualEnv, auto_revert_venv
+from pcs.specs import Spec
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
 
@@ -86,17 +87,16 @@ def test_venv_repl(tmpdir):
 
         venv.deactivate()
 
+fixes tests test_setup_py_agent(), test_component_instance_run(),  test_flatten_spec(), test_repo_from_github(), removes test_flatten_versioned_spec()
 
 def test_setup_py_agent():
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        local_repo_spec = {
-            "local__setup_py_agent__repo": {
-                Component.TYPE_KEY: "LocalRepo",
-                "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
-            }
-        }
+        local_repo_spec = Spec.from_flat({
+            Component.TYPE_KEY: "LocalRepo",
+            "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
+        })
         agent_repo = Repo.from_spec(local_repo_spec)
         agent_instance = Instance(
             instance_of=Class(

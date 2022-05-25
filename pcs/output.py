@@ -4,11 +4,10 @@ from typing import Any, Dict, Optional
 
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
+from pcs.command import Command
 from pcs.exceptions import PythonComponentSystemException
 from pcs.registry import Registry
 from pcs.run import MLflowRun
-from pcs.command import Command
-from pcs.specs import unflatten_spec
 
 
 class Output(MLflowRun):
@@ -37,12 +36,10 @@ class Output(MLflowRun):
         experiment_id: str = None,
     ) -> None:
         super().__init__(experiment_id=experiment_id)
-        self._setup_local_state(command)
-
-    def _setup_local_state(self, command: Command):
         self._return_value = None
-        self._command = None
-        self.set_and_log_command(command)
+        self._command = command
+        self.register_attribute("command")
+        self._log_command()
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
             MLFLOW_RUN_NAME,
@@ -90,7 +87,7 @@ class Output(MLflowRun):
         registry = Registry.from_yaml(path)
         return Command.from_registry(registry, command_id)
 
-    def set_and_log_command(self, command: Command) -> None:
+    def _log_command(self) -> None:
         """
         Log a Registry YAML file for the Command of this run, including
         the ArgumentSet, function_name (i.e., function name), component ID,
@@ -106,11 +103,9 @@ class Output(MLflowRun):
         sharing purposes, which essentially normalizes the Run's root
         component's dependency graph into flat component specs.
         """
-        assert not self._command
-        self._command = command
         self._validate_no_command_logged()
-        self.set_tag(self.COMMAND_ID_KEY, command.identifier)
-        command_dict = command.to_registry().to_dict()
+        self.set_tag(self.COMMAND_ID_KEY, self._command.identifier)
+        command_dict = self._command.to_registry().to_dict()
         self.log_dict(command_dict, self.COMMAND_REGISTRY_FILENAME)
 
     def _validate_no_command_logged(self):
@@ -177,12 +172,6 @@ class Output(MLflowRun):
             return self._mlflow_run.data.tags[self.IS_FROZEN_KEY] == "True"
         except KeyError:
             return False
-
-    def to_spec(self, flatten: bool = False) -> Dict:
-        flat_spec = super().to_spec(flatten=True)
-        assert self.command, "Every Output instance must have a command."
-        flat_spec["command"] = self.command.identifier
-        return flat_spec if flatten else unflatten_spec(flat_spec)
 
 
 def active_output(
