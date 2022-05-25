@@ -1,27 +1,33 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c with CartPole
 # python main.py --env-name "CartPole-v1"
 
-papag_agent:
-    __init__:
-        env_name: CartPole-v1
-        algo_name: a2c
+specs:
+    a2c_cartpole_args:
+        type: ArgumentSet
+        kwargs:
+            env_name: CartPole-v1
+            algo_name: a2c
     evaluate:
-        lr: .0007
-        clip_param: 0.2
-        value_loss_coef: 0.5
-        num_processes: 8
-        num_steps: 5
-        num_mini_batch: 32
-        log_interval: 10
-        entropy_coef: 0.01
+        type: ArgumentSet
+        kwargs:
+            lr: .0007
+            clip_param: 0.2
+            value_loss_coef: 0.5
+            num_processes: 8
+            num_steps: 5
+            num_mini_batch: 32
+            log_interval: 10
+            entropy_coef: 0.01
     learn:
-        lr: .0007
-        clip_param: 0.2
-        value_loss_coef: 0.5
-        num_processes: 8
-        num_steps: 5
-        num_mini_batch: 32
-        log_interval: 10
-        entropy_coef: 0.01
-        num_env_steps: 40000
+        type: ArgumentSet
+        kwargs:
+            lr: .0007
+            clip_param: 0.2
+            value_loss_coef: 0.5
+            num_processes: 8
+            num_steps: 5
+            num_mini_batch: 32
+            log_interval: 10
+            entropy_coef: 0.01
+            num_env_steps: 40000
 
