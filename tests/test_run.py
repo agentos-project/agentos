@@ -1,5 +1,5 @@
 from pcs.argument_set import ArgumentSet
-from pcs.component import Class, Instance
+from pcs import Class, Instance
 from pcs.registry import InMemoryRegistry
 
 

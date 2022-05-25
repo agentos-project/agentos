@@ -3,10 +3,10 @@ from unittest.mock import DEFAULT, patch
 
 from agentos.cli import init
 from pcs.argument_set import ArgumentSet
-from pcs.component import Module, Class, Instance
-from pcs.component_run import Output
+from pcs import Module, Class, Instance
+from pcs.output import Output
 from pcs.repo import Repo
-from pcs.run_command import Command
+from pcs.command import Command
 from pcs.utils import extract_identifier
 from pcs.virtual_env import auto_revert_venv
 from tests.utils import (

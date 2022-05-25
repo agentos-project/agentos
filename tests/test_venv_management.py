@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from pcs.component import Module, Class, Instance
+from pcs import Module, Class, Instance
 from pcs.repo import Repo
-from pcs.spec_object import Component
+from pcs.component import Component
 from pcs.virtual_env import VirtualEnv, auto_revert_venv
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 

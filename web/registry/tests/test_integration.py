@@ -4,11 +4,11 @@ from registry.models import Repo as RepoModel
 from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
-from pcs.component import Module
-from pcs.component_run import Output
+from pcs import Module
+from pcs.output import Output
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
-from pcs.run_command import Command
+from pcs.command import Command
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 

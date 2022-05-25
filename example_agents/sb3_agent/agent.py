@@ -1,7 +1,7 @@
 from gym.wrappers import TimeLimit
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from pcs.component_run import active_output
+from pcs.output import active_output
 
 
 # A basic agent.

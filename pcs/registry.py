@@ -30,7 +30,7 @@ from pcs.utils import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from pcs.component import Module
+    from pcs import Module
     from pcs.repo import Repo
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
@@ -94,7 +94,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from pcs.component import Module  # Avoid circular ref.
+        from pcs.object_manager import Module  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo
@@ -356,7 +356,7 @@ class InMemoryRegistry(Registry):
                 for attr_key, attr_val in elt.items():
                     if is_spec_body(attr_val):  # normalize nested_spec
                         inner_spec = attr_val
-                        from pcs.spec_object import Component
+                        from pcs.component import Component
 
                         inner_id = Component.spec_body_to_identifier(inner_spec)
                         struct[key][attr_key] = make_identifier_ref(inner_id)
@@ -419,7 +419,7 @@ class InMemoryRegistry(Registry):
                 "Trying to resolve aliases in something that is not spec "
                 f"body: {body}"
             )
-            from pcs.spec_object import Component  # Avoid circular import.
+            from pcs.component import Component  # Avoid circular import.
 
             hash = Component.spec_body_to_identifier(body)
             if is_identifier(id_or_alias):
@@ -447,7 +447,7 @@ class InMemoryRegistry(Registry):
             self._registry[self.ALIASES_KEY] = new_aliases
 
     def add_spec(self, spec: Dict) -> None:
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         flat_spec = flatten_spec(spec)
         identifier = flat_spec[Component.IDENTIFIER_KEY]
@@ -515,7 +515,7 @@ class WebRegistry(Registry):
         if not self._is_response_ok(response, error_if_not_found):
             return None
         data = json.loads(response.content)
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         flat_spec = {Component.IDENTIFIER_KEY: data[Component.IDENTIFIER_KEY]}
         flat_spec.update(data[self.SPEC_RESPONSE_BODY_KEY])
@@ -528,7 +528,7 @@ class WebRegistry(Registry):
         """
         req_url = f"{self.root_api_url}/components/"
         flat_spec = spec if is_flat_spec(spec) else flatten_spec(spec)
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         identifier = flat_spec.pop(Component.IDENTIFIER_KEY)
         body = json.encoder.JSONEncoder().encode(flat_spec)

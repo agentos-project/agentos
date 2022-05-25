@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Mapping, Tuple, TypeVar, TYPE_CHECKING
 
 from pcs.git_manager import GitManager
-from pcs.spec_object import Component
+from pcs.component import Component
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
 
 if TYPE_CHECKING:

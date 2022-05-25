@@ -7,7 +7,7 @@ from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 from pcs.exceptions import PythonComponentSystemException
 from pcs.registry import Registry
 from pcs.run import MLflowRun
-from pcs.run_command import Command
+from pcs.command import Command
 from pcs.specs import unflatten_spec
 
 
@@ -199,7 +199,7 @@ def active_output(
         instead of returning None.
     :return: the active component run if it exists, else None.
     """
-    from pcs.component import Module
+    from pcs import Module
 
     if isinstance(caller, Module):
         component = caller

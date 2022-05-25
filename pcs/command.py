@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING
 
-from pcs.spec_object import Component
+from pcs.component import Component
 
 # Avoids circular imports
 if TYPE_CHECKING:
     from pcs.argument_set import ArgumentSet
-    from pcs.component import Module
-    from pcs.component_run import Output
+    from pcs.module_manager import Module
+    from pcs.output import Output
 
 
 class Command(Component):

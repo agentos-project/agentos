@@ -1,6 +1,6 @@
 from pcs.argument_set import ArgumentSet
-from pcs.component import Module
-from pcs.component_run import Output
+from pcs import Module
+from pcs.output import Output
 from pcs.registry import Registry, WebRegistry
 from pcs.repo import Repo
 

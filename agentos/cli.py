@@ -12,12 +12,12 @@ import yaml
 
 from agentos.agent_run import AgentRun
 from pcs.argument_set import ArgumentSet
-from pcs.component import Module
-from pcs.component_run import Output
+from pcs.component import Component
+from pcs.module_manager import Module
+from pcs.output import Output
 from pcs.registry import Registry, InMemoryRegistry
 from pcs.repo import Repo
 from pcs.run import MLflowRun
-from pcs.spec_object import Component
 from pcs.virtual_env import VirtualEnv
 
 
@@ -158,7 +158,7 @@ def run(
     if registry_string:
         registry.update(Registry.from_dict(literal_eval(registry_string)))
     print(registry.to_dict())
-    from pcs.spec_object import Component
+    from pcs.component import Component
     comp = Component.from_registry(registry, identifier)
     function_name = function_name or comp.get_default_function_name()
     assert not (arg_set_id and (arg_set_args or arg_set_kwargs)), (

@@ -1,5 +1,5 @@
-from pcs.component import Module
-from pcs.component_run import Output
+from pcs import Module
+from pcs.output import Output
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
 

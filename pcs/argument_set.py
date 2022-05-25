@@ -1,7 +1,7 @@
 import copy
 from typing import Any, Dict, List, Tuple, Union
 
-from pcs.spec_object import Component
+from pcs.component import Component
 from pcs.utils import find_and_replace_leaves
 
 
@@ -21,7 +21,7 @@ class ArgumentSet(Component):
 
     @staticmethod
     def _resolve_objs(data_structure: Any):
-        from pcs.component import ObjectManager
+        from pcs.object_manager import ObjectManager
 
         find_and_replace_leaves(
             data_structure,

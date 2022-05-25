@@ -27,7 +27,7 @@ from stable_baselines3.common.atari_wrappers import (
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
-from pcs.component_run import active_output
+from pcs.output import active_output
 
 
 class PAPAGAgent:

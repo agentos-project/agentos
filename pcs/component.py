@@ -1,430 +1,342 @@
-import abc
 import copy
-import importlib
 import logging
-import sys
-import uuid
-from functools import partial
-from hashlib import sha1
-from pathlib import Path
-from typing import Any, Dict, Type, TypeVar
+import numbers
+from rich import print as rich_print
+from rich.tree import Tree
+from typing import (
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Sequence,
+    Type,
+    TypeVar,
+    TYPE_CHECKING
+)
+import yaml
+from deepdiff import DeepDiff, DeepHash
 
-from dill.source import getsource as dill_getsource
+import pcs  # for hasattr(pcs, ...)
+from pcs.registry import InMemoryRegistry, Registry
+from pcs.specs import flatten_spec, Spec, unflatten_spec
+from pcs.utils import (
+    extract_identifier,
+    filter_leaves,
+    find_and_replace_leaves,
+    is_identifier_ref,
+    make_identifier_ref,
+)
 
-from pcs.argument_set import ArgumentSet
-from pcs.component_run import Output
-from pcs.registry import Registry
-from pcs.repo import GitHubRepo, LocalRepo, Repo
-from pcs.run_command import Command
-from pcs.spec_object import Component
-from pcs.utils import find_and_replace_leaves, parse_github_web_ui_url
-from pcs.virtual_env import NoOpVirtualEnv, VirtualEnv
+if TYPE_CHECKING:
+    from pcs import Module
 
 logger = logging.getLogger(__name__)
 
-# Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
-T = TypeVar("T")
+C = TypeVar('C', bound='Component')
 
 
-class ObjectManager(abc.ABC, Component):
+class Component:
     """
-    ObjectManagers manage an underlying Python object (i.e. a module, class,
-    or class instance). They can also run a method that is an attribute on
-    their underlying object. Runs can take an argument set.
+    Conceptually, a Component is a graph node with edges and attributes, that
+    can serialize itself to and from spec YAML strings and registries.
+
+    A Component is the Python object version of a PCS Spec, which itself
+    is a YAML dictionary that maps a content hash identifier string to
+    its body. The body is, in turn, a map from str to attribute. Attributes
+    can be type str, bool, None, number, dict, list, or Component.
+
+    A value in the spec body map can be another Spec's identifier.
+    This represents a causal dependency between the two Specs.
     """
+
+    IDENTIFIER_KEY = "identifier"
+    TYPE_KEY = "type"
+    OK_LEAF_ATTR_TYPES = (numbers.Number, str, bool)
+
     def __init__(self):
-        Component.__init__(self)
-        self.active_output = None
+        self._spec_attr_names: List[str] = []  # Managed by register_attribute
+        # A Component's identifier is not considered a spec_attribute. # Rather,
+        # it is a function of all spec_attributes.
+        self.register_attribute(self.TYPE_KEY)
 
-    def get_default_function_name(self):
-        try:
-            imported_obj = self.get_object()
-            function_name = imported_obj.DEFAULT_ENTRY_POINT
-        except AttributeError:
-            function_name = "run"
-        return function_name
-
-    def __getattr__(self, attr_name):
-        if attr_name != "run_with_arg_set" and attr_name.startswith("run_"):
-            function_name = attr_name[4:]
-            return partial(self.run, function_name)
+    def __eq__(self, other) -> bool:
+        if isinstance(other, self.__class__):
+            return hash(self) == hash(other)
         else:
-            raise AttributeError(
-                f"type object '{self.__class__}' has no attribute "
-                f"'{attr_name}'"
-            )
+            return NotImplemented
 
-    def run(self, function_name: str, *args, **kwargs):
-        """
-        Run an entry point with provided arguments. If you need to specify
-        arguments to the init function of the managed object or any of
-        its dependency components, use :py:func:`run_with_arg_set`.
+    def __str__(self) -> str:
+        return self.identifier
 
-        :param function_name: name of function to call on manage object.
-        :param kwargs: keyword-only args to pass through to managed object
-            function called entry-point.
-        :return: the return value of the entry point called.
-        """
-        run = self.run_with_arg_set(
-            function_name,
-            arg_set=ArgumentSet(args, kwargs),
-            log_return_value=True,
+    def __hash__(self) -> int:
+        return int(self.sha1(), 16)
+
+    @staticmethod
+    def spec_body_to_identifier(spec_body: Dict) -> str:
+        return DeepHash(spec_body, hasher=DeepHash.sha1hex)[spec_body]
+
+    def sha1(self) -> str:
+        body = self.body(dependencies_as_strings=True)
+        return self.spec_body_to_identifier(body)
+
+    def register_attribute(self, attribute_name: str):
+        assert attribute_name != self.IDENTIFIER_KEY, (
+            f"{self.IDENTIFIER_KEY} cannot be registered as an "
+            "attribute since it is a function of all attributes."
         )
-        return run.return_value
-
-    def run_with_arg_set(
-        self,
-        function_name: str,
-        arg_set: ArgumentSet = None,
-        publish_to: Registry = None,
-        log_return_value: bool = True,
-        return_value_log_format: str = "yaml",
-    ) -> Output:
-        """
-        Run the specified entry point a new instance of this Module's
-        managed object given the specified arg_set, log the results
-        and return the Run object.
-
-        :param function_name: Name of a function to be called on a new
-            instance of this component's managed object.
-        :param arg_set: A :py:func:`pcs.argument_set.ArgumentSet` or
-            ArgumentSet-like dict containing the entry-point arguments, and/or
-            arguments to be passed to the __init__() functions of this
-            component's dependents during managed object initialization.
-        :param publish_to: Optionally, publish the resulting Run object
-            to the provided registry.
-        :param log_return_value: If True, log the return value of the entry
-            point being run.
-        :param return_value_log_format: Specify which format to use when
-            serializing the return value. Only used if ``log_return_value``
-            is True.
-        """
-        assert not self.active_output, (
-            f"Module {self.identifier} already has an active_output, so a "
-            "new run is not allowed."
+        assert attribute_name not in self._spec_attr_names
+        assert hasattr(self, attribute_name), (
+            f"{self.type} Component ({self}) does not have attribute "
+            f"{attribute_name}"
         )
-        arg_set = arg_set if arg_set else ArgumentSet()
-        command = Command(self, function_name, arg_set, log_return_value)
-        with Output.from_command(command) as output:
-            for c in self.dependency_list():
-                c.active_output = output
-            obj = self.get_object()
-            res = self.call_function_with_arg_set(obj, function_name, arg_set)
-            if log_return_value:
-                output.log_return_value(res, return_value_log_format)
-            for c in self.dependency_list():
-                c.active_output = None
-            if publish_to:
-                output.to_registry(publish_to)
-            return output
+        self._spec_attr_names.append(attribute_name)
 
-    def call_function_with_arg_set(
-        self, instance: Any, function_name: str, arg_set: ArgumentSet
-    ) -> Any:
-        fn = getattr(instance, function_name)
-        assert fn is not None, f"{instance} has no attr {function_name}"
-        print(f"Calling {self.identifier}.{function_name} with "
-              f"args: {arg_set.args} and kwargs: {arg_set.kwargs})")
-        result = fn(*arg_set.get_arg_objs(), **arg_set.get_kwarg_objs())
-        return result
-
-    @abc.abstractmethod
-    def get_object(self) -> Any:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def freeze(self: T, force: bool = False) -> T:
-        """
-        Return a copy of self whose parent Module (or self if this is a Module)
-        is versioned.
-        """
-        raise NotImplementedError
-
-
-class Module(ObjectManager):
-    """
-    A Module is an object manager. Objects can be Python Modules, Python
-    Classes, or Python Class Instances. The Module abstraction provides a
-    standard programmatic mechanism for managing dependencies between these
-    objects, reproducibly creating/initializing them and executing their
-    methods. You can think of methods on a managed object as "managed methods"
-    which we call "Entry Points". We call the execution of an Entry Point a
-    "Run". Components provide reproducibility by automatically tracking (i.e.,
-    logging) all of the parts that make up a Run, including: (1) the code of
-    the object being run (i.e., the Module and its Entry Point), (2) the
-    full DAG of other objects it depends on (i.e., DAG of other Components),
-    (3) the set of arguments (literally a
-    :py:func:`pcs.argument_set.ArgumentSet`) used during initialization of
-    the managed object and all objects it transitively depends on, and
-    (4) the arguments passed to the Entry Point being run.
-    """
-
-    DUNDER_NAME = "__component__"
-
-    def __init__(
-        self,
-        repo: Repo,
-        file_path: str,
-        version: str = None,
-        requirements_path: str = None,
-        imported_modules: Dict[str, "Module"] = None,
-    ):
-        """
-        :param repo: Repo where this Module's source file can be found. The
-            ``file_path`` argument is relative to the root this Repo.
-        :param file_path: Path to Python module file this Module manages.
-        :param name: Optionally, the name of the class that is being
-            managed. If none provided, then by default this is a
-            managed Python Module.
-        :param requirements_path: Optional path to a pip installable file.
-        :param imported_modules: Dict from modules found in import statements
-            in self's managed_object (i.e. the Python Module that this
-            Module Component represents) to a `pcs.Module`.
-        """
-        super().__init__()
-        self.repo = repo
-        self.file_path = file_path
-        self.version = version
-        self.requirements_path = requirements_path
-        self.imported_modules = imported_modules if imported_modules else {}
-        self.register_attributes(
-            [
-                "repo",
-                 "file_path",
-                 "version",
-                 "requirements_path",
-                 "imported_modules",
-             ]
-        )
-        self._venv = None
-        self._requirements = []
-        self._parent_modules = set()
-        self._use_venv = True
+    def register_attributes(self, attribute_names: Collection[str]):
+        for name in attribute_names:
+            self.register_attribute(name)
 
     @classmethod
-    def from_github_registry(
+    @property
+    def type(cls):
+        return cls.__name__
+
+    @property
+    def identifier(self) -> str:
+        return self.sha1()
+
+    def body(self, dependencies_as_strings=False) -> Dict:
+        attributes = {}
+        for name in self._spec_attr_names:
+            attr = {name: copy.deepcopy(getattr(self, name, None))}
+
+            def not_allowed(i):
+                allowed = (
+                    isinstance(i, Component) or
+                    isinstance(i, self.OK_LEAF_ATTR_TYPES)
+                )
+                return not allowed
+            # Stringify all non-allowed types.
+            find_and_replace_leaves(attr, not_allowed, lambda leaf: str(leaf))
+            # Per 'dependencies_as_strings' flag, stringify dependencies
+            if dependencies_as_strings:
+                find_and_replace_leaves(
+                    attr,
+                    lambda leaf: isinstance(leaf, Component),
+                    lambda leaf: make_identifier_ref(leaf.identifier)
+                )
+            attributes.update(attr)
+        return attributes
+
+    def dependencies(self, filter_by_types: Sequence[Type[C]] = None) -> Dict:
+        """
+        Returns the subset of ``self.attributes`` that are references to
+        other Components, optionally filtered to only those of any of the
+        list of Component types provided in 'filter_by_types'.
+        """
+
+        def filter_fn(leaf):
+            return (
+                isinstance(leaf, Component) and
+                (not filter_by_types or type(leaf) in filter_by_types)
+            )
+        return {
+            k: v
+            for k, v in filter_leaves(self.body(), filter_fn=filter_fn).items()
+        }
+
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,
+        dry_run: bool = False,
+    ) -> Registry:
+        if not registry:
+            registry = InMemoryRegistry()
+        if recurse:
+            # Test whether recursively pushing all dependencies will succeed.
+            self._all_dependencies_to_registry(registry, True)
+        existing = registry.get_spec(self.identifier, error_if_not_found=False)
+        # Test whether pushing this spec to registry will succeed.
+        if existing:
+            diff = DeepDiff(existing, self.to_spec())
+            assert not diff, (
+                f"A spec with identifier '{self.identifier}' already exists "
+                f"in registry '{registry}' and differs from the one you're "
+                f"trying to add. Diff of existing spec vs this spec:\n {diff}"
+            )
+        if not dry_run:
+            self._all_dependencies_to_registry(registry, False)
+            registry.add_spec(self.to_spec())
+        return registry
+
+    def _all_dependencies_to_registry(self, registry: Registry, dry_run: bool):
+        dep_objs = self.dependencies().values()
+        dry_run_text = "Dry running " if dry_run else "Actually "
+        logger.debug(
+            f"{dry_run_text}pushing dependencies of {self.identifier} "
+            f"({dep_objs}) to registry {registry}."
+        )
+        for d in dep_objs:
+            d.to_registry(
+                registry=registry,
+                recurse=True,
+                dry_run=dry_run,
+            )
+
+    @classmethod
+    def from_registry(cls, registry: Registry, identifier: str):
+        return cls.from_spec(registry.get_spec(identifier), registry)
+
+    @classmethod
+    def from_default_registry(cls, identifier: str) -> "Module":
+        return cls.from_registry(Registry.from_default(), identifier)
+
+    @classmethod
+    def from_registry_file(
         cls,
-        github_url: str,
+        yaml_file: str,
         identifier: str,
     ) -> "Module":
-        """
-        This method gets a Module from a registry file found on GitHub.  If
-        the registry file contains a LocalRepo, this method automatically
-        translates that LocalRepo into a GitHubRepo.
+        registry = Registry.from_yaml(yaml_file)
+        return cls.from_registry(registry, identifier)
 
-        The ``github_url`` argument can be found by navigating to the
-        registry file on the GitHub web UI.  It should look like the
-        following::
-
-            https://github.com/<project>/<repo>/{blob,raw}/<branch>/<path>
-        """
-        project, repo_name, branch, reg_file_path = parse_github_web_ui_url(
-            github_url
-        )
-        repo = Repo.from_github(project, repo_name)
-        registry = Registry.from_file_in_repo(repo, reg_file_path, branch)
-        module = cls.from_registry(registry, identifier)
-        return module
+    def to_spec(self, flatten: bool = False) -> Dict:
+        spec = Spec({self.identifier: self.body(dependencies_as_strings=True)})
+        return flatten_spec(spec) if flatten else spec
 
     @classmethod
-    def from_repo(
-        cls,
-        repo: Repo,
-        version: str,
-        file_path: str,
-        requirements_path: str = None,
-    ) -> "Module":
-        full_path = repo.get_local_file_path(file_path, version)
-        assert full_path.is_file(), f"{full_path} does not exist"
-        return cls(
-            repo=repo,
-            file_path=file_path,
-            version=version,
-            requirements_path=requirements_path,
+    def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
+        spec = Spec(copy.deepcopy(spec))
+        spec.replace_in_body(
+            is_identifier_ref,
+            lambda leaf: cls._resolve_dep(extract_identifier(leaf), registry)
         )
-
-    def get_object(self):
-        collected = {}
-        return self._get_object(collected)
-
-    def _get_object(self, collected: dict) -> T:
-        if self.identifier in collected:
-            return collected[self.identifier]
-        return self._import_module()
-
-    def _import_module(self):
-        """Return managed module, or class if ``self.name`` is set."""
-        if not self._venv:
-            self._venv = self._build_virtual_env()
-            self._venv.activate()
-        full_path = self.repo.get_local_file_path(self.file_path, self.version)
-        assert full_path.is_file(), f"{full_path} does not exist"
-        spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE", str(full_path)
+        assert hasattr(pcs, spec.type), (
+            f"No Component type '{spec.type}' found in "
+            "module 'pcs'."
         )
-        managed_obj = importlib.util.module_from_spec(spec)
-        sys.path.insert(0, str(full_path.parent))
-        spec.loader.exec_module(managed_obj)
-        return managed_obj
-
-    def _build_virtual_env(self) -> VirtualEnv:
-        # Only the root Module will setup and activate the VirtualEnv
-        if not self._use_venv or self._parent_modules:
-            return NoOpVirtualEnv()
-        req_paths = set()
-        for c in self.dependency_list(
-            include_parents=True, filter_by_types=[Module]
-        ):
-            if c.requirements_path is None:
-                continue
-            for req_path in str(c.requirements_path).split(";"):
-                full_req_path = self.repo.get_local_file_path(
-                    req_path, c.version
-                ).absolute()
-                req_paths.add(full_req_path)
-        return VirtualEnv.from_requirements_paths(req_paths)
-
-    def _handle_repo_spec(self, repos):
-        existing_repo = repos.get(self.repo.name)
-        if existing_repo:
-            if self.repo.to_dict() != existing_repo:
-                self.repo.name = str(uuid.uuid4())
-        repos[self.repo.name] = self.repo.to_dict()
-
-    def to_versioned_module(self, force: bool = False) -> "Module":
-        repo_url, version = self.repo.get_version_from_git(
-            self.file_path, version=self.version, force=force
-        )
-        prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
-            version, self.file_path
-        )
-        prefixed_reqs_path = None
-        if self.requirements_path:
-            prefixed_reqs_path = self.repo.get_prefixed_path_from_repo_root(
-                version, self.requirements_path
-            )
-        clone = Module(
-            repo=GitHubRepo(url=repo_url),
-            file_path=prefixed_file_path,
-            version=version,
-            requirements_path=prefixed_reqs_path,
-        )
-        frozen_imported_mods = {}
-        for name, mod in self.imported_modules.items():
-            frozen_imported_mods.update[name] = mod.freeze(force=force)
-        self.imported_modules.update(frozen_imported_mods)
-        return clone
-
-    def freeze(self: T, force: bool = False) -> T:
-        """
-        Return a copy of self whose parent Module (or self if this is a Module)
-        is versioned.
-        """
-        return self.to_versioned_module(force)
-
-
-class Class(ObjectManager):
-    def __init__(self, module: Module, name: str, **other_dependencies):
-        super().__init__()
-        for k, v in other_dependencies.items():
-            setattr(self, k, v)
-        self.register_attributes(other_dependencies.keys())
-        self.module = module
-        self.name = name
-        self.register_attributes(["module", "name"])
+        comp_cls = getattr(pcs, spec.type)
+        print(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
+        comp_class = comp_cls(**spec.as_kwargs)
+        return comp_class
 
     @classmethod
-    def from_class(
-        cls,
-        class_obj: Type[T],
-        repo: Repo = None,
-    ) -> "Module":
-        name = class_obj.__name__
-        if class_obj.__module__ == "__main__":
-            # handle classes defined in REPL.
-            file_contents = dill_getsource(class_obj)
-            if not repo:
-                repo = LocalRepo()
-            sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
-            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
-            if src_file.exists():
-                print(f"Re-using existing source file {src_file}.")
-            else:
-                with open(src_file, "x") as f:
-                    f.write(file_contents)
-                print(f"Wrote new source file {src_file}.")
-        else:
-            managed_obj_module = sys.modules[class_obj.__module__]
-            assert hasattr(managed_obj_module, name), (
-                "Components can only be created from classes that are "
-                "available as an attribute of their module."
-            )
-            src_file = Path(managed_obj_module.__file__)
-            logger.debug(
-                f"Handling class_obj {name} from existing "
-                f"source file {src_file}."
-            )
-            repo = LocalRepo(path=src_file.parent)
-            logger.debug(
-                f"Created LocalRepo {repo.identifier} from existing source "
-                f"file {src_file}."
-            )
-
-        return cls(
-            module=Module(repo=repo, file_path=src_file.name),
-            name=name,
+    def _resolve_dep(cls, identifier: str, registry: Registry):
+        assert registry, (
+            f"{cls.__name__} requires a registry to be "
+            "passed in order to create a Component from the provided "
+            "spec that has dependencies."
+        )
+        dep_spec = registry.get_spec(identifier, flatten=True)
+        assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
+        dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
+        assert issubclass(dep_comp_cls, Component)
+        return dep_comp_cls.from_spec(
+            unflatten_spec(dep_spec), registry=registry
         )
 
-    def get_object(self):
-        module = self.module.get_object()
-        return getattr(module, self.name)
+    @classmethod
+    def from_yaml_str(cls, yaml_str: str):
+        return cls(yaml.load(yaml_str))
 
-    def instantiate(self, argument_set: ArgumentSet, name: str = None):
-        return Instance(self, argument_set=argument_set, name=name)
+    @classmethod
+    def from_yaml_file(cls, filename: str):
+        with open(filename, "r") as f:
+            return cls(yaml.load(f))
 
-    def freeze(self: T, force: bool = False) -> T:
-        self_copy = copy.deepcopy(self)
-        self_copy.module = self.module.freeze(force)
-        return self_copy
+    def to_yaml_str(self) -> str:
+        return yaml.dump(self.to_spec())
 
+    def to_yaml_file(self, filename: str) -> None:
+        with open(filename, "w") as f:
+            yaml.dump(self.to_spec(), f)
+    def publish(self) -> Registry:
+        self.to_registry(Registry.from_default())
 
-class Instance(ObjectManager):
-    """
-    An Instance Component is very similar to a Class Component. The difference
-    is that for an Instance, the underlying class is instantiated during
-    initialization of the component.
-    """
-    def __init__(
+    def dependency_list(
         self,
-        instance_of: Class,
-        argument_set: ArgumentSet = None,
-        name: str = None,
-    ):
-        super().__init__()
-        self.instance_of = instance_of
-        self.argument_set = argument_set if argument_set else ArgumentSet()
-        self.name = name
-        self.register_attributes(["instance_of", "argument_set", "name"])
-        self._instance = None
+        include_root: bool = True,
+        include_parents: bool = False,
+        filter_by_types: Sequence[Type[C]] = None,
+    ) -> Sequence["Component"]:
+        """
+        Return a normalized (i.e. flat) Sequence containing all transitive
+        dependencies of this component and (optionally) this component.
 
-    def get_object(self):
-        if self._instance:
-            return self._instance
-        else:
-            cls = self.instance_of.get_object()
-            self._instance = cls(
-                *self.argument_set.get_arg_objs(),
-                **self.argument_set.get_kwarg_objs()
-            )
-            return self._instance
+        :param include_root: Whether to include root component in the list.
+            If True, self is included in the list returned.
+        :param include_parents: If True, then recursively include all parents
+            of this component (and their parents, etc). A parent of this Module
+            is a Module which depends on this Module.  Ultimately, if True, all
+            Components in the DAG will be returned.
+        :param filter_by_types: list of classes whose type is 'type'.
 
-    def freeze(self: T, force: bool = False) -> T:
-        self_copy = copy.deepcopy(self)
-        self_copy.instance_of = self.instance_of.freeze(force)
-        for i in [self_copy.argument_set.args, self_copy.argument_set.kwargs]:
-            find_and_replace_leaves(
-                i,
-                lambda x: isinstance(x, ObjectManager),
-                lambda x: x.freeze(force)
-            )
-        return self_copy
+        :return: a list containing all all of the transitive dependencies
+                 of this component (optionally  including the root component).
+        """
+        module_queue = [self]
+        ret_val = set()
+        while module_queue:
+            module = module_queue.pop()
+            if include_root or module is not self:
+                ret_val.add(module)
+            for dependency in module.dependencies(
+                filter_by_types=filter_by_types
+            ).values():
+                if dependency not in ret_val:
+                    module_queue.append(dependency)
+            if include_parents and hasattr(module, "_parent_modules"):
+                for parent in module._parent_modules:
+                    if parent not in ret_val:
+                        module_queue.append(parent)
+        return list(ret_val)
+
+    def print_status_tree(self) -> None:
+        tree = self.get_status_tree()
+        rich_print(tree)
+
+    def get_status_tree(self, parent_tree: Tree = None) -> Tree:
+        self_tree = Tree(f"Module: {self.identifier}")
+        if parent_tree is not None:
+            parent_tree.add(self_tree)
+        for dep_attr_name, dep_module in self.dependencies().items():
+            dep_module.get_status_tree(parent_tree=self_tree)
+        return self_tree
+
+
+
+def test_spec_object():
+    class GitHubComponent(Component):
+        ATTRIBUTES = ["url"]
+
+        def __init__(self, url: str):
+            self.url = url
+            super().__init__()
+
+    r = GitHubComponent(url="https://github.com/agentos-project/agentos")
+    assert r.type == "GitHubComponent"
+
+    class ModuleComponent(Component):
+        ATTRIBUTES = ["repo", "version", "module_path"]
+
+        def __init__(
+            self, repo: GitHubComponent, version: str, module_path: str
+        ):
+            self.repo = repo
+            self.version = version
+            self.module_path = module_path
+            super().__init__()
+
+    c = ModuleComponent(
+        repo=r, version="master", module_path="example_agents/random/agent.py"
+    )
+    assert c.repo is r
+    reg = c.to_registry()
+    print(reg.to_yaml())
+    print("=======")
+    print(c.to_registry(reg))
+    print("=======")
+    c_two = ModuleComponent(
+        repo=r, version="master", module_path="example_agents/random/agent.py"
+    )
+    print(c_two.to_registry(reg))

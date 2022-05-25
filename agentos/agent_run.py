@@ -5,7 +5,7 @@ from typing import Optional
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
-from pcs.component_run import Output
+from pcs.output import Output
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.run import MLflowRun
 

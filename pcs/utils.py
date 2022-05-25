@@ -25,7 +25,7 @@ HASH_REGEXES = [
 def is_spec_body(item: Any) -> bool:
     if not isinstance(item, Mapping):
         return False
-    from pcs.spec_object import Component  # Avoid circular import
+    from pcs.component import Component  # Avoid circular import
 
     type_attr = item.get(Component.TYPE_KEY, None)
     import pcs

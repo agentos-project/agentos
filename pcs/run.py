@@ -8,7 +8,7 @@ from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context import registry as context_registry
 
-from pcs.spec_object import Component
+from pcs.component import Component
 
 
 class MLflowRun(Component):

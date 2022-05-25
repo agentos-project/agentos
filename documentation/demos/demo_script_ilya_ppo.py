@@ -1,6 +1,6 @@
 import pprint
 
-from pcs.component import Module
+from pcs import Module
 from pcs.registry import Registry
 from pcs.repo import Repo
 

@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import List, Tuple
 
 from pcs.registry import WebRegistry
-from pcs.spec_object import Component as PCSComponent
+from pcs.component import Component as PCSComponent
 
 from django.db import models
 from django.http import QueryDict

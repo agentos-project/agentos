@@ -52,7 +52,7 @@ class Spec(UserDict):
 
     @property
     def type(self) -> str:
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         return self.body[Component.TYPE_KEY]
 
@@ -65,7 +65,7 @@ class Spec(UserDict):
             f"len(self.data) must be 1, but is {len(self.data)}. self.data "
             f"is:\n{self.data}"
         )
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         for ident, body in self.data.items():
             assert Component.spec_body_to_identifier(body) == ident, (
@@ -74,7 +74,7 @@ class Spec(UserDict):
             )
 
     def _update_identifier(self):
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         for ident, body in self.data.items():
             self.data = {Component.spec_body_to_identifier(body): body}
@@ -93,7 +93,7 @@ class Spec(UserDict):
 
     @classmethod
     def from_flat(cls, flat_spec: Dict) -> "Spec":
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         assert Component.TYPE_KEY in flat_spec
         ident_computed = Component.spec_body_to_identifier(flat_spec)
@@ -118,7 +118,7 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
     flat_spec = {}
     for identifier, inner_spec in nested_spec.items():
         assert type(identifier) == str
-        from pcs.spec_object import Component  # Avoid circular import.
+        from pcs.component import Component  # Avoid circular import.
 
         flat_spec[Component.IDENTIFIER_KEY] = identifier
         flat_spec.update(copy.deepcopy(inner_spec))
@@ -141,7 +141,7 @@ def unflatten_spec(
         normalize the spec.
     :return: Nested version of ``flat_spec``.
     """
-    from pcs.spec_object import Component  # Avoid circular import.
+    from pcs.component import Component  # Avoid circular import.
 
     assert Component.IDENTIFIER_KEY in flat_spec
     identifier = flat_spec[Component.IDENTIFIER_KEY]
@@ -155,6 +155,6 @@ def unflatten_spec(
 def is_flat_spec(spec: Mapping) -> bool:
     assert len(spec) > 0  # specs must have at least one key-value pair.
     # Flat specs must have an identifier in their outermost dict.
-    from pcs.spec_object import Component  # Avoid circular import.
+    from pcs.component import Component  # Avoid circular import.
 
     return Component.IDENTIFIER_KEY in spec

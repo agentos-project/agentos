@@ -2,10 +2,10 @@
 import pytest
 
 from pcs.argument_set import ArgumentSet
-from pcs.component import Module
+from pcs import Module
 from pcs.registry import Registry
 from pcs.repo import Repo
-from pcs.spec_object import Component
+from pcs.component import Component
 from pcs.utils import generate_dummy_dev_registry, make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
