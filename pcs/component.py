@@ -56,7 +56,7 @@ class Component:
 
     def __init__(self):
         self._spec_attr_names: List[str] = []  # Managed by register_attribute
-        # A Component's identifier is not considered a spec_attribute. # Rather,
+        # A Component's identifier is not considered a spec_attribute. Rather,
         # it is a function of all spec_attributes.
         self.register_attribute(self.TYPE_KEY)
 

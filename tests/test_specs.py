@@ -1,6 +1,6 @@
 from pcs.registry import Registry
 from pcs.specs import flatten_spec, unflatten_spec
-from tests.utils import GH_SB3_AGENT_DIR, RANDOM_AGENT_DIR
+from tests.utils import RANDOM_AGENT_DIR
 
 
 def test_flatten_spec():

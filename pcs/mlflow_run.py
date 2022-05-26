@@ -72,7 +72,7 @@ class MLflowRun(Component):
         self.register_attribute("experiment_id")
 
     @classmethod
-    def from_existing_mlflow_run(cls, run_id: str) -> "Run":
+    def from_existing_mlflow_run(cls, run_id: str) -> "MLflowRun":
         try:
             cls.MLFLOW_CLIENT.get_run(run_id)
         except MlflowException as mlflow_exception:
@@ -191,7 +191,7 @@ class MLflowRun(Component):
             run.print_status()
         print()
 
-    def __enter__(self) -> "Run":
+    def __enter__(self) -> "MLflowRun":
         return self
 
     def __exit__(self, type, value, traceback) -> None:

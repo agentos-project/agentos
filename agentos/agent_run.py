@@ -5,9 +5,9 @@ from typing import Optional
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
+from pcs.mlflow_run import MLflowRun
 from pcs.output import Output
 from pcs.registry import InMemoryRegistry, Registry
-from pcs.run import MLflowRun
 
 _EPISODE_KEY = "episode_count"
 _STEP_KEY = "step_count"

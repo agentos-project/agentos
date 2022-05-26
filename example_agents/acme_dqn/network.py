@@ -6,7 +6,7 @@ import module_manager
 import sonnet as snt
 import tensorflow as tf
 
-from pcs.run import Run
+from pcs.mlflow_run import Run
 
 
 class TFModelSaver:

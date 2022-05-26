@@ -78,8 +78,8 @@ class ObjectManager(abc.ABC, Component):
         :param function_name: Name of a function to be called on a new
             instance of this component's managed object.
         :param arg_set: A :py:func:`pcs.argument_set.ArgumentSet` or
-            ArgumentSet-like dict containing the function-name arguments, and/or
-            arguments to be passed to the __init__() functions of this
+            ArgumentSet-like dict containing the function-name arguments,
+            and/or arguments to be passed to the __init__() functions of this
             component's dependents during managed object initialization.
         :param publish_to: Optionally, publish the resulting Run object
             to the provided registry.

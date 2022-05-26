@@ -13,11 +13,11 @@ import yaml
 from agentos.agent_run import AgentRun
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
+from pcs.mlflow_run import MLflowRun
 from pcs.module_manager import Module
 from pcs.output import Output
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.repo import Repo
-from pcs.run import MLflowRun
 from pcs.virtual_env import VirtualEnv
 
 

@@ -1,4 +1,4 @@
-from pcs import Class, Instance
+from pcs import Class
 from pcs.argument_set import ArgumentSet
 from pcs.registry import InMemoryRegistry
 
@@ -34,7 +34,7 @@ def test_component_instance_run():
 
 
 def test_run_tracking():
-    from pcs.run import MLflowRun
+    from pcs.mlflow_run import MLflowRun
 
     run = MLflowRun()
     run.log_metric("test_metric", 1)

@@ -4,11 +4,11 @@ from pcs.argument_set import ArgumentSet
 from pcs.class_manager import Class
 from pcs.command import Command
 from pcs.instance_manager import Instance
+from pcs.mlflow_run import MLflowRun
 from pcs.module_manager import Module
 from pcs.output import Output, active_output
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, LocalRepo, Repo
-from pcs.run import MLflowRun
 from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.version import VERSION as __version__  # noqa: F401
 

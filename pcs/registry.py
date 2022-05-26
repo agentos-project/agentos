@@ -17,8 +17,6 @@ from dotenv import load_dotenv
 
 from pcs.specs import Spec, flatten_spec, is_flat_spec, unflatten_spec
 from pcs.utils import (
-    IDENTIFIER_REF_PREFIX,
-    extract_identifier,
     is_identifier,
     is_spec_body,
     make_identifier_ref,
@@ -28,7 +26,7 @@ from pcs.utils import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from pcs import Module
+    from pcs.component import Component
     from pcs.repo import Repo
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
@@ -413,13 +411,13 @@ class InMemoryRegistry(Registry):
         """
         new_specs = {}
         new_aliases = self.aliases if self.aliases else {}
+        from pcs.component import Component  # Avoid circular import.
+
         for id_or_alias, body in self.specs.items():
             assert is_spec_body(body), (
                 "Trying to resolve aliases in something that is not spec "
                 f"body: {body}"
             )
-            from pcs.component import Component  # Avoid circular import.
-
             hash = Component.spec_body_to_identifier(body)
             if is_identifier(id_or_alias):
                 new_specs[id_or_alias] = body
@@ -466,20 +464,6 @@ class InMemoryRegistry(Registry):
         return self._registry
 
 
-class WebSpecMapping(Mapping):
-    def __init__(self, root_api_url: str):
-        self.root_api_url = root_api_url
-
-    def __getitem__(self, item):
-        pass
-
-    def __iter__(self):
-        pass
-
-    def __len__(self):
-        req_url = f"{self.root_api_url}/components/"
-
-
 class WebRegistry(Registry):
     """
     A web-server backed Registry.
@@ -489,7 +473,6 @@ class WebRegistry(Registry):
 
     def __init__(self, root_api_url: str):
         self.root_api_url = root_api_url
-        self.spec_mapping = WebSpecMapping(root_api_url)
 
     def __contains__(self, item):
         pass
@@ -538,7 +521,7 @@ class WebRegistry(Registry):
         response = requests.post(req_url, data=data)
         self._is_response_ok(response)
         result = json.loads(response.content)
-        logger.debug(f"\npost spec http response:")
+        logger.debug("\npost spec http response:")
         logger.debug(pprint.pformat(result))
 
     @staticmethod

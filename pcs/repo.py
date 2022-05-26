@@ -3,14 +3,11 @@ import logging
 import sys
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping, Tuple, TypeVar
+from typing import Tuple, TypeVar
 
 from pcs.component import Component
 from pcs.git_manager import GitManager
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
-
-if TYPE_CHECKING:
-    from pcs.registry import Registry
 
 logger = logging.getLogger(__name__)
 

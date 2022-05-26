@@ -120,7 +120,7 @@ class Module(ObjectManager):
         full_path = self.repo.get_local_file_path(self.file_path, self.version)
         assert full_path.is_file(), f"{full_path} does not exist"
         spec = importlib.util.spec_from_file_location(
-            f"AOS_MODULE", str(full_path)
+            "AOS_MODULE", str(full_path)
         )
         managed_obj = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(full_path.parent))
