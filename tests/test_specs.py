@@ -51,14 +51,14 @@ def test_flatten_spec():
 
 def test_flatten_versioned_spec():
     reg = Registry.from_yaml(GH_SB3_AGENT_DIR / "components.yaml")
-    rand_comp_spec = reg.get_component_spec("agent", "test_staging")
-    full_comp_id = "agent==test_staging"
+    rand_comp_spec = reg.get_component_spec("sb3_agent", "test_staging")
+    full_comp_id = "sb3_agent==test_staging"
     assert full_comp_id in rand_comp_spec.keys()
-    assert rand_comp_spec[full_comp_id]["repo"] == "aos_github"
+    assert rand_comp_spec[full_comp_id]["repo"] == "sb3_agent_gh"
 
     flattened = flatten_spec(rand_comp_spec)
     assert flattened["identifier"] == full_comp_id
-    assert flattened["name"] == "agent"
+    assert flattened["name"] == "sb3_agent"
     assert flattened["version"] == "test_staging"
 
     nested = unflatten_spec(flattened)
@@ -70,5 +70,5 @@ def test_flatten_versioned_spec():
 
     # make sure we used deepcopy
     flattened["repo"] = "update_repo"
-    assert rand_comp_spec[full_comp_id]["repo"] == "aos_github"
-    assert nested[full_comp_id]["repo"] == "aos_github"
+    assert rand_comp_spec[full_comp_id]["repo"] == "sb3_agent_gh"
+    assert nested[full_comp_id]["repo"] == "sb3_agent_gh"
