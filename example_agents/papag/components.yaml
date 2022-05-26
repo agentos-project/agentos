@@ -21,6 +21,7 @@ specs:
             type: Class
             name: PAPAGAgent
             module:
+                type: Module
                 repo: spec:papag_agent_dir
                 file_path: agent.py
                 requirements_path: ./requirements.txt

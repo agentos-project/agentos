@@ -161,15 +161,15 @@ def run(
     from pcs.component import Component
     comp = Component.from_registry(registry, identifier)
     function_name = function_name or comp.get_default_function_name()
-    assert not (arg_set_id and (arg_set_args or arg_set_kwargs)), (
-        "Cannot pass both arg_set_id and (arg_set_args or arg_set_kwargs)."
-    )
     if arg_set_id:
         arg_set = ArgumentSet.from_registry(registry, arg_set_id)
     else:
-        args = literal_eval(arg_set_args) if arg_set_args else None
-        kwargs = literal_eval(arg_set_kwargs) if arg_set_kwargs else None
-        arg_set = ArgumentSet(args=args, kwargs=kwargs)
+        arg_set = ArgumentSet()
+    args = literal_eval(arg_set_args.lstrip()) if arg_set_args else None
+    kwargs = literal_eval(arg_set_kwargs.lstrip()) if arg_set_kwargs else None
+    arg_set.args.append(args)
+    arg_set.kwargs.update(kwargs)
+
     output = comp.run_with_arg_set(function_name, arg_set)
     print(f"Output {output.identifier} recorded.", end=" ")
     print("Execute the following for details:")
