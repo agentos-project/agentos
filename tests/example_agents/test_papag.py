@@ -2,11 +2,14 @@ from agentos.cli import run
 from tests.utils import PAPAG_AGENT_DIR, run_test_command
 
 # Use CartPole because Atari ROM licensing issues break tests on Windows.
-test_args = ["papag_agent", "-K {'num_env_steps': 1, 'num_processes': 1}"]
+test_args = [
+    "papag_agent",
+    "-K {'num_env_steps': 1, 'num_processes': 1}",
+    "--registry-file", str(PAPAG_AGENT_DIR / 'components.yaml'),
+    "--registry-file", str(PAPAG_AGENT_DIR / 'a2c_cartpole_args.yaml')
+]
 
 test_kwargs = {
-    "--registry-file": str(PAPAG_AGENT_DIR / "components.yaml"),
-    "--registry-file": str(PAPAG_AGENT_DIR / "a2c_cartpole_args.yaml"),
     "--arg-set-id": "a2c_cartpole_args"
 }
 

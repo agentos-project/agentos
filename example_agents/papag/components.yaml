@@ -5,15 +5,15 @@ specs:
 
     openai_gym:
         type: GitHubRepo
-        url: git@GitHubRepo.com:openai/gym.git
+        url: git@github.com:openai/gym.git
 
     ikostrikov_papag:
         type: GitHubRepo
-        url: git@GitHubRepo.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
+        url: git@github.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
 
     mgbellemare_ale:
         type: GitHubRepo
-        url: https://GitHubRepo.com/mgbellemare/Arcade-Learning-Environment.git
+        url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
     papag_agent:
         type: Instance
