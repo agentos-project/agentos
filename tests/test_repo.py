@@ -21,7 +21,7 @@ def test_repo_from_github():
             aos_repo,
             version=TESTING_BRANCH_NAME,
             file_path="agentos/core.py",
-        )
+        ),
     )
     print("===============")
     print(pprint.pprint(agent_class.to_registry().to_dict()))

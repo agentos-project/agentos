@@ -1,12 +1,11 @@
 import pprint
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Callable, List, Optional, Mapping
-
-from deepdiff import grep
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import regex
 import yaml
+from deepdiff import grep
 
 AOS_ROOT = Path(__file__).parent.absolute()
 AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
@@ -15,11 +14,7 @@ AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
 IDENTIFIER_REF_PREFIX = "spec:"
-HASH_REGEXES = [
-    "^[a-fA-F0-9]{32}$",
-    "^[a-fA-F0-9]{40}$",
-    "^[a-fA-F0-9]{64}$"
-]
+HASH_REGEXES = ["^[a-fA-F0-9]{32}$", "^[a-fA-F0-9]{40}$", "^[a-fA-F0-9]{64}$"]
 
 
 def is_spec_body(item: Any) -> bool:
@@ -46,7 +41,7 @@ def is_identifier_ref(token: Any) -> bool:
 
 def extract_identifier(identifier_ref: str) -> str:
     assert identifier_ref.startswith(IDENTIFIER_REF_PREFIX)
-    return identifier_ref[len(IDENTIFIER_REF_PREFIX):]
+    return identifier_ref[len(IDENTIFIER_REF_PREFIX) :]
 
 
 def make_identifier_ref(identifier: str) -> str:
@@ -219,7 +214,7 @@ def nested_dict_list_replace(
     root = d
     results = root | grep(f"^{regex_str}$", use_regexp=True)
     if results:
-        for dict_as_str in results['matched_values']:
+        for dict_as_str in results["matched_values"]:
             # This is ugly and maybe unsafe and should be done in a more
             # sane way.
             assert isinstance(replace_with, str)
@@ -258,18 +253,15 @@ def leaf_lists(data_struct: Any, pre: List = None):
     if isinstance(data_struct, dict):
         for key, value in data_struct.items():
             if isinstance(value, dict):
-                for d in leaf_lists(value, pre + [key]):
-                    yield d
+                yield from leaf_lists(value, pre + [key])
             elif isinstance(value, list) or isinstance(value, tuple):
                 for i, v in enumerate(value):
-                    for d in leaf_lists(v, pre + [key, i]):
-                        yield d
+                    yield from leaf_lists(v, pre + [key, i])
             else:
                 yield pre + [key, value]
     elif isinstance(data_struct, list):
         for i, v in enumerate(data_struct):
-            for d in leaf_lists(v, pre + [i]):
-                yield d
+            yield from leaf_lists(v, pre + [i])
     else:
         yield pre + [data_struct]
 

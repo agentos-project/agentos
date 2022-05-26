@@ -2,11 +2,11 @@ import json
 from collections import defaultdict
 from typing import List, Tuple
 
-from pcs.registry import WebRegistry
-from pcs.component import Component as PCSComponent
-
 from django.db import models
 from django.http import QueryDict
+
+from pcs.component import Component as PCSComponent
+from pcs.registry import WebRegistry
 
 
 class TimeStampedModel(models.Model):
@@ -33,7 +33,8 @@ class Component(TimeStampedModel):
         #        has permission to create a new version of this Module
         #        (i.e. if the name already exists but not the version).
         component = Component.objects.create(
-            identifier=identifier, body=flat_spec,
+            identifier=identifier,
+            body=flat_spec,
         )
         return component
 
@@ -89,7 +90,14 @@ class Component(TimeStampedModel):
 
     @staticmethod
     def agent_run_dag(identifier) -> List:
-        run_map, env_map, root_ids, term_ids, n2r, graph = Component.agent_run_dags()
+        (
+            run_map,
+            env_map,
+            root_ids,
+            term_ids,
+            n2r,
+            graph,
+        ) = Component.agent_run_dags()
         print(f"run_id_map.keys(): {run_map.keys()}")
         ident = n2r[identifier]
         res = [run_map[ident]]

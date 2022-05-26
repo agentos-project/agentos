@@ -7,10 +7,10 @@ from typing import Type, TypeVar
 
 from dill.source import getsource as dill_getsource
 
-from pcs.object_manager import ObjectManager
-from pcs.module_manager import Module
-from pcs.repo import Repo, LocalRepo
 from pcs.argument_set import ArgumentSet
+from pcs.module_manager import Module
+from pcs.object_manager import ObjectManager
+from pcs.repo import LocalRepo, Repo
 
 logger = logging.getLogger(__name__)
 

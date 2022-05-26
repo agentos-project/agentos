@@ -1,11 +1,11 @@
 """Test suite for AgentOS Registry."""
 import pytest
 
-from pcs.argument_set import ArgumentSet
 from pcs import Module
+from pcs.argument_set import ArgumentSet
+from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
-from pcs.component import Component
 from pcs.utils import generate_dummy_dev_registry, make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
@@ -18,16 +18,11 @@ from tests.utils import (
 
 
 def test_resolve_inline_specs():
-    inner_spec_body = {
-        "type": "Module",
-        "key": "val"
-    }
+    inner_spec_body = {"type": "Module", "key": "val"}
 
     def get_outer_spec_body(what_to_inline):
-        return {
-            "type": "Class",
-            "some_module": what_to_inline
-        }
+        return {"type": "Class", "some_module": what_to_inline}
+
     inner_spec_id = Component.spec_body_to_identifier(inner_spec_body)
     normalized_outer = get_outer_spec_body(make_identifier_ref(inner_spec_id))
     nested_outer = get_outer_spec_body(inner_spec_body)
@@ -39,16 +34,7 @@ def test_resolve_inline_specs():
 
 
 def test_resolve_inline_aliases():
-    test_reg_dict = {
-        "specs":
-            {
-                "inline_alias":
-                    {
-                        "type": "Module",
-                        "k": "v"
-                    }
-            }
-    }
+    test_reg_dict = {"specs": {"inline_alias": {"type": "Module", "k": "v"}}}
     r = Registry.from_dict(test_reg_dict)
     spec_id = r.aliases["inline_alias"]
     assert r.get_spec(spec_id, flatten=True)["k"] == "v"

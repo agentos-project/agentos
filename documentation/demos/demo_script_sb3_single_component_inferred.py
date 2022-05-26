@@ -1,5 +1,5 @@
-from pcs.argument_set import ArgumentSet
 from pcs import Module
+from pcs.argument_set import ArgumentSet
 from pcs.output import Output
 from pcs.registry import Registry, WebRegistry
 from pcs.repo import Repo

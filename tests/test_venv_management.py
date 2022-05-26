@@ -4,11 +4,11 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from pcs import Module, Class, Instance
-from pcs.repo import Repo
+from pcs import Class, Instance, Module
 from pcs.component import Component
-from pcs.virtual_env import VirtualEnv, auto_revert_venv
+from pcs.repo import Repo
 from pcs.specs import Spec
+from pcs.virtual_env import VirtualEnv, auto_revert_venv
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
 
@@ -92,10 +92,12 @@ def test_setup_py_agent():
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        local_repo_spec = Spec.from_flat({
-            Component.TYPE_KEY: "LocalRepo",
-            "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
-        })
+        local_repo_spec = Spec.from_flat(
+            {
+                Component.TYPE_KEY: "LocalRepo",
+                "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
+            }
+        )
         agent_repo = Repo.from_spec(local_repo_spec)
         agent_instance = Instance(
             instance_of=Class(
@@ -105,7 +107,7 @@ def test_setup_py_agent():
                     version=None,
                     file_path="./agent.py",
                     requirements_path="./setup.py",
-                )
+                ),
             )
         )
         agent_instance.run("evaluate")

@@ -44,7 +44,7 @@ class Output(MLflowRun):
         self.set_tag(
             MLFLOW_RUN_NAME,
             f"Running function '{self.command.function_name}' on Component "
-            f"'{self.command.component.identifier[0:7]}'."
+            f"'{self.command.component.identifier[0:7]}'.",
         )
 
     @classmethod
@@ -174,9 +174,7 @@ class Output(MLflowRun):
             return False
 
 
-def active_output(
-    caller: Any, fail_if_none: bool = False
-) -> Optional[Output]:
+def active_output(caller: Any, fail_if_none: bool = False) -> Optional[Output]:
     """
     A helper function, returns the currently active Output, if it exists,
     else None. More specifically, if the caller is an object that is managed by

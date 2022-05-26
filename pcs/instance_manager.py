@@ -1,8 +1,8 @@
 import copy
 from typing import TypeVar
 
+from pcs.class_manager import ArgumentSet, Class
 from pcs.object_manager import ObjectManager
-from pcs.class_manager import Class, ArgumentSet
 from pcs.utils import find_and_replace_leaves
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
@@ -15,6 +15,7 @@ class Instance(ObjectManager):
     is that for an Instance, the underlying class is instantiated during
     initialization of the component.
     """
+
     def __init__(
         self,
         instance_of: Class,
@@ -47,6 +48,6 @@ class Instance(ObjectManager):
             find_and_replace_leaves(
                 i,
                 lambda x: isinstance(x, ObjectManager),
-                lambda x: x.freeze(force)
+                lambda x: x.freeze(force),
             )
         return self_copy

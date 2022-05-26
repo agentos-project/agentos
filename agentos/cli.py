@@ -15,7 +15,7 @@ from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.module_manager import Module
 from pcs.output import Output
-from pcs.registry import Registry, InMemoryRegistry
+from pcs.registry import InMemoryRegistry, Registry
 from pcs.repo import Repo
 from pcs.run import MLflowRun
 from pcs.virtual_env import VirtualEnv
@@ -33,9 +33,7 @@ def _validate_agent_name(ctx, param, value):
     return value
 
 
-_arg_identifier = click.argument(
-    "identifier", metavar="IDENTIFIER"
-)
+_arg_identifier = click.argument("identifier", metavar="IDENTIFIER")
 _arg_optional_identifier = click.argument(
     "identifier", metavar="IDENTIFIER", required=False
 )
@@ -52,7 +50,7 @@ _option_registry_string = click.option(
     "--registry-string",
     metavar="REGISTRY_STRING",
     default=None,
-    help="a Python dict that is a valid pcs.Registry."
+    help="a Python dict that is a valid pcs.Registry.",
 )
 _option_assume_yes = click.option(
     "--assume-yes",
@@ -98,9 +96,7 @@ def init(dir_names):
         d.mkdir(parents=True, exist_ok=True)
         _instantiate_template_files(d)
         d = CWD_STR if d == Path(".") else d
-        click.echo(
-            f"\nFinished initializing AgentOS agent in {d}.\n"
-        )
+        click.echo(f"\nFinished initializing AgentOS agent in {d}.\n")
         click.echo("To run agent:")
 
         registry_path = ""
@@ -118,7 +114,7 @@ def init(dir_names):
     type=str,
     default=None,
     help="A function of the component that AgentOS Runtime will call with "
-         "the specified argument set.",
+    "the specified argument set.",
 )
 @click.option(
     "--arg-set-id",
@@ -126,19 +122,19 @@ def init(dir_names):
     type=str,
     default=None,
     help="The Identifier of an ArgumentSet Spec to use for this run. "
-         "If None is provided, then the empty ArgumentSet will be used."
+    "If None is provided, then the empty ArgumentSet will be used.",
 )
 @click.option(
     "--arg-set-args",
     "-A",
     metavar="ARG_SET_ARGS_STRING",
-    help="a string in Python list format that contains args."
+    help="a string in Python list format that contains args.",
 )
 @click.option(
     "--arg-set-kwargs",
     "-K",
     metavar="ARG_SET_KWARGS_STRING",
-    help="a string in Python dict format that contains keyword args."
+    help="a string in Python dict format that contains keyword args.",
 )
 @_option_registry_file
 @_option_registry_string
@@ -159,6 +155,7 @@ def run(
         registry.update(Registry.from_dict(literal_eval(registry_string)))
     print(registry.to_dict())
     from pcs.component import Component
+
     comp = Component.from_registry(registry, identifier)
     function_name = function_name or comp.get_default_function_name()
     if arg_set_id:
@@ -187,7 +184,9 @@ def status(identifier, registry_file):
     if not identifier:
         MLflowRun.print_all_status()
     elif MLflowRun.run_exists(identifier):
-        MLflowRun.from_existing_mlflow_run(identifier).print_status(detailed=True)
+        MLflowRun.from_existing_mlflow_run(identifier).print_status(
+            detailed=True
+        )
     else:  # assume identifier is a Component identifier
         try:
             registry = InMemoryRegistry()

@@ -3,10 +3,10 @@ import logging
 import sys
 import uuid
 from pathlib import Path
-from typing import Mapping, Tuple, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Tuple, TypeVar
 
-from pcs.git_manager import GitManager
 from pcs.component import Component
+from pcs.git_manager import GitManager
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
 
 if TYPE_CHECKING:
@@ -102,6 +102,7 @@ class GitHubRepo(Repo):
     """
     A Module with an GitHubRepo can be found on GitHub.
     """
+
     def __init__(self, url: str, default_version: str = "master"):
         super().__init__(default_version)
         # https repo link allows for cloning without unlocking your GitHub keys
@@ -147,6 +148,7 @@ class LocalRepo(Repo):
     be loaded from files and the path of the file can be stored
     in ``relative_path_prefix``.
     """
+
     def __init__(
         self,
         path: str = None,

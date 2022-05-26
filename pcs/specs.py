@@ -9,6 +9,7 @@ the spec identifier at the same level as the rest of the spec properties.
 import copy
 from collections import UserDict
 from typing import Callable, Dict, Mapping
+
 from pcs.utils import find_and_replace_leaves
 
 
@@ -33,6 +34,7 @@ class Spec(UserDict):
 
         {identifier: <str>, type: <str>, <other key->val flat_spec>}
     """
+
     def __init__(self, input_dict: Dict):
         super().__init__()
         self.data = input_dict
@@ -86,7 +88,7 @@ class Spec(UserDict):
         self._update_identifier()
 
     def replace_in_body(
-            self, filter_fn: Callable, replace_fn: Callable
+        self, filter_fn: Callable, replace_fn: Callable
     ) -> bool:
         found = find_and_replace_leaves(self.body, filter_fn, replace_fn)
         self._update_identifier()

@@ -15,9 +15,7 @@ import yaml
 from deepdiff import DeepDiff
 from dotenv import load_dotenv
 
-from pcs.specs import (
-    flatten_spec, is_flat_spec, Spec, unflatten_spec
-)
+from pcs.specs import Spec, flatten_spec, is_flat_spec, unflatten_spec
 from pcs.utils import (
     IDENTIFIER_REF_PREFIX,
     extract_identifier,
@@ -261,12 +259,13 @@ class Registry(abc.ABC):
                 spec_copy = Spec.from_flat(spec_body)  # Makes deepcopy
                 found = spec_copy.replace_in_body(
                     lambda x: x == make_identifier_ref(ident_to_replace),
-                    lambda x: make_identifier_ref(new_spec.identifier)
+                    lambda x: make_identifier_ref(new_spec.identifier),
                 )
                 if found:
-                   replacements_to_do.append((ident, spec_copy))
+                    replacements_to_do.append((ident, spec_copy))
             aliases_to_update = [
-                alias for alias, ident in self.aliases.items()
+                alias
+                for alias, ident in self.aliases.items()
                 if ident == ident_to_replace
             ]
             for alias in aliases_to_update:
@@ -277,6 +276,7 @@ class InMemoryRegistry(Registry):
     """
     A mutable in-memory registry.
     """
+
     SPECS_KEY = "specs"
     ALIASES_KEY = "aliases"
 
@@ -301,7 +301,7 @@ class InMemoryRegistry(Registry):
     def aliases(self) -> Mapping:
         return self._registry.get(self.ALIASES_KEY, {})
 
-    #TODO: This function probably belongs in the Registry class.
+    # TODO: This function probably belongs in the Registry class.
     def _resolve_inline_specs(self):
         """
         Allow developers to specify specs in-line. This will rewrite those
@@ -355,7 +355,9 @@ class InMemoryRegistry(Registry):
                         inner_spec = attr_val
                         from pcs.component import Component
 
-                        inner_id = Component.spec_body_to_identifier(inner_spec)
+                        inner_id = Component.spec_body_to_identifier(
+                            inner_spec
+                        )
                         struct[key][attr_key] = make_identifier_ref(inner_id)
                         new_specs[inner_id] = {}
                         to_handle.append((new_specs, inner_id, inner_spec))
@@ -373,11 +375,11 @@ class InMemoryRegistry(Registry):
                 for i, sub_elt in enumerate(elt):
                     to_handle.append((struct[key], i, sub_elt))
             else:  # elt must be leaf
-               struct[key] = elt
+                struct[key] = elt
 
         self._registry[self.SPECS_KEY] = new_specs
 
-    #TODO: This function probably belongs in the Registry class.
+    # TODO: This function probably belongs in the Registry class.
     def _resolve_aliases(self):
         """
         To make it easier for developers to write specs, we allow for
@@ -437,7 +439,7 @@ class InMemoryRegistry(Registry):
                 nested_dict_list_replace(
                     new_specs,
                     f"^{make_identifier_ref(alias)}$",
-                    make_identifier_ref(new_aliases[alias])
+                    make_identifier_ref(new_aliases[alias]),
                 )
         self._registry[self.SPECS_KEY] = new_specs
         if new_aliases:
@@ -449,9 +451,7 @@ class InMemoryRegistry(Registry):
         flat_spec = flatten_spec(spec)
         identifier = flat_spec[Component.IDENTIFIER_KEY]
         if identifier in self.specs:
-            spec_diff = DeepDiff(
-                spec[identifier], self.specs[identifier]
-            )
+            spec_diff = DeepDiff(spec[identifier], self.specs[identifier])
             assert not spec_diff, (
                 f"Spec {identifier} exists in registry and is different:\n\n"
                 f"{spec_diff}"
@@ -468,7 +468,7 @@ class InMemoryRegistry(Registry):
 
 class WebSpecMapping(Mapping):
     def __init__(self, root_api_url: str):
-       self.root_api_url = root_api_url
+        self.root_api_url = root_api_url
 
     def __getitem__(self, item):
         pass
@@ -484,6 +484,7 @@ class WebRegistry(Registry):
     """
     A web-server backed Registry.
     """
+
     SPEC_RESPONSE_BODY_KEY = "body"
 
     def __init__(self, root_api_url: str):

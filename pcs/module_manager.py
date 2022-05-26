@@ -7,7 +7,7 @@ from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, Repo
 from pcs.utils import parse_github_web_ui_url
-from pcs.virtual_env import VirtualEnv, NoOpVirtualEnv
+from pcs.virtual_env import NoOpVirtualEnv, VirtualEnv
 
 
 class Module(ObjectManager):
@@ -59,11 +59,11 @@ class Module(ObjectManager):
         self.register_attributes(
             [
                 "repo",
-                 "file_path",
-                 "version",
-                 "requirements_path",
-                 "imported_modules",
-             ]
+                "file_path",
+                "version",
+                "requirements_path",
+                "imported_modules",
+            ]
         )
         self._venv = None
         self._requirements = []

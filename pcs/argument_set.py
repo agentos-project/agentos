@@ -9,10 +9,11 @@ class ArgumentSet(Component):
     """
     Encapsulate a set of arguments for a function call.
     """
+
     def __init__(
         self,
         args: Union[Tuple[Any], List[Any]] = None,
-        kwargs: Dict[Any, Any] = None
+        kwargs: Dict[Any, Any] = None,
     ):
         super().__init__()
         self.args = list(args) if args else []
@@ -26,7 +27,7 @@ class ArgumentSet(Component):
         find_and_replace_leaves(
             data_structure,
             lambda leaf: isinstance(leaf, ObjectManager),
-            lambda leaf: leaf.get_object()
+            lambda leaf: leaf.get_object(),
         )
 
     def get_arg_objs(self):
@@ -38,4 +39,3 @@ class ArgumentSet(Component):
         resolved_args = copy.deepcopy(self.kwargs)
         self._resolve_objs(resolved_args)
         return resolved_args
-

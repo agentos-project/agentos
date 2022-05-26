@@ -133,9 +133,7 @@ class SB3Run(AgentRun):
             # for the first run that contains a policy by the name provided.
             for run in mlflow_runs:
                 try:
-                    cls.MLFLOW_CLIENT.download_artifacts(
-                        run.info.run_id, name
-                    )
+                    cls.MLFLOW_CLIENT.download_artifacts(run.info.run_id, name)
                 except OSError:
                     continue  # No policy was logged in this run, keep trying.
                 print(

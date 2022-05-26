@@ -2,11 +2,11 @@
 from unittest.mock import DEFAULT, patch
 
 from agentos.cli import init
+from pcs import Class, Instance, Module
 from pcs.argument_set import ArgumentSet
-from pcs import Module, Class, Instance
+from pcs.command import Command
 from pcs.output import Output
 from pcs.repo import Repo
-from pcs.command import Command
 from pcs.utils import extract_identifier
 from pcs.virtual_env import auto_revert_venv
 from tests.utils import (
@@ -57,9 +57,7 @@ def test_component_repl_demo():
     gen_class = Class.from_class(GenericDependency)
     gen_inst = Instance(gen_class)
     inst_args = ArgumentSet(
-        kwargs={
-            "env": env_inst, "gen_class": gen_class, "gen_inst": gen_inst
-        }
+        kwargs={"env": env_inst, "gen_class": gen_class, "gen_inst": gen_inst}
     )
     agent_inst = Instance(instance_of=agent_class, argument_set=inst_args)
 
@@ -73,9 +71,9 @@ def test_component_repl_demo():
     assert "gen_inst" in agent_inst.argument_set.kwargs.keys()
     agent = agent_inst.get_object()
     inst_dep_obj = agent.gen_inst
-    assert inst_dep_obj.__class__.__name__ == "GenericDependency", (
-        inst_dep_obj.__class__.__name__
-    )
+    assert (
+        inst_dep_obj.__class__.__name__ == "GenericDependency"
+    ), inst_dep_obj.__class__.__name__
     assert inst_dep_obj.x == 1
     assert inst_dep_obj.y == 10
 
@@ -92,7 +90,9 @@ def test_component_repl_demo():
 
     copy = Output.from_existing_mlflow_run(output.mlflow_run_id)
     assert copy.command == output.command
-    assert copy._mlflow_run.to_dictionary() == output._mlflow_run.to_dictionary()
+    assert (
+        copy._mlflow_run.to_dictionary() == output._mlflow_run.to_dictionary()
+    )
 
 
 def test_component_freezing(tmpdir):
@@ -115,12 +115,12 @@ def test_component_freezing(tmpdir):
             reg = frozen_inst.to_registry()
             agent_spec = reg.get_spec(frozen_inst.identifier, flatten=True)
             class_id = agent_spec["instance_of"]
-            mod_id = reg.get_spec(
-                extract_identifier(class_id), flatten=True
-            )["module"]
-            version = reg.get_spec(
-                extract_identifier(mod_id), flatten=True
-            )["version"]
+            mod_id = reg.get_spec(extract_identifier(class_id), flatten=True)[
+                "module"
+            ]
+            version = reg.get_spec(extract_identifier(mod_id), flatten=True)[
+                "version"
+            ]
             assert version == "test_freezing_version"
 
 
@@ -144,7 +144,7 @@ def test_module_component_from_agentos_github_repo():
             name="Corridor",
             module=Module.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}environment.py"
-            )
+            ),
         )
     )
     ds = Instance(
@@ -152,7 +152,7 @@ def test_module_component_from_agentos_github_repo():
             name="BasicDataset",
             module=Module.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}dataset.py"
-            )
+            ),
         )
     )
     pol = Instance(
@@ -160,23 +160,27 @@ def test_module_component_from_agentos_github_repo():
             name="RandomPolicy",
             module=Module.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}policy.py"
-            )
+            ),
         ),
-        argument_set=ArgumentSet(kwargs={
-            "environment": env,
-        })
+        argument_set=ArgumentSet(
+            kwargs={
+                "environment": env,
+            }
+        ),
     )
     agent = Instance(
         instance_of=Class(
             name="BasicAgent",
             module=Module.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}agent.py"
-            )
+            ),
         ),
-        argument_set=ArgumentSet(kwargs={
-            "environment": env,
-            "policy": pol,
-            "dataset": ds,
-        })
+        argument_set=ArgumentSet(
+            kwargs={
+                "environment": env,
+                "policy": pol,
+                "dataset": ds,
+            }
+        ),
     )
     agent.run("run_episode")

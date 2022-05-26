@@ -2,10 +2,10 @@ import shutil
 import tempfile
 from pathlib import Path
 
+import module_manager
 import sonnet as snt
 import tensorflow as tf
 
-import module_manager
 from pcs.run import Run
 
 

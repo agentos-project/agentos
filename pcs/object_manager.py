@@ -4,10 +4,10 @@ from functools import partial
 from typing import Any, TypeVar
 
 from pcs.argument_set import ArgumentSet
-from pcs.output import Output
-from pcs.registry import Registry
 from pcs.command import Command
 from pcs.component import Component
+from pcs.output import Output
+from pcs.registry import Registry
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class ObjectManager(abc.ABC, Component):
     or class instance). They can also run a method that is an attribute on
     their underlying object. Runs can take an argument set.
     """
+
     def __init__(self):
         Component.__init__(self)
         self.active_output = None
@@ -112,8 +113,10 @@ class ObjectManager(abc.ABC, Component):
     ) -> Any:
         fn = getattr(instance, function_name)
         assert fn is not None, f"{instance} has no attr {function_name}"
-        print(f"Calling {self.identifier}.{function_name} with "
-              f"args: {arg_set.args} and kwargs: {arg_set.kwargs})")
+        print(
+            f"Calling {self.identifier}.{function_name} with "
+            f"args: {arg_set.args} and kwargs: {arg_set.kwargs})"
+        )
         result = fn(*arg_set.get_arg_objs(), **arg_set.get_kwarg_objs())
         return result
 

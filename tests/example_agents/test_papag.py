@@ -5,13 +5,13 @@ from tests.utils import PAPAG_AGENT_DIR, run_test_command
 test_args = [
     "papag_agent",
     "-K {'num_env_steps': 1, 'num_processes': 1}",
-    "--registry-file", str(PAPAG_AGENT_DIR / 'components.yaml'),
-    "--registry-file", str(PAPAG_AGENT_DIR / 'a2c_cartpole_args.yaml')
+    "--registry-file",
+    str(PAPAG_AGENT_DIR / "components.yaml"),
+    "--registry-file",
+    str(PAPAG_AGENT_DIR / "a2c_cartpole_args.yaml"),
 ]
 
-test_kwargs = {
-    "--arg-set-id": "a2c_cartpole_args"
-}
+test_kwargs = {"--arg-set-id": "a2c_cartpole_args"}
 
 
 def test_papag_agent_evaluate():

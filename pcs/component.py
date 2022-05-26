@@ -1,9 +1,8 @@
 import copy
 import logging
 import numbers
-from rich import print as rich_print
-from rich.tree import Tree
 from typing import (
+    TYPE_CHECKING,
     Collection,
     Dict,
     List,
@@ -11,14 +10,16 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
-    TYPE_CHECKING
 )
+
 import yaml
 from deepdiff import DeepDiff, DeepHash
+from rich import print as rich_print
+from rich.tree import Tree
 
 import pcs  # for hasattr(pcs, ...)
 from pcs.registry import InMemoryRegistry, Registry
-from pcs.specs import flatten_spec, Spec, unflatten_spec
+from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.utils import (
     extract_identifier,
     filter_leaves,
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-C = TypeVar('C', bound='Component')
+C = TypeVar("C", bound="Component")
 
 
 class Component:
@@ -110,11 +111,11 @@ class Component:
             attr = {name: copy.deepcopy(getattr(self, name, None))}
 
             def not_allowed(i):
-                allowed = (
-                    isinstance(i, Component) or
-                    isinstance(i, self.OK_LEAF_ATTR_TYPES)
+                allowed = isinstance(i, Component) or isinstance(
+                    i, self.OK_LEAF_ATTR_TYPES
                 )
                 return not allowed
+
             # Stringify all non-allowed types.
             find_and_replace_leaves(attr, not_allowed, lambda leaf: str(leaf))
             # Per 'dependencies_as_strings' flag, stringify dependencies
@@ -122,7 +123,7 @@ class Component:
                 find_and_replace_leaves(
                     attr,
                     lambda leaf: isinstance(leaf, Component),
-                    lambda leaf: make_identifier_ref(leaf.identifier)
+                    lambda leaf: make_identifier_ref(leaf.identifier),
                 )
             attributes.update(attr)
         return attributes
@@ -135,10 +136,10 @@ class Component:
         """
 
         def filter_fn(leaf):
-            return (
-                isinstance(leaf, Component) and
-                (not filter_by_types or type(leaf) in filter_by_types)
+            return isinstance(leaf, Component) and (
+                not filter_by_types or type(leaf) in filter_by_types
             )
+
         return {
             k: v
             for k, v in filter_leaves(self.body(), filter_fn=filter_fn).items()
@@ -209,11 +210,10 @@ class Component:
         spec = Spec(copy.deepcopy(spec))
         spec.replace_in_body(
             is_identifier_ref,
-            lambda leaf: cls._resolve_dep(extract_identifier(leaf), registry)
+            lambda leaf: cls._resolve_dep(extract_identifier(leaf), registry),
         )
         assert hasattr(pcs, spec.type), (
-            f"No Component type '{spec.type}' found in "
-            "module 'pcs'."
+            f"No Component type '{spec.type}' found in " "module 'pcs'."
         )
         comp_cls = getattr(pcs, spec.type)
         print(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
@@ -241,7 +241,7 @@ class Component:
 
     @classmethod
     def from_yaml_file(cls, filename: str):
-        with open(filename, "r") as f:
+        with open(filename) as f:
             return cls(yaml.load(f))
 
     def to_yaml_str(self) -> str:
@@ -250,6 +250,7 @@ class Component:
     def to_yaml_file(self, filename: str) -> None:
         with open(filename, "w") as f:
             yaml.dump(self.to_spec(), f)
+
     def publish(self) -> Registry:
         self.to_registry(Registry.from_default())
 
@@ -302,7 +303,6 @@ class Component:
         for dep_attr_name, dep_module in self.dependencies().items():
             dep_module.get_status_tree(parent_tree=self_tree)
         return self_tree
-
 
 
 def test_spec_object():

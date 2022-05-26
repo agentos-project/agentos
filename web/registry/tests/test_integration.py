@@ -5,10 +5,10 @@ from registry.models import Run as RunModel
 from registry.models import RunCommand as RunCommandModel
 
 from pcs import Module
+from pcs.command import Command
 from pcs.output import Output
 from pcs.registry import WebRegistry
 from pcs.repo import Repo
-from pcs.command import Command
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, clear_cache_path
 from tests.utils import TESTING_BRANCH_NAME, TESTING_GITHUB_REPO_URL
 
