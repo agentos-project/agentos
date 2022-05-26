@@ -1,7 +1,7 @@
 from agentos.cli import run
 from tests.utils import GH_SB3_AGENT_DIR, run_test_command
 
-test_args = ["agent", "--use-outer-env"]
+test_args = ["sb3_agent", "--use-outer-env"]
 test_kwargs = {"--registry-file": str(GH_SB3_AGENT_DIR / "components.yaml")}
 
 
