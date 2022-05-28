@@ -41,7 +41,8 @@ def is_identifier_ref(token: Any) -> bool:
 
 def extract_identifier(identifier_ref: str) -> str:
     assert identifier_ref.startswith(IDENTIFIER_REF_PREFIX)
-    return identifier_ref[len(IDENTIFIER_REF_PREFIX) :]
+    prefix_len = len(IDENTIFIER_REF_PREFIX)
+    return identifier_ref[prefix_len:]
 
 
 def make_identifier_ref(identifier: str) -> str:
@@ -180,7 +181,7 @@ def _handle_random_agent(version_string):
 def _handle_sb3_agent(version_string):
     sb3_path_prefix = Path("example_agents") / Path("sb3_agent")
     atari_env = "AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f"
-    cartpole_env = "CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1"
+    cartpole_env = "CartPoleEnv==c755d5c35a25ab118746e2ba885894ff66fb8c43"
     ppo_algo = "PPO==21f6a474a4755996709efee8c0aab309df905cbf"
     sb3_rename_map = {
         "sb3_agent": f"sb3_ppo_agent=={version_string}",

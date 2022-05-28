@@ -29,10 +29,10 @@ specs:
             type: ArgumentSet
             kwargs:
                 PAPAGRun: spec:PAPAGRun
-                AtariEnv: spec:AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f
-                CartPoleEnv: spec:CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
-                A2C_ACKTR: spec:A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60
-                PPO: spec:PPO==41332b78dfb50321c29bade65f9d244387f68a60
+                AtariEnv: spec:AtariEnv
+                CartPoleEnv: spec:CartPoleEnv
+                A2C_ACKTR: spec:A2C_ACKTR
+                PPO: spec:PPO
 
     PAPAGRun:
         type: Class
@@ -42,34 +42,38 @@ specs:
             repo: spec:papag_agent_dir
             file_path: papag_run.py
 
-    AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f:
+    AtariEnv:
         type: Class
         name: AtariEnv
         module:
             type: Module
+            version: db3728264f382402120913d76c4fa0dc320ef59f
             repo: spec:mgbellemare_ale
             file_path: ./src/gym/envs/atari/environment.py
 
-    CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
+    CartPoleEnv:
         type: Class
         name: CartPoleEnv
         module:
             type: Module
+            version: c755d5c35a25ab118746e2ba885894ff66fb8c43
             repo: spec:openai_gym
             file_path: ./gym/envs/classic_control/cartpole.py
 
-    A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60:
+    A2C_ACKTR:
         type: Class
         name: A2C_ACKTR
         module:
             type: Module
+            version: 41332b78dfb50321c29bade65f9d244387f68a60
             repo: spec:ikostrikov_papag
             file_path: ./a2c_ppo_acktr/algo/a2c_acktr.py
 
-    PPO==41332b78dfb50321c29bade65f9d244387f68a60:
+    PPO:
         type: Class
         name: PPO
         module:
             type: Module
+            version: 41332b78dfb50321c29bade65f9d244387f68a60
             repo: spec:ikostrikov_papag
             file_path: ./a2c_ppo_acktr/algo/ppo.py
