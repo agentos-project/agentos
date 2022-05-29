@@ -23,10 +23,11 @@ setup(
     install_requires=[
         "click>=7.0",
         "pyyaml>=5.4.1",
-        "mlflow>=1.20.2",
+        "mlflow>=1.26.1",
         "dulwich==0.20.28",
         "requests>=2.21.0",
         "python-dotenv>=0.19.1",
+        "protobuf==3.20.1",
         "rich>=10.15.2",
         "deepdiff>=5.8.0",
         "dill>=0.3.4",
