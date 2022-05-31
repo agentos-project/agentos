@@ -7,7 +7,7 @@ gym[accept-rom-license]==0.21.0
 pygame==2.1.2
 stable-baselines3==1.5.0
 dm-env==1.5
-mlflow==1.25.1
+mlflow==1.26.1
 torch==1.11.0+cpu; sys_platform == 'linux'
 torch==1.11.0; sys_platform == 'win32'
 torch==1.11.0; sys_platform == 'darwin'

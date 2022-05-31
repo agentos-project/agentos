@@ -64,7 +64,7 @@ specs:
             type: Module
             repo: spec:openai_gym
             file_path: ./gym/envs/classic_control/cartpole.py
-            version: 4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
+            version: c755d5c35a25ab118746e2ba885894ff66fb8c43
 
     A2C_ACKTR:
         type: Class

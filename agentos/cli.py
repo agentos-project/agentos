@@ -169,8 +169,10 @@ def run(
         arg_set = ArgumentSet()
     args = literal_eval(arg_set_args.lstrip()) if arg_set_args else None
     kwargs = literal_eval(arg_set_kwargs.lstrip()) if arg_set_kwargs else None
-    arg_set.args.append(args)
-    arg_set.kwargs.update(kwargs)
+    if args is not None:
+        arg_set.args.append(args)
+    if kwargs is not None:
+        arg_set.kwargs.update(kwargs)
 
     output = comp.run_with_arg_set(function_name, arg_set)
     print(f"Output {output.identifier} recorded.", end=" ")

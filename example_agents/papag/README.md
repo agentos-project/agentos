@@ -7,13 +7,13 @@
 AgentOS Train:
 
 ```
-agentos run agent --function-name learn --arg-set-file a2c_pong_args.yaml
+agentos run papag_agent --registry-file components.yaml --registry-file a2c_cartpole_args.yaml --arg-set-id a2c_cartpole_args --function-name learn
 ```
 
 AgentOS Evaluate:
 
 ```
-agentos run agent --function-name evaluate --arg-set-file a2c_pong_args.yaml
+agentos run papag_agent --registry-file components.yaml --registry-file a2c_cartpole_args.yaml --arg-set-id a2c_cartpole_args --function-name learn
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c).
@@ -23,13 +23,13 @@ Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 train:
 
 ```
-agentos run agent --function-name learn --arg-set-file ppo_pong_args.yaml
+TODO: once spec v2 is finished
 ```
 
 evaluate:
 
 ```
-agentos run agent --function-name evaluate --arg-set-file ppo_pong_args.yaml
+TODO: once spec v2 is finished
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#ppo).
@@ -40,14 +40,13 @@ Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 train:
 
 ```
-agentos run agent --function-name learn --arg-set-file acktr_pong_args.yaml
+TODO: once spec v2 is finished
 ```
 
 evaluate:
 
 ```
-agentos run agent --function-name evaluate --arg-set-file acktr_pong_args.yaml
+TODO: once spec v2 is finished
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#acktr).
-
