@@ -185,7 +185,7 @@ def _handle_sb3_agent(version_string):
     sb3_rename_map = {
         "sb3_agent": f"sb3_ppo_agent=={version_string}",
         "environment": f"sb3_cartpole=={version_string}",
-        "SB3AgentRun": f"SB3AgentRun=={version_string}",
+        "SB3AgentOutput": f"SB3AgentOutput=={version_string}",
         atari_env: atari_env,
         cartpole_env: cartpole_env,
         ppo_algo: ppo_algo,

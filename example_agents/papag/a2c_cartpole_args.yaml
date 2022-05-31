@@ -1,13 +1,20 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c with CartPole
-# python main.py --env-name "CartPole-v1"
+# eval_command equivalent to: python main.py --env-name "CartPole-v1"
 
 specs:
-    a2c_cartpole_args:
-        type: ArgumentSet
-        kwargs:
-            env_name: CartPole-v1
-            algo_name: a2c
-    evaluate:
+    a2c_cartpole_papag_eval_command:
+        type: Command
+        component: spec:a2c_papag_agent
+        function_name: evaluate
+        argument_set: spec:a2c_cartpole_eval_args
+
+    a2c_cartpole_papag_learn_command:
+        type: Command
+        component: spec:a2c_papag_agent
+        function_name: evaluate
+        argument_set: spec:a2c_cartpole_learn_args
+
+    a2c_cartpole_eval_args:
         type: ArgumentSet
         kwargs:
             lr: .0007
@@ -18,7 +25,8 @@ specs:
             num_mini_batch: 32
             log_interval: 10
             entropy_coef: 0.01
-    learn:
+
+    a2c_cartpole_learn_args:
         type: ArgumentSet
         kwargs:
             lr: .0007

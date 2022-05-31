@@ -32,13 +32,13 @@ learning_run = random_agent.run_with_arg_set("learn", {})
 # via the following command:
 # run.to_registry(wr)
 
-# OR, update and uncomment the code below to publish the AgentRun itself.
+# OR, update and uncomment the code below to publish the AgentOutput itself.
 # Look at the output printed by the call to `run_with_arg_set()` above,
-# and copy the ID of the AgentRun from the line that looks similar to this:
-# "Results for AgentRun 85ad300d7d86461c938444063de68343"
-# from agentos import AgentRun
+# and copy the ID of the AgentOutput from the line that looks similar to this:
+# "Results for AgentOutput 85ad300d7d86461c938444063de68343"
+# from agentos import AgentOutput
 # agent_run_id = XXXXXXXXXXXXXXXXXXXXXXX
 # from pcs.registry import WebRegistry
-# sb3_agent_run = AgentRun.from_existing_mlflow_run(agent_run_id)
+# sb3_agent_run = AgentOutput.from_existing_mlflow_run(agent_run_id)
 # wr = WebRegistry("http://localhost:8000/api/v1")
 # sb3_agent_run.to_registry(wr)

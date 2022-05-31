@@ -1,9 +1,9 @@
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentOutput
 
 
 # Adheres to Acme Logger interface
 # https://github.com/deepmind/acme/blob/master/acme/utils/loggers/base.py
-class AcmeRun(AgentRun):
+class AcmeRun(AgentOutput):
     # Acme logger API
     def write(self, data: dict):
         self.add_episode_data(

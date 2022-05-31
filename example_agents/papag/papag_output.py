@@ -7,10 +7,10 @@ import torch
 from a2c_ppo_acktr import utils
 from a2c_ppo_acktr.utils import get_vec_normalize
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentOutput
 
 
-class PAPAGRun(AgentRun):
+class PAPAGOutput(AgentOutput):
     """
     An PAPAGRun must be of type "learn" or "evaluate". Learning runs can have
     log_model() called on them.
@@ -20,7 +20,7 @@ class PAPAGRun(AgentRun):
     https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
     """
 
-    PAPAG_RUN_TAG_KEY = "papag_agent_run"
+    PAPAG_RUN_TAG_KEY = "papag_agent_output"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -50,10 +50,10 @@ class PAPAGRun(AgentRun):
 
     @classmethod
     def _get_artifact_path(cls, run, name: str) -> Path:
-        return cls.MLFLOW_CLIENT.download_artifacts(run.mlflow_run_id, name)
+        return cls.MLFLOW_CLIENT.download_artifacts(run.info.run_id, name)
 
     @classmethod
-    def get_last_logged_model_run(cls, name: str) -> AgentRun:
+    def get_last_logged_model_run(cls, name: str) -> AgentOutput:
         runs = cls.MLFLOW_CLIENT.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],

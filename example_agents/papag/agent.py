@@ -42,11 +42,24 @@ class PAPAGAgent:
 
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self, algo_name: str, env_name: str):
+    def __init__(self,
+        PAPAGOutput,
+        AtariEnv,
+        CartPoleEnv,
+        A2C_ACKTR,
+        PPO,
+        algo_name: str,
+        env_name: str,
+    ):
+        self.PAPAGOutput = PAPAGOutput
+        self.AtariEnv = AtariEnv
+        self.CartPoleEnv = CartPoleEnv
+        self.A2C_ACKTR = A2C_ACKTR
+        self.PPO = PPO
         self.algo_name = algo_name
         self.env_name = env_name
         model_name = self.get_model_name()
-        self.model_input_run = self.PAPAGRun.get_last_logged_model_run(
+        self.model_input_run = self.PAPAGOutput.get_last_logged_model_run(
             model_name
         )
         if self.algo_name == "a2c":
@@ -92,7 +105,7 @@ class PAPAGAgent:
     ):
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
-        with self.PAPAGRun.evaluate_run(
+        with self.PAPAGOutput.evaluate_run(
             outer_run=active_output(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
@@ -176,7 +189,7 @@ class PAPAGAgent:
     ):
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
-        with self.PAPAGRun.learn_run(
+        with self.PAPAGOutput.learn_run(
             outer_run=active_output(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,

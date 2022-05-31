@@ -15,61 +15,71 @@ specs:
         type: GitHubRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
-    papag_agent:
-        type: Instance
-        instance_of:
-            type: Class
-            name: PAPAGAgent
-            module:
-                type: Module
-                repo: spec:papag_agent_dir
-                file_path: agent.py
-                requirements_path: ./requirements.txt
-        argument_set:
-            type: ArgumentSet
-            kwargs:
-                PAPAGRun: spec:PAPAGRun
-                AtariEnv: spec:AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f
-                CartPoleEnv: spec:CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
-                A2C_ACKTR: spec:A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60
-                PPO: spec:PPO==41332b78dfb50321c29bade65f9d244387f68a60
-
-    PAPAGRun:
+    papag_class:
         type: Class
-        name: PAPAGRun
+        name: PAPAGAgent
         module:
             type: Module
             repo: spec:papag_agent_dir
-            file_path: papag_run.py
+            file_path: agent.py
+            requirements_path: ./requirements.txt
 
-    AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f:
+    a2c_cartpole_args:
+        type: ArgumentSet
+        args:
+            - spec:PAPAGOutput
+            - spec:AtariEnv
+            - spec:CartPoleEnv
+            - spec:A2C_ACKTR
+            - spec:PPO
+            - a2c
+            - CartPole-v1
+
+    a2c_papag_agent:
+        type: Instance
+        instance_of: spec:papag_class
+        argument_set: spec:a2c_cartpole_args
+
+    PAPAGOutput:
+        type: Class
+        name: PAPAGOutput
+        module:
+            type: Module
+            repo: spec:papag_agent_dir
+            file_path: papag_output.py
+
+    AtariEnv:
         type: Class
         name: AtariEnv
         module:
             type: Module
             repo: spec:mgbellemare_ale
             file_path: ./src/gym/envs/atari/environment.py
+            version: db3728264f382402120913d76c4fa0dc320ef59f
 
-    CartPoleEnv==4ede9280f9c477f1ca09929d10cdc1e1ba1129f1:
+    CartPoleEnv:
         type: Class
         name: CartPoleEnv
         module:
             type: Module
             repo: spec:openai_gym
             file_path: ./gym/envs/classic_control/cartpole.py
+            version: 4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
 
-    A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60:
+    A2C_ACKTR:
         type: Class
         name: A2C_ACKTR
         module:
             type: Module
             repo: spec:ikostrikov_papag
             file_path: ./a2c_ppo_acktr/algo/a2c_acktr.py
+            version: 41332b78dfb50321c29bade65f9d244387f68a60
 
-    PPO==41332b78dfb50321c29bade65f9d244387f68a60:
+    PPO:
         type: Class
         name: PPO
         module:
             type: Module
             repo: spec:ikostrikov_papag
             file_path: ./a2c_ppo_acktr/algo/ppo.py
+            version: 41332b78dfb50321c29bade65f9d244387f68a60

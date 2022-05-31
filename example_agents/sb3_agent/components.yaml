@@ -23,7 +23,7 @@ specs:
                 AtariEnv: spec:AtariEnv
                 CartPoleEnv: spec:CartPoleEnv
                 PPO: spec:PPO
-                SB3AgentRun: spec:SB3AgentRun
+                SB3AgentOutput: spec:SB3AgentOutput
         instance_of:
             type: Class
             name: SB3PPOAgent
@@ -60,7 +60,7 @@ specs:
             repo: spec:stable_baselines3
             file_path: ./stable_baselines3/ppo/ppo.py
 
-    SB3AgentRun:
+    SB3AgentOutput:
         type: Class
         name: SB3Run
         module:

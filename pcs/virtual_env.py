@@ -165,7 +165,10 @@ class VirtualEnv:
         subprocess.run(["virtualenv", "-p", sys.executable, self.venv_path])
 
     def install_requirements_file(
-        self, req_path: Path, pip_flags: dict = None
+        self,
+        req_path: Path,
+        pip_flags: dict = None,
+        pipe_stdout_and_err: bool = True,
     ) -> None:
         """
         Installs the requirements_file pointed at by `req_path` into the
@@ -216,7 +219,19 @@ class VirtualEnv:
             "VIRTUAL_ENV": str(self.venv_path),
             "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
         }
-        subprocess.run(cmd, env=component_env)
+        print(f"Running {cmd}")
+        proc = subprocess.Popen(cmd, env=component_env, stdout=subprocess.PIPE)
+        # Copied from https://stackoverflow.com/questions/17411966/printing-stdout-in-realtime-from-a-subprocess-that-requires-stdin/17413045#17413045  # noqa: E501
+        # Grab stdout line by line as it becomes available. This will loop
+        # until proc terminates.
+        while proc.poll() is None:
+            if pipe_stdout_and_err:
+                line = proc.stdout.readline()  # block until newline.
+                print(line.decode(), end="")
+        # When the subprocess terminates there might be unconsumed output
+        # that still needs to be processed.
+        print(proc.stdout.read(), end="")
+        assert proc.returncode == 0, "virtualenv install requirements failed."
 
     def _build_virtual_env(self, req_paths: Sequence):
         hashed = self._hash_req_paths(req_paths)

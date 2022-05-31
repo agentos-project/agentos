@@ -23,27 +23,27 @@ _RUN_STATS_MEMBERS = [
     "training_step_count",
 ]
 
-RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
+OutputStats = namedtuple("OutputStats", _RUN_STATS_MEMBERS)
 
 
-class AgentRun(MLflowRun):
+class AgentOutput(MLflowRun):
     """
-    An AgentRun provides an API that agents can use to log agent related
-    data/stats/tags/etc. AgentRun can be one of two flavors (which we call
+    An AgentOutput provides an API that agents can use to log agent related
+    data/stats/tags/etc. AgentOutput can be one of two flavors (which we call
     ``run_type``), 'evaluate' and 'learn'.
 
-    The AgentRun can contain tags that reference other AgentRuns for tracking
+    The AgentOutput can contain tags that reference other AgentOutputs for tracking
     the training history of an agent.
 
-    An ``AgentRun`` inherits from ``Run``, and adds functionality specific to
+    An ``AgentOutput`` inherits from ``Output``, and adds functionality specific to
     runs of agents, such as runs that *evaluate* the agent's performance in an
     environment, or runs that cause the agent to *learn* in an environment.
 
-    Like a ``Run``, an ``AgentRun`` can be used as a context manager, so that
+    Like a ``Output``, an ``AgentOutput`` can be used as a context manager, so that
     the developer doesn't need to remember to mark a run as finished, for
     example::
 
-         with AgentRun('evaluate',
+         with AgentOutput('evaluate',
                        outer_run=self.__component__.active_output) as run:
               # run an episode
               run.log_episode(
@@ -70,11 +70,11 @@ class AgentRun(MLflowRun):
         existing_run_id: str = None,
     ) -> None:
         """
-        Create a new AgentRun.
+        Create a new AgentOutput.
 
         :param run_type: must be 'evaluate' or 'learn'
-        :param outer_run: Optionally, specify another Run that this run is
-            a sub-run of. Setting this will result in this AgentRun being
+        :param outer_run: Optionally, specify another Output that this run is
+            a sub-run of. Setting this will result in this AgentOutput being
             visually nested under the outer_run in the MLflow UI.
         :param agent_identifier: Identifier of Agent component being evaluated
             or trained.
@@ -152,7 +152,7 @@ class AgentRun(MLflowRun):
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
-    ) -> "AgentRun":
+    ) -> "AgentOutput":
         return cls(
             run_type=cls.EVALUATE_KEY,
             outer_run=outer_run,
@@ -170,7 +170,7 @@ class AgentRun(MLflowRun):
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
-    ) -> "AgentRun":
+    ) -> "AgentOutput":
         return cls(
             run_type=cls.LEARN_KEY,
             outer_run=outer_run,
@@ -211,7 +211,7 @@ class AgentRun(MLflowRun):
         if not self.episode_data:
             return
         run_stats = self._get_run_stats()
-        print(f"Results for AgentRun {self.identifier}")
+        print(f"Results for AgentOutput {self.identifier}")
         if self.run_type == self.LEARN_KEY:
             print(
                 "\nTraining results over "
@@ -254,7 +254,7 @@ class AgentRun(MLflowRun):
         episode_lengths = [d["steps"] for d in self.episode_data]
         episode_returns = [d["reward"] for d in self.episode_data]
         training_episodes, training_steps = self.get_training_info()
-        return RunStats(
+        return OutputStats(
             episode_count=len(self.episode_data),
             step_count=sum(episode_lengths),
             max_reward=max(episode_returns),
@@ -311,7 +311,7 @@ class AgentRun(MLflowRun):
         if print_results:
             self.print_results()
 
-    def __enter__(self) -> "AgentRun":
+    def __enter__(self) -> "AgentOutput":
         return self
 
     def __exit__(self, type, value, traceback) -> None:

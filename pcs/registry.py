@@ -373,6 +373,10 @@ class InMemoryRegistry(Registry):
                 for i, sub_elt in enumerate(elt):
                     to_handle.append((struct[key], i, sub_elt))
             else:  # elt must be leaf
+                if isinstance(struct, list):
+                    assert isinstance(key, int)
+                    while key >= len(struct):  # List too short
+                        struct.append(None)
                 struct[key] = elt
 
         self._registry[self.SPECS_KEY] = new_specs

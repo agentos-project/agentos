@@ -3,8 +3,6 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-from click.testing import CliRunner
-
 ROOT_DIR = Path(__file__).parent.parent
 EXAMPLE_AGENT_DIR = ROOT_DIR / "example_agents"
 RANDOM_AGENT_DIR = EXAMPLE_AGENT_DIR / "random"
@@ -25,14 +23,13 @@ TESTING_GITHUB_REPO_URL = (
 TESTING_BRANCH_NAME = "spec_structure_revamp"
 
 
-def run_test_command(cmd, cli_args=None, cli_kwargs=None):
+def run_test_command(cli_runner, cmd, cli_args=None, cli_kwargs=None):
     call_list = [a for a in (cli_args or [])]
     for param, val in (cli_kwargs or {}).items():
         call_list.append(param)
         call_list.append(val)
-    runner = CliRunner()
     print(f"Running the following: {cmd.name} {call_list}")
-    result = runner.invoke(cmd, call_list, catch_exceptions=False)
+    result = cli_runner.invoke(cmd, call_list, catch_exceptions=False, echo=True)
     if result.stdout_bytes:
         print()
         print("-" * 79)

@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Thread
 from typing import Optional, Sequence
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentOutput
 
 
 class MemberInitializer:
@@ -38,10 +38,10 @@ class Agent(MemberInitializer):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-        self._active_agent_run_stack: Sequence[AgentRun] = []
+        self._active_agent_run_stack: Sequence[AgentOutput] = []
 
     @property
-    def active_agent_run(self) -> AgentRun:
+    def active_agent_run(self) -> AgentOutput:
         if self._active_agent_run_stack:
             return self._active_agent_run_stack[-1]
         else:
@@ -64,7 +64,7 @@ class Agent(MemberInitializer):
             truncating an episode.
         :param backup_dst: if specified, will print backup path to stdout
         :param print_stats: if True, will print run stats to stdout
-        :param outer_run: If set, then the AgentRun created by this function
+        :param outer_run: If set, then the AgentOutput created by this function
             will set this as their parent. Else, it will try to set the
             currently active component run, else it won't set a parent.
 
@@ -127,7 +127,7 @@ class Agent(MemberInitializer):
             )
             total_episodes += run_size
 
-    def start_agent_run(self, run_type: str, outer_run: AgentRun) -> None:
+    def start_agent_run(self, run_type: str, outer_run: AgentOutput) -> None:
         from pcs import active_output  # avoid circular import
 
         agent_comp = self.__component__
@@ -142,7 +142,7 @@ class Agent(MemberInitializer):
                     "list of the active component run."
                 )
         self._active_agent_run_stack.append(
-            AgentRun(
+            AgentOutput(
                 run_type=run_type,
                 outer_run=outer_run,
                 agent_identifier=agent_comp.identifier,
@@ -151,7 +151,7 @@ class Agent(MemberInitializer):
         )
 
     def end_agent_run(self, print_results: bool = False) -> None:
-        assert self._active_agent_run_stack, "No active AgentRun to end."
+        assert self._active_agent_run_stack, "No active AgentOutput to end."
         run = self._active_agent_run_stack.pop()
         run.end(print_results=print_results)
 

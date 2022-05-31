@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 import yaml
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentOutput
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.mlflow_run import MLflowRun
@@ -118,6 +118,7 @@ def init(dir_names):
 )
 @click.option(
     "--arg-set-id",
+    "-I",
     metavar="ARG_SET_ID",
     type=str,
     default=None,
@@ -128,12 +129,16 @@ def init(dir_names):
     "--arg-set-args",
     "-A",
     metavar="ARG_SET_ARGS_STRING",
+    type=str,
+    default=None,
     help="a string in Python list format that contains args.",
 )
 @click.option(
     "--arg-set-kwargs",
     "-K",
     metavar="ARG_SET_KWARGS_STRING",
+    type=str,
+    default=None,
     help="a string in Python dict format that contains keyword args.",
 )
 @_option_registry_file
@@ -242,8 +247,8 @@ def freeze(identifier, registry_file, force, output_file):
 def publish(identifier, registry_file, force):
     # If identifier is a Run.
     r = MLflowRun.from_existing_mlflow_run(run_id=identifier)
-    if AgentRun.IS_AGENT_RUN_TAG in r.data.tags:
-        r = AgentRun.from_existing_mlflow_run(run_id=identifier)
+    if AgentOutput.IS_AGENT_RUN_TAG in r.data.tags:
+        r = AgentOutput.from_existing_mlflow_run(run_id=identifier)
     if Output.IS_COMPONENT_RUN_TAG in r.data.tags:
         r = Output.from_existing_mlflow_run(run_id=identifier)
     r.to_registry(Registry.from_default(), force=force)
