@@ -89,7 +89,7 @@ class Component(TimeStampedModel):
         )
 
     @staticmethod
-    def agent_run_dag(identifier) -> List:
+    def agent_run_dag(identifier, learn_only=False) -> List:
         (
             run_map,
             env_map,
@@ -103,5 +103,7 @@ class Component(TimeStampedModel):
         res = [run_map[ident]]
         while ident in graph:
             ident = graph[ident]
-            res.append(run_map[ident])
+            run_type = run_map[ident].data.get("tags", {}).get("run_type", "")
+            if not learn_only or run_type == "learn":
+                res.append(run_map[ident])
         return res

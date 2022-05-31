@@ -7,13 +7,13 @@
 AgentOS Train:
 
 ```
-agentos run papag_agent --registry-file components.yaml --registry-file a2c_cartpole_args.yaml --arg-set-id a2c_cartpole_args --function-name learn
+agentos run papag_agent --function-name learn --registry-file components.yaml --registry-file a2c_pong_args.yaml --arg-set-id a2c_pong_args
 ```
 
 AgentOS Evaluate:
 
 ```
-agentos run papag_agent --registry-file components.yaml --registry-file a2c_cartpole_args.yaml --arg-set-id a2c_cartpole_args --function-name learn
+agentos run papag_agent --function-name learn --registry-file components.yaml --registry-file a2c_pong_args.yaml --arg-set-id a2c_pong_args
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c).
@@ -23,13 +23,13 @@ Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 train:
 
 ```
-TODO: once spec v2 is finished
+agentos run papag_agent --function-name learn --registry-file components.yaml --registry-file ppo_pong_args.yaml --arg-set-id ppo_pong_args
 ```
 
 evaluate:
 
 ```
-TODO: once spec v2 is finished
+agentos run papag_agent --function-name evaluate --registry-file components.yaml --registry-file ppo_pong_args.yaml --arg-set-id ppo_pong_args
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#ppo).
@@ -40,13 +40,13 @@ Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 train:
 
 ```
-TODO: once spec v2 is finished
+agentos run papag_agent --function-name learn --registry-file components.yaml --registry-file acktr_pong_args.yaml --arg-set-id ppo_pong_args
 ```
 
 evaluate:
 
 ```
-TODO: once spec v2 is finished
+agentos run papag_agent --function-name evaluate --registry-file components.yaml --registry-file acktr_pong_args.yaml
 ```
 
 Equivalent to [this command](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#acktr).

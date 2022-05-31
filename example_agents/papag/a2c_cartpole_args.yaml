@@ -2,29 +2,30 @@
 # eval_command equivalent to: python main.py --env-name "CartPole-v1"
 
 specs:
-    a2c_cartpole_papag_eval_command:
         type: Command
-        component: spec:a2c_papag_agent
+        component: spec:a2c_cartpole_papag_agent
         function_name: evaluate
-        argument_set: spec:a2c_cartpole_eval_args
+        argument_set: spec:evaluation_args
 
     a2c_cartpole_papag_learn_command:
         type: Command
-        component: spec:a2c_papag_agent
+        component: spec:a2c_cartpole_papag_agent
         function_name: evaluate
         argument_set: spec:a2c_cartpole_learn_args
 
-    a2c_cartpole_eval_args:
-        type: ArgumentSet
-        kwargs:
-            lr: .0007
-            clip_param: 0.2
-            value_loss_coef: 0.5
-            num_processes: 8
-            num_steps: 5
-            num_mini_batch: 32
-            log_interval: 10
-            entropy_coef: 0.01
+    a2c_cartpole_papag_agent:
+        type: Instance
+        instance_of: spec:papag_class  # defined in papag/components.yaml
+        argument_set:
+            type: ArgumentSet
+            args:
+                - spec:PAPAGOutput
+                - spec:AtariEnv
+                - spec:CartPoleEnv
+                - spec:A2C_ACKTR
+                - spec:PPO
+                - a2c
+                - CartPole-v1
 
     a2c_cartpole_learn_args:
         type: ArgumentSet

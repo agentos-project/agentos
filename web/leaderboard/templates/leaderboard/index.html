@@ -11,7 +11,9 @@
 <script type="text/javascript" src="static/leaderboard/jquery.dataTables.min.js"></script>
 <script>
 $(document).ready( function () {
-    $('#myTable').DataTable();
+    $('#myTable').DataTable( {
+            "order": [[ 4, "desc" ]]
+    } );
 } );
 </script>
 {% endblock head_code %}
@@ -29,6 +31,7 @@ $(document).ready( function () {
               <table id="myTable" class="display table">
                   <thead>
                       <tr>
+                          <th>Timestamp</th>
                           <th>Agent</th>
                           <th>Run ID</th>
                           <th>Run Description</th>
@@ -40,6 +43,7 @@ $(document).ready( function () {
                   <tbody>
                       {% for run in run_list %}
                           <tr>
+                              <td><span style="font-size: 0.85em">{{ run.start_time }}</span></td>
                               <td><a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a></td>
                               <td><a href="run/{{ run.identifier }}">{{ run.identifier|truncatechars:7 }}</a></td>
                               <td>

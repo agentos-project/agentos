@@ -10,7 +10,9 @@
 <script type="text/javascript" src="/static/leaderboard/jquery.dataTables.min.js"></script>
 <script type="text/javascript">
 $(document).ready( function () {
-    $('#LineageTable').DataTable();
+    $('#LineageTable').DataTable( {
+        "order": [[0, "desc"]]
+    } );
     $("#run_info_show").click(function () {
         $("#run_info_content").slideToggle("slow", function () {
             // Animation complete.
@@ -128,6 +130,7 @@ $(document).ready( function () {
     <table id="LineageTable" class="display table">
       <thead>
       <tr>
+        <th>Timestamp</th>
         <th>Run Identifier</th>
         <th>Run Name</th>
         <th>Avg. Reward</th>
@@ -138,6 +141,7 @@ $(document).ready( function () {
       <tbody>
       {% for r in run_dag %}
         <tr>
+          <td>{{ r.start_time }}</td>
           <td>
             <a href="/run/{{ r.identifier }}" {%  if r.identifier == run.identifier %}style="font-weight: bold"{% endif %}>
               {{ r.identifier|truncatechars:10 }}

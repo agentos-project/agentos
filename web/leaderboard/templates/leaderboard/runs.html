@@ -10,8 +10,12 @@
   <script type="text/javascript" src="{% static 'leaderboard/jquery.dataTables.min.js' %}"></script>
   <script>
       $(document).ready( function () {
-          $('#agentRunsTable').DataTable();
-          $('#componentRunsTable').DataTable();
+          $('#agentRunsTable').DataTable( {
+              "order": [[0, "desc"]]
+          } )
+          $('#componentRunsTable').DataTable( {
+              "order": [[0, "desc"]]
+          } )
       } );
   </script>
   <style>
@@ -39,10 +43,10 @@
           </tr>
         </thead>
         <tbody>
-        {% for run, start_time in agent_runs.items %}
+        {% for run in agent_runs %}
           <tr>
             <td>
-              <span class="start_time">{{ start_time }}</span>
+              <span class="start_time">{{ run.start_time }}</span>
             </td>
             <td><a href="run/{{ run.identifier }}">{{ run.identifier|truncatechars:7 }}</a></td>
             <td>
@@ -97,10 +101,10 @@
         </tr>
         </thead>
         <tbody>
-        {% for run, start_time in component_runs.items %}
+        {% for run in component_runs %}
           <tr>
             <td>
-              <span class="start_time">{{ start_time }}</span>
+              <span class="start_time">{{ run.start_time }}</span>
             </td>
             <td><a href="{% url 'run-detail' run.identifier %}">{{ run.identifier|truncatechars:7 }}</a></td>
             <td>

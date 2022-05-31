@@ -24,21 +24,17 @@ specs:
             file_path: agent.py
             requirements_path: ./requirements.txt
 
-    a2c_cartpole_args:
-        type: ArgumentSet
-        args:
-            - spec:PAPAGOutput
-            - spec:AtariEnv
-            - spec:CartPoleEnv
-            - spec:A2C_ACKTR
-            - spec:PPO
-            - a2c
-            - CartPole-v1
-
-    a2c_papag_agent:
-        type: Instance
-        instance_of: spec:papag_class
-        argument_set: spec:a2c_cartpole_args
+    eva
+      type: ArgumentSet
+      kwargs:
+        lr: .0007
+        clip_param: 0.2
+        value_loss_coef: 0.5
+        num_processes: 8
+        num_steps: 5
+        num_mini_batch: 32
+        log_interval: 10
+        entropy_coef: 0.01
 
     PAPAGOutput:
         type: Class

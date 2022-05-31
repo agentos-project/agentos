@@ -3,6 +3,7 @@
 from pcs.argument_set import ArgumentSet
 from pcs.class_manager import Class
 from pcs.command import Command
+from pcs.component import Component
 from pcs.instance_manager import Instance
 from pcs.mlflow_run import MLflowRun
 from pcs.module_manager import Module
@@ -16,6 +17,7 @@ __all__ = [
     "ArgumentSet",
     "Class",
     "Command",
+    "Component",
     "GitHubRepo",
     "Instance",
     "LocalRepo",

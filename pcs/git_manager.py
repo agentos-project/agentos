@@ -55,8 +55,7 @@ class GitManager:
             )
 
         self._check_for_local_changes(porcelain_repo, force)
-        url = self._check_for_github_url(porcelain_repo, force)
-        curr_head_hash = self._check_remote_branch_status(
+        url, curr_head_hash = self._check_remote_branch_status(
             porcelain_repo, force
         )
         return url, curr_head_hash
@@ -115,84 +114,48 @@ class GitManager:
         )
         raise BadGitStateException(error_msg)
 
-    def _get_remote_url(
-        self,
-        porcelain_repo: PorcelainRepo,
-        force: bool,
-        remote: str = "origin",
-    ) -> str:
-        url_or_path = self._get_remote_uri(porcelain_repo, force, remote)
-        # If path, assume cloned from default repo and find default repo URL.
-        if Path(url_or_path).exists():
-            with porcelain.open_repo_closing(url_or_path) as local_repo:
-                url = self._get_remote_uri(local_repo, force)
-        else:
-            url = url_or_path
-        return url
-
-    def _check_for_github_url(
-        self, porcelain_repo: PorcelainRepo, force: bool
-    ) -> str:
-        try:
-            remote = porcelain.get_branch_remote(porcelain_repo)
-        except IndexError:
-            remote = b"origin"
-        url = self._get_remote_url(
-            porcelain_repo, force, remote=remote.decode()
-        )
-        if url is None or "github.com" not in url:
-            error_msg = f"Remote must be on github, not {url}"
-            if force:
-                print(f"Warning: {error_msg}")
-            else:
-                raise BadGitStateException(error_msg)
-        return url
-
-    def _get_remote_uri(
-        self,
-        porcelain_repo: PorcelainRepo,
-        force: bool,
-        remote_name: str = "origin",
-    ) -> str:
-        """Can return a local path string or a URL."""
-        url = None
-        try:
-            REMOTE_KEY = (b"remote", remote_name.encode())
-            url = porcelain_repo.get_config()[REMOTE_KEY][b"url"].decode()
-        except KeyError:
-            error_msg = "Could not find remote repo"
-            if force:
-                print(f"Warning: {error_msg}")
-            else:
-                raise BadGitStateException(error_msg)
-        return url
+    def _get_all_remotes(self, porcelain_repo: PorcelainRepo) -> list:
+        repo_config = porcelain_repo.get_config()
+        remotes = []
+        for el in repo_config:
+            if len(el) != 2 or el[0] != b"remote":
+                continue
+            remotes.append((el[1].decode(), repo_config[el][b"url"].decode()))
+        if len(remotes) == 1:
+            remote_name, remote_uri = remotes[0]
+            # If path, assume a default repo clone and find default repo URLs.
+            if remote_name == "origin" and Path(remote_uri).exists():
+                with porcelain.open_repo_closing(remote_uri) as local_repo:
+                    return self._get_all_remotes(local_repo)
+        return remotes
 
     def _check_remote_branch_status(
         self, porcelain_repo: PorcelainRepo, force: bool
     ) -> str:
         curr_head_hash = porcelain_repo.head().decode()
-        try:
-            remote = porcelain.get_branch_remote(porcelain_repo)
-        except IndexError:
-            remote = b"origin"
-        url = self._get_remote_url(
-            porcelain_repo, force, remote=remote.decode()
-        )
-        project_name, repo_name, _, _ = parse_github_web_ui_url(url)
-        remote_commit_exists = self.sha1_hash_exists(
-            project_name, repo_name, curr_head_hash
-        )
-        if not remote_commit_exists:
-            error_msg = (
-                f"Current head hash {curr_head_hash} in "
-                f"PCS repo {porcelain_repo} is not on remote {url}. "
-                "Push your changes to your remote!"
+        all_remotes = self._get_all_remotes(porcelain_repo)
+        github_url = None
+        for remote_name, remote_url in all_remotes:
+            if "github.com" not in remote_url:
+                continue
+            github_url = remote_url
+            project_name, repo_name, _, _ = parse_github_web_ui_url(github_url)
+            remote_commit_exists = self.sha1_hash_exists(
+                project_name, repo_name, curr_head_hash
             )
-            if force:
-                print(f"Warning: {error_msg}")
-            else:
-                raise BadGitStateException(error_msg)
-        return curr_head_hash
+            if remote_commit_exists:
+                return github_url, curr_head_hash
+
+        error_msg = (
+            f"Current head hash {curr_head_hash} in PCS repo "
+            f"{porcelain_repo} is not on any remote {all_remotes}. "
+            "Push your changes to a GitHub remote!"
+        )
+        if force:
+            print(f"Warning: {error_msg}")
+        else:
+            raise BadGitStateException(error_msg)
+        return github_url, curr_head_hash
 
     def _check_for_local_changes(
         self, porcelain_repo: PorcelainRepo, force: bool
@@ -295,7 +258,6 @@ class GitManager:
         if sec_since_last_fetch > 1800:
             _do_fetch()
             return
-        print(f"GitManager: NOT fetching {default_repo_path}...")
 
     def clear_repo_cache(
         self, repo_cache_path: Path = None, assume_yes: bool = False

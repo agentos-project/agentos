@@ -15,7 +15,7 @@ specs:
         type: GitHubRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
-    agent==test_staging:
+    agent:
         type: Instance
         argument_set:
             type: ArgumentSet

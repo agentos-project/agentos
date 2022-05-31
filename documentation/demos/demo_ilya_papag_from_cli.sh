@@ -1,6 +1,6 @@
 #!/bin/bash
 set -xe
-cd "$(dirname "$0")"  # cd to dir that this shell script is in.
+cd "$(dirname "$0")"  # change to dir that this shell script is in.
 cd ../..  # cd to agentos root
 PAPAG_DIR=./example_agents/papag
 SB3_DIR=./example_agents/sb3_agent
