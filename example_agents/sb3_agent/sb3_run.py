@@ -86,16 +86,16 @@ class SB3Run(AgentOutput):
     def __init__(
         self,
         run_type: str = None,
-        outer_run: str = None,
-        model_input_run: str = None,
+        outer_output: str = None,
+        prev_output_with_model: str = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: Optional[str] = None,
     ) -> None:
         super().__init__(
             run_type,
-            outer_run=outer_run,
-            model_input_run=model_input_run,
+            outer_output=outer_output,
+            prev_output_with_model=prev_output_with_model,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,

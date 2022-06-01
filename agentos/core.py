@@ -54,7 +54,7 @@ class Agent(MemberInitializer):
         max_transitions=None,
         backup_dst=None,
         print_stats=True,
-        outer_run=None,
+        outer_output=None,
     ) -> None:
         """Runs an agent specified by a given [agent_file]
 
@@ -64,7 +64,7 @@ class Agent(MemberInitializer):
             truncating an episode.
         :param backup_dst: if specified, will print backup path to stdout
         :param print_stats: if True, will print run stats to stdout
-        :param outer_run: If set, then the AgentOutput created by this function
+        :param outer_output: If set, then the AgentOutput created by this function
             will set this as their parent. Else, it will try to set the
             currently active component run, else it won't set a parent.
 
@@ -72,9 +72,9 @@ class Agent(MemberInitializer):
         """
         all_steps = []
         if should_learn:
-            self.start_agent_run("learn", outer_run)
+            self.start_agent_run("learn", outer_output)
         else:
-            self.start_agent_run("evaluate", outer_run)
+            self.start_agent_run("evaluate", outer_output)
         for _ in range(int(num_episodes)):
             steps = self.rollout(
                 should_learn=should_learn, max_transitions=max_transitions
@@ -127,16 +127,16 @@ class Agent(MemberInitializer):
             )
             total_episodes += run_size
 
-    def start_agent_run(self, run_type: str, outer_run: AgentOutput) -> None:
+    def start_agent_run(self, run_type: str, outer_output: AgentOutput) -> None:
         from pcs import active_output  # avoid circular import
 
         agent_comp = self.__component__
         env_comp = self.environment.__component__
-        if not outer_run:
-            outer_run = active_output(self)
-            if outer_run:
+        if not outer_output:
+            outer_output = active_output(self)
+            if outer_output:
                 assert env_comp in (
-                    outer_run.run_command.component.dependency_list()
+                    outer_output.run_command.component.dependency_list()
                 ), (
                     "This agent's environment must be in the dependency "
                     "list of the active component run."
@@ -144,7 +144,7 @@ class Agent(MemberInitializer):
         self._active_agent_run_stack.append(
             AgentOutput(
                 run_type=run_type,
-                outer_run=outer_run,
+                outer_output=outer_output,
                 agent_identifier=agent_comp.identifier,
                 environment_identifier=env_comp.identifier,
             )

@@ -45,7 +45,7 @@ class AgentOutput(MLflowRun):
     example::
 
          with AgentOutput('evaluate',
-                       outer_run=self.__component__.active_output) as run:
+                       outer_output=self.__component__.active_output) as run:
               # run an episode
               run.log_episode(
                     # episode_data
@@ -59,13 +59,13 @@ class AgentOutput(MLflowRun):
     RUN_TYPE_TAG = "run_type"
     AGENT_ID_KEY = "agent_identifier"
     ENV_ID_KEY = "environment_identifier"
-    MODEL_INPUT_RUN_ID = "model_input_run_id"
+    PREV_OUTPUT_WITH_MODEL_ID = "prev_output_with_model_id"
 
     def __init__(
         self,
         run_type: str = None,
-        outer_output: Output = None,
-        model_input_run: MLflowRun = None,
+        outer_output: Optional[Output] = None,
+        prev_output_with_model: Optional[Output] = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
@@ -74,9 +74,9 @@ class AgentOutput(MLflowRun):
         Create a new AgentOutput.
 
         :param run_type: must be 'evaluate' or 'learn'
-        :param outer_run: Optionally, specify another Output that this run is
+        :param outer_output: Optionally, specify another Output that this run is
             a sub-run of. Setting this will result in this AgentOutput being
-            visually nested under the outer_run in the MLflow UI.
+            visually nested under the outer_output in the MLflow UI.
         :param agent_identifier: Identifier of Agent component being evaluated
             or trained.
         :param environment_identifier: Identifier of Environment component
@@ -88,28 +88,28 @@ class AgentOutput(MLflowRun):
         if existing_run_id:
             assert not (
                 run_type
-                or outer_run
+                or outer_output
                 or agent_identifier
                 or environment_identifier
             ), (
                 "If 'existing_run_id' is specified, then 'run_type', "
-                "'outer_run', 'agent_identifier', and "
+                "'outer_output', 'agent_identifier', and "
                 "'environment_identifier' must be None."
             )
 
             super().__init__(existing_run_id=existing_run_id)
             if MLFLOW_PARENT_RUN_ID in self.data.tags:
-                outer_run_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
-                self.outer_run = Output.from_existing_mlflow_run(outer_run_id)
+                outer_output_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
+                self.outer_output = Output.from_existing_mlflow_run(outer_output_id)
             else:
-                self.outer_run = None
-            if self.MODEL_INPUT_RUN_ID in self.data.tags:
-                model_input_run = self.data.tags[self.MODEL_INPUT_RUN_ID]
-                self.model_input_run = self.__class__.from_existing_mlflow_run(
-                    model_input_run
+                self.outer_output = None
+            if self.PREV_OUTPUT_WITH_MODEL_ID in self.data.tags:
+                prev_output_with_model = self.data.tags[self.PREV_OUTPUT_WITH_MODEL_ID]
+                self.prev_output_with_model = self.__class__.from_existing_mlflow_run(
+                    prev_output_with_model
                 )
             else:
-                self.model_input_run = None
+                self.prev_output_with_model = None
             self.episode_data = []
             self.run_type = self.data.tags[self.RUN_TYPE_TAG]
             self.agent_identifier = self.data.tags[self.AGENT_ID_KEY]
@@ -120,8 +120,8 @@ class AgentOutput(MLflowRun):
                 "'agent_identifier' and 'environment_identifier' must be."
             )
             super().__init__()
-            self.outer_run = outer_run
-            self.model_input_run = model_input_run
+            self.outer_output = outer_output
+            self.prev_output_with_model = prev_output_with_model
             self.set_tag(self.IS_AGENT_RUN_TAG, "True")
             self.episode_data = []
             self.run_type = run_type
@@ -135,11 +135,11 @@ class AgentOutput(MLflowRun):
                     f"and Env '{self.environment_identifier}'"
                 ),
             )
-            if self.outer_run:
-                self.set_tag(MLFLOW_PARENT_RUN_ID, self.outer_run.info.run_id)
-            if self.model_input_run:
+            if self.outer_output:
+                self.set_tag(MLFLOW_PARENT_RUN_ID, self.outer_output.info.run_id)
+            if self.prev_output_with_model:
                 self.set_tag(
-                    self.MODEL_INPUT_RUN_ID, self.model_input_run.info.run_id
+                    self.PREV_OUTPUT_WITH_MODEL_ID, self.prev_output_with_model.info.run_id
                 )
             self.log_run_type(self.run_type)
             self.log_agent_identifier(self.agent_identifier)
@@ -148,16 +148,16 @@ class AgentOutput(MLflowRun):
     @classmethod
     def evaluate_run(
         cls,
-        outer_run: MLflowRun = None,
-        model_input_run: MLflowRun = None,
+        outer_output: Optional[Output] = None,
+        prev_output_with_model: Optional[Output] = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
     ) -> "AgentOutput":
         return cls(
             run_type=cls.EVALUATE_KEY,
-            outer_run=outer_run,
-            model_input_run=model_input_run,
+            outer_output=outer_output,
+            prev_output_with_model=prev_output_with_model,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,
@@ -166,16 +166,16 @@ class AgentOutput(MLflowRun):
     @classmethod
     def learn_run(
         cls,
-        outer_run: MLflowRun = None,
-        model_input_run: MLflowRun = None,
+        outer_output: Optional[Output] = None,
+        prev_output_with_model: Optional[Output] = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: str = None,
     ) -> "AgentOutput":
         return cls(
             run_type=cls.LEARN_KEY,
-            outer_run=outer_run,
-            model_input_run=model_input_run,
+            outer_output=outer_output,
+            prev_output_with_model=prev_output_with_model,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,
@@ -284,15 +284,15 @@ class AgentOutput(MLflowRun):
         if not registry:
             registry = InMemoryRegistry()
         if recurse:
-            if self.outer_run:
-                self.outer_run.to_registry(
+            if self.outer_output:
+                self.outer_output.to_registry(
                     registry=registry,
                     recurse=recurse,
                     force=force,
                     include_artifacts=include_artifacts,
                 )
-            if self.model_input_run:
-                self.model_input_run.to_registry(
+            if self.prev_output_with_model:
+                self.prev_output_with_model.to_registry(
                     registry=registry,
                     recurse=recurse,
                     force=force,

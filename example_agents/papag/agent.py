@@ -60,7 +60,7 @@ class PAPAGAgent:
         self.algo_name = algo_name
         self.env_name = env_name
         model_name = self.get_model_name()
-        self.model_input_run = self.PAPAGOutput.get_last_logged_model_run(
+        self.prev_output_with_model = self.PAPAGOutput.get_last_logged_model_run(
             model_name
         )
         if self.algo_name == "a2c":
@@ -107,8 +107,8 @@ class PAPAGAgent:
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
         with self.PAPAGOutput.evaluate_run(
-            outer_run=active_output(self),
-            model_input_run=self.model_input_run,
+            outer_output=active_output(self),
+            prev_output_with_model=self.prev_output_with_model,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
         ) as eval_run:
@@ -191,8 +191,8 @@ class PAPAGAgent:
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
         with self.PAPAGOutput.learn_run(
-            outer_run=active_output(self),
-            model_input_run=self.model_input_run,
+            outer_output=active_output(self),
+            prev_output_with_model=self.prev_output_with_model,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
         ) as learn_run:

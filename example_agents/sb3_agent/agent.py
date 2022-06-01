@@ -16,7 +16,7 @@ class SB3PPOAgent:
         SB3AgentOutput,
         env_name: str = "CartPole-v1",
         load_most_recent_run: bool = True,
-        model_input_run_id: str = None,
+        prev_output_with_model_id: str = None,
     ):
         self.AtariEnv = AtariEnv
         self.CartPoleEnv = CartPoleEnv
@@ -25,38 +25,38 @@ class SB3PPOAgent:
         self.env_name = env_name
         self.model_name = f"{self.env_name}-ppo.zip"
         self.environment = self._get_environment()
-        assert not (load_most_recent_run and model_input_run_id), (
-            "If 'model_input_run_id' is specified, then "
+        assert not (load_most_recent_run and prev_output_with_model_id), (
+            "If 'prev_output_with_model_id' is specified, then "
             "'load_most_recent_run' must be False."
         )
         if load_most_recent_run:
             print("Loading most recent model from AgentOS/MLflow.")
-            self.model_input_run = self.SB3AgentOutput.get_last_learning_run(
+            self.prev_output_with_model = self.SB3AgentOutput.get_last_learning_run(
                 self.model_name
             )
-            if self.model_input_run:
-                policy_path = self.model_input_run.download_artifacts(
+            if self.prev_output_with_model:
+                policy_path = self.prev_output_with_model.download_artifacts(
                     self.model_name
                 )
                 self.sb3_ppo = self.PPO.load(policy_path)
                 self.sb3_ppo.set_env(self.environment)
                 return
-        if model_input_run_id:
+        if prev_output_with_model_id:
             print(
-                f"Loading model from AgentOS/MLflow run {model_input_run_id}."
+                f"Loading model from AgentOS/MLflow run {prev_output_with_model_id}."
             )
-            self.model_input_run = (
+            self.prev_output_with_model = (
                 self.SB3AgentOutput.from_existing_mlflow_run(
-                    model_input_run_id
+                    prev_output_with_model_id
                 )
             )
-            policy_path = self.model_input_run.download_artifacts(
+            policy_path = self.prev_output_with_model.download_artifacts(
                 self.model_name
             )
             self.sb3_ppo = self.PPO.load(policy_path)
             self.sb3_ppo.set_env(self.environment)
             return
-        self.model_input_run = None
+        self.prev_output_with_model = None
         self.sb3_ppo = self.PPO("MlpPolicy", self.environment)
 
     def _get_environment(self):
@@ -101,8 +101,8 @@ class SB3PPOAgent:
     ):
         env_cls = self._get_environment_cls()
         with self.SB3AgentOutput.evaluate_run(
-            outer_run=self.active_output,
-            model_input_run=self.model_input_run,
+            outer_output=self.active_output,
+            prev_output_with_model=self.prev_output_with_model,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
         ) as eval_run:
@@ -121,8 +121,8 @@ class SB3PPOAgent:
     def learn(self, total_timesteps=250):
         env_cls = self._get_environment_cls()
         with self.SB3AgentOutput.learn_run(
-            outer_run=self.active_output,
-            model_input_run=self.model_input_run,
+            outer_output=self.active_output,
+            prev_output_with_model=self.prev_output_with_model,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
         ) as learn_run:
