@@ -31,8 +31,8 @@ class SB3PPOAgent:
         )
         if load_most_recent_run:
             print("Loading most recent model from AgentOS/MLflow.")
-            self.prev_output_with_model = self.SB3AgentOutput.get_last_learning_run(
-                self.model_name
+            self.prev_output_with_model = (
+                self.SB3AgentOutput.get_last_learning_run(self.model_name)
             )
             if self.prev_output_with_model:
                 policy_path = self.prev_output_with_model.download_artifacts(

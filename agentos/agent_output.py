@@ -100,13 +100,19 @@ class AgentOutput(MLflowRun):
             super().__init__(existing_run_id=existing_run_id)
             if MLFLOW_PARENT_RUN_ID in self.data.tags:
                 outer_output_id = self.data.tags[MLFLOW_PARENT_RUN_ID]
-                self.outer_output = Output.from_existing_mlflow_run(outer_output_id)
+                self.outer_output = Output.from_existing_mlflow_run(
+                    outer_output_id
+                )
             else:
                 self.outer_output = None
             if self.PREV_OUTPUT_WITH_MODEL_ID in self.data.tags:
-                prev_output_with_model = self.data.tags[self.PREV_OUTPUT_WITH_MODEL_ID]
-                self.prev_output_with_model = self.__class__.from_existing_mlflow_run(
-                    prev_output_with_model
+                prev_output_with_model = self.data.tags[
+                    self.PREV_OUTPUT_WITH_MODEL_ID
+                ]
+                self.prev_output_with_model = (
+                    self.__class__.from_existing_mlflow_run(
+                        prev_output_with_model
+                    )
                 )
             else:
                 self.prev_output_with_model = None
@@ -136,10 +142,13 @@ class AgentOutput(MLflowRun):
                 ),
             )
             if self.outer_output:
-                self.set_tag(MLFLOW_PARENT_RUN_ID, self.outer_output.info.run_id)
+                self.set_tag(
+                    MLFLOW_PARENT_RUN_ID, self.outer_output.info.run_id
+                )
             if self.prev_output_with_model:
                 self.set_tag(
-                    self.PREV_OUTPUT_WITH_MODEL_ID, self.prev_output_with_model.info.run_id
+                    self.PREV_OUTPUT_WITH_MODEL_ID,
+                    self.prev_output_with_model.info.run_id,
                 )
             self.log_run_type(self.run_type)
             self.log_agent_identifier(self.agent_identifier)
