@@ -32,15 +32,16 @@ class AgentOutput(MLflowRun):
     data/stats/tags/etc. AgentOutput can be one of two flavors (which we call
     ``run_type``), 'evaluate' and 'learn'.
 
-    The AgentOutput can contain tags that reference other AgentOutputs for tracking
-    the training history of an agent.
+    The AgentOutput can contain tags that reference other AgentOutputs for
+    tracking the training history of an agent.
 
-    An ``AgentOutput`` inherits from ``Output``, and adds functionality specific to
-    runs of agents, such as runs that *evaluate* the agent's performance in an
-    environment, or runs that cause the agent to *learn* in an environment.
+    An ``AgentOutput`` inherits from ``Output``, and adds functionality
+    specific to runs of agents, such as runs that *evaluate* the agent's
+    performance in an environment, or runs that cause the agent to *learn* in
+    an environment.
 
-    Like a ``Output``, an ``AgentOutput`` can be used as a context manager, so that
-    the developer doesn't need to remember to mark a run as finished, for
+    Like a ``Output``, an ``AgentOutput`` can be used as a context manager, so
+    that the developer doesn't need to remember to mark a run as finished, for
     example::
 
          with AgentOutput('evaluate',

@@ -42,7 +42,8 @@ class PAPAGAgent:
 
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self,
+    def __init__(
+        self,
         PAPAGOutput,
         AtariEnv,
         CartPoleEnv,

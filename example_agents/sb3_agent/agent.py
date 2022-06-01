@@ -45,8 +45,10 @@ class SB3PPOAgent:
             print(
                 f"Loading model from AgentOS/MLflow run {model_input_run_id}."
             )
-            self.model_input_run = self.SB3AgentOutput.from_existing_mlflow_run(
-                model_input_run_id
+            self.model_input_run = (
+                self.SB3AgentOutput.from_existing_mlflow_run(
+                    model_input_run_id
+                )
             )
             policy_path = self.model_input_run.download_artifacts(
                 self.model_name

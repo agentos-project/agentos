@@ -1,7 +1,8 @@
-from click.testing import CliRunner
 import functools
-import pytest
 import sys
+
+import pytest
+from click.testing import CliRunner
 
 
 # From https://github.com/pallets/click/issues/737#issuecomment-309231467
@@ -18,9 +19,10 @@ def cli_runner():
         failures.
 
         """
+
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
-            echo = kwargs.pop('echo', False)
+            echo = kwargs.pop("echo", False)
             result = f(*args, **kwargs)
 
             if echo is True:
@@ -37,5 +39,5 @@ def cli_runner():
 
 
 def test_basic(cli_runner, package):
-    result = cli_runner.invoke(package, ['--help'])
+    result = cli_runner.invoke(package, ["--help"])
     assert result.exit_code == 0
