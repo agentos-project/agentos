@@ -1,8 +1,5 @@
 from django.test import LiveServerTestCase
 from registry.models import Component as ComponentModel
-from registry.models import Repo as RepoModel
-from registry.models import Run as RunModel
-from registry.models import RunCommand as RunCommandModel
 
 from pcs import Module
 from pcs.command import Command

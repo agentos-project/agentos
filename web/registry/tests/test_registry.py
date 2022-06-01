@@ -5,7 +5,7 @@ from pathlib import Path
 from django.core.files.base import File
 from django.test import Client, TestCase
 from django.urls import reverse
-from registry.models import Component, Repo, Run, RunCommand
+from registry.models import Component
 
 # from .static.data import RUN_CREATE_DATA
 

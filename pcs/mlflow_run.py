@@ -69,7 +69,7 @@ class MLflowRun(Component):
         resolved_tags = context_registry.resolve_tags()
         for tag_k, tag_v in resolved_tags.items():
             self.set_tag(tag_k, tag_v)
-        self.register_attribute("experiment_id")
+        self._register_attributes()
 
     @classmethod
     def from_existing_mlflow_run(cls, run_id: str) -> "MLflowRun":
@@ -91,8 +91,11 @@ class MLflowRun(Component):
         finally:
             cls.__init__ = orig_init
         super().__init__(run)
-        run.register_attribute("experiment_id")
+        run._register_attributes()
         return run
+
+    def _register_attributes(self):
+        self.register_attributes(["experiment_id", "info", "data"])
 
     @classmethod
     def run_exists(cls, mlflow_run_id) -> bool:
@@ -125,11 +128,11 @@ class MLflowRun(Component):
 
     @property
     def data(self) -> dict:
-        return self._mlflow_run.data
+        return self._mlflow_run.data.to_dictionary()
 
     @property
     def info(self) -> dict:
-        return self._mlflow_run.info
+        return dict(self._mlflow_run.info)
 
     @property
     def experiment_id(self):

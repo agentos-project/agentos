@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from registry.models import Component, ComponentDependency, Repo, Run
+from registry.models import Component
 
 
 def index(request):

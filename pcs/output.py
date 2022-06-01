@@ -38,7 +38,7 @@ class Output(MLflowRun):
         super().__init__(experiment_id=experiment_id)
         self._return_value = None
         self._command = command
-        self.register_attribute("command")
+        self._register_output_attributes()
         self._log_command()
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
@@ -51,7 +51,11 @@ class Output(MLflowRun):
     def from_existing_mlflow_run(cls, run_id: str) -> "Output":
         output = super().from_existing_mlflow_run(run_id)
         output._command = output._fetch_command()
+        output._register_output_attributes()
         return output
+
+    def _register_output_attributes(self):
+        self.register_attribute("command")
 
     @property
     def command(self) -> "Command":
@@ -79,7 +83,7 @@ class Output(MLflowRun):
                 f"Command registry artifact not found in Run with id "
                 f"{self._mlflow_run_id}. {repr(e)}"
             )
-        assert self.COMMAND_ID_KEY in self.data.tags, (
+        assert self.COMMAND_ID_KEY in self.data["tags"], (
             f"{self.COMMAND_ID_KEY} not found in the tags of MLflow "
             f"run with id {self._mlflow_run_id}."
         )

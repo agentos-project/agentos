@@ -64,7 +64,7 @@ class AgentOutput(MLflowRun):
     def __init__(
         self,
         run_type: str = None,
-        outer_run: MLflowRun = None,
+        outer_output: Output = None,
         model_input_run: MLflowRun = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
