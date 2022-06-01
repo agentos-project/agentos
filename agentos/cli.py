@@ -143,6 +143,13 @@ def init(dir_names):
 )
 @_option_registry_file
 @_option_registry_string
+@click.option(
+    "--log-return-value/--no-log-return-value",
+    metavar="LOG_RETURN_VALUE",
+    type=bool,
+    default=True,
+    help="Whether to log the return value of the function being called.",
+)
 def run(
     identifier,
     function_name,
@@ -151,6 +158,7 @@ def run(
     arg_set_id,
     registry_file,
     registry_string,
+    log_return_value,
 ):
 
     registry = InMemoryRegistry()
@@ -174,7 +182,9 @@ def run(
     if kwargs is not None:
         arg_set.kwargs.update(kwargs)
 
-    output = comp.run_with_arg_set(function_name, arg_set)
+    output = comp.run_with_arg_set(
+        function_name, arg_set=arg_set, log_return_value=log_return_value
+    )
     print(f"Output {output.identifier} recorded.", end=" ")
     print("Execute the following for details:")
     print(f"\n  agentos status {output.identifier}\n")

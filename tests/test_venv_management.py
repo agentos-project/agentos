@@ -29,7 +29,7 @@ def _confirm_modules_not_in_env():
         import bottle  # noqa: F401
 
 
-def test_venv_management(tmpdir):
+def test_venv_management(cli_runner, tmpdir):
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
@@ -53,7 +53,7 @@ def test_venv_management(tmpdir):
         # Should succeed because we will create a venv
         venv_test_args = ["test_venv_agent"]
         run_test_command(
-            cmd=run, cli_args=venv_test_args, cli_kwargs=test_kwargs
+            cli_runner, run, cli_args=venv_test_args, cli_kwargs=test_kwargs
         )
 
 

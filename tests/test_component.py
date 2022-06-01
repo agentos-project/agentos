@@ -95,9 +95,9 @@ def test_component_repl_demo():
     )
 
 
-def test_component_freezing(tmpdir):
+def test_component_freezing(cli_runner, tmpdir):
     with run_in_dir(tmpdir):
-        run_test_command(init)
+        run_test_command(cli_runner, init)
         c = Module.from_registry_file("components.yaml", "agent")
         with patch.multiple(
             "pcs.repo.Repo",

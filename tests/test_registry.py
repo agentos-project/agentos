@@ -1,19 +1,16 @@
 """Test suite for AgentOS Registry."""
-import pytest
 
 from pcs import Module
-from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
-from pcs.utils import generate_dummy_dev_registry, make_identifier_ref
+from pcs.utils import make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
     TESTING_GITHUB_REPO,
-    is_linux,
 )
 
 
@@ -39,101 +36,6 @@ def test_resolve_inline_aliases():
     spec_id = r.aliases["inline_alias"]
     assert r.get_spec(spec_id, flatten=True)["k"] == "v"
     assert r.get_spec("inline_alias", flatten=True)["k"] == "v"
-
-
-@pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
-def test_registry_integration(venv):
-    args = {
-        "acme_r2d2_agent": {
-            "evaluate": {"num_episodes": 10},
-            "learn": {"num_episodes": 10},
-        },
-        "acme_r2d2_dataset": {
-            "__init__": {
-                "batch_size": 32,
-                "discount": 0.99,
-                "max_priority_weight": 0.9,
-                "max_replay_size": 500,
-                "priority_exponent": 0.6,
-                "replay_period": 40,
-                "sequence_length": 13,
-                "store_lstm_state": True,
-            }
-        },
-        "acme_cartpole": {
-            "__init__": {
-                "batch_size": 32,
-                "discount": 0.99,
-                "max_replay_size": 500,
-                "replay_period": 40,
-                "sequence_length": 13,
-                "store_lstm_state": True,
-            }
-        },
-        "acme_r2d2_policy": {
-            "__init__": {
-                "batch_size": 32,
-                "discount": 0.99,
-                "epsilon": 0.01,
-                "max_replay_size": 500,
-                "replay_period": 40,
-                "sequence_length": 13,
-                "store_lstm_state": True,
-            }
-        },
-        "acme_r2d2_trainer": {
-            "__init__": {
-                "adam_epsilon": 0.001,
-                "batch_size": 32,
-                "burn_in_length": 2,
-                "clip_grad_norm": None,
-                "discount": 0.99,
-                "importance_sampling_exponent": 0.2,
-                "learning_rate": 0.001,
-                "max_replay_size": 500,
-                "min_replay_size": 50,
-                "n_step": 5,
-                "replay_period": 40,
-                "samples_per_insert": 32.0,
-                "sequence_length": 13,
-                "store_lstm_state": True,
-                "target_update_period": 20,
-            }
-        },
-    }
-    registry = Registry.from_dict(generate_dummy_dev_registry())
-    component = Module.from_registry(
-        registry, "acme_r2d2_agent", use_venv=False
-    )
-    component.run_with_arg_set("evaluate", ArgumentSet(args))
-
-
-def test_registry_from_dict():
-    reg_dict = generate_dummy_dev_registry("test_key")
-    reg_dict["components"]["acme_cartpole==master"] = {
-        "name": "CartPole",
-        "dependencies": {},
-        "repo": "dev_repo",
-    }
-    r = Registry.from_dict(reg_dict)
-
-    assert "acme_cartpole==test_key" in r.get_component_specs().keys()
-    assert (
-        "acme_cartpole==test_key"
-        in r.get_component_specs(filter_by_name="acme_cartpole").keys()
-    )
-    assert (
-        "acme_cartpole==master"
-        in r.get_component_specs(filter_by_name="acme_cartpole").keys()
-    )
-
-    agent_component_flat_spec = r.get_component_spec(
-        "acme_r2d2_agent", flatten=True
-    )
-    assert agent_component_flat_spec["name"] == "acme_r2d2_agent"
-    assert agent_component_flat_spec["version"] == "test_key"
-    assert agent_component_flat_spec["name"] == "AcmeR2D2Agent"
-    assert agent_component_flat_spec["repo"] == "local_dir"
 
 
 def test_registry_from_file():

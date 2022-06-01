@@ -1,38 +1,54 @@
-repos:
+specs:
     local_dir:
-        type: local
+        type: LocalRepo
         path: .
 
-
-components:
     agent:
-        repo: local_dir
-        file_path: ./agent.py
-        class_name: AcmeDQNAgent
-        requirements_path: ./requirements.txt
-        instantiate: True
-        dependencies:
-            network: network
-            environment: environment
-            AcmeRun: AcmeRun
+        type: Instance
+        argument_set:
+            type: ArgumentSet
+                kwargs:
+                    network: spec:network
+                    environment: spec:environment
+                    AcmeRun: spec:AcmeRun
+        instance_of:
+            type: class
+            name: AcmeDQNAgent
+            module:
+                type: Module
+                repo: spec:local_dir
+                file_path: ./agent.py
+                requirements_path: ./requirements.txt
 
     network:
-        repo: local_dir
-        file_path: ./network.py
-        class_name: AcmeDQNNetwork
-        instantiate: True
-        dependencies:
-            environment: environment
-            AcmeRun: AcmeRun
-    
+        type: Instance
+        argument_set:
+            type: ArgumentSet
+                kwargs:
+                    environment: spec:environment
+                    AcmeRun: spec:AcmeRun
+        instance_of:
+            type: class
+            name: AcmeDQNNetwork
+            module:
+                type: Module
+                repo: spec:local_dir
+                file_path: ./network.py
+
     environment:
-        repo: local_dir
-        file_path: ./environment.py
-        class_name: CartPole
-        instantiate: True
+        type: Instance
+        instance_of:
+            type: class
+            name: CartPole
+            module:
+                type: Module
+                repo: spec:local_dir
+                file_path: ./environment.py
 
     AcmeRun:
-        repo: local_dir
-        file_path: ./run.py
-        class_name: AcmeRun
-        instantiate: False
+        type: Class
+        name: AcmeRun
+        module:
+            type: Module
+            repo: spec:local_dir
+            file_path: ./run.py
