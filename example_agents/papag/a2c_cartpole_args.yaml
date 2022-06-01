@@ -2,6 +2,7 @@
 # eval_command equivalent to: python main.py --env-name "CartPole-v1"
 
 specs:
+    a2c_cartpole_papag_eval_command:
         type: Command
         component: spec:a2c_cartpole_papag_agent
         function_name: evaluate

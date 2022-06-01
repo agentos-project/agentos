@@ -24,17 +24,17 @@ specs:
             file_path: agent.py
             requirements_path: ./requirements.txt
 
-    eva
-      type: ArgumentSet
-      kwargs:
-        lr: .0007
-        clip_param: 0.2
-        value_loss_coef: 0.5
-        num_processes: 8
-        num_steps: 5
-        num_mini_batch: 32
-        log_interval: 10
-        entropy_coef: 0.01
+    evaluation_args:
+        type: ArgumentSet
+        kwargs:
+            lr: .0007
+            clip_param: 0.2
+            value_loss_coef: 0.5
+            num_processes: 8
+            num_steps: 5
+            num_mini_batch: 32
+            log_interval: 10
+            entropy_coef: 0.01
 
     PAPAGOutput:
         type: Class
