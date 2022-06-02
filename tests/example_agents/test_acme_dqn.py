@@ -3,11 +3,10 @@ import pytest
 from agentos.cli import run
 from tests.utils import ACME_DQN_AGENT_DIR, is_linux, run_test_command
 
-test_args = ["agent", "--use-outer-env"]
+test_args = ["agent"]
 test_kwargs = {
     "--registry-file": str(ACME_DQN_AGENT_DIR / "components.yaml"),
-    "-A": "num_episodes=1",
-    "--arg-set-file": str(ACME_DQN_AGENT_DIR / "arguments.yaml"),
+    "--arg-set-kwargs": "{'num_episodes': 1}",
 }
 
 
@@ -15,6 +14,7 @@ test_kwargs = {
 def test_acme_dqn_agent_evaluate(cli_runner):
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "evaluate"
+    kwargs["--arg-set-id"] = "evaluate_args"
     run_test_command(cli_runner, run, cli_args=test_args, cli_kwargs=kwargs)
 
 
@@ -22,4 +22,5 @@ def test_acme_dqn_agent_evaluate(cli_runner):
 def test_acme_dqn_agent_learn(cli_runner):
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "learn"
+    kwargs["--arg-set-id"] = "learn_args"
     run_test_command(cli_runner, run, cli_args=test_args, cli_kwargs=kwargs)

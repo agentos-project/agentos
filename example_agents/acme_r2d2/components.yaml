@@ -78,9 +78,12 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
+            args:
+                - spec:environment
+                - spec:network
             kwargs:
-                environment: spec:environment
-                network: spec:network
+                priority_exponent: 0.6
+                max_priority_weight: 0.9
         instance_of:
             type: Class
             name: ReverbDataset

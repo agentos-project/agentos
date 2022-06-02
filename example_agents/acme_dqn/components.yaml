@@ -7,10 +7,15 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-                kwargs:
-                    network: spec:network
-                    environment: spec:environment
-                    AcmeRun: spec:AcmeRun
+            args:
+                - spec:network
+                - spec:environment
+                - spec:AcmeRun
+            kwargs:
+                discount: .99
+                batch_size: 10
+                samples_per_insert: 2
+                min_replay_size: 10
         instance_of:
             type: class
             name: AcmeDQNAgent
@@ -37,6 +42,7 @@ specs:
 
     environment:
         type: Instance
+        argument_set: spec:base_arg_set
         instance_of:
             type: class
             name: CartPole
@@ -52,3 +58,13 @@ specs:
             type: Module
             repo: spec:local_dir
             file_path: ./run.py
+
+    evaluate_args:
+        type: ArgumentSet
+        kwargs:
+            num_episodes: 100
+
+    learn_args:
+        type: ArgumentSet
+        kwargs:
+            num_episodes: 200

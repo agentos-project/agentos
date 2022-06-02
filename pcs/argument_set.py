@@ -12,13 +12,30 @@ class ArgumentSet(Component):
 
     def __init__(
         self,
+        parent: "ArgumentSet" = None,
         args: Union[Tuple[Any], List[Any]] = None,
         kwargs: Dict[Any, Any] = None,
     ):
         super().__init__()
-        self.args = list(args) if args else []
-        self.kwargs = kwargs if kwargs else {}
-        self.register_attributes(["args", "kwargs"])
+        self.parent = parent
+        self._args = list(args) if args else []
+        self._kwargs = kwargs if kwargs else {}
+        self.register_attributes(["parent", "args", "kwargs"])
+    
+    @property
+    def args(self):
+        args = []
+        if self.parent:
+            args += self.parent.args
+        return args += self._args
+
+    @property
+    def kwargs(self):
+        kwargs = {}
+        if self.parent:
+            kwargs.update(self.parent.kwargs)
+        kwargs.update(self._kwargs)
+        return kwargs
 
     @staticmethod
     def _resolve_objs(data_structure: Any):
