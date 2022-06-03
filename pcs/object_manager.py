@@ -57,7 +57,7 @@ class ObjectManager(abc.ABC, Component):
         """
         run = self.run_with_arg_set(
             function_name,
-            arg_set=ArgumentSet(args, kwargs),
+            arg_set=ArgumentSet(args=args, kwargs=kwargs),
             log_return_value=True,
         )
         return run.return_value

@@ -9,7 +9,7 @@ def test_arg_set_equality():
 
 def test_arg_set_with_parent():
     x = ArgumentSet(args=[1, 2], kwargs={3: 4})
-    y = ArgumentSet(parent=x, args=[5, 6], kwargs={7: 8})
+    y = ArgumentSet(args=[5, 6], kwargs={7: 8}, parent=x)
     assert y.args == [1, 2, 5, 6]
     assert y.kwargs == {3: 4, 7: 8}
 

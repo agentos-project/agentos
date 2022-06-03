@@ -111,8 +111,10 @@ class Component:
             attr = {name: copy.deepcopy(getattr(self, name, None))}
 
             def not_allowed(i):
-                allowed = isinstance(i, Component) or isinstance(
-                    i, self.OK_LEAF_ATTR_TYPES
+                allowed = (
+                    i is None
+                    or isinstance(i, Component)
+                    or isinstance(i, self.OK_LEAF_ATTR_TYPES)
                 )
                 return not allowed
 

@@ -12,15 +12,15 @@ class ArgumentSet(Component):
 
     def __init__(
         self,
-        parent: Optional["ArgumentSet"] = None,
         args: Union[Tuple[Any], List[Any]] = None,
         kwargs: Dict[Any, Any] = None,
+        parent: Optional["ArgumentSet"] = None,
     ):
         super().__init__()
-        self.parent = parent
         self._args = list(args) if args else []
         self._kwargs = kwargs if kwargs else {}
-        self.register_attributes(["parent", "args", "kwargs"])
+        self.parent = parent
+        self.register_attributes(["args", "kwargs", "parent"])
 
     @property
     def args(self):
