@@ -178,9 +178,9 @@ def run(
     args = literal_eval(arg_set_args.lstrip()) if arg_set_args else None
     kwargs = literal_eval(arg_set_kwargs.lstrip()) if arg_set_kwargs else None
     if args is not None:
-        arg_set.args.append(args)
+        arg_set.args = arg_set.args + [args]
     if kwargs is not None:
-        arg_set.kwargs.update(kwargs)
+        arg_set.kwargs = arg_set.kwargs.update(kwargs)
 
     output = comp.run_with_arg_set(
         function_name, arg_set=arg_set, log_return_value=log_return_value

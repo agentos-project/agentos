@@ -195,7 +195,7 @@ class Registry(abc.ABC):
         elif error_if_not_found:
             raise LookupError(
                 f"'{identifier}' did not match any identifiers or aliases "
-                f"in this registry {self}"
+                f"in this registry {self.to_dict()}"
             )
         else:
             return None
@@ -246,7 +246,8 @@ class Registry(abc.ABC):
         for alias, i in other_registry.aliases.items():
             if alias in self.aliases:
                 assert self.aliases[alias] == i
-            self.add_alias(alias, i)
+            else:
+                self.add_alias(alias, i)
 
     def replace_spec(self, identifier, new_spec):
         replacements_to_do = [(identifier, new_spec)]
@@ -434,10 +435,6 @@ class InMemoryRegistry(Registry):
         # replace uses of aliases within the body of the spec.
         for alias in new_aliases.keys():
             for spec in new_specs:
-                print(
-                    f"replace '{alias}' with {new_aliases[alias]}, in spec: "
-                    f"{spec}"
-                )
                 nested_dict_list_replace(
                     new_specs,
                     f"^{make_identifier_ref(alias)}$",

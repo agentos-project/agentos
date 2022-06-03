@@ -17,7 +17,7 @@ specs:
                 samples_per_insert: 2
                 min_replay_size: 10
         instance_of:
-            type: class
+            type: Class
             name: AcmeDQNAgent
             module:
                 type: Module
@@ -29,9 +29,9 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-                kwargs:
-                    environment: spec:environment
-                    AcmeRun: spec:AcmeRun
+            kwargs:
+                environment: spec:environment
+                AcmeRun: spec:AcmeRun
         instance_of:
             type: class
             name: AcmeDQNNetwork
@@ -42,7 +42,10 @@ specs:
 
     environment:
         type: Instance
-        argument_set: spec:base_arg_set
+        argument_set:
+            type: ArgumentSet
+            kwargs:
+                discount: .99
         instance_of:
             type: class
             name: CartPole

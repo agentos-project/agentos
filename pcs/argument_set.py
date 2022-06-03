@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pcs.component import Component
 from pcs.utils import find_and_replace_leaves
@@ -12,7 +12,7 @@ class ArgumentSet(Component):
 
     def __init__(
         self,
-        parent: "ArgumentSet" = None,
+        parent: Optional["ArgumentSet"] = None,
         args: Union[Tuple[Any], List[Any]] = None,
         kwargs: Dict[Any, Any] = None,
     ):
@@ -26,16 +26,26 @@ class ArgumentSet(Component):
     def args(self):
         args = []
         if self.parent:
-            args += self.parent.args
-        return args += self._args
+            args = args + self.parent.args
+        return args + self._args
+
+    @args.setter
+    def args(self, value):
+        self._args = value
 
     @property
     def kwargs(self):
         kwargs = {}
         if self.parent:
             kwargs.update(self.parent.kwargs)
-        kwargs.update(self._kwargs)
+        if self._kwargs:
+            kwargs.update(self._kwargs)
         return kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        self._kwargs = value
+        print(f"kwargs updated to {value}")
 
     @staticmethod
     def _resolve_objs(data_structure: Any):

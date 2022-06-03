@@ -3,10 +3,12 @@ import pytest
 from agentos.cli import run
 from tests.utils import ACME_R2D2_AGENT_DIR, is_linux, run_test_command
 
-test_args = ["agent"]
+test_args = [
+    "agent", 
+    "--registry-file", str(ACME_R2D2_AGENT_DIR / "components.yaml"),
+    "--registry-file", str(ACME_R2D2_AGENT_DIR / "arguments.yaml"),
+]
 test_kwargs = {
-    "--registry-file": str(ACME_R2D2_AGENT_DIR / "components.yaml"),
-    "--registry-file": str(ACME_R2D2_AGENT_DIR / "arguments.yaml"),
     "--arg-set-kwargs": "{'num_episodes': 1}",
 }
 

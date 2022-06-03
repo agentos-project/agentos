@@ -28,7 +28,7 @@ def run_test_command(cli_runner, cmd, cli_args=None, cli_kwargs=None):
     for param, val in (cli_kwargs or {}).items():
         call_list.append(param)
         call_list.append(val)
-    print(f"Running the following: {cmd.name} {call_list}")
+    print(f"Running the following: {cmd.name} {' '.join(call_list)}")
     result = cli_runner.invoke(
         cmd, call_list, catch_exceptions=False, echo=True
     )
