@@ -43,7 +43,8 @@ class SB3PPOAgent:
                 return
         if prev_output_with_model_id:
             print(
-                f"Loading model from AgentOS/MLflow run {prev_output_with_model_id}."
+                "Loading model from AgentOS/MLflow run "
+                f"{prev_output_with_model_id}."
             )
             self.prev_output_with_model = (
                 self.SB3AgentOutput.from_existing_mlflow_run(

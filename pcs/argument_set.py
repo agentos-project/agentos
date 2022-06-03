@@ -21,7 +21,7 @@ class ArgumentSet(Component):
         self._args = list(args) if args else []
         self._kwargs = kwargs if kwargs else {}
         self.register_attributes(["parent", "args", "kwargs"])
-    
+
     @property
     def args(self):
         args = []

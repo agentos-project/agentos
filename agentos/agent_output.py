@@ -74,8 +74,8 @@ class AgentOutput(MLflowRun):
         Create a new AgentOutput.
 
         :param run_type: must be 'evaluate' or 'learn'
-        :param outer_output: Optionally, specify another Output that this run is
-            a sub-run of. Setting this will result in this AgentOutput being
+        :param outer_output: Optionally, specify another Output that this run
+            is a sub-run of. Setting this will result in this AgentOutput being
             visually nested under the outer_output in the MLflow UI.
         :param agent_identifier: Identifier of Agent component being evaluated
             or trained.

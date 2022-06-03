@@ -179,7 +179,7 @@ class MLflowRun(Component):
         if not detailed:
             filtered_tags = {
                 k: v
-                for k, v in self.data.tags.items()
+                for k, v in self.data["tags"].items()
                 if not k.startswith("mlflow.")
             }
             print(f"    Run {self.mlflow_run_id}: {filtered_tags}")

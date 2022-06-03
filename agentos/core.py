@@ -64,9 +64,9 @@ class Agent(MemberInitializer):
             truncating an episode.
         :param backup_dst: if specified, will print backup path to stdout
         :param print_stats: if True, will print run stats to stdout
-        :param outer_output: If set, then the AgentOutput created by this function
-            will set this as their parent. Else, it will try to set the
-            currently active component run, else it won't set a parent.
+        :param outer_output: If set, then the AgentOutput created by this
+            function will set this as their parent. Else, it will try to
+            set the currently active component run, else it won't set a parent.
 
         :returns: None
         """

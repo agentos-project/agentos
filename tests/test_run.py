@@ -38,6 +38,6 @@ def test_run_tracking():
 
     run = MLflowRun()
     run.log_metric("test_metric", 1)
-    assert run.data.metrics["test_metric"] == 1
+    assert run.data["metrics"]["test_metric"] == 1
     run.set_tag("test_tag", "tag_val")
-    assert run.data.tags["test_tag"] == "tag_val"
+    assert run.data["tags"]["test_tag"] == "tag_val"
