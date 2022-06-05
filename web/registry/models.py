@@ -26,16 +26,16 @@ class Component(TimeStampedModel):
         # get mutable version of request so that we can decode json fields. Per
         # https://docs.djangoproject.com/en/4.0/ref/request-response/#querydict-objects
         data = request_data.copy()
-        identifier = data.pop(PCSComponent.IDENTIFIER_KEY)
+        identifier = data[PCSComponent.IDENTIFIER_KEY]
         encoded_body = data[WebRegistry.SPEC_RESPONSE_BODY_KEY]
         flat_spec = json.decoder.JSONDecoder().decode(encoded_body)
         # TODO - When we have accounts, we need to check the the user
         #        has permission to create a new version of this Module
         #        (i.e. if the name already exists but not the version).
-        component = Component.objects.create(
-            identifier=identifier,
-            body=flat_spec,
+        component, created = Component.objects.get_or_create(
+            identifier=identifier, defaults={"body": flat_spec}
         )
+        print(f"Got Component {component}, created: {created}")
         return component
 
     @staticmethod

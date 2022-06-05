@@ -13,11 +13,11 @@ from registry.models import Component
 class RegistryTestCases(TestCase):
     def setUp(self):
         self.client = Client()
-        self.repo = Repo.objects.create(
-            identifier="test-repo-a38",
-            type="github",
-            url="https://github.com/example/example",
-        )
+        # self.repo = Repo.objects.create(
+        #    identifier="test-repo-a38",
+        #    type="github",
+        #    url="https://github.com/example/example",
+        # )
         self.component = Component.objects.create(
             identifier="test-component-h42==1.0.1",
             name="test-component-h42",
@@ -27,17 +27,17 @@ class RegistryTestCases(TestCase):
             class_name="TestComponentH42",
             instantiate=True,
         )
-        self.run_command = RunCommand.objects.create(
-            entry_point="test_entry_pt",
-            argument_set={},
-            component=self.component,
-            log_return_value=False,
-        )
-        self.run = Run.objects.create(
-            identifier="sklldfjiekls",
-            agent=self.component,
-            environment=self.component,
-        )
+        # self.run_command = RunCommand.objects.create(
+        #    entry_point="test_entry_pt",
+        #    argument_set={},
+        #    component=self.component,
+        #    log_return_value=False,
+        # )
+        # self.run = Run.objects.create(
+        #    identifier="sklldfjiekls",
+        #    agent=self.component,
+        #    environment=self.component,
+        # )
         self.static_dir = Path(__file__).parent / "static"
 
     # TODO: update these test once we've finished reworking ingest_spec

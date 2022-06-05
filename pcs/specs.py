@@ -63,6 +63,16 @@ class Spec(UserDict):
     def as_kwargs(self):
         return {k: v for k, v in self.body.items() if k != "type"}
 
+    def to_dict(self, flatten=False):
+        from pcs.component import Component  # Avoid circular import.
+        if flatten:
+            result = {}
+            result.update(self.body.copy())
+            result[Component.IDENTIFIER_KEY] = self.identifier[:]
+            return result
+        else:
+            return {self.identifier[:]: self.body.copy()}
+
     def _check_format(self):
         assert len(self.data) == 1, (
             f"len(self.data) must be 1, but is {len(self.data)}. self.data "

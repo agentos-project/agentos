@@ -566,3 +566,6 @@ class WebRegistry(Registry):
 
     def to_dict(self) -> Dict:
         raise Exception("to_dict() is not supported on WebRegistry.")
+
+    def add_alias(self, alias: str, identifier: str) -> None:
+        raise NotImplementedError

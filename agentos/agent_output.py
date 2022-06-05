@@ -143,7 +143,7 @@ class AgentOutput(MLflowRun):
             )
             if self.outer_output:
                 self.set_tag(
-                    MLFLOW_PARENT_RUN_ID, self.outer_output.info.run_id
+                    MLFLOW_PARENT_RUN_ID, self.outer_output.info["run_id"]
                 )
             if self.prev_output_with_model:
                 self.set_tag(
@@ -212,9 +212,9 @@ class AgentOutput(MLflowRun):
         total_episodes = 0
         total_steps = 0
         for run in runs:
-            if run.data.tags.get(self.RUN_TYPE_TAG) == self.LEARN_KEY:
-                total_episodes += int(run.data.metrics.get(_EPISODE_KEY, 0))
-                total_steps += int(run.data.metrics.get(_STEP_KEY, 0))
+            if run.data["tags"].get(self.RUN_TYPE_TAG) == self.LEARN_KEY:
+                total_episodes += int(run.data["metrics"].get(_EPISODE_KEY, 0))
+                total_steps += int(run.data["metrics"].get(_STEP_KEY, 0))
         return total_episodes, total_steps
 
     def print_results(self):

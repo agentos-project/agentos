@@ -17,5 +17,9 @@ class ComponentSerializer(serializers.ModelSerializer):
         model = Component
         fields = [
             "identifier",
+            "identifier_link",
             "body",
         ]
+
+    def get_identifier_link(self, obj):
+        return _get_link_from_id(self, "component-detail", obj.identifier)
