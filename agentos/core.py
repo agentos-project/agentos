@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Thread
 from typing import Optional, Sequence
 
-from agentos.agent_output import AgentOutput
+from agentos.agent_output import AgentRun
 
 
 class MemberInitializer:
@@ -38,10 +38,10 @@ class Agent(MemberInitializer):
         super().__init__(**kwargs)
         self.curr_obs = None
         self._should_reset = True
-        self._active_agent_run_stack: Sequence[AgentOutput] = []
+        self._active_agent_run_stack: Sequence[AgentRun] = []
 
     @property
-    def active_agent_run(self) -> AgentOutput:
+    def active_agent_run(self) -> AgentRun:
         if self._active_agent_run_stack:
             return self._active_agent_run_stack[-1]
         else:
@@ -54,7 +54,7 @@ class Agent(MemberInitializer):
         max_transitions=None,
         backup_dst=None,
         print_stats=True,
-        outer_output=None,
+        outer_run=None,
     ) -> None:
         """Runs an agent specified by a given [agent_file]
 
@@ -64,7 +64,7 @@ class Agent(MemberInitializer):
             truncating an episode.
         :param backup_dst: if specified, will print backup path to stdout
         :param print_stats: if True, will print run stats to stdout
-        :param outer_output: If set, then the AgentOutput created by this
+        :param outer_run: If set, then the AgentRun created by this
             function will set this as their parent. Else, it will try to
             set the currently active component run, else it won't set a parent.
 
@@ -72,9 +72,9 @@ class Agent(MemberInitializer):
         """
         all_steps = []
         if should_learn:
-            self.start_agent_run("learn", outer_output)
+            self.start_agent_run("learn", outer_run)
         else:
-            self.start_agent_run("evaluate", outer_output)
+            self.start_agent_run("evaluate", outer_run)
         for _ in range(int(num_episodes)):
             steps = self.rollout(
                 should_learn=should_learn, max_transitions=max_transitions
@@ -128,32 +128,32 @@ class Agent(MemberInitializer):
             total_episodes += run_size
 
     def start_agent_run(
-        self, run_type: str, outer_output: AgentOutput
+        self, run_type: str, outer_run: AgentRun
     ) -> None:
         from pcs import active_output  # avoid circular import
 
         agent_comp = self.__component__
         env_comp = self.environment.__component__
-        if not outer_output:
-            outer_output = active_output(self)
-            if outer_output:
+        if not outer_run:
+            outer_run = active_output(self)
+            if outer_run:
                 assert env_comp in (
-                    outer_output.run_command.component.dependency_list()
+                    outer_run.run_command.component.dependency_list()
                 ), (
                     "This agent's environment must be in the dependency "
                     "list of the active component run."
                 )
         self._active_agent_run_stack.append(
-            AgentOutput(
+            AgentRun(
                 run_type=run_type,
-                outer_output=outer_output,
+                outer_run=outer_run,
                 agent_identifier=agent_comp.identifier,
                 environment_identifier=env_comp.identifier,
             )
         )
 
     def end_agent_run(self, print_results: bool = False) -> None:
-        assert self._active_agent_run_stack, "No active AgentOutput to end."
+        assert self._active_agent_run_stack, "No active AgentRun to end."
         run = self._active_agent_run_stack.pop()
         run.end(print_results=print_results)
 

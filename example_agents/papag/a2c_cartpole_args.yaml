@@ -20,7 +20,7 @@ specs:
         argument_set:
             type: ArgumentSet
             args:
-                - spec:PAPAGOutput
+                - spec:PAPAGRun
                 - spec:AtariEnv
                 - spec:CartPoleEnv
                 - spec:A2C_ACKTR

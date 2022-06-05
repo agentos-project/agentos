@@ -6,7 +6,7 @@ from typing import Optional
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import BasePolicy
 
-from agentos.agent_output import AgentOutput
+from agentos.agent_output import AgentRun
 
 
 class EvaluateCallback:
@@ -17,7 +17,7 @@ class EvaluateCallback:
     sequence).
     """
 
-    def __init__(self, agent_run: AgentOutput):
+    def __init__(self, agent_run: AgentRun):
         self.agent_run = agent_run
 
     def __call__(self, *args, **kwargs):
@@ -44,7 +44,7 @@ class LearnCallback(BaseCallback):
     sequence).
     """
 
-    def __init__(self, run: AgentOutput):
+    def __init__(self, run: AgentRun):
         super().__init__()
         self.agent_run = run
         self.curr_steps = 0
@@ -75,7 +75,7 @@ class LearnCallback(BaseCallback):
         self.curr_reward = 0
 
 
-class SB3Run(AgentOutput):
+class SB3Run(AgentRun):
     """
     An SB3Run must be of type "learn" or "evaluate". Learning runs can have
     log_model() called on them.
@@ -86,16 +86,16 @@ class SB3Run(AgentOutput):
     def __init__(
         self,
         run_type: str = None,
-        outer_output: str = None,
-        prev_output_with_model: str = None,
+        outer_run: str = None,
+        model_input_run: str = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
         existing_run_id: Optional[str] = None,
     ) -> None:
         super().__init__(
             run_type,
-            outer_output=outer_output,
-            prev_output_with_model=prev_output_with_model,
+            outer_run=outer_run,
+            model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
             existing_run_id=existing_run_id,

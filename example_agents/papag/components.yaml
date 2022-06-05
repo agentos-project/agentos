@@ -36,9 +36,9 @@ specs:
             log_interval: 10
             entropy_coef: 0.01
 
-    PAPAGOutput:
+    PAPAGRun:
         type: Class
-        name: PAPAGOutput
+        name: PAPAGRun
         module:
             type: Module
             repo: spec:papag_agent_dir

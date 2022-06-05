@@ -24,7 +24,7 @@ class AcmeDQNAgent:
 
     def evaluate(self, num_episodes=1):
         with self.AcmeRun.evaluate_run(
-            outer_output=active_output(self),
+            outer_run=active_output(self),
             agent_identifier=self.__component__.identifier,
             environment_identifier=self.environment.__component__.identifier,
         ) as run:
@@ -39,7 +39,7 @@ class AcmeDQNAgent:
 
     def learn(self, num_episodes=1):
         with self.AcmeRun.learn_run(
-            outer_output=active_output(self),
+            outer_run=active_output(self),
             agent_identifier=self.__component__.identifier,
             environment_identifier=self.environment.__component__.identifier,
         ) as run:

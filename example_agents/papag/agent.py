@@ -44,7 +44,7 @@ class PAPAGAgent:
 
     def __init__(
         self,
-        PAPAGOutput,
+        PAPAGRun,
         AtariEnv,
         CartPoleEnv,
         A2C_ACKTR,
@@ -52,7 +52,7 @@ class PAPAGAgent:
         algo_name: str,
         env_name: str,
     ):
-        self.PAPAGOutput = PAPAGOutput
+        self.PAPAGRun = PAPAGRun
         self.AtariEnv = AtariEnv
         self.CartPoleEnv = CartPoleEnv
         self.A2C_ACKTR = A2C_ACKTR
@@ -60,8 +60,8 @@ class PAPAGAgent:
         self.algo_name = algo_name
         self.env_name = env_name
         model_name = self.get_model_name()
-        self.prev_output_with_model = (
-            self.PAPAGOutput.get_last_logged_model_run(model_name)
+        self.model_input_run = (
+            self.PAPAGRun.get_last_logged_model_run(model_name)
         )
         if self.algo_name == "a2c":
             self.Algo = self.A2C_ACKTR
@@ -106,9 +106,9 @@ class PAPAGAgent:
     ):
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
-        with self.PAPAGOutput.evaluate_run(
-            outer_output=active_output(self),
-            prev_output_with_model=self.prev_output_with_model,
+        with self.PAPAGRun.evaluate_run(
+            outer_run=active_output(self),
+            model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
         ) as eval_run:
@@ -190,9 +190,9 @@ class PAPAGAgent:
     ):
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
-        with self.PAPAGOutput.learn_run(
-            outer_output=active_output(self),
-            prev_output_with_model=self.prev_output_with_model,
+        with self.PAPAGRun.learn_run(
+            outer_run=active_output(self),
+            model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
         ) as learn_run:

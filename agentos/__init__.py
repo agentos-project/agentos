@@ -1,6 +1,6 @@
 """The ``agentos`` package provides an API for building learning agents."""
 
-from agentos.agent_output import AgentOutput
+from agentos.agent_output import AgentRun
 from agentos.core import (
     Agent,
     Dataset,
@@ -16,7 +16,7 @@ from pcs.version import VERSION as __version__  # noqa: F401
 
 __all__ = [
     "Agent",
-    "AgentOutput",
+    "AgentRun",
     "Dataset",
     "Environment",
     "EnvironmentSpec",

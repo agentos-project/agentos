@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 import yaml
 
-from agentos.agent_output import AgentOutput
+from agentos.agent_output import AgentRun
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.mlflow_run import MLflowRun
@@ -180,7 +180,9 @@ def run(
     if args is not None:
         arg_set.args = arg_set.args + [args]
     if kwargs is not None:
-        arg_set.kwargs = arg_set.kwargs.update(kwargs)
+        updated_args = arg_set.kwargs
+        updated_args.update(kwargs)
+        arg_set.kwargs = updated_args
 
     output = comp.run_with_arg_set(
         function_name, arg_set=arg_set, log_return_value=log_return_value
@@ -263,8 +265,8 @@ def freeze(identifier, registry_file, force, output_file):
 def publish(identifier, registry_file, force):
     # If identifier is a Run.
     r = MLflowRun.from_existing_mlflow_run(run_id=identifier)
-    if AgentOutput.IS_AGENT_RUN_TAG in r.data["tags"]:
-        r = AgentOutput.from_existing_mlflow_run(run_id=identifier)
+    if AgentRun.IS_AGENT_RUN_TAG in r.data["tags"]:
+        r = AgentRun.from_existing_mlflow_run(run_id=identifier)
     if Output.IS_COMPONENT_RUN_TAG in r.data["tags"]:
         r = Output.from_existing_mlflow_run(run_id=identifier)
     r.to_registry(Registry.from_default())
