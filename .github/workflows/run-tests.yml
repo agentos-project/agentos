@@ -34,14 +34,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python install_requirements.py -y
-      - name: Run Django tests
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          cd web
-          python manage.py collectstatic
-          python manage.py test
-          cd ..
+      #- name: Run Django tests
+      #  if: ${{ matrix.os == 'ubuntu-latest' }}
+      #  run: |
+      #    cd web
+      #    python manage.py collectstatic
+      #    python manage.py test
+      #    cd ..
       - name: Run pytest
         run: |
           echo running pytest now
-          python -m pytest -s --durations=0 --ignore=tests/test_acme_from_registry.py --ignore=web/
+          python -m pytest -s --durations=0 --ignore=web/
