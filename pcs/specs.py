@@ -65,6 +65,7 @@ class Spec(UserDict):
 
     def to_dict(self, flatten=False):
         from pcs.component import Component  # Avoid circular import.
+
         if flatten:
             result = {}
             result.update(self.body.copy())
