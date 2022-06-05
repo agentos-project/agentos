@@ -158,10 +158,15 @@ class Component:
         if recurse:
             # Test whether recursively pushing all dependencies will succeed.
             self._all_dependencies_to_registry(registry, True)
-        existing = registry.get_spec(self.identifier, error_if_not_found=False)
+        existing = registry.get_spec(
+            self.identifier, error_if_not_found=False, flatten=False
+        )
         # Test whether pushing this spec to registry will succeed.
+        # NJTODO - sometimes existing is a dict, sometimes its a spec
         if existing:
-            diff = DeepDiff(existing, self.to_spec())
+            existing_is_dict = type(existing) is dict
+            existing = existing if existing_is_dict else existing.to_dict()
+            diff = DeepDiff(existing, self.to_spec().to_dict())
             assert not diff, (
                 f"A spec with identifier '{self.identifier}' already exists "
                 f"in registry '{registry}' and differs from the one you're "
