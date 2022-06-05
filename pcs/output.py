@@ -1,7 +1,10 @@
+import json
+import pickle
 import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
+import yaml
 from mlflow.utils.mlflow_tags import MLFLOW_RUN_NAME
 
 from pcs.command import Command
@@ -145,20 +148,14 @@ class Output(MLflowRun):
         tmp_dir_path = Path(tempfile.mkdtemp())
         filename_base = tmp_dir_path / (self.identifier + "-return_value")
         if format == "pickle":
-            import pickle
-
             filename = filename_base.parent / (filename_base.name + ".pickle")
             with open(filename, "wb") as f:
                 pickle.dump(ret_val, f)
         elif format == "json":
-            import json
-
             filename = filename_base.parent / (filename_base.name + ".json")
             with open(filename, "w") as f:
                 json.dump(ret_val, f)
         elif format == "yaml":
-            import yaml
-
             filename = filename_base.parent / (filename_base.name + ".yaml")
             with open(filename, "w") as f:
                 yaml.dump(ret_val, f)
