@@ -1,7 +1,7 @@
 import pytest
 
 from agentos.cli import run
-from tests.utils import ACME_R2D2_AGENT_DIR, is_linux, run_test_command
+from tests.utils import ACME_R2D2_AGENT_DIR, run_test_command
 
 test_args = [
     "agent",
