@@ -185,9 +185,12 @@ def run(
     output = comp.run_with_arg_set(
         function_name, arg_set=arg_set, log_return_value=log_return_value
     )
+    print()
     print(f"Output {output.identifier} recorded.", end=" ")
     print("Execute the following for details:")
-    print(f"\n  agentos status {output.identifier}\n")
+    print(f"\n  agentos status {output.mlflow_run_id}\n")
+    print("Execute the following to publish:")
+    print(f"\n  agentos publish {output.mlflow_run_id}\n")
 
 
 @agentos_cmd.command()
@@ -252,6 +255,7 @@ def freeze(identifier, registry_file, force, output_file):
         print(yaml.dump(frozen_reg.to_dict()))
 
 
+# NJTODO - does this need force arg?
 @agentos_cmd.command()
 @_arg_identifier
 @_option_registry_file
@@ -259,16 +263,11 @@ def freeze(identifier, registry_file, force, output_file):
 def publish(identifier, registry_file, force):
     # If identifier is a Run.
     r = MLflowRun.from_existing_mlflow_run(run_id=identifier)
-    if AgentOutput.IS_AGENT_RUN_TAG in r.data.tags:
+    if AgentOutput.IS_AGENT_RUN_TAG in r.data["tags"]:
         r = AgentOutput.from_existing_mlflow_run(run_id=identifier)
-    if Output.IS_COMPONENT_RUN_TAG in r.data.tags:
+    if Output.IS_COMPONENT_RUN_TAG in r.data["tags"]:
         r = Output.from_existing_mlflow_run(run_id=identifier)
-    r.to_registry(Registry.from_default(), force=force)
-
-    # If identifier is a Module
-    module = Module.from_registry_file(registry_file, identifier)
-    frozen_module = module.to_versioned_module()
-    frozen_module.to_registry(Registry.get_default(), force=force)
+    r.to_registry(Registry.from_default())
 
 
 @agentos_cmd.command()
