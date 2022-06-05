@@ -12,7 +12,8 @@ class ModelTests(LiveServerTestCase):
         pass
 
     def test_serializers(self):
-        r = Repo.objects.create(identifier="r")
+        # r = Repo.objects.create(identifier="r")
+        r = {}  # NJTODO - FIXME
         component = Component.objects.create(
             identifier="x",
             name="x",
@@ -31,9 +32,10 @@ class ModelTests(LiveServerTestCase):
             file_path=".",
             instantiate=False,
         )
-        cd = ComponentDependency(
-            depender=component, dependee=component_two, attribute_name="x"
-        )
+        # cd = ComponentDependency(
+        #    depender=component, dependee=component_two, attribute_name="x"
+        # )
+        cd = {}  # NJTODO - FIXME
         self.assertIsNotNone(component_two.dependencies().all())
         cd.save()
         self.assertEqual(component.depender_set.count(), 1)

@@ -8,7 +8,10 @@ from registry.models import Component
 
 
 def index(request):
-    run_obj_by_id, env_obj_by_id, _, terminals, _, _ = Run.agent_run_dags()
+    # run_obj_by_id, env_obj_by_id, _, terminals, _, _ = Run.agent_run_dags()
+    run_obj_by_id = {}
+    env_obj_by_id = {}
+    terminals = {}
     env_dict = defaultdict(list)
     for env_id, run_list in terminals.items():
         runs = sorted(
@@ -23,12 +26,14 @@ def index(request):
 
 
 def run_list(request):
-    agent_runs = Run.objects.filter(
-        data__tags__contains={"pcs.is_agent_run": "True"}
-    )
-    component_runs = Run.objects.filter(
-        data__tags__contains={"pcs.is_component_run": "True"}
-    )
+    # agent_runs = Run.objects.filter(
+    #    data__tags__contains={"pcs.is_agent_run": "True"}
+    # )
+    # component_runs = Run.objects.filter(
+    #    data__tags__contains={"pcs.is_component_run": "True"}
+    # )
+    agent_runs = []
+    component_runs = []
     context = {
         "agent_runs": agent_runs,
         "component_runs": component_runs,
@@ -38,8 +43,10 @@ def run_list(request):
 
 
 def run_detail(request, identifier):
-    run = Run.objects.get(identifier=identifier)
-    run_dag = Run.agent_run_dag(identifier, learn_only=True)
+    # run = Run.objects.get(identifier=identifier)
+    # run_dag = Run.agent_run_dag(identifier, learn_only=True)
+    run = []
+    run_dag = {}
     context = {"run": run, "run_dag": run_dag, "is_debug": settings.DEBUG}
     return render(request, "leaderboard/run_detail.html", context)
 
@@ -47,8 +54,8 @@ def run_detail(request, identifier):
 def empty_database(request):
     if not settings.DEBUG:
         raise HttpResponseBadRequest("Not allowed.")
-    ComponentDependency.objects.all().delete()
+    # ComponentDependency.objects.all().delete()
     Component.objects.all().delete()
-    Repo.objects.all().delete()
-    Run.objects.all().delete()
+    # Repo.objects.all().delete()
+    # Run.objects.all().delete()
     return HttpResponseRedirect(reverse("index"))
