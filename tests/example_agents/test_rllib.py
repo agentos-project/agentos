@@ -6,6 +6,7 @@ from tests.utils import RLLIB_AGENT_DIR, run_test_command
 test_args = ["agent"]
 test_kwargs = {"--registry-file": str(RLLIB_AGENT_DIR / "components.yaml")}
 
+
 @pytest.skip()
 def test_rllib_agent_evaluate(cli_runner):
     kwargs = {k: v for k, v in test_kwargs.items()}

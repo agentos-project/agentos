@@ -127,9 +127,7 @@ class Agent(MemberInitializer):
             )
             total_episodes += run_size
 
-    def start_agent_run(
-        self, run_type: str, outer_run: AgentRun
-    ) -> None:
+    def start_agent_run(self, run_type: str, outer_run: AgentRun) -> None:
         from pcs import active_output  # avoid circular import
 
         agent_comp = self.__component__

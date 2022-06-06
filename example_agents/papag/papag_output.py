@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional
 
 import torch
 from a2c_ppo_acktr import utils
@@ -9,8 +9,6 @@ from a2c_ppo_acktr.utils import get_vec_normalize
 
 from agentos.agent_output import AgentRun
 
-if TYPE_CHECKING:
-    from mlflow.entities.run import Run as NativeMLFlowRun
 
 class PAPAGRun(AgentRun):
     """

@@ -60,8 +60,8 @@ class PAPAGAgent:
         self.algo_name = algo_name
         self.env_name = env_name
         model_name = self.get_model_name()
-        self.model_input_run = (
-            self.PAPAGRun.get_last_logged_model_run(model_name)
+        self.model_input_run = self.PAPAGRun.get_last_logged_model_run(
+            model_name
         )
         if self.algo_name == "a2c":
             self.Algo = self.A2C_ACKTR

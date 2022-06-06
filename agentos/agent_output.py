@@ -100,19 +100,13 @@ class AgentRun(MLflowRun):
             super().__init__(existing_run_id=existing_run_id)
             if MLFLOW_PARENT_RUN_ID in self.data["tags"]:
                 outer_run_id = self.data["tags"][MLFLOW_PARENT_RUN_ID]
-                self.outer_run = Output.from_existing_mlflow_run(
-                    outer_run_id
-                )
+                self.outer_run = Output.from_existing_mlflow_run(outer_run_id)
             else:
                 self.outer_run = None
             if self.MODEL_INPUT_RUN_ID in self.data["tags"]:
-                model_input_run = self.data["tags"][
-                    self.MODEL_INPUT_RUN_ID
-                ]
-                self.model_input_run = (
-                    self.__class__.from_existing_mlflow_run(
-                        model_input_run
-                    )
+                model_input_run = self.data["tags"][self.MODEL_INPUT_RUN_ID]
+                self.model_input_run = self.__class__.from_existing_mlflow_run(
+                    model_input_run
                 )
             else:
                 self.model_input_run = None

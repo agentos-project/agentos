@@ -31,8 +31,8 @@ class SB3PPOAgent:
         )
         if load_most_recent_run:
             print("Loading most recent model from AgentOS/MLflow.")
-            self.model_input_run = (
-                self.SB3AgentRun.get_last_learning_run(self.model_name)
+            self.model_input_run = self.SB3AgentRun.get_last_learning_run(
+                self.model_name
             )
             if self.model_input_run:
                 policy_path = self.model_input_run.download_artifacts(
@@ -46,10 +46,8 @@ class SB3PPOAgent:
                 "Loading model from AgentOS/MLflow run "
                 f"{model_input_run_id}."
             )
-            self.model_input_run = (
-                self.SB3AgentRun.from_existing_mlflow_run(
-                    model_input_run_id
-                )
+            self.model_input_run = self.SB3AgentRun.from_existing_mlflow_run(
+                model_input_run_id
             )
             policy_path = self.model_input_run.download_artifacts(
                 self.model_name
