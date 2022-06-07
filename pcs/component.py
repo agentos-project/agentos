@@ -96,10 +96,9 @@ class Component:
         for name in attribute_names:
             self.register_attribute(name)
 
-    @classmethod
     @property
-    def type(cls):
-        return cls.__name__
+    def type(self):
+        return self.__class__.__name__
 
     @property
     def identifier(self) -> str:
