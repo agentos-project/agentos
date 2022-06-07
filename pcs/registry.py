@@ -106,7 +106,7 @@ class Registry(abc.ABC):
             mod_version = version if version else repo.default_version
             module_kwargs = {
                 "repo": repo,
-                "file_path": str(relative_path),
+                "file_path": str(relative_path).replace(r"\\", "/"),
                 "version": mod_version,
             }
             if repo.get_local_file_path(
