@@ -14,7 +14,6 @@ def test_sb3_agent_evaluate(cli_runner):
     run_test_command(cli_runner, run, cli_args=test_args, cli_kwargs=kwargs)
 
 
-@pytest.mark.skip()
 def test_sb3_agent_learn(cli_runner):
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "learn"

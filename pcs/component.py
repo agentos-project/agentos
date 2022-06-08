@@ -23,7 +23,7 @@ from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.utils import (
     extract_identifier,
     filter_leaves,
-    find_and_replace_leaves,
+    copy_find_and_replace_leaves,
     is_identifier_ref,
     make_identifier_ref,
 )
@@ -107,7 +107,14 @@ class Component:
     def body(self, dependencies_as_strings=False) -> Dict:
         attributes = {}
         for name in self._spec_attr_names:
-            attr = {name: copy.deepcopy(getattr(self, name, None))}
+            print(
+                "\n-----\n-----\n"
+                f"type: {self.type}\n"
+                f"name: {name}\n"
+                f"_spec_attr_names: {self._spec_attr_names}"
+            )
+            attr = {name: getattr(self, name, None)}
+            print(f"attr: {attr}")
 
             def not_allowed(i):
                 allowed = (
@@ -118,10 +125,10 @@ class Component:
                 return not allowed
 
             # Stringify all non-allowed types.
-            find_and_replace_leaves(attr, not_allowed, lambda leaf: str(leaf))
+            _, attr = copy_find_and_replace_leaves(attr, not_allowed, lambda leaf: str(leaf))
             # Per 'dependencies_as_strings' flag, stringify dependencies
             if dependencies_as_strings:
-                find_and_replace_leaves(
+                _, attr = copy_find_and_replace_leaves(
                     attr,
                     lambda leaf: isinstance(leaf, Component),
                     lambda leaf: make_identifier_ref(leaf.identifier),
