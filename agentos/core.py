@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Thread
 from typing import Optional, Sequence
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentRun
 
 
 class MemberInitializer:
@@ -64,9 +64,9 @@ class Agent(MemberInitializer):
             truncating an episode.
         :param backup_dst: if specified, will print backup path to stdout
         :param print_stats: if True, will print run stats to stdout
-        :param outer_run: If set, then the AgentRun created by this function
-            will set this as their parent. Else, it will try to set the
-            currently active component run, else it won't set a parent.
+        :param outer_run: If set, then the AgentRun created by this
+            function will set this as their parent. Else, it will try to
+            set the currently active component run, else it won't set a parent.
 
         :returns: None
         """
@@ -128,12 +128,12 @@ class Agent(MemberInitializer):
             total_episodes += run_size
 
     def start_agent_run(self, run_type: str, outer_run: AgentRun) -> None:
-        from pcs import active_component_run  # avoid circular import
+        from pcs import active_output  # avoid circular import
 
         agent_comp = self.__component__
         env_comp = self.environment.__component__
         if not outer_run:
-            outer_run = active_component_run(self)
+            outer_run = active_output(self)
             if outer_run:
                 assert env_comp in (
                     outer_run.run_command.component.dependency_list()

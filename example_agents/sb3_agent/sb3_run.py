@@ -6,7 +6,7 @@ from typing import Optional
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import BasePolicy
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentRun
 
 
 class EvaluateCallback:
@@ -123,7 +123,7 @@ class SB3Run(AgentRun):
         :param name: the filename of the artifact to restore.
         :return: ID of the Run found in MLflow, or None if none were found.
         """
-        mlflow_runs = cls._mlflow_client.search_runs(
+        mlflow_runs = cls.MLFLOW_CLIENT.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.SB3_RUN_TAG_KEY} ILIKE "%"',
@@ -133,9 +133,7 @@ class SB3Run(AgentRun):
             # for the first run that contains a policy by the name provided.
             for run in mlflow_runs:
                 try:
-                    cls._mlflow_client.download_artifacts(
-                        run.info.run_id, name
-                    )
+                    cls.MLFLOW_CLIENT.download_artifacts(run.info.run_id, name)
                 except OSError:
                     continue  # No policy was logged in this run, keep trying.
                 print(
@@ -143,5 +141,5 @@ class SB3Run(AgentRun):
                     f"in {run.info.run_id}."
                 )
                 # Create and return an SB3Run out of this MLflow run.
-                return cls.from_existing_run_id(run.info.run_id)
+                return cls.from_existing_mlflow_run(run.info.run_id)
         print(f"SB3Run: No SB3 policy with name '{name}' found.")

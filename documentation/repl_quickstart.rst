@@ -20,22 +20,22 @@ In the example below we first define a very basic class called ``Adder``.
 Then we use PCS to track the execution of a method on this class and share the
 results::
 
-  >>> from pcs import Component
+  >>> from pcs import Module
   >>> class Adder:
   ...     def add_one(self, x):
   ...         return x + 1
   ...
-  >>> adder_component = Component.from_class(Adder, instantiate=True)
+  >>> adder_component = Module.from_class(Adder, instantiate=True)
   >>> adder_component.run_with_arg_set('add_one', {'Adder':{'add_one':{'x':1}}})
 
 Let's break down the example above. First we import one of the core PCS
-abstractions: **Component**.  A Component wraps a Python object (in this case
+abstractions: **Module**.  A Module wraps a Python object (in this case
 a Python class) and provides facilities for tracking and sharing.
-Then we define our ``Adder`` class and wrap it in a Component. Finally
+Then we define our ``Adder`` class and wrap it in a Module. Finally
 we run our ``Adder.add_one()`` function in a reproducible and shareable
 way by calling run on the component.
 
-That's it!  Using the ``run`` method on our Component automatically instruments
+That's it!  Using the ``run`` method on our Module automatically instruments
 our call to ``Adder.add_one`` and tracks its inputs and outputs so we can
 easily share and reproduce this program execution.
 

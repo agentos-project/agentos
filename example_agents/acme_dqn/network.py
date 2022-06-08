@@ -2,10 +2,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
+import module_manager
 import sonnet as snt
 import tensorflow as tf
 
-from pcs.run import Run
+from pcs.mlflow_run import Run
 
 
 class TFModelSaver:
@@ -15,7 +16,7 @@ class TFModelSaver:
     """
 
     @classmethod
-    def save(cls, save_as_name: str, network: tf.Module, run=None):
+    def save(cls, save_as_name: str, network: module_manager.Module, run=None):
         print(f"in save, network is {network}.")
         dir_path = Path(tempfile.mkdtemp())
         print(
@@ -29,7 +30,7 @@ class TFModelSaver:
         shutil.rmtree(dir_path)
 
     @classmethod
-    def restore(cls, save_as_name: str, network: tf.Module):
+    def restore(cls, save_as_name: str, network: module_manager.Module):
         runs = Run.get_all_runs()
         for run in runs:
             try:

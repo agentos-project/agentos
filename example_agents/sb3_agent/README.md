@@ -13,7 +13,7 @@ environment `PongNoFrameskip-v4`, add the following flag to the commands below:
 Train the agent by running the following from the command-line:
 
 ```bash
-agentos run sb3_agent --entry-point learn
+agentos run sb3_agent --function-name learn
 ```
 
 Optional command-line arguments:
@@ -26,7 +26,7 @@ Optional command-line arguments:
 Evaluate the agent by running the following from the command-line:
 
 ```bash
-agentos run sb3_agent --entry-point evaluate
+agentos run sb3_agent --function-name evaluate
 ```
 
 Optional command-line arguments:
@@ -40,7 +40,7 @@ Reset agent (including the backing model) by running the following from the
 command-line:
 
 ```bash
-agentos run sb3_agent --entry-point reset
+agentos run sb3_agent --function-name reset
 ```
 
 ### Publish a run

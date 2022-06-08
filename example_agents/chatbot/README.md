@@ -3,5 +3,5 @@
 Run the chatbot as follows:
 
 ```bash
-agentos run chatbot --entry-point advance
+agentos run chatbot --function-name advance
 ```

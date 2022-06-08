@@ -1,36 +1,79 @@
-repos:
+specs:
     local_dir:
-        type: local
+        type: LocalRepo
         path: .
 
-components:
-    agent:
-        repo: local_dir
+    agent_module:
+        type: Module
+        repo: spec:local_dir
         file_path: ./agent.py
-        class_name: {agent_name}
         requirements_path: ./requirements.txt
-        instantiate: True
-        dependencies:
-            environment: environment
-            policy: policy
-            dataset: dataset
+
+    agent_class:
+        type: Class
+        module: spec:agent_module
+        name: BasicAgent
+
+    agent_argument_set:
+        type: ArgumentSet
+        kwargs:
+            environment: spec:environment
+            policy: spec:policy
+            dataset: spec:dataset
+
+    agent:
+        type: Instance
+        instance_of: spec:agent_class
+        name: null
+        argument_set: spec:agent_argument_set
+
+    environment_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./environment.py
+
+    environment_class:
+        type: Class
+        module: spec:environment_module
+        name: Corridor
 
     environment:
-        repo: local_dir
-        file_path: ./environment.py
-        class_name: Corridor
-        instantiate: True
+        type: Instance
+        instance_of: spec:environment_class
+        argument_set: null
+        name: null
+
+    policy_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./policy.py
+
+    policy_class:
+        type: Class
+        module: spec:policy_module
+        name: RandomPolicy
 
     policy:
-        repo: local_dir
-        file_path: ./policy.py
-        class_name: RandomPolicy
-        instantiate: True
-        dependencies:
-            environment: environment
-    
-    dataset:
-        repo: local_dir
+        type: Instance
+        instance_of: spec:policy_class
+        argument_set:
+            type: ArgumentSet
+            kwargs:
+                environment: spec:environment
+        name: null
+
+    dataset_module:
+        type: Module
+        repo: spec:local_dir
         file_path: ./dataset.py
-        class_name: BasicDataset
-        instantiate: True
+
+    dataset_class:
+        type: Class
+        module: spec:dataset_module
+        name: BasicDataset
+
+    dataset:
+        type: Instance
+        instance_of: spec:dataset_class
+        argument_set: null
+        name: null

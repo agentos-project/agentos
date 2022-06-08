@@ -10,9 +10,9 @@ from utils import SB3_AGENT_DIR, run_in_dir, run_test_command
 from agentos.cli import freeze, init, run, status
 
 
-def test_cli_init(tmpdir):
+def test_cli_init(cli_runner, tmpdir):
     with run_in_dir(tmpdir):
-        run_test_command(init)
+        run_test_command(cli_runner, init)
         expected_file_names = [
             "agent.py",
             "environment.py",
@@ -34,19 +34,25 @@ def test_cli_init(tmpdir):
         # Test basic run commands work on initialized agent
         run_args = ["agent"]
         run_1_kwargs = {}
-        run_test_command(run, cli_args=run_args, cli_kwargs=run_1_kwargs)
-        run_2_kwargs = {"-A": "num_episodes=10"}
-        run_test_command(run, cli_args=run_args, cli_kwargs=run_2_kwargs)
+        run_test_command(
+            cli_runner, run, cli_args=run_args, cli_kwargs=run_1_kwargs
+        )
+        run_2_kwargs = {"--arg-set-kwargs": "{'num_episodes': 10}"}
+        run_test_command(
+            cli_runner, run, cli_args=run_args, cli_kwargs=run_2_kwargs
+        )
 
 
-def test_cli_status():
+def test_cli_status(cli_runner):
     with run_in_dir(SB3_AGENT_DIR):
-        run_test_command(status)
-        run_args = ["sb3_agent", "--use-outer-env"]
-        run_test_command(status, cli_args=run_args)
+        run_test_command(cli_runner, status)
+        run_args = ["sb3_agent"]
+        run_test_command(cli_runner, status, cli_args=run_args)
 
 
-def test_cli_freeze(tmpdir):
-    run_args = ["sb3_agent", "-f", "--use-outer-env"]
+def test_cli_freeze(cli_runner, tmpdir):
+    run_args = ["sb3_agent", "-f"]
     run_kwargs = {"--registry-file": str(SB3_AGENT_DIR / "components.yaml")}
-    run_test_command(freeze, cli_args=run_args, cli_kwargs=run_kwargs)
+    run_test_command(
+        cli_runner, freeze, cli_args=run_args, cli_kwargs=run_kwargs
+    )

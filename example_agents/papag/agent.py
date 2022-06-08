@@ -27,7 +27,7 @@ from stable_baselines3.common.atari_wrappers import (
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
-from pcs.component_run import active_component_run
+from pcs.output import active_output
 
 
 class PAPAGAgent:
@@ -42,7 +42,21 @@ class PAPAGAgent:
 
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self, algo_name: str, env_name: str):
+    def __init__(
+        self,
+        PAPAGRun,
+        AtariEnv,
+        CartPoleEnv,
+        A2C_ACKTR,
+        PPO,
+        algo_name: str,
+        env_name: str,
+    ):
+        self.PAPAGRun = PAPAGRun
+        self.AtariEnv = AtariEnv
+        self.CartPoleEnv = CartPoleEnv
+        self.A2C_ACKTR = A2C_ACKTR
+        self.PPO = PPO
         self.algo_name = algo_name
         self.env_name = env_name
         model_name = self.get_model_name()
@@ -93,7 +107,7 @@ class PAPAGAgent:
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
         with self.PAPAGRun.evaluate_run(
-            outer_run=active_component_run(self),
+            outer_run=active_output(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,
@@ -177,7 +191,7 @@ class PAPAGAgent:
         num_processes = int(num_processes)
         env_class, _ = self._get_env_class_and_kwargs()
         with self.PAPAGRun.learn_run(
-            outer_run=active_component_run(self),
+            outer_run=active_output(self),
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_class.__component__.identifier,

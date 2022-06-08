@@ -1,6 +1,9 @@
+import pprint
 from pathlib import Path
 
+from pcs.class_manager import Class
 from pcs.component import Component
+from pcs.module_manager import Module
 from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -11,40 +14,29 @@ from tests.utils import (
 
 def test_repo_from_github():
     aos_repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
-    agent_component = Component.from_repo(
-        aos_repo,
-        identifier=f"agent=={TESTING_BRANCH_NAME}",
-        file_path="agentos/core.py",
-        class_name="Agent",
-        instantiate=True,
+    print(aos_repo.to_spec())
+    agent_class = Class(
+        name="Agent",
+        module=Module.from_repo(
+            aos_repo,
+            version=TESTING_BRANCH_NAME,
+            file_path="agentos/core.py",
+        ),
     )
-    assert hasattr(agent_component.get_object(), "evaluate")
-    assert agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
-    assert agent_component.repo.identifier == (
-        f"{TESTING_GITHUB_ACCOUNT}__{TESTING_GITHUB_REPO}"
-    )
-
-    aos_repo_w_custom_id = Repo.from_github(
-        "agentos-project", "agentos", identifier="custom_ident"
-    )
-    diff_agent_component = Component.from_repo(
-        aos_repo_w_custom_id,
-        identifier=f"agent=={TESTING_BRANCH_NAME}",
-        file_path="agentos/core.py",
-        class_name="Agent",
-        instantiate=True,
-    )
-    assert hasattr(diff_agent_component.get_object(), "evaluate")
-    assert diff_agent_component.identifier == f"agent=={TESTING_BRANCH_NAME}"
-    assert diff_agent_component.repo.identifier == "custom_ident"
+    print("===============")
+    print(pprint.pprint(agent_class.to_registry().to_dict()))
+    assert hasattr(agent_class.get_object(), "evaluate")
+    assert agent_class.module.version == TESTING_BRANCH_NAME
+    assert agent_class.module.repo.identifier == aos_repo.identifier
 
 
 def test_local_to_from_registry():
-    repo = LocalRepo("test_id")
+    repo = LocalRepo("test_path")
     reg = repo.to_registry()
-    repo_from_reg = Repo.from_registry(reg, "test_id")
+    repo_from_reg = Component.from_registry(reg, repo.identifier)
+    print(pprint.pprint(repo.to_registry().to_dict()))
     assert repo.identifier == repo_from_reg.identifier
-    assert repo.local_repo_path == repo_from_reg.local_repo_path
+    assert repo.path == repo_from_reg.path
 
 
 def test_repo_checkout_bug():

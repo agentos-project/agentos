@@ -1,20 +1,34 @@
 # https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail#a2c
 # python main.py --env-name "PongNoFrameskip-v4"
 
-papag_agent:
-    __init__:
-        env_name: PongNoFrameskip-v4
-        algo_name: a2c
-    evaluate:
-        lr: .0007
-        clip_param: 0.2
-        value_loss_coef: 0.5
-        num_processes: 8
-        num_steps: 5
-        num_mini_batch: 32
-        log_interval: 10
-        entropy_coef: 0.01
-    learn:
+specs:
+    a2c_pong_papag_eval_command:
+        type: Command
+        component: spec:a2c_pong_papag_agent
+        function_name: evaluate
+        argument_set: spec:evaluation_args
+
+    a2c_pong_papag_learn_command:
+        type: Command
+        component: spec:a2c_pong_papag_agent
+        function_name: evaluate
+        argument_set: spec:a2c_pong_learn_args
+
+    a2c_pong_papag_agent:
+        type: Instance
+        instance_of: spec:papag_class  # defined in papag/components.yaml
+        argument_set:
+            type: ArgumentSet
+            args:
+                - spec:PAPAGRun
+                - spec:AtariEnv
+                - spec:CartPoleEnv
+                - spec:A2C_ACKTR
+                - spec:PPO
+                - a2c
+                - PongNoFrameskip-v4
+
+    a2c_pong_learn_args:
         lr: .0007
         clip_param: 0.2
         value_loss_coef: 0.5

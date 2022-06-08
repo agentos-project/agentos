@@ -1,7 +1,7 @@
 from gym.wrappers import TimeLimit
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from pcs.component_run import active_component_run
+from pcs.output import active_output
 
 
 # A basic agent.
@@ -10,10 +10,18 @@ class SB3PPOAgent:
 
     def __init__(
         self,
+        AtariEnv,
+        CartPoleEnv,
+        PPO,
+        SB3AgentRun,
         env_name: str = "CartPole-v1",
         load_most_recent_run: bool = True,
         model_input_run_id: str = None,
     ):
+        self.AtariEnv = AtariEnv
+        self.CartPoleEnv = CartPoleEnv
+        self.PPO = PPO
+        self.SB3AgentRun = SB3AgentRun
         self.env_name = env_name
         self.model_name = f"{self.env_name}-ppo.zip"
         self.environment = self._get_environment()
@@ -35,9 +43,10 @@ class SB3PPOAgent:
                 return
         if model_input_run_id:
             print(
-                f"Loading model from AgentOS/MLflow run {model_input_run_id}."
+                "Loading model from AgentOS/MLflow run "
+                f"{model_input_run_id}."
             )
-            self.model_input_run = self.SB3AgentRun.from_existing_run_id(
+            self.model_input_run = self.SB3AgentRun.from_existing_mlflow_run(
                 model_input_run_id
             )
             policy_path = self.model_input_run.download_artifacts(
@@ -77,8 +86,8 @@ class SB3PPOAgent:
             raise Exception(f"Unknown env_name: {self.env_name}")
 
     @property
-    def active_run(self):
-        return active_component_run(self)
+    def active_output(self):
+        return active_output(self)
 
     def evaluate(
         self,
@@ -91,7 +100,7 @@ class SB3PPOAgent:
     ):
         env_cls = self._get_environment_cls()
         with self.SB3AgentRun.evaluate_run(
-            outer_run=self.active_run,
+            outer_run=self.active_output,
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,
@@ -111,7 +120,7 @@ class SB3PPOAgent:
     def learn(self, total_timesteps=250):
         env_cls = self._get_environment_cls()
         with self.SB3AgentRun.learn_run(
-            outer_run=self.active_run,
+            outer_run=self.active_output,
             model_input_run=self.model_input_run,
             agent_identifier=self.__component__.identifier,
             environment_identifier=env_cls.__component__.identifier,

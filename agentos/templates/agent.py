@@ -2,8 +2,13 @@
 from statistics import mean, median
 
 
-class {agent_name}:
+class BasicAgent:
     DEFAULT_ENTRY_POINT = "run_episodes"
+
+    def __init__(self, environment, policy, dataset):
+        self.environment = environment
+        self.policy = policy
+        self.dataset = dataset
 
     def run_episodes(self, num_episodes=1):
         for i in range(int(num_episodes)):

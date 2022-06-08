@@ -1,7 +1,7 @@
 import logging
 
 from django.test import LiveServerTestCase
-from registry.models import Component, ComponentDependency, Repo
+from registry.models import Component
 from registry.serializers import ComponentSerializer
 
 logger = logging.getLogger(__name__)
@@ -12,7 +12,8 @@ class ModelTests(LiveServerTestCase):
         pass
 
     def test_serializers(self):
-        r = Repo.objects.create(identifier="r")
+        # r = Repo.objects.create(identifier="r")
+        r = {}  # NJTODO - FIXME
         component = Component.objects.create(
             identifier="x",
             name="x",
@@ -31,13 +32,14 @@ class ModelTests(LiveServerTestCase):
             file_path=".",
             instantiate=False,
         )
-        cd = ComponentDependency(
-            depender=component, dependee=component_two, attribute_name="x"
-        )
-        self.assertIsNotNone(component_two.dependencies.all())
+        # cd = ComponentDependency(
+        #    depender=component, dependee=component_two, attribute_name="x"
+        # )
+        cd = {}  # NJTODO - FIXME
+        self.assertIsNotNone(component_two.dependencies().all())
         cd.save()
         self.assertEqual(component.depender_set.count(), 1)
         self.assertEqual(component.dependee_set.count(), 0)
-        self.assertEqual(component.dependencies.count(), 1)
+        self.assertEqual(component.dependencies().count(), 1)
         c_ser = ComponentSerializer(component)
         self.assertEqual(c_ser.data["identifier"], "x")

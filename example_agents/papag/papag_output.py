@@ -7,7 +7,7 @@ import torch
 from a2c_ppo_acktr import utils
 from a2c_ppo_acktr.utils import get_vec_normalize
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentRun
 
 
 class PAPAGRun(AgentRun):
@@ -20,7 +20,7 @@ class PAPAGRun(AgentRun):
     https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
     """
 
-    PAPAG_RUN_TAG_KEY = "papag_agent_run"
+    PAPAG_RUN_TAG_KEY = "papag_agent_output"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -49,12 +49,12 @@ class PAPAGRun(AgentRun):
             print("PAPAGRun: no episode data to log")
 
     @classmethod
-    def _get_artifact_path(cls, run, name: str) -> Path:
-        return cls._mlflow_client.download_artifacts(run.info.run_id, name)
+    def _get_artifact_path(cls, mlflow_run_id: str, name: str) -> Path:
+        return cls.MLFLOW_CLIENT.download_artifacts(mlflow_run_id, name)
 
     @classmethod
-    def get_last_logged_model_run(cls, name: str) -> AgentRun:
-        runs = cls._mlflow_client.search_runs(
+    def get_last_logged_model_run(cls, name: str) -> "PAPAGRun":
+        runs = cls.MLFLOW_CLIENT.search_runs(
             experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
             order_by=["attribute.start_time DESC"],
             filter_string=f'tag.{cls.PAPAG_RUN_TAG_KEY} ILIKE "%"',
@@ -64,10 +64,10 @@ class PAPAGRun(AgentRun):
             # for the first run that contains a policy by the name provided.
             for run in runs:
                 try:
-                    cls._get_artifact_path(run, name)
+                    cls._get_artifact_path(run.info.run_id, name)
                 except OSError:
                     continue  # No policy was logged in this run, keep trying.
-                return run
+                return PAPAGRun.from_existing_mlflow_run(run.info.run_id)
         return None
 
     @classmethod
@@ -81,7 +81,7 @@ class PAPAGRun(AgentRun):
         run = cls.get_last_logged_model_run(name)
         if run:
             print(f"PAPAGRun: Found last_logged policy '{name}'.")
-            model_path = cls._get_artifact_path(run, name)
+            model_path = cls._get_artifact_path(run.mlflow_run_id, name)
             # We need the same stats for normalization as used in training
             actor_critic, obs_rms = torch.load(model_path, map_location="cpu")
 

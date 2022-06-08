@@ -37,13 +37,13 @@ The key features provided by PCS, our implementation of the component programmin
 Key Concepts
 ------------
 
-At the core of PCS is the idea of a **Component**.  A Component is an
+At the core of PCS is the idea of a **Module**.  A Module is an
 abstraction for encapsulating and sharing runnable Python code in a way that is
-portable and easy to reproduce.  A Component wraps a Python object (e.g. a
+portable and easy to reproduce.  A Module wraps a Python object (e.g. a
 class instance, a class, or a module) and tracks that object's setup
 requirements as well as its inputs and outputs.
 
-More specifically, a Component consists of the following information:
+More specifically, a Module consists of the following information:
 
 * Repo - a reference to a location where the source code can be fetched (e.g. a
   git URL)
@@ -51,35 +51,35 @@ More specifically, a Component consists of the following information:
 * Module Path - the location of a Python file within the repo from which the
   managed object can be fetched.
 
-* Object Name - the name of the Python object the Component manages.
+* Object Name - the name of the Python object the Module manages.
 
 * Requirements Path - the location of a requirements file that can be installed
   using ``pip`` (or a ``setup.py`` file) that list the packages needed by the
-  Component to run.
+  Module to run.
 
-* Dependencies - a list of other Components on which this Component depends.
+* Dependencies - a list of other Components on which this Module depends.
 
-A developer uses a Component by running an **entry point** on it.  An entry
-point is a managed, runnable function on the Component.  A Component may have
+A developer uses a Module by running an **entry point** on it.  An entry
+point is a managed, runnable function on the Module.  A Module may have
 one or more entry points, and an entry point may be passed arguments (via a
 :py:func:`pcs.argument_set.ArgumentSet`) when run.  When an entry point is run in the PCS runtime, it
 automatically has its inputs and outputs instrumented and recorded for
 reproducibility and sharing purposes.
 
-When a Component's entry point is run under PCS, a **Run** object gets created.
+When a Module's entry point is run under PCS, a **Run** object gets created.
 Runs are used for tracking the outputs of executing code, which can be used for
 debugging, analysis, and as the inputs by subsequent runs. Runs can be shared.
 
 In PCS, Runs provide a logging interface and track the outputs and results of
-code execution.  A **Component Run** is a specific type of Run that contains
-information about about a particular execution of a Component's entry point
+code execution.  A **Module Run** is a specific type of Run that contains
+information about about a particular execution of a Module's entry point
 with a particular Argument Set.  Whenever an entry point is executed under
-PCS, a Component Run gets created.
+PCS, a Module Run gets created.
 
 All Runs enforce semantics around the type of outputs and results they track,
 dividing the world into info, data, and artifacts:
 
-* Info is metadata (start-time, run_id)
+* Info is metadata (start-time, mlflow_run_id)
 * Data can be metrics, parameters, and tags
 * Artifacts are files or folders produced during the Run
   

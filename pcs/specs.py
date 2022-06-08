@@ -1,94 +1,128 @@
 """
-The spec types in this file specify which types of objects can be added to a
-Registry. They are literally types, and used in type annotations on core
-abstractions.
-
-Though this isn't currently enforced by the types, objects that are Specs
-should be serializable to YAML format and are human readable and manageable.
-
-Currently dicts are most often used where a Spec is required by type
-signatures.
-
 Specs are always mappings. By default, specs map from an identifier string to
-a mapping of key-value properties of the spec; and in some specs such as
-ArgumentSetSpec, those values can themselves be mappings.
+a mapping of key-value properties of the spec
 
 For developer convenience many functions support flattened specs, which have
 the spec identifier at the same level as the rest of the spec properties.
 """
 
 import copy
-import json
-from typing import Any, Mapping, Union
+from collections import UserDict
+from typing import Callable, Dict, Mapping
 
-from pcs.identifiers import ComponentIdentifier
-
-FlatSpec = Mapping[str, str]
+from pcs.utils import find_and_replace_leaves
 
 
-NestedComponentSpec = Mapping[str, Mapping[str, str]]
-ComponentSpec = Union[NestedComponentSpec, FlatSpec]
+class Spec(UserDict):
+    """
+    A Specs is a Mapping of the form::
 
+        {
+            identifier:
+                {
+                    type: some_type_here
+                    <optional other key->val attributes>
+                }
+        }
 
-class VersionedSpec:
-    SEPARATOR = "=="
+    A spec is always a nested dict, i.e.: a dict inside a dict.
+    The inner dict is called the 'body'. There must be
+    exactly one key in the outer dict: the identifier of the spec, which
+    is a hash of the inner dict.
 
+    Any Spec can also be represented as a flat dict, of the form::
 
-class ComponentSpecKeys:
-    IDENTIFIER = "identifier"
-    NAME = "name"
-    VERSION = "version"
-    CLASS_NAME = "class_name"
-    FILE_PATH = "file_path"
-    DEPENDENCIES = "dependencies"
+        {identifier: <str>, type: <str>, <other key->val flat_spec>}
+    """
 
+    def __init__(self, input_dict: Dict):
+        super().__init__()
+        self.data = input_dict
+        self._check_format()
 
-# Repo is serialized to a YAML dictionary with the following (unflatted) form:
-# {repo_identifier: {repo_property_key: repo_property_val}}
-NestedRepoSpec = Mapping[str, Mapping[str, str]]
-RepoSpec = Union[NestedRepoSpec, FlatSpec]
+    @property
+    def identifier(self):
+        self._check_format()
+        for ident, body in self.data.items():
+            return ident
+        raise Exception(f"{self} is a malformed")
 
+    @property
+    def body(self):
+        self._check_format()
+        for ident, body in self.data.items():
+            return body
 
-class RepoSpecKeys:
-    IDENTIFIER = "identifier"
-    TYPE = "type"
-    URL = "url"
-    PATH = "path"
+    @property
+    def type(self) -> str:
+        from pcs.component import Component  # Avoid circular import.
 
+        return self.body[Component.TYPE_KEY]
 
-# A arg_set is serialized as a ArgumentSetSpec, which is a YAML dictionary
-# with the following structure:
-# {component_name: {entry_point_name: {arg_name: arg_val}}
-#
-# arg_value can be any type supported by YAML, which includes:
-# scalars (numeric or string), potentially nested lists or dictionaries with
-# scalars as leaf values.
-#
-# Note that you can have a run use complex types via the dependencies
-# mechanism which allows a component to depend on other components,
-# which themselves can be instances of an arbitrary Python class.
-# TODO: Figure out a better type than Any for the leaf type here.
-#       Specifically, one that captures the required serializability.
-ArgumentSetSpec = Mapping[str, Mapping[str, Mapping[str, Any]]]
-ArgumentSetSpec.identifier_key = "identifier"
+    @property
+    def as_kwargs(self):
+        return {k: v for k, v in self.body.items() if k != "type"}
 
+    def to_dict(self, flatten=False):
+        from pcs.component import Component  # Avoid circular import.
 
-RunCommandSpec = Mapping
+        if flatten:
+            result = {}
+            result.update(self.body.copy())
+            result[Component.IDENTIFIER_KEY] = self.identifier[:]
+            return result
+        else:
+            return {self.identifier[:]: self.body.copy()}
 
+    def _check_format(self):
+        assert len(self.data) == 1, (
+            f"len(self.data) must be 1, but is {len(self.data)}. self.data "
+            f"is:\n{self.data}"
+        )
+        from pcs.component import Component  # Avoid circular import.
 
-class RunCommandSpecKeys:
-    IDENTIFIER = "identifier"  # for flattened RunCommandSpec
-    COMPONENT_ID = "component"
-    ENTRY_POINT = "entry_point"
-    ARGUMENT_SET = "argument_set"
-    LOG_RETURN_VALUE = "log_return_value"
+        for ident, body in self.data.items():
+            assert Component.spec_body_to_identifier(body) == ident, (
+                f"{Component.spec_body_to_identifier(body)} != {ident}.\n"
+                f"body is:\n{body}"
+            )
 
+    def _update_identifier(self):
+        from pcs.component import Component  # Avoid circular import.
 
-RunSpec = Mapping
+        for ident, body in self.data.items():
+            self.data = {Component.spec_body_to_identifier(body): body}
+        self._check_format()
 
+    def update_body(self, update_dict: Dict) -> None:
+        self.data[self.identifier].update(update_dict)
+        self._update_identifier()
 
-class RunSpecKeys:
-    IDENTIFIER = "identifier"
+    def replace_in_body(
+        self, filter_fn: Callable, replace_fn: Callable
+    ) -> bool:
+        found = find_and_replace_leaves(self.body, filter_fn, replace_fn)
+        self._update_identifier()
+        return found
+
+    @classmethod
+    def from_flat(cls, flat_spec: Dict) -> "Spec":
+        from pcs.component import Component  # Avoid circular import.
+
+        assert Component.TYPE_KEY in flat_spec
+        ident_computed = Component.spec_body_to_identifier(flat_spec)
+        flat_spec_copy = copy.deepcopy(flat_spec)
+        if Component.IDENTIFIER_KEY in flat_spec:
+            ident_in = flat_spec_copy.pop(Component.IDENTIFIER_KEY)
+            assert ident_computed == ident_in, (
+                "The identifier in the provided dict does not match the "
+                "hash of the other contents (i.e. the attributes) of the "
+                "dict provided."
+            )
+        return cls({ident_computed: flat_spec_copy})
+
+    def to_flat(self):
+        return flatten_spec(self.data)
 
 
 def flatten_spec(nested_spec: Mapping) -> Mapping:
@@ -98,37 +132,14 @@ def flatten_spec(nested_spec: Mapping) -> Mapping:
     flat_spec = {}
     for identifier, inner_spec in nested_spec.items():
         assert type(identifier) == str
+        from pcs.component import Component  # Avoid circular import.
+
+        flat_spec[Component.IDENTIFIER_KEY] = identifier
         flat_spec.update(copy.deepcopy(inner_spec))
-
-        def err(attr):
-            return (
-                f"'{attr}' is a reserved spec key: if it exists inside a "
-                "nested spec, its value must match the spec's identifier."
-            )
-
-        if ComponentSpecKeys.IDENTIFIER in flat_spec:
-            flat_spec_id = flat_spec[ComponentSpecKeys.IDENTIFIER]
-            assert flat_spec_id == identifier, err("identifier")
-        if ComponentSpecKeys.NAME in flat_spec:
-            name = ComponentIdentifier(identifier).name
-            assert flat_spec[ComponentSpecKeys.NAME] == name, err("name")
-        if ComponentSpecKeys.VERSION in flat_spec:
-            ver = ComponentIdentifier(identifier).version
-            assert flat_spec[ComponentSpecKeys.version] == ver, err("version")
-        flat_spec[ComponentSpecKeys.IDENTIFIER] = identifier
-        id_parts = identifier.split(VersionedSpec.SEPARATOR)
-        assert 0 < len(id_parts) <= 2, f"invalid identifier {identifier}"
-        flat_spec[ComponentSpecKeys.NAME] = id_parts[0]
-        if len(id_parts) == 2:
-            flat_spec[ComponentSpecKeys.VERSION] = id_parts[1]
-        else:
-            flat_spec[ComponentSpecKeys.VERSION] = None
     return flat_spec
 
 
-def unflatten_spec(
-    flat_spec: Mapping, preserve_inner_identifier: bool = False
-) -> Mapping:
+def unflatten_spec(flat_spec: Mapping) -> Dict:
     """
     Takes a flat spec, and returns a nested spec. A nested spec is a map
     from the spec's identifier to a map of the specs other key->value
@@ -136,46 +147,20 @@ def unflatten_spec(
     essentially flattening the outer two dictionaries into a single dictionary.
 
     :param flat_spec: a flat spec to unflatten.
-    :param preserve_inner_identifier: if true, do not delete 'identiifer',
-        'name', or 'version' keys (and their associated values) from the inner
-        part of the nested spec that is returned. Else, do remove them, i.e.,
-        normalize the spec.
     :return: Nested version of ``flat_spec``.
     """
-    assert ComponentSpecKeys.IDENTIFIER in flat_spec
-    identifier = flat_spec[ComponentSpecKeys.IDENTIFIER]
-    if VersionedSpec.SEPARATOR in identifier:
-        parts = identifier.split(VersionedSpec.SEPARATOR)
-        assert len(parts) == 2
-        for check_key in [ComponentSpecKeys.NAME, ComponentSpecKeys.VERSION]:
-            assert check_key in flat_spec, (
-                f"'{check_key} must be a key in a flat spec that "
-                "has a versioned identifier (i.e., that has an '==' in its "
-                "identifier."
-            )
-    dup_spec = copy.deepcopy(flat_spec)
-    if not preserve_inner_identifier:
-        if ComponentSpecKeys.NAME in dup_spec:
-            dup_spec.pop(ComponentSpecKeys.NAME)
-        if ComponentSpecKeys.VERSION in dup_spec:
-            dup_spec.pop(ComponentSpecKeys.VERSION)
-        if ComponentSpecKeys.IDENTIFIER in dup_spec:
-            dup_spec.pop(ComponentSpecKeys.IDENTIFIER)
+    from pcs.component import Component  # Avoid circular import.
+
+    assert Component.IDENTIFIER_KEY in flat_spec
+    identifier = flat_spec[Component.IDENTIFIER_KEY]
+    dup_spec = dict(copy.deepcopy(flat_spec))
+    dup_spec.pop(Component.IDENTIFIER_KEY)
     return {identifier: dup_spec}
 
 
-def is_flat(spec: Mapping) -> bool:
+def is_flat_spec(spec: Mapping) -> bool:
     assert len(spec) > 0  # specs must have at least one key-value pair.
-    # Nested specs have exactly one outer-most key, i.e., their identifier.
-    # Flat specs have more than one (the identifier and something else).
-    return not len(spec) == 1
+    # Flat specs must have an identifier in their outermost dict.
+    from pcs.component import Component  # Avoid circular import.
 
-
-def json_encode_flat_spec_field(spec: Mapping, field_name: str) -> Mapping:
-    assert is_flat(spec)
-    assert field_name in spec, f"no key '{field_name}' in spec '{spec}'."
-    spec_copy = copy.deepcopy(spec)
-    spec_copy[field_name] = json.encoder.JSONEncoder().encode(
-        spec_copy[field_name]
-    )
-    return spec_copy
+    return Component.IDENTIFIER_KEY in spec

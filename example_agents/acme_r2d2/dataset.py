@@ -9,7 +9,9 @@ import agentos
 
 
 class ReverbDataset(agentos.Dataset):
-    def __init__(self, **kwargs):
+    def __init__(self, environment, network, **kwargs):
+        self.environment = environment
+        self.network = network
         self.parameters = kwargs
         initial_state = self.network.rnn.initial_state(1)
         extra_spec = {
@@ -35,7 +37,7 @@ class ReverbDataset(agentos.Dataset):
         self.reverb_server = reverb.Server([replay_table], port=None)
         address = f"localhost:{self.reverb_server.port}"
 
-        # Component to add things into replay.
+        # Module to add things into replay.
         self.adder = adders.SequenceAdder(
             client=reverb.Client(address),
             period=self.parameters["replay_period"],

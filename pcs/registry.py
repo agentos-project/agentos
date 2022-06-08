@@ -1,4 +1,5 @@
 import abc
+import copy
 import json
 import logging
 import os
@@ -6,29 +7,20 @@ import pprint
 import shutil
 import tarfile
 import tempfile
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
 
 import requests
 import yaml
+from deepdiff import DeepDiff
 from dotenv import load_dotenv
 
-from pcs.identifiers import (
-    ComponentIdentifier,
-    RepoIdentifier,
-    RunCommandIdentifier,
-    RunIdentifier,
-)
-from pcs.specs import (
-    ComponentSpec,
-    NestedComponentSpec,
-    RepoSpec,
-    RunCommandSpec,
-    RunSpec,
-    flatten_spec,
-    is_flat,
-    json_encode_flat_spec_field,
-    unflatten_spec,
+from pcs.specs import Spec, flatten_spec, is_flat_spec, unflatten_spec
+from pcs.utils import (
+    is_identifier,
+    is_spec_body,
+    make_identifier_ref,
+    nested_dict_list_replace,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +28,6 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from pcs.component import Component
     from pcs.repo import Repo
-    from pcs.run import Run
 
 # add USE_LOCAL_SERVER=True to .env to talk to local server
 load_dotenv()
@@ -51,27 +42,34 @@ DEFAULT_REG_FILE = "components.yaml"
 
 
 class Registry(abc.ABC):
-    def __init__(self, base_dir: str = None):
-        self.base_dir = (
-            base_dir if base_dir else "."
-        )  # Used for file-backed Registry types.
-
     @staticmethod
     def from_dict(input_dict: Dict) -> "Registry":
-        return InMemoryRegistry(input_dict)
+        return InMemoryRegistry(input_dict=input_dict)
 
     @staticmethod
     def from_yaml(file_path: str) -> "Registry":
         with open(file_path) as file_in:
             config = yaml.safe_load(file_in)
-        return InMemoryRegistry(config, base_dir=str(Path(file_path).parent))
+        reg = InMemoryRegistry(input_dict=config)
+        updated_specs = []
+        for spec_id, spec_body in reg.specs.items():
+            if spec_body["type"] == "LocalRepo":
+                p = PurePath(spec_body["path"])
+                if not p.is_absolute():
+                    abs_path = (Path(file_path).parent / p).resolve()
+                    updated_spec = Spec.from_flat(copy.deepcopy(spec_body))
+                    updated_spec.update_body({"path": str(abs_path)})
+                    updated_specs.append((spec_id, updated_spec))
+        for old_id, updated in updated_specs:
+            reg.replace_spec(old_id, updated)
+        return reg
 
     @classmethod
     def from_file_in_repo(
         cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
     ) -> "Registry":
         """
-        Read in a registry file from an repo.
+        Read in a registry file from a repo.
 
         :param repo: Repo to load registry file from.
         :param file_path: Path within Repo that registry is located, relative
@@ -92,7 +90,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from pcs.component import Component  # Avoid circular ref.
+        from pcs.module_manager import Module  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo
@@ -105,26 +103,23 @@ class Registry(abc.ABC):
             relative_path = f.relative_to(
                 repo.get_local_repo_dir(version=version)
             )
-            c_name = str(relative_path).replace(os.sep, "__")
-            c_version = version if version else repo.default_version
-            c_identifier = f"{c_name}=={c_version}" if c_version else c_name
-            component_init_kwargs = {
+            mod_version = version if version else repo.default_version
+            module_kwargs = {
                 "repo": repo,
-                "identifier": (f"module:{c_identifier}"),
-                "file_path": str(relative_path),
-                "instantiate": False,
+                "file_path": str(relative_path).replace(r"\\", "/"),
+                "version": mod_version,
             }
             if repo.get_local_file_path(
-                requirements_file, version=c_version
+                requirements_file, version=mod_version
             ).is_file():
-                component_init_kwargs.update(
+                module_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )
-            mod_component = Component(**component_init_kwargs)
+            mod_component = Module(**module_kwargs)
             # TODO: add dependencies to component for every import
             #       statement in the file (or just the ones at the
             #       module level?)
-            reg.add_component(mod_component)
+            mod_component.to_registry(reg)
         return reg
         # TODO: finish this, add class components & class instance components?
 
@@ -148,211 +143,132 @@ class Registry(abc.ABC):
     def to_dict(self) -> Dict:
         raise NotImplementedError
 
-    def to_yaml(self, filename: str) -> None:
-        with open(filename, "w") as file:
-            yaml.dump(self.to_dict(), file)
+    def to_yaml(self, filename: str = None) -> None:
+        if filename:
+            with open(filename, "w") as file:
+                yaml.dump(self.to_dict(), file)
+        else:
+            return yaml.dump(self.to_dict())
 
+    @property
     @abc.abstractmethod
-    def get_repo_spec(
-        self,
-        repo_id: RepoIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RepoSpec]:
+    def specs(self) -> Mapping:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def get_component_specs(
-        self, filter_by_name: str = None, filter_by_version: str = None
-    ) -> NestedComponentSpec:
-        """
-        Return dictionary of component specs in this Registry, optionally
-        filtered by name and/or version; or None if none are found.
+    @property
+    def __contains__(self, identifier: str):
+        return identifier in self.specs
 
-        Each Component Spec is itself a dict mapping ComponentIdentifier to a
-        dict of properties that define the Component.
+    def __getitem__(self, identifier):
+        return self.specs[identifier]
 
-        Optionally, filter the list to match all filter strings provided.
-        Filters can be provided on name, version, or both.
-
-        If this registry contains zero component specs that match
-        the filter criteria (if any), then an empty dictionary is returned.
-
-        If ``filter_by_name`` and ``filter_by_version`` are provided,
-        then 0 or 1 components will be returned.
-
-        :param filter_by_name: return only components with this name.
-        :param filter_by_version: return only components with this version.
-        :param include_id_in_contents: add ``name`` and ``version`` fields to
-               innermost dict of the ComponentSpec Dict. This denormalizes the
-               spec by duplicating the ``name`` and ``version`` which are
-               already included via the ComponentIdentifier Dict key.
-
-        :returns: A dictionary of components in this registry, optionally
-                  filtered by name, version, or both. If no matching
-                  components are found, an empty dictionary is returned.
-        """
-        raise NotImplementedError
-
-    def get_component_spec(
+    def get_spec(
         self,
-        name: str,
-        version: str = None,
+        identifier: str,
         flatten: bool = False,
         error_if_not_found: bool = True,
-    ) -> Optional[ComponentSpec]:
+    ) -> Optional[Spec]:
         """
-        Returns the component spec with ``name`` and ``version``, if it exists,
-        or raise an Error if it does not. A component's name and version are
-        defined as its identifier's name and version.
+        Returns the spec dict with ``identifier`` if it exists, or raise an
+        Error (or optionally, return None) if it does not. Registries are not
+        allowed to contain multiple specs with the same identifier.
 
-        Registries are not allowed to contain multiple Components with the same
-        identifier. The Registry abstract base class does not enforce that all
-        Components have a version (version can be None) though some
-        sub-classes, such as web service backed registries, may choose to
-        enforce that constraint.
-
-        When version is unspecified or None, this function assumes that a
-        Component ``c`` exists where ``c.name == name`` and ``c.version is
-        None``, and throws an error otherwise.
-
-        Subclasses of Registry may choose to provide their own (more elaborate)
-        semantics for "default components". E.g., since WebRegistry does not
-        allow non-versioned components, it defines its own concept of a default
-        component by maintaining a separate map from component name to
-        a specific version of the component, and it allows that mapping to be
-        updated by users.
-
-        :param name: The name of the component to fetch.
-        :param version: Optional version of the component to fetch.
+        :param identifier: The identifier of the component to fetch.
         :param flatten: If True, flatten the outermost 2 layers of nested
             dicts into a single dict. In an unflattened component spec, the
-            outermost dict is from identifier (which is a string in the format
-            of name[==version]) Component component properties (class_name,
-            repo, etc.). In a flattened Component spec, the name and version
-            are included in the same dictionary as the class_name, repo,
-            dependencies, etc.
+            outermost dict is from identifier (which is a hash string)
+            to component properties. In a flattened Module spec, the
+            identifier is included in the dictionary with the other component
+            attributes.
         :param error_if_not_found: Set to False to return an empty dict in
             the case that a matching component is not found in this registry.
 
-        :returns: a ComponentSpec (i.e. a dict) matching the filter criteria
-            provided, else throw an error.
+        :returns: the spec dict with the identifier provided, if it exists
+            in this registry, otherwise either return None or throw an Error,
+            depending on whether error_if_not_found is True or False.
 
         """
-        components = self.get_component_specs(name, version)
-        if len(components) == 0:
-            if error_if_not_found:
-                raise LookupError(
-                    f"This registry does not contain any components that "
-                    f"match your filter criteria: name:'{name}', "
-                    f"version:'{version}'."
-                )
-            else:
-                return {}
-        if len(components) > 1:
-            versions = [
-                ComponentIdentifier(c_id).version for c_id in components.keys()
-            ]
-            version_str = "\n - ".join(versions)
+        if identifier in self.specs:
+            body = self.specs[identifier]
+        elif identifier in self.aliases:
+            body = self.specs[self.aliases[identifier]]
+        elif error_if_not_found:
             raise LookupError(
-                f"This registry contains more than one component with "
-                f"the name {name}. Please specify one of the following "
-                f"versions:\n - {version_str}"
+                f"'{identifier}' did not match any identifiers or aliases "
+                f"in this registry {self.to_dict()}"
             )
-        return flatten_spec(components) if flatten else components
-
-    def get_component_spec_by_id(
-        self,
-        identifier: Union[ComponentIdentifier, str],
-        flatten: bool = False,
-    ) -> Optional[ComponentSpec]:
-        identifier = ComponentIdentifier(identifier)
-        return self.get_component_spec(
-            identifier.name, identifier.version, flatten=flatten
-        )
+        else:
+            return None
+        spec = Spec.from_flat(body)
+        return spec.to_flat() if flatten else spec
 
     def get_specs_transitively_by_id(
         self,
-        identifier: Union[ComponentIdentifier, str],
+        identifier: str,
         flatten: bool = True,
-    ) -> (Sequence[ComponentSpec], Sequence[RepoSpec]):
-        identifier = ComponentIdentifier(identifier)
+    ) -> (Sequence[Dict], Sequence[Dict]):
         component_identifiers = [identifier]
         repo_specs = {}
         component_specs = {}
         while component_identifiers:
             c_id = component_identifiers.pop()
-            c_spec = self.get_component_spec_by_id(c_id, flatten=flatten)
+            c_spec = self.get_spec(c_id, flatten=flatten)
             inner_spec = c_spec if flatten else c_spec[c_id]
             component_specs[c_id] = c_spec
             repo_id = inner_spec["repo"]
-            repo_spec = self.get_repo_spec(repo_id, flatten=flatten)
+            repo_spec = self.get_spec(repo_id, flatten=flatten)
             repo_specs[repo_id] = repo_spec
             for d_id in inner_spec.get("dependencies", {}).values():
-                component_identifiers.append(ComponentIdentifier(d_id))
+                component_identifiers.append(d_id)
         return list(component_specs.values()), list(repo_specs.values())
 
-    def has_component_by_id(self, identifier: ComponentIdentifier) -> bool:
-        try:
-            self.get_component_spec_by_id(identifier)
-        except LookupError:
-            return False
-        return True
-
-    def has_component_by_name(self, name: str, version: str = None) -> bool:
-        identifier = ComponentIdentifier(name, version)
-        return self.has_component_by_id(identifier)
-
-    def get_run_command_spec(
-        self,
-        run_command_id: RunCommandIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunCommandSpec]:
+    @property
+    @abc.abstractmethod
+    def aliases(self) -> Mapping:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_run_spec(
-        self,
-        run_id: RunIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunSpec]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_registries(self) -> Sequence:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        """
-        Adds a component spec to this registry. *This does not add any
-        Registry Objects* to this registry.
-
-        To register a component, use the higher the level function
-        Component.register(registry) or Registry.add_component().
-
-        :param component_spec: The ``ComponentSpec`` to register.
-        """
+    def add_spec(self, spec: Dict) -> None:
         raise NotImplementedError
 
     def add_component(
-        self, component: "Component", recurse: bool = True, force: bool = False
+        self, component: "Component", recurse: bool = True
     ) -> None:
-        component.to_registry(self, recurse=recurse, force=force)
+        component.to_registry(self, recurse=recurse)
 
     @abc.abstractmethod
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
+    def add_alias(self, alias: str, identifier: str) -> None:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def add_run_spec(self, run_spec: RunSpec) -> None:
-        raise NotImplementedError
+    def update(self, other_registry) -> None:
+        for ident, body in other_registry.specs.items():
+            self.add_spec({ident: body})
+        for alias, i in other_registry.aliases.items():
+            if alias in self.aliases:
+                assert self.aliases[alias] == i
+            else:
+                self.add_alias(alias, i)
+
+    def replace_spec(self, identifier, new_spec):
+        replacements_to_do = [(identifier, new_spec)]
+        while replacements_to_do:
+            ident_to_replace, new_spec = replacements_to_do.pop()
+            self.add_spec(new_spec)
+            for ident, spec_body in self.specs.items():
+                spec_copy = Spec.from_flat(spec_body)  # Makes deepcopy
+                found = spec_copy.replace_in_body(
+                    lambda x: x == make_identifier_ref(ident_to_replace),
+                    lambda x: make_identifier_ref(new_spec.identifier),
+                )
+                if found:
+                    replacements_to_do.append((ident, spec_copy))
+            aliases_to_update = [
+                alias
+                for alias, ident in self.aliases.items()
+                if ident == ident_to_replace
+            ]
+            for alias in aliases_to_update:
+                self.aliases[alias] = new_spec.identifier
 
 
 class InMemoryRegistry(Registry):
@@ -360,108 +276,190 @@ class InMemoryRegistry(Registry):
     A mutable in-memory registry.
     """
 
-    def __init__(self, input_dict: Dict = None, base_dir: str = None):
-        super().__init__(base_dir)
-        self._registry = input_dict if input_dict else {}
-        if "components" not in self._registry.keys():
-            self._registry["components"] = {}
-        if "repos" not in self._registry.keys():
-            self._registry["repos"] = {}
-        if "runs" not in self._registry.keys():
-            self._registry["runs"] = {}
-        if "run_commands" not in self._registry.keys():
-            self._registry["run_commands"] = {}
-        if "registries" not in self._registry.keys():
-            self._registry["registries"] = []
+    SPECS_KEY = "specs"
+    ALIASES_KEY = "aliases"
 
-    def get_repo_spec(
-        self,
-        repo_id: RepoIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RepoSpec]:
-        return self._get_spec(repo_id, "repos", flatten, error_if_not_found)
-
-    def get_component_specs(
-        self, filter_by_name: str = None, filter_by_version: str = None
-    ) -> NestedComponentSpec:
-        if filter_by_name or filter_by_version:
-            try:
-                components = {}
-                for k, v in self._registry["components"].items():
-                    candidate_id = ComponentIdentifier(k)
-                    passes_filter = True
-                    if filter_by_name and candidate_id.name != filter_by_name:
-                        passes_filter = False
-                    if (
-                        filter_by_version
-                        and candidate_id.version != filter_by_version
-                    ):
-                        passes_filter = False
-                    if passes_filter:
-                        components[k] = v
-                return components
-            except KeyError:
-                return {}
-        return self._registry["components"]
-
-    def get_run_command_spec(
-        self,
-        run_command_id: RunCommandIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunCommandSpec]:
-        return self._get_spec(
-            run_command_id, "run_commands", flatten, error_if_not_found
-        )
-
-    def get_run_spec(
-        self,
-        run_id: RunIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RunSpec]:
-        return self._get_spec(run_id, "runs", flatten, error_if_not_found)
-
-    def _get_spec(
-        self,
-        identifier: str,
-        spec_type: str,
-        flatten: bool,
-        error_if_not_found: bool = True,
-    ) -> Optional[Dict]:
-        """
-        Factor out common functionality for fetching specs from the
-        internal represention of them. Because Components are special,
-        (i.e., their identifiers can be versioned) they are handled
-        differently.
-        """
-        assert spec_type in ["repos", "runs", "run_commands"]
-        if identifier not in self._registry[spec_type]:
-            if error_if_not_found:
-                raise LookupError(
-                    f"{self.__class__}l spec with identifier "
-                    f"'{identifier}' not found."
+    def __init__(self, input_dict: Dict = None):
+        self._registry = {self.SPECS_KEY: {}, self.ALIASES_KEY: {}}
+        if input_dict:
+            for key in input_dict.keys():
+                assert key == self.SPECS_KEY or key == self.ALIASES_KEY, (
+                    f"'input_dict' can not have top level level keys besides "
+                    f"'{self.SPECS_KEY}' and '{self.ALIASES_KEY}', but this "
+                    f"has '{key}'."
                 )
+            self._registry.update(input_dict)
+            self._resolve_inline_specs()
+            self._resolve_aliases()
+
+    @property
+    def specs(self) -> Mapping:
+        return self._registry[self.SPECS_KEY]
+
+    @property
+    def aliases(self) -> Mapping:
+        return self._registry.get(self.ALIASES_KEY, {})
+
+    # TODO: This function probably belongs in the Registry class.
+    def _resolve_inline_specs(self):
+        """
+        Allow developers to specify specs in-line. This will rewrite those
+        in a more normalized form. So, for example, resolve the following::
+
+            specs:
+                c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
+                    nested_spec1:  # nested spec
+                        type: ComponentType1
+                        nested_spec2:  # nested spec
+                            type: ComponentType2
+                            key2: val2
+                    non_spec_dict:
+                        - nested_spec3:  # nested spec
+                            type: ComponentType3
+                            key3: val3
+                        - "a string"
+
+        ...into::
+
+            specs:
+                c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
+                    nested_spec1: 271dfe754c6af7bc9d0729adfdc4338c8ee34398
+                    non_spec_dict:
+                        - 64d0729adf2e75caf7bc971d4398dc43cf883e3e
+                        - "a string"
+
+                271dfe754c6af7bc9d0729adfdc4338c8ee34398:
+                    type: ComponentType1
+                    nested_spec2: e75caf7bc964d0729adf271df838ee34398dc43c
+
+                e75caf7bc964d0729adf271df838ee34398dc43c:
+                    type: ComponentType2
+                    key2: val2
+
+                64d0729adf2e75caf7bc971d4398dc43cf883e3e:
+                    type: ComponentType3
+                    key3: val3
+
+        """
+        new_specs = {}
+        to_handle = []
+        for ident, body in self.specs.items():
+            new_specs[ident] = {}
+            to_handle += [(new_specs, ident, {k: v}) for k, v in body.items()]
+        while to_handle:
+            struct, key, elt = to_handle.pop()
+            if elt and isinstance(elt, dict):  # handling dict
+                for attr_key, attr_val in elt.items():
+                    if is_spec_body(attr_val):  # normalize nested_spec
+                        inner_spec = attr_val
+                        from pcs.component import Component
+
+                        inner_id = Component.spec_body_to_identifier(
+                            inner_spec
+                        )
+                        struct[key][attr_key] = make_identifier_ref(inner_id)
+                        new_specs[inner_id] = {}
+                        to_handle.append((new_specs, inner_id, inner_spec))
+                    else:
+                        try:
+                            struct[key]
+                        except (IndexError, KeyError):
+                            struct[key] = {}
+                        to_handle.append((struct[key], attr_key, attr_val))
+            elif elt and isinstance(elt, list):  # handling list
+                try:
+                    struct[key]
+                except (IndexError, KeyError):
+                    struct[key] = []
+                for i, sub_elt in enumerate(elt):
+                    to_handle.append((struct[key], i, sub_elt))
+            else:  # elt must be leaf
+                if isinstance(struct, list):
+                    assert isinstance(key, int)
+                    while key >= len(struct):  # List too short
+                        struct.append(None)
+                struct[key] = elt
+
+        self._registry[self.SPECS_KEY] = new_specs
+
+    # TODO: This function probably belongs in the Registry class.
+    def _resolve_aliases(self):
+        """
+        To make it easier for developers to write specs, we allow for
+        the input dictionary to have specs where the identifier is an
+        arbitrary string. We assume that any spec identifier that is not
+        currently a valid hash is an alias (i.e a 1-1 mapping for the hash
+        of the contents of the spec) and we resolve the dictionary by replacing
+        the string provided with the correct hash identifier of the underlying
+        spec contents dict and then updating the aliases section of the
+        registry with the string provided. E.g.,::
+
+            specs:
+                my_alias:  # Must be a spec, i.e.: have 'type' attr.
+                    type: MyComponentType
+                    other: my_2nd_alias
+                my_2nd_alias:
+                    type: MyComponentType
+
+        ...will be transformed into::
+
+            specs:
+                c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
+                    type: MyComponentType
+                    other: d076af7bc92c71dfe754293fdc43384398dac8ee
+                d076af7bc92c71dfe754293fdc43384398dac8ee:
+                    type: MyComponentType
+            aliases:
+                my_alias: c6af7bc9d07271dfe75429ac8ee34398dfdc4338
+                my_2nd_alias: d076af7bc92c71dfe754293fdc43384398dac8ee
+
+        """
+        new_specs = {}
+        new_aliases = self.aliases if self.aliases else {}
+        from pcs.component import Component  # Avoid circular import.
+
+        for id_or_alias, body in self.specs.items():
+            assert is_spec_body(body), (
+                "Trying to resolve aliases in something that is not spec "
+                f"body: {body}"
+            )
+            hash = Component.spec_body_to_identifier(body)
+            if is_identifier(id_or_alias):
+                new_specs[id_or_alias] = body
             else:
-                return None
-        spec = {identifier: self._registry[spec_type][identifier]}
-        return flatten_spec(spec) if flatten else spec
+                if id_or_alias in new_aliases:
+                    assert new_aliases[id_or_alias] == hash
+                else:
+                    new_aliases[id_or_alias] = hash
+                new_specs[hash] = body
+        # replace uses of aliases within the body of the spec.
+        for alias in new_aliases.keys():
+            for spec in new_specs:
+                nested_dict_list_replace(
+                    new_specs,
+                    f"^{make_identifier_ref(alias)}$",
+                    make_identifier_ref(new_aliases[alias]),
+                )
+        self._registry[self.SPECS_KEY] = new_specs
+        if new_aliases:
+            self._registry[self.ALIASES_KEY] = new_aliases
 
-    def get_registries(self) -> Sequence[Registry]:
-        return self._registry["registries"]
+    def add_spec(self, spec: Dict) -> None:
+        from pcs.component import Component  # Avoid circular import.
 
-    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        self._registry["components"].update(component_spec)
+        flat_spec = flatten_spec(spec)
+        identifier = flat_spec[Component.IDENTIFIER_KEY]
+        if identifier in self.specs:
+            spec_diff = DeepDiff(spec[identifier], self.specs[identifier])
+            assert not spec_diff, (
+                f"Spec {identifier} exists in registry and is different:\n\n"
+                f"{spec_diff}"
+            )
+            print(f"Spec {identifier} is already in registry; nothing to do.")
+        self._registry[self.SPECS_KEY].update(spec)
 
-    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        self._registry["repos"].update(repo_spec)
-
-    def add_run_spec(self, run_spec: RunSpec) -> None:
-        self._registry["runs"].update(run_spec)
-
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
-        self._registry["run_commands"].update(run_command_spec)
+    def add_alias(self, alias: str, identifier: str) -> None:
+        self._registry[self.ALIASES_KEY][alias] = identifier
 
     def to_dict(self) -> Dict:
         return self._registry
@@ -472,11 +470,60 @@ class WebRegistry(Registry):
     A web-server backed Registry.
     """
 
-    def __init__(self, root_api_url: str, base_dir: str = None):
+    SPEC_RESPONSE_BODY_KEY = "body"
+
+    def __init__(self, root_api_url: str):
         self.root_api_url = root_api_url
-        self.base_dir = (
-            base_dir if base_dir else "."
-        )  # Used for file-backed Registry types.
+
+    def __contains__(self, item):
+        pass
+
+    @property
+    def specs(self) -> Mapping:
+        pass
+
+    @property
+    def aliases(self) -> Mapping:
+        pass
+
+    def get_spec(
+        self,
+        identifier: str,
+        flatten: bool,
+        error_if_not_found: bool = True,
+    ) -> Optional[Dict]:
+        req_url = f"{self.root_api_url}/components/{identifier}/"
+        response = requests.get(req_url)
+        if not self._is_response_ok(response, error_if_not_found):
+            return None
+        data = json.loads(response.content)
+        from pcs.component import Component  # Avoid circular import.
+
+        flat_spec = {Component.IDENTIFIER_KEY: data[Component.IDENTIFIER_KEY]}
+        flat_spec.update(data[self.SPEC_RESPONSE_BODY_KEY])
+        return unflatten_spec(flat_spec) if not flatten else flat_spec
+
+    def add_spec(self, spec: dict) -> None:
+        """
+        Handles HTTP request to backing webserver to upload a spec.
+        Handles both nested and flat specs.
+        """
+        req_url = f"{self.root_api_url}/components/"
+        flat_spec = spec if is_flat_spec(spec) else flatten_spec(spec)
+        from pcs.component import Component  # Avoid circular import.
+
+        identifier = flat_spec.pop(Component.IDENTIFIER_KEY)
+        body = json.encoder.JSONEncoder().encode(flat_spec)
+        data = {
+            Component.IDENTIFIER_KEY: identifier,
+            self.SPEC_RESPONSE_BODY_KEY: body,
+        }
+        logger.debug(f"\nabout to post spec http request: {data}")
+        response = requests.post(req_url, data=data)
+        self._is_response_ok(response)
+        result = json.loads(response.content)
+        logger.debug("\npost spec http response:")
+        logger.debug(pprint.pformat(result))
 
     @staticmethod
     def _is_response_ok(
@@ -492,114 +539,13 @@ class WebRegistry(Registry):
                     content = content[0]
             except json.decoder.JSONDecodeError:
                 try:
-                    content = content.decode()
+                    content.decode()
                 except Exception:
                     pass
             if error_if_not_found:
                 raise LookupError(response.text)
             else:
                 return False
-
-    def get_repo_spec(
-        self,
-        repo_id: RepoIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> Optional[RepoSpec]:
-        return self._request_spec_from_web_server(
-            "repo", repo_id, flatten, error_if_not_found
-        )
-
-    def get_component_specs(
-        self, filter_by_name: str = None, filter_by_version: str = None
-    ) -> NestedComponentSpec:
-        url_filter_str = ""
-        if filter_by_name:
-            url_filter_str += f"name={filter_by_name}"
-        if filter_by_version:
-            if url_filter_str:
-                url_filter_str += "&"
-            url_filter_str += f"version={filter_by_version}"
-        if url_filter_str:
-            url_filter_str = f"?{url_filter_str}"
-        component_url = f"{self.root_api_url}/components{url_filter_str}"
-        component_response = requests.get(component_url)
-        assert component_response.status_code == 200
-        json_results = json.loads(component_response.content)
-        component_specs = {}
-        for c_dict in json_results["results"]:
-            identifier = f"{c_dict['name']}=={c_dict['version']}"
-            dep_dict = {
-                d["attribute_name"]: d["dependee"]
-                for d in c_dict["depender_set"]
-            }
-            component_specs[identifier] = {
-                "repo": c_dict["repo"],
-                "file_path": c_dict["file_path"],
-                "class_name": c_dict["class_name"],
-                "instantiate": c_dict["instantiate"],
-                "dependencies": dep_dict,
-            }
-        return component_specs
-
-    def get_default_component(self, name: str):
-        raise NotImplementedError
-
-    def get_run_command_spec(
-        self,
-        run_command_id: RunCommandIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> RunCommandSpec:
-        return self._request_spec_from_web_server(
-            "runcommand", run_command_id, flatten, error_if_not_found
-        )
-
-    def get_run_spec(
-        self,
-        run_id: RunIdentifier,
-        flatten: bool = False,
-        error_if_not_found: bool = True,
-    ) -> RunSpec:
-        run_spec = self._request_spec_from_web_server(
-            "run", run_id, flatten, error_if_not_found
-        )
-        # TODO: Handle Runs in WebRegistry in a more sane way by treating
-        #       different RunTypes each as a separate type of Spec,
-        #       so that we don't need these special cases to remove
-        #       attributes that are added on the webapp side.
-        if run_spec:
-            run_spec = flatten_spec(run_spec) if not flatten else run_spec
-            if "environment" in run_spec:
-                run_spec.pop("environment")
-            if "agent" in run_spec:
-                run_spec.pop("agent")
-            run_spec = unflatten_spec(run_spec) if not flatten else run_spec
-        return run_spec
-
-    def get_registries(self) -> Sequence:
-        raise NotImplementedError
-
-    def add_repo_spec(self, repo_spec: RepoSpec) -> None:
-        self._post_spec_to_web_server("repo", repo_spec)
-
-    def add_component_spec(self, component_spec: NestedComponentSpec) -> None:
-        flat_spec = flatten_spec(component_spec)
-        flat_spec = json_encode_flat_spec_field(flat_spec, "dependencies")
-        self._post_spec_to_web_server("component", unflatten_spec(flat_spec))
-
-    def add_run_command_spec(self, run_command_spec: RunCommandSpec) -> None:
-        flat_spec = flatten_spec(run_command_spec)
-        flat_spec = json_encode_flat_spec_field(flat_spec, "argument_set")
-        self._post_spec_to_web_server("runcommand", unflatten_spec(flat_spec))
-
-    def add_run_spec(self, run_spec: RunSpec) -> Sequence:
-        flat_spec = flatten_spec(run_spec)
-        flat_spec = json_encode_flat_spec_field(flat_spec, "info")
-        flat_spec = json_encode_flat_spec_field(flat_spec, "data")
-        if "artifact_tarball" not in flat_spec:
-            flat_spec["artifact_tarball"] = None
-        self._post_spec_to_web_server("run", flat_spec)
 
     def add_run_artifacts(
         self, run_id: int, run_artifact_paths: Sequence[str]
@@ -618,50 +564,8 @@ class WebRegistry(Registry):
         finally:
             shutil.rmtree(tmp_dir_path)
 
-    def get_run(self, run_id: str) -> "Run":
-        from pcs.run import Run
-
-        return Run.from_registry(self, run_id)
-
-    def _request_spec_from_web_server(
-        self,
-        spec_type: str,
-        identifier: str,
-        flatten: bool,
-        error_if_not_found: bool = True,
-    ) -> Optional[Dict]:
-        assert spec_type in ["run", "runcommand", "repo", "component"]
-        req_url = f"{self.root_api_url}/{spec_type}s/{identifier}/"
-        response = requests.get(req_url)
-        if not self._is_response_ok(response, error_if_not_found):
-            return None
-        flat_spec = json.loads(response.content)
-        for spec_key, spec_val in [
-            (k, v)
-            for k, v in flat_spec.items()
-            if k.endswith("_link") or v is None
-        ]:
-            logger.debug(
-                f"Dropping field '{spec_key}: {spec_val}' from spec "
-                "returned by web server."
-            )
-            flat_spec.pop(spec_key)
-        return unflatten_spec(flat_spec) if not flatten else flat_spec
-
-    def _post_spec_to_web_server(self, spec_type: str, spec: dict) -> None:
-        """
-        Handles HTTP request to backing webserver to upload a spec.
-        Handles both nested and flat specs.
-        """
-        assert spec_type in ["run", "runcommand", "repo", "component"]
-        req_url = f"{self.root_api_url}/{spec_type}s/"
-        data = spec if is_flat(spec) else flatten_spec(spec)
-        logger.debug(f"\nabout to post {spec_type} spec http request: {data}")
-        response = requests.post(req_url, data=data)
-        self._is_response_ok(response)
-        result = json.loads(response.content)
-        logger.debug(f"\npost {spec_type} spec http response:")
-        logger.debug(pprint.pformat(result))
-
     def to_dict(self) -> Dict:
         raise Exception("to_dict() is not supported on WebRegistry.")
+
+    def add_alias(self, alias: str, identifier: str) -> None:
+        raise NotImplementedError

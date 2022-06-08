@@ -1,63 +1,81 @@
-repos:
+specs:
     papag_agent_dir:
-        type: local
+        type: LocalRepo
         path: .
 
     openai_gym:
-        type: github
+        type: GitHubRepo
         url: git@github.com:openai/gym.git
 
     ikostrikov_papag:
-        type: github
+        type: GitHubRepo
         url: git@github.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
 
     mgbellemare_ale:
-        type: github
+        type: GitHubRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
-components:
-    papag_agent:
-        repo: papag_agent_dir
-        file_path: agent.py
-        class_name: PAPAGAgent
-        instantiate: True
-        requirements_path: ./requirements.txt
-        dependencies:
-            PAPAGRun: PAPAGRun
-            AtariEnv: AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f
-            CartPoleEnv: CartPoleEnv==c755d5c35a25ab118746e2ba885894ff66fb8c43
-            A2C_ACKTR: A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60
-            PPO: PPO==41332b78dfb50321c29bade65f9d244387f68a60
+    papag_class:
+        type: Class
+        name: PAPAGAgent
+        module:
+            type: Module
+            repo: spec:papag_agent_dir
+            file_path: agent.py
+            requirements_path: ./requirements.txt
+
+    evaluation_args:
+        type: ArgumentSet
+        kwargs:
+            lr: .0007
+            clip_param: 0.2
+            value_loss_coef: 0.5
+            num_processes: 8
+            num_steps: 5
+            num_mini_batch: 32
+            log_interval: 10
+            entropy_coef: 0.01
 
     PAPAGRun:
-        repo: papag_agent_dir
-        file_path: papag_run.py
-        class_name: PAPAGRun
-        instantiate: False
+        type: Class
+        name: PAPAGRun
+        module:
+            type: Module
+            repo: spec:papag_agent_dir
+            file_path: papag_output.py
 
-    AtariEnv==db3728264f382402120913d76c4fa0dc320ef59f:
-        repo: mgbellemare_ale
-        file_path: ./src/gym/envs/atari/environment.py
-        class_name: AtariEnv
-        instantiate: False
+    AtariEnv:
+        type: Class
+        name: AtariEnv
+        module:
+            type: Module
+            repo: spec:mgbellemare_ale
+            file_path: ./src/gym/envs/atari/environment.py
+            version: db3728264f382402120913d76c4fa0dc320ef59f
 
-    CartPoleEnv==c755d5c35a25ab118746e2ba885894ff66fb8c43:
-        repo: openai_gym
-        file_path: ./gym/envs/classic_control/cartpole.py
-        class_name: CartPoleEnv
-        instantiate: False
+    CartPoleEnv:
+        type: Class
+        name: CartPoleEnv
+        module:
+            type: Module
+            repo: spec:openai_gym
+            file_path: ./gym/envs/classic_control/cartpole.py
+            version: c755d5c35a25ab118746e2ba885894ff66fb8c43
 
-    A2C_ACKTR==41332b78dfb50321c29bade65f9d244387f68a60:
-        repo: ikostrikov_papag
-        file_path: ./a2c_ppo_acktr/algo/a2c_acktr.py
-        class_name: A2C_ACKTR
-        instantiate: False
+    A2C_ACKTR:
+        type: Class
+        name: A2C_ACKTR
+        module:
+            type: Module
+            repo: spec:ikostrikov_papag
+            file_path: ./a2c_ppo_acktr/algo/a2c_acktr.py
+            version: 41332b78dfb50321c29bade65f9d244387f68a60
 
-    PPO==41332b78dfb50321c29bade65f9d244387f68a60:
-        repo: ikostrikov_papag
-        file_path: ./a2c_ppo_acktr/algo/ppo.py
-        class_name: PPO
-        instantiate: False
-
-
-
+    PPO:
+        type: Class
+        name: PPO
+        module:
+            type: Module
+            repo: spec:ikostrikov_papag
+            file_path: ./a2c_ppo_acktr/algo/ppo.py
+            version: 41332b78dfb50321c29bade65f9d244387f68a60

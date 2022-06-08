@@ -1,6 +1,6 @@
 """The ``agentos`` package provides an API for building learning agents."""
 
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentRun
 from agentos.core import (
     Agent,
     Dataset,

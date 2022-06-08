@@ -2,13 +2,16 @@ import acme
 import numpy as np
 from acme.agents.tf import dqn
 
-from pcs import active_component_run
+from pcs import active_output
 
 
 class AcmeDQNAgent:
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self, **kwargs):
+    def __init__(self, network, environment, AcmeRun, **kwargs):
+        self.network = network
+        self.environment = environment
+        self.AcmeRun = AcmeRun
         self.discount = (np.float32(kwargs["discount"]),)
         self.agent = dqn.DQN(
             environment_spec=self.environment.get_spec(),
@@ -19,9 +22,9 @@ class AcmeDQNAgent:
             min_replay_size=int(kwargs["min_replay_size"]),
         )
 
-    def evaluate(self, num_episodes):
+    def evaluate(self, num_episodes=1):
         with self.AcmeRun.evaluate_run(
-            outer_run=active_component_run(self),
+            outer_run=active_output(self),
             agent_identifier=self.__component__.identifier,
             environment_identifier=self.environment.__component__.identifier,
         ) as run:
@@ -34,9 +37,9 @@ class AcmeDQNAgent:
             )
             loop.run(num_episodes=num_episodes)
 
-    def learn(self, num_episodes):
+    def learn(self, num_episodes=1):
         with self.AcmeRun.learn_run(
-            outer_run=active_component_run(self),
+            outer_run=active_output(self),
             agent_identifier=self.__component__.identifier,
             environment_identifier=self.environment.__component__.identifier,
         ) as run:

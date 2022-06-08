@@ -3,7 +3,7 @@ RUN_CREATE_DATA = {
     "component_spec": {
         "components": {
             "agent==73fbfe92028aec1a259935b5d809f1a7ee1e4336": {
-                "class_name": "SB3PPOAgent",
+                "name": "SB3PPOAgent",
                 "dependencies": {
                     "environment": (
                         "environment==73fbfe92028aec1a259935b5d809f1a7ee1e4336"
@@ -17,14 +17,14 @@ RUN_CREATE_DATA = {
                 "instantiate": True,
             },
             "environment==73fbfe92028aec1a259935b5d809f1a7ee1e4336": {
-                "class_name": "CartPole",
+                "name": "CartPole",
                 "dependencies": {},
                 "file_path": "example_agents/sb3_agent/environment.py",
                 "repo": "sb3_agent_dir",
                 "instantiate": True,
             },
             "run_manager==73fbfe92028aec1a259935b5d809f1a7ee1e4336": {
-                "class_name": "SB3RunManager",
+                "name": "SB3RunManager",
                 "dependencies": {},
                 "file_path": "example_agents/sb3_agent/run_manager.py",
                 "repo": "sb3_agent_dir",
@@ -38,7 +38,7 @@ RUN_CREATE_DATA = {
             }
         },
     },
-    "entry_point": "evaluate",
+    "function_name": "evaluate",
     "id": "39be22d7ff9848bd9545988ff15f578f",
     "is_publishable": True,
     "metrics": {
@@ -65,7 +65,7 @@ RUN_CREATE_DATA = {
         "params": {
             "agent_exists": "True",
             "agent_name": "agent",
-            "entry_point": "evaluate",
+            "function_name": "evaluate",
             "environment_exists": "True",
             "environment_name": "environment",
             "root_name": "agent",
@@ -89,7 +89,7 @@ RUN_CREATE_DATA = {
         "end_time": 1639001190864,
         "experiment_id": "0",
         "lifecycle_stage": "active",
-        "run_id": "39be22d7ff9848bd9545988ff15f578f",
+        "mlflow_run_id": "39be22d7ff9848bd9545988ff15f578f",
         "run_uuid": "39be22d7ff9848bd9545988ff15f578f",
         "start_time": 1639001190314,
         "status": "FINISHED",

@@ -1,37 +1,33 @@
-"""The ``pcs`` package provides an API for Component Programming."""
+"""The ``pcs`` package provides an API for Module Programming."""
 
 from pcs.argument_set import ArgumentSet
+from pcs.class_manager import Class
+from pcs.command import Command
 from pcs.component import Component
-from pcs.component_run import ComponentRun, active_component_run
+from pcs.instance_manager import Instance
+from pcs.mlflow_run import MLflowRun
+from pcs.module_manager import Module
+from pcs.output import Output, active_output
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, LocalRepo, Repo
-from pcs.run import Run
-from pcs.run_command import RunCommand
-from pcs.specs import (
-    ArgumentSetSpec,
-    ComponentSpec,
-    RepoSpec,
-    RunSpec,
-    flatten_spec,
-    unflatten_spec,
-)
+from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.version import VERSION as __version__  # noqa: F401
 
 __all__ = [
+    "ArgumentSet",
+    "Class",
+    "Command",
+    "Component",
+    "GitHubRepo",
+    "Instance",
+    "LocalRepo",
+    "MLflowRun",
+    "Module",
+    "Output",
     "Registry",
     "Repo",
-    "LocalRepo",
-    "GitHubRepo",
-    "Component",
-    "ArgumentSet",
-    "RunCommand",
-    "Run",
-    "ComponentRun",
-    "active_component_run",
+    "Spec",
+    "active_output",
     "flatten_spec",
     "unflatten_spec",
-    "ComponentSpec",
-    "RepoSpec",
-    "ArgumentSetSpec",
-    "RunSpec",
 ]

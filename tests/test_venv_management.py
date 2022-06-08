@@ -4,11 +4,12 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
+from pcs import Class, Instance, Module
 from pcs.component import Component
-from pcs.repo import LocalRepo, Repo
-from pcs.specs import RepoSpecKeys
+from pcs.repo import Repo
+from pcs.specs import Spec
 from pcs.virtual_env import VirtualEnv, auto_revert_venv
-from tests.utils import RANDOM_AGENT_DIR, TEST_VENV_AGENT_DIR, run_test_command
+from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
 
 def _clean_up_sys_modules():
@@ -28,7 +29,7 @@ def _confirm_modules_not_in_env():
         import bottle  # noqa: F401
 
 
-def test_venv_management(tmpdir):
+def test_venv_management(cli_runner, tmpdir):
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
@@ -46,20 +47,13 @@ def test_venv_management(tmpdir):
         Repo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
         assert not touch_test.exists()
 
-        # Should fail because of --no_venv
-        no_venv_test_args = ["test_venv_agent", "--use-outer-env"]
         test_kwargs = {
             "--registry-file": str(TEST_VENV_AGENT_DIR / "components.yaml")
         }
-        with pytest.raises(ModuleNotFoundError):
-            run_test_command(
-                cmd=run, cli_args=no_venv_test_args, cli_kwargs=test_kwargs
-            )
-
         # Should succeed because we will create a venv
         venv_test_args = ["test_venv_agent"]
         run_test_command(
-            cmd=run, cli_args=venv_test_args, cli_kwargs=test_kwargs
+            cli_runner, run, cli_args=venv_test_args, cli_kwargs=test_kwargs
         )
 
 
@@ -98,64 +92,22 @@ def test_setup_py_agent():
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        local_repo_spec = {
-            "local__setup_py_agent__repo": {
-                RepoSpecKeys.TYPE: "local",
-                RepoSpecKeys.PATH: "test_agents/setup_py_agent/",
+        local_repo_spec = Spec.from_flat(
+            {
+                Component.TYPE_KEY: "LocalRepo",
+                "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
             }
-        }
-        base_dir = Path(__file__).parent
-        agent_repo = Repo.from_spec(local_repo_spec, base_dir=base_dir)
-        agent_c = Component.from_repo(
-            repo=agent_repo,
-            identifier="BasicAgent",
-            file_path="./agent.py",
-            class_name="BasicAgent",
-            instantiate=True,
-            requirements_path="./setup.py",
         )
-        agent_c.run("evaluate")
-
-
-def test_only_activate_venv_once():
-    with auto_revert_venv():
-        _clean_up_sys_modules()
-        _confirm_modules_not_in_env()
-        random_agent_repo = LocalRepo(
-            "random_agent_repo", local_dir=RANDOM_AGENT_DIR
-        )
-        print(random_agent_repo)
-        random_agent_component = Component.from_repo(
-            repo=random_agent_repo,
-            identifier="BasicAgent",
-            file_path="./agent.py",
-            class_name="BasicAgent",
-            instantiate=True,
-            requirements_path="./requirements.txt",
-        )
-        random_agent_component.get_object()
-        env_component_no_reqs = Component.from_repo(
-            repo=random_agent_repo,
-            identifier="Corridor1",
-            file_path="./environment.py",
-            class_name="Corridor",
-            instantiate=True,
-        )
-        # OK to add a dependency without reqs to a Component with active venv
-        random_agent_component.add_dependency(
-            env_component_no_reqs, attribute_name="env1"
-        )
-        random_agent_component.get_object()
-        env_component_reqs = Component.from_repo(
-            repo=random_agent_repo,
-            identifier="Corridor2",
-            file_path="./environment.py",
-            class_name="Corridor",
-            instantiate=True,
-            requirements_path="./requirements.txt",
-        )
-        # Should explode because venv is active and we're adding new reqs
-        with pytest.raises(Exception):
-            random_agent_component.add_dependency(
-                env_component_reqs, attribute_name="env2"
+        agent_repo = Repo.from_spec(local_repo_spec)
+        agent_instance = Instance(
+            instance_of=Class(
+                name="BasicAgent",
+                module=Module.from_repo(
+                    repo=agent_repo,
+                    version=None,
+                    file_path="./agent.py",
+                    requirements_path="./setup.py",
+                ),
             )
+        )
+        agent_instance.run("evaluate")

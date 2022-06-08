@@ -1,13 +1,13 @@
-repos:
-    local_dir:
-        type: local
-        path: .
-
-components:
+specs:
     test_venv_agent:
-        repo: local_dir
-        file_path: ./agent.py
-        class_name: BasicAgent
-        instantiate: True
-        requirements_path: ./requirements.txt
-
+        type: Instance
+        instance_of:
+            type: Class
+            name: BasicAgent
+            module:
+                type: Module
+                file_path: ./agent.py
+                requirements_path: ./requirements.txt
+                repo:
+                    type: LocalRepo
+                    path: .

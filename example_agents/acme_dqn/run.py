@@ -1,4 +1,4 @@
-from agentos.agent_run import AgentRun
+from agentos.agent_output import AgentRun
 
 
 # Adheres to Acme Logger interface
