@@ -107,14 +107,7 @@ class Component:
     def body(self, dependencies_as_strings=False) -> Dict:
         attributes = {}
         for name in self._spec_attr_names:
-            print(
-                "\n-----\n-----\n"
-                f"type: {self.type}\n"
-                f"name: {name}\n"
-                f"_spec_attr_names: {self._spec_attr_names}"
-            )
             attr = {name: getattr(self, name, None)}
-            print(f"attr: {attr}")
 
             def not_allowed(i):
                 allowed = (

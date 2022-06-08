@@ -1,4 +1,3 @@
-import copy
 import json
 import pickle
 import tempfile
@@ -145,15 +144,7 @@ class Output(MLflowRun):
         assert (
             not self._return_value
         ), "return_value has already been logged and can only be logged once."
-        try:
-            copy.deepcopy(ret_val)
-            deep_copy_ok = True
-        except RuntimeError:  # Make sure output type supports deepcopy.
-            deep_copy_ok = False
-        if deep_copy_ok:
-            self._return_value = ret_val
-        else:
-            self._return_value = str(ret_val)
+        self._return_value = ret_val
         tmp_dir_path = Path(tempfile.mkdtemp())
         filename_base = tmp_dir_path / (self.identifier + "-return_value")
         if format == "pickle":

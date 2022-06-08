@@ -263,6 +263,8 @@ def copy_find_and_replace_leaves(
     match_found = False
     for leaf_list in leaf_lists(data_struct):
         if filter_fn(leaf_list[-1]):
-            leaf_replace(data_struct, copy_struct, leaf_list, replace_fn)
+            transform_leaf(data_struct, copy_struct, leaf_list, replace_fn)
             match_found = True
+        else:
+            transform_leaf(data_struct, copy_struct, leaf_list, lambda x: x)
     return match_found, copy_struct
