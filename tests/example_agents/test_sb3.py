@@ -1,5 +1,3 @@
-import pytest
-
 from agentos.cli import run
 from tests.utils import SB3_AGENT_DIR, run_test_command
 

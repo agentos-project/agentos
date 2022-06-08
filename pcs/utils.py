@@ -235,8 +235,8 @@ def transform_leaf(
             copy_struct[key] = {} if isinstance(next_inner, Dict) else []
     if isinstance(next_inner, Dict) or isinstance(next_inner, List):
         transform_leaf(
-                next_inner, copy_struct[key], remaining_keys, replacement_fn
-            )
+            next_inner, copy_struct[key], remaining_keys, replacement_fn
+        )
     else:
         # This is the leaf we're looking for.
         assert len(leaf_list) == 2

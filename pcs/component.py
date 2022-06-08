@@ -21,9 +21,9 @@ import pcs  # for hasattr(pcs, ...)
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.utils import (
+    copy_find_and_replace_leaves,
     extract_identifier,
     filter_leaves,
-    copy_find_and_replace_leaves,
     is_identifier_ref,
     make_identifier_ref,
 )
@@ -125,7 +125,9 @@ class Component:
                 return not allowed
 
             # Stringify all non-allowed types.
-            _, attr = copy_find_and_replace_leaves(attr, not_allowed, lambda leaf: str(leaf))
+            _, attr = copy_find_and_replace_leaves(
+                attr, not_allowed, lambda leaf: str(leaf)
+            )
             # Per 'dependencies_as_strings' flag, stringify dependencies
             if dependencies_as_strings:
                 _, attr = copy_find_and_replace_leaves(
