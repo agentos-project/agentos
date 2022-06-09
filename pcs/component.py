@@ -51,11 +51,16 @@ class Component:
     """
 
     IDENTIFIER_KEY = "identifier"
+    PRIVATE_IDENTIFIER_KEY = "_identifier"
     TYPE_KEY = "type"
+    BODY_KEY = "body"
+    PRIVATE_BODY_KEY = "_body"
     OK_LEAF_ATTR_TYPES = (numbers.Number, str, bool)
 
     def __init__(self):
-        self._spec_attr_names: List[str] = []  # Managed by register_attribute
+        self._spec_attr_names: List[str] = []  # Updated by register_attribute.
+        self._update_body()  # Initializes self._body and self._spec_body.
+        self._update_identifier()  # Creates and initializes self._identifier.
         # A Component's identifier is not considered a spec_attribute. Rather,
         # it is a function of all spec_attributes.
         self.register_attribute(self.TYPE_KEY)
@@ -77,13 +82,24 @@ class Component:
         return DeepHash(spec_body, hasher=DeepHash.sha1hex)[spec_body]
 
     def sha1(self) -> str:
-        body = self.body(dependencies_as_strings=True)
-        return self.spec_body_to_identifier(body)
+        return self.spec_body_to_identifier(self._spec_body)
 
     def register_attribute(self, attribute_name: str):
         assert attribute_name != self.IDENTIFIER_KEY, (
             f"{self.IDENTIFIER_KEY} cannot be registered as an "
             "attribute since it is a function of all attributes."
+        )
+        assert attribute_name != self.PRIVATE_IDENTIFIER_KEY, (
+            f"{self.PRIVATE_IDENTIFIER_KEY} cannot be registered as an "
+            "attribute since it is used internally by pcs.Component."
+        )
+        assert attribute_name != self.BODY_KEY, (
+            f"{self.BODY_KEY} cannot be registered as an "
+            "attribute since it is a function of all attributes."
+        )
+        assert attribute_name != self.PRIVATE_BODY_KEY, (
+            f"{self.PRIVATE_BODY_KEY} cannot be registered as an "
+            "attribute since it is used internally by pcs.Component."
         )
         assert attribute_name not in self._spec_attr_names
         assert hasattr(self, attribute_name), (
@@ -91,10 +107,18 @@ class Component:
             f"{attribute_name}"
         )
         self._spec_attr_names.append(attribute_name)
+        self._update_body()
+        self._update_identifier()
 
     def register_attributes(self, attribute_names: Collection[str]):
         for name in attribute_names:
             self.register_attribute(name)
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        if hasattr(self, "_spec_attr_names") and name in self._spec_attr_names:
+            self._update_body()
+            self._update_identifier()
 
     @property
     def type(self):
@@ -102,10 +126,17 @@ class Component:
 
     @property
     def identifier(self) -> str:
-        return self.sha1()
+        return self._identifier
 
-    def body(self, dependencies_as_strings=False) -> Dict:
-        attributes = {}
+    def _update_identifier(self):
+        self._identifier = self.sha1()
+
+    @property
+    def body(self) -> Dict:
+        return self._body
+
+    def _update_body(self):
+        self._body = {}
         for name in self._spec_attr_names:
             attr = {name: getattr(self, name, None)}
 
@@ -121,15 +152,14 @@ class Component:
             _, attr = copy_find_and_replace_leaves(
                 attr, not_allowed, lambda leaf: str(leaf)
             )
-            # Per 'dependencies_as_strings' flag, stringify dependencies
-            if dependencies_as_strings:
-                _, attr = copy_find_and_replace_leaves(
-                    attr,
-                    lambda leaf: isinstance(leaf, Component),
-                    lambda leaf: make_identifier_ref(leaf.identifier),
-                )
-            attributes.update(attr)
-        return attributes
+            self._body.update(attr)
+
+        # Stringify dependencies for self._spec_body
+        _, self._spec_body = copy_find_and_replace_leaves(
+            self._body,
+            lambda leaf: isinstance(leaf, Component),
+            lambda leaf: make_identifier_ref(leaf.identifier),
+        )
 
     def dependencies(self, filter_by_types: Sequence[Type[C]] = None) -> Dict:
         """
@@ -145,7 +175,7 @@ class Component:
 
         return {
             k: v
-            for k, v in filter_leaves(self.body(), filter_fn=filter_fn).items()
+            for k, v in filter_leaves(self.body, filter_fn=filter_fn).items()
         }
 
     def to_registry(
@@ -210,7 +240,7 @@ class Component:
         return cls.from_registry(registry, identifier)
 
     def to_spec(self, flatten: bool = False) -> Dict:
-        spec = Spec({self.identifier: self.body(dependencies_as_strings=True)})
+        spec = Spec({self.identifier: self._spec_body})
         return flatten_spec(spec) if flatten else spec
 
     @classmethod
