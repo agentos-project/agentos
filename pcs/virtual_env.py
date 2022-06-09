@@ -10,6 +10,7 @@ from typing import Sequence
 import yaml
 
 from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path
+from pcs.component import Component
 
 
 class VirtualEnv:
@@ -354,3 +355,14 @@ def auto_revert_venv():
         yield
     finally:
         venv.deactivate()
+
+
+class VirtualEnvComponent(Component):
+    def __init__(self, requirements_path: str = None, venv_path: Path = None):
+        super().__init__()
+        self._virtual_env = VirtualEnv(venv_path=venv_path)
+        self.register_attributes(["requirements_path", "venv_path"])
+
+    @staticmethod
+    def no_op_venv() -> VirtualEnv:
+            return NoOpVirtualEnv()

@@ -3,6 +3,7 @@ import sys
 import uuid
 from typing import Dict
 
+from pcs.file import File
 from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, Repo
@@ -32,16 +33,11 @@ class Module(ObjectManager):
 
     def __init__(
         self,
-        repo: Repo,
-        file_path: str,
-        version: str = None,
+        file: File,
         requirements_path: str = None,
         imported_modules: Dict[str, "Module"] = None,
     ):
         """
-        :param repo: Repo where this Module's source file can be found. The
-            ``file_path`` argument is relative to the root this Repo.
-        :param file_path: Path to Python module file this Module manages.
         :param name: Optionally, the name of the class that is being
             managed. If none provided, then by default this is a
             managed Python Module.
@@ -51,16 +47,12 @@ class Module(ObjectManager):
             Module Component represents) to a `pcs.Module`.
         """
         super().__init__()
-        self.repo = repo
-        self.file_path = file_path
-        self.version = version
+        self.file = file
         self.requirements_path = requirements_path
         self.imported_modules = imported_modules if imported_modules else {}
         self.register_attributes(
             [
-                "repo",
-                "file_path",
-                "version",
+                "file",
                 "requirements_path",
                 "imported_modules",
             ]
@@ -106,9 +98,11 @@ class Module(ObjectManager):
         full_path = repo.get_local_file_path(file_path, version)
         assert full_path.is_file(), f"{full_path} does not exist"
         return cls(
-            repo=repo,
-            file_path=file_path,
-            version=version,
+            File(
+                repo=repo,
+                path=file_path,
+                version=version,
+            ),
             requirements_path=requirements_path,
         )
 
@@ -117,7 +111,7 @@ class Module(ObjectManager):
         if not self._venv:
             self._venv = self._build_virtual_env()
             self._venv.activate()
-        full_path = self.repo.get_local_file_path(self.file_path, self.version)
+        full_path = self.repo.get_local_file_path(self.file.path, self.version)
         assert full_path.is_file(), f"{full_path} does not exist"
         spec = importlib.util.spec_from_file_location(
             "AOS_MODULE", str(full_path)
@@ -154,10 +148,10 @@ class Module(ObjectManager):
 
     def to_versioned_module(self, force: bool = False) -> "Module":
         repo_url, version = self.repo.get_version_from_git(
-            self.file_path, version=self.version, force=force
+            self.file.path, version=self.version, force=force
         )
         prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
-            version, self.file_path
+            version, self.file.path
         )
         prefixed_reqs_path = None
         if self.requirements_path:

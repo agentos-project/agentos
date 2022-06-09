@@ -1,0 +1,53 @@
+specs:
+    my_command:
+        type: Command
+        function_name: evaluate 
+        runtime:
+            type: PythonRuntime
+            version: str # e.g., 3.9.4
+        object_manager: # ObjectManager is an abstract class w/ subtypes: `Module`, `Class`, `Instance`
+            type: Instance
+            instance_of:
+                type: Class
+                name: RLlibAgent
+                module: spec:agent_module
+        env:
+            type: VirtualEnv
+            pip_packages:
+                - type: PipPackage
+                  repo:
+                      type: PyPIRepo # must be a `PyPIRepo`, `GitHubRepo`, `LocalRepo`
+                      project_name: numpy
+                      default_version: 0.1.0
+                - type: LocalPackage
+                  name: agentos
+                  setup_file:
+                      type: File
+                      name: setup.py
+                      repo:
+                          type: LocalRepo
+                          path: ../.. 
+                  package_dependencies:
+                      - spec:other_pip_package
+                  module_dependencies:
+                      - spec:agent_module
+                      - spec:other_module_2
+                  requirements_files:
+                      - type: RequirementsFile
+                        path: 
+                        repo:
+                      - spec:other_requirements_file
+
+    agent_module:
+        type: Module
+        repo:
+            type: LocalRepo
+            path: .
+
+    other_requirements_file:
+        type: RequirementsFile
+        path: numpy.py
+        repo:
+            type: PyPIRepo # one of `PyPIRepo`, `GitHubRepo`, `LocalRepo`
+            project_name: numpy
+            default_version: 0.1.0
