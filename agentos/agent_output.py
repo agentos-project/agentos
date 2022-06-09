@@ -25,6 +25,30 @@ _RUN_STATS_MEMBERS = [
 
 RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 
+SPEC_ATTRS = []
+
+
+def _register_attributes(run):
+    for attribute in SPEC_ATTRS:
+        run.register_attribute(attribute)
+
+
+def _check_initialization(run):
+    assert hasattr(run, "outer_run")
+    assert hasattr(run, "model_input_run")
+    assert hasattr(run, "episode_data")
+    assert hasattr(run, "run_type")
+    assert hasattr(run, "agent_identifier")
+    assert hasattr(run, "environment_identifier")
+    assert run.data["tags"].get(run.IS_AGENT_RUN_TAG) == "True"
+    assert run.data["tags"].get(MLFLOW_RUN_NAME)
+    outer_run = getattr(run, "outer_run")
+    if outer_run:
+        assert run.data["tags"].get(MLFLOW_PARENT_RUN_ID)
+    model_input_run = getattr(run, "model_input_run")
+    if model_input_run:
+        assert run.data["tags"].get(run.MODEL_INPUT_RUN_ID)
+
 
 class AgentRun(MLflowRun):
     """
@@ -68,7 +92,6 @@ class AgentRun(MLflowRun):
         model_input_run: Optional[MLflowRun] = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
-        existing_run_id: str = None,
     ) -> None:
         """
         Create a new AgentRun.
@@ -81,72 +104,34 @@ class AgentRun(MLflowRun):
             or trained.
         :param environment_identifier: Identifier of Environment component
             being evaluated or trained.
-        :param existing_run_id: Optional. If provided, load an existing run
-            from the MLflow backing store. If provided, no other options can be
-            provided.
         """
-        if existing_run_id:
-            assert not (
-                run_type
-                or outer_run
-                or agent_identifier
-                or environment_identifier
-            ), (
-                "If 'existing_run_id' is specified, then 'run_type', "
-                "'outer_run', 'agent_identifier', and "
-                "'environment_identifier' must be None."
-            )
-
-            super().__init__(existing_run_id=existing_run_id)
-            if MLFLOW_PARENT_RUN_ID in self.data["tags"]:
-                outer_run_id = self.data["tags"][MLFLOW_PARENT_RUN_ID]
-                self.outer_run = Output.from_existing_mlflow_run(outer_run_id)
-            else:
-                self.outer_run = None
-            if self.MODEL_INPUT_RUN_ID in self.data["tags"]:
-                model_input_run = self.data["tags"][self.MODEL_INPUT_RUN_ID]
-                self.model_input_run = self.__class__.from_existing_mlflow_run(
-                    model_input_run
-                )
-            else:
-                self.model_input_run = None
-            self.episode_data = []
-            self.run_type = self.data["tags"][self.RUN_TYPE_TAG]
-            self.agent_identifier = self.data["tags"][self.AGENT_ID_KEY]
-            self.environment_identifier = self.data["tags"][self.ENV_ID_KEY]
-        else:
-            assert agent_identifier and environment_identifier, (
-                "If 'existing_run_id' is not provided, then "
-                "'agent_identifier' and 'environment_identifier' must be."
-            )
-            super().__init__()
-            self.outer_run = outer_run
-            self.model_input_run = model_input_run
-            self.set_tag(self.IS_AGENT_RUN_TAG, "True")
-            self.episode_data = []
-            self.run_type = run_type
-            self.agent_identifier = agent_identifier
-            self.environment_identifier = environment_identifier
-
+        assert agent_identifier, "Provide `agent_identifier`"
+        assert environment_identifier, "Provide `environment_identifier`"
+        super().__init__()
+        self.outer_run = outer_run
+        self.model_input_run = model_input_run
+        self.set_tag(self.IS_AGENT_RUN_TAG, "True")
+        self.episode_data = []
+        self.run_type = run_type
+        self.agent_identifier = agent_identifier
+        self.environment_identifier = environment_identifier
+        run_name = (
+            f"AgentOS {run_type} with Agent '{self.agent_identifier}' "
+            f"and Env '{self.environment_identifier}'"
+        )
+        self.set_tag(MLFLOW_RUN_NAME, run_name)
+        if self.outer_run:
+            self.set_tag(MLFLOW_PARENT_RUN_ID, self.outer_run.info["run_id"])
+        if self.model_input_run:
             self.set_tag(
-                MLFLOW_RUN_NAME,
-                (
-                    f"AgentOS {run_type} with Agent '{self.agent_identifier}' "
-                    f"and Env '{self.environment_identifier}'"
-                ),
+                self.MODEL_INPUT_RUN_ID,
+                self.model_input_run.info["run_id"],
             )
-            if self.outer_run:
-                self.set_tag(
-                    MLFLOW_PARENT_RUN_ID, self.outer_run.info["run_id"]
-                )
-            if self.model_input_run:
-                self.set_tag(
-                    self.MODEL_INPUT_RUN_ID,
-                    self.model_input_run.info["run_id"],
-                )
-            self.log_run_type(self.run_type)
-            self.log_agent_identifier(self.agent_identifier)
-            self.log_environment_identifier(self.environment_identifier)
+        self.log_run_type(self.run_type)
+        self.log_agent_identifier(self.agent_identifier)
+        self.log_environment_identifier(self.environment_identifier)
+        _register_attributes(self)
+        _check_initialization(self)
 
     @classmethod
     def evaluate_run(
@@ -155,7 +140,6 @@ class AgentRun(MLflowRun):
         model_input_run: Optional[MLflowRun] = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
-        existing_run_id: str = None,
     ) -> "AgentRun":
         return cls(
             run_type=cls.EVALUATE_KEY,
@@ -163,7 +147,6 @@ class AgentRun(MLflowRun):
             model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
-            existing_run_id=existing_run_id,
         )
 
     @classmethod
@@ -173,7 +156,6 @@ class AgentRun(MLflowRun):
         model_input_run: Optional[MLflowRun] = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
-        existing_run_id: str = None,
     ) -> "AgentRun":
         return cls(
             run_type=cls.LEARN_KEY,
@@ -181,7 +163,6 @@ class AgentRun(MLflowRun):
             model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
-            existing_run_id=existing_run_id,
         )
 
     def log_run_type(self, run_type: str) -> None:
@@ -202,13 +183,17 @@ class AgentRun(MLflowRun):
             self.log_metric(key, val)
 
     def get_training_info(self) -> (int, int):
-        runs = self.get_all_runs()
+        # TODO - this should just follow chain of `model_input_run`s
+        mlflow_runs = self._get_all_mlflow_runs()
         total_episodes = 0
         total_steps = 0
-        for run in runs:
-            if run.data["tags"].get(self.RUN_TYPE_TAG) == self.LEARN_KEY:
-                total_episodes += int(run.data["metrics"].get(_EPISODE_KEY, 0))
-                total_steps += int(run.data["metrics"].get(_STEP_KEY, 0))
+        for mlflow_run in mlflow_runs:
+            run_type = mlflow_run.data.tags.get(self.RUN_TYPE_TAG)
+            if run_type == self.LEARN_KEY:
+                episodes = int(mlflow_run.data.metrics.get(_EPISODE_KEY, 0))
+                total_episodes += episodes
+                steps = int(mlflow_run.data.metrics.get(_STEP_KEY, 0))
+                total_steps += steps
         return total_episodes, total_steps
 
     def print_results(self):
@@ -281,29 +266,23 @@ class AgentRun(MLflowRun):
         self,
         registry: Registry = None,
         recurse: bool = True,
-        force: bool = False,
         include_artifacts: bool = False,
     ) -> Registry:
         if not registry:
             registry = InMemoryRegistry()
+        # TODO - push artifacts to registry
         if recurse:
             if self.outer_run:
                 self.outer_run.to_registry(
                     registry=registry,
                     recurse=recurse,
-                    force=force,
-                    include_artifacts=include_artifacts,
                 )
             if self.model_input_run:
                 self.model_input_run.to_registry(
                     registry=registry,
                     recurse=recurse,
-                    force=force,
-                    include_artifacts=include_artifacts,
                 )
-        return super().to_registry(
-            registry=registry, force=force, include_artifacts=include_artifacts
-        )
+        return super().to_registry(registry=registry)
 
     def end(
         self,
@@ -314,6 +293,27 @@ class AgentRun(MLflowRun):
         self.log_run_metrics()
         if print_results:
             self.print_results()
+
+    @classmethod
+    def from_existing_mlflow_run(cls, run_id: str) -> "AgentRun":
+        run = super().from_existing_mlflow_run(run_id)
+        if MLFLOW_PARENT_RUN_ID in run.data["tags"]:
+            outer_run_id = run.data["tags"][MLFLOW_PARENT_RUN_ID]
+            run.outer_run = Output.from_existing_mlflow_run(outer_run_id)
+        else:
+            run.outer_run = None
+        if cls.MODEL_INPUT_RUN_ID in run.data["tags"]:
+            model_input_run = run.data["tags"][cls.MODEL_INPUT_RUN_ID]
+            run.model_input_run = cls.from_existing_mlflow_run(model_input_run)
+        else:
+            run.model_input_run = None
+        run.episode_data = []
+        run.run_type = run.data["tags"][cls.RUN_TYPE_TAG]
+        run.agent_identifier = run.data["tags"][cls.AGENT_ID_KEY]
+        run.environment_identifier = run.data["tags"][cls.ENV_ID_KEY]
+        _register_attributes(run)
+        _check_initialization(run)
+        return run
 
     def __enter__(self) -> "AgentRun":
         return self

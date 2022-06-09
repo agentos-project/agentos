@@ -12,6 +12,22 @@ from pcs.exceptions import PythonComponentSystemException
 from pcs.mlflow_run import MLflowRun
 from pcs.registry import Registry
 
+SPEC_ATTRS = ["command"]
+
+
+def _register_attributes(run):
+    for attribute in SPEC_ATTRS:
+        run.register_attribute(attribute)
+
+
+def _check_initialization(run):
+    assert hasattr(run, "_return_value")
+    assert hasattr(run, "_command")
+    for attribute in SPEC_ATTRS:
+        assert run.attribute_is_registered(attribute)
+    assert run.data["tags"].get(run.IS_COMPONENT_RUN_TAG) == "True"
+    assert run.data["tags"].get(MLFLOW_RUN_NAME)
+
 
 class Output(MLflowRun):
     IS_FROZEN_KEY = "agentos.spec_is_frozen"
@@ -41,7 +57,7 @@ class Output(MLflowRun):
         super().__init__(experiment_id=experiment_id)
         self._return_value = None
         self._command = command
-        self._register_output_attributes()
+        _register_attributes(self)
         self._log_command()
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
@@ -49,16 +65,17 @@ class Output(MLflowRun):
             f"Running function '{self.command.function_name}' on Component "
             f"'{self.command.component.identifier[0:7]}'.",
         )
+        _check_initialization(self)
 
     @classmethod
     def from_existing_mlflow_run(cls, run_id: str) -> "Output":
         output = super().from_existing_mlflow_run(run_id)
         output._command = output._fetch_command()
-        output._register_output_attributes()
+        # TODO - need to pull return value from attributes
+        output._return_value = None
+        _register_attributes(output)
+        _check_initialization(output)
         return output
-
-    def _register_output_attributes(self):
-        self.register_attribute("command")
 
     @property
     def command(self) -> "Command":

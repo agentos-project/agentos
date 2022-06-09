@@ -84,6 +84,9 @@ class Component:
     def sha1(self) -> str:
         return self.spec_body_to_identifier(self._spec_body)
 
+    def attribute_is_registered(self, attribute_name: str) -> bool:
+        return attribute_name in self._spec_attr_names
+
     def register_attribute(self, attribute_name: str):
         assert attribute_name != self.IDENTIFIER_KEY, (
             f"{self.IDENTIFIER_KEY} cannot be registered as an "

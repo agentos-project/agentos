@@ -7,8 +7,23 @@ from mlflow.entities import RunStatus
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context import registry as context_registry
+from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 
 from pcs.component import Component
+
+SPEC_ATTRS = ["experiment_id", "info", "data"]
+
+
+def _register_attributes(run):
+    for attribute in SPEC_ATTRS:
+        run.register_attribute(attribute)
+
+
+def _check_initialization(run):
+    assert run._mlflow_run_id
+    assert run.data["tags"].get(run.PCS_RUN_TAG) == "True"
+    for attribute in SPEC_ATTRS:
+        assert run.attribute_is_registered(attribute)
 
 
 class MLflowRun(Component):
@@ -69,7 +84,8 @@ class MLflowRun(Component):
         resolved_tags = context_registry.resolve_tags()
         for tag_k, tag_v in resolved_tags.items():
             self.set_tag(tag_k, tag_v)
-        self._register_attributes()
+        _register_attributes(self)
+        _check_initialization(self)
 
     @classmethod
     def from_existing_mlflow_run(cls, run_id: str) -> "MLflowRun":
@@ -83,19 +99,19 @@ class MLflowRun(Component):
                 f"mlflow_run_id {run_id} is not."
             )
             raise mlflow_exception
+
         orig_init = cls.__init__
-        cls.__init__ = lambda x: None
+        cls.__init__ = Component.__init__
         try:
             run = cls()
             run._mlflow_run_id = run_id
         finally:
             cls.__init__ = orig_init
-        super().__init__(run)
-        run._register_attributes()
-        return run
 
-    def _register_attributes(self):
-        self.register_attributes(["experiment_id", "info", "data"])
+        run._mlflow_run_id = run_id
+        _register_attributes(run)
+        _check_initialization(run)
+        return run
 
     @classmethod
     def run_exists(cls, mlflow_run_id) -> bool:
@@ -107,16 +123,20 @@ class MLflowRun(Component):
 
     @classmethod
     def get_all_runs(cls):
-        mlflow_runs = cls.MLFLOW_CLIENT.search_runs(
-            experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
-            order_by=["attribute.start_time DESC"],
-            filter_string=f'tag.{cls.PCS_RUN_TAG} ILIKE "%"',
-        )
+        mlflow_runs = cls._get_all_mlflow_runs()
         res = []
         for mlflow_run in mlflow_runs:
             r = cls.from_existing_mlflow_run(mlflow_run.info.run_id)
             res.append(r)
         return res
+
+    @classmethod
+    def _get_all_mlflow_runs(cls):
+        return cls.MLFLOW_CLIENT.search_runs(
+            experiment_ids=[cls.DEFAULT_EXPERIMENT_ID],
+            order_by=["attribute.start_time DESC"],
+            filter_string=f'tag.{cls.PCS_RUN_TAG} ILIKE "%"',
+        )
 
     @property
     def _mlflow_run(self):
@@ -193,6 +213,15 @@ class MLflowRun(Component):
         for run in runs:
             run.print_status()
         print()
+
+    def get_child_mlflow_runs(self):
+        mlflow_runs = self._get_all_mlflow_runs()
+        children_runs = []
+        for run in mlflow_runs:
+            parent_mlflow_id = run.data.tags.get(MLFLOW_PARENT_RUN_ID)
+            if self._mlflow_run_id == parent_mlflow_id:
+                children_runs.append(run)
+        return children_runs
 
     def __enter__(self) -> "MLflowRun":
         return self
