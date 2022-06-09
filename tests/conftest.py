@@ -26,8 +26,10 @@ def cli_runner():
             result = f(*args, **kwargs)
 
             if echo is True:
-                sys.stdout.write(result.output)
-
+                try:
+                    sys.stdout.write(result.output)
+                except UnicodeEncodeError:
+                    pass  # Github's CI Windows encoding causes this exception
             return result
 
         return wrapper

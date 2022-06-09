@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import regex
 from deepdiff import grep
@@ -207,3 +207,64 @@ def find_and_replace_leaves(
             leaf_replace(data_struct, leaf_list, replace_fn)
             match_found = True
     return match_found
+
+
+def transform_leaf(
+    orig_struct: Any,
+    copy_struct: Any,
+    leaf_list: List,
+    replacement_fn: Callable,
+):
+    """
+    Copy the leaf specified by ``leaf_list`` from orig_struct to
+    copy_struct, applying replacement_fn.
+    """
+    if not isinstance(orig_struct, Dict) and not isinstance(orig_struct, List):
+        return
+    key, *remaining_keys = leaf_list
+    next_inner = orig_struct[key]
+    if isinstance(orig_struct, List):  # copy branch structure.
+        assert isinstance(copy_struct, List)
+        while key >= len(copy_struct):
+            copy_struct.append(None)
+        if copy_struct[key] is None:
+            copy_struct[key] = {} if isinstance(next_inner, Dict) else []
+    if isinstance(orig_struct, Dict):  # copy branch structure.
+        assert isinstance(copy_struct, Dict)
+        if key not in copy_struct:
+            copy_struct[key] = {} if isinstance(next_inner, Dict) else []
+    if isinstance(next_inner, Dict) or isinstance(next_inner, List):
+        transform_leaf(
+            next_inner, copy_struct[key], remaining_keys, replacement_fn
+        )
+    else:
+        # This is the leaf we're looking for.
+        assert len(leaf_list) == 2
+        assert next_inner == leaf_list[-1]
+        copy_struct[key] = replacement_fn(next_inner)
+
+
+def copy_find_and_replace_leaves(
+    data_struct: Any, filter_fn: Callable, replace_fn: Callable
+) -> Tuple[bool, Union[List, Dict]]:
+    """
+    :param data_struct: the list or dict to copy and search
+    :param filter_fn: the function to use when filtering
+    :param replace_fn: a function that takes the existing leaf element
+        and returns an element that will replace the existing one.
+    :return: True if any matches were found, and the new structure reflecting
+        the changes.
+    """
+    assert isinstance(data_struct, (List, Dict)), (
+        f"data_struct must be a list or dict, but is type "
+        f"{type(data_struct)} (value: '{data_struct}')."
+    )
+    copy_struct = {} if isinstance(data_struct, Dict) else []
+    match_found = False
+    for leaf_list in leaf_lists(data_struct):
+        if filter_fn(leaf_list[-1]):
+            transform_leaf(data_struct, copy_struct, leaf_list, replace_fn)
+            match_found = True
+        else:
+            transform_leaf(data_struct, copy_struct, leaf_list, lambda x: x)
+    return match_found, copy_struct
