@@ -29,9 +29,9 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-            kwargs:
-                environment: spec:environment
-                AcmeRun: spec:AcmeRun
+            args:
+                - spec:environment
+                - spec:AcmeRun
         instance_of:
             type: Class
             name: AcmeDQNNetwork
