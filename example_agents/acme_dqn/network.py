@@ -6,7 +6,7 @@ import module_manager
 import sonnet as snt
 import tensorflow as tf
 
-from pcs.mlflow_run import Run
+from pcs.mlflow_run import MLflowRun
 
 
 class TFModelSaver:
@@ -31,7 +31,7 @@ class TFModelSaver:
 
     @classmethod
     def restore(cls, save_as_name: str, network: module_manager.Module):
-        runs = Run.get_all_runs()
+        runs = MLflowRun.get_all_runs()
         for run in runs:
             try:
                 save_path = Path(run.download_artifacts(save_as_name))
