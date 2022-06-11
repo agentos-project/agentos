@@ -7,7 +7,7 @@ import torch
 from a2c_ppo_acktr import utils
 from a2c_ppo_acktr.utils import get_vec_normalize
 
-from agentos.agent_output import AgentRun
+from agentos.agent_run import AgentRun
 
 
 class PAPAGRun(AgentRun):
@@ -20,7 +20,7 @@ class PAPAGRun(AgentRun):
     https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
     """
 
-    PAPAG_RUN_TAG_KEY = "papag_agent_output"
+    PAPAG_RUN_TAG_KEY = "papag_agent_run"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

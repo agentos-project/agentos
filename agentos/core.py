@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Thread
 from typing import Optional, Sequence
 
-from agentos.agent_output import AgentRun
+from agentos.agent_run import AgentRun
 
 
 class MemberInitializer:

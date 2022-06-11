@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 import yaml
 
-from agentos.agent_output import AgentRun
+from agentos.agent_run import AgentRun
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.mlflow_run import MLflowRun
@@ -187,12 +187,23 @@ def run(
     output = comp.run_with_arg_set(
         function_name, arg_set=arg_set, log_return_value=log_return_value
     )
+    children = output.get_child_mlflow_runs()
     print()
-    print(f"Output {output.identifier} recorded.", end=" ")
-    print("Execute the following for details:")
-    print(f"\n  agentos status {output.mlflow_run_id}\n")
-    print("Execute the following to publish:")
-    print(f"\n  agentos publish {output.mlflow_run_id}\n")
+    print(f"Output {output.identifier} recorded.")
+    print(f"\tpublish: agentos publish {output.info['run_id']}")
+    print(f"\tdetails: agentos status {output.info['run_id']}")
+    if children:
+        print()
+        print(f"Output {output.identifier} has the following children:")
+        print()
+        for child in children:
+            if child.data.tags.get(AgentRun.IS_AGENT_RUN_TAG):
+                print(f"\tAgentRun {child.info.run_id}")
+            else:
+                print(f"\tOutput {child.info.run_id}")
+            print(f"\t\tpublish: agentos publish {child.info.run_id}")
+            print(f"\t\tdetails: agentos status {child.info.run_id}")
+        print()
 
 
 @agentos_cmd.command()

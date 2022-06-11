@@ -6,7 +6,7 @@ from typing import Optional
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import BasePolicy
 
-from agentos.agent_output import AgentRun
+from agentos.agent_run import AgentRun
 
 
 class EvaluateCallback:
@@ -90,7 +90,6 @@ class SB3Run(AgentRun):
         model_input_run: str = None,
         agent_identifier: Optional[str] = None,
         environment_identifier: Optional[str] = None,
-        existing_run_id: Optional[str] = None,
     ) -> None:
         super().__init__(
             run_type,
@@ -98,7 +97,6 @@ class SB3Run(AgentRun):
             model_input_run=model_input_run,
             agent_identifier=agent_identifier,
             environment_identifier=environment_identifier,
-            existing_run_id=existing_run_id,
         )
         self.evaluate_callback = EvaluateCallback(self)
         self.learn_callback = LearnCallback(self)
