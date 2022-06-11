@@ -1,5 +1,5 @@
 specs:
-    my_command:
+    rllib_evaluate_cmd:
         type: Command
         function_name: evaluate 
         runtime:
@@ -17,8 +17,8 @@ specs:
                 - type: PipPackage
                   repo:
                       type: PyPIRepo # must be a `PyPIRepo`, `GitHubRepo`, `LocalRepo`
-                      project_name: numpy
-                      default_version: 0.1.0
+                      project_name: gym
+                      default_version: 0.10.0
                 - type: LocalPackage
                   name: agentos
                   setup_file:
