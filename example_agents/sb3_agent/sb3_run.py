@@ -6,7 +6,7 @@ from typing import Optional
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import BasePolicy
 
-from agentos.agent_output import AgentRun
+from agentos.agent_run import AgentRun
 
 
 class EvaluateCallback:

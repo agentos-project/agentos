@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 import yaml
 
-from agentos.agent_output import AgentRun
+from agentos.agent_run import AgentRun
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.mlflow_run import MLflowRun
