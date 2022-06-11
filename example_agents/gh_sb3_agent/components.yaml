@@ -31,7 +31,7 @@ specs:
                 type: Module
                 repo: spec:aos_github
                 file_path: example_agents/sb3_agent/agent.py
-                version: test_staging_alt
+                version: test_staging
 
     AtariEnv:
         type: Class
@@ -67,4 +67,4 @@ specs:
             type: Module
             repo: spec:aos_github
             file_path: example_agents/sb3_agent/sb3_run.py
-            version: test_staging_alt
+            version: test_staging
