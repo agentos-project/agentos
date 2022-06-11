@@ -14,18 +14,6 @@ from pcs.component import Component
 SPEC_ATTRS = ["experiment_id", "info", "data"]
 
 
-def _register_attributes(run):
-    for attribute in SPEC_ATTRS:
-        run.register_attribute(attribute)
-
-
-def _check_initialization(run):
-    assert run._mlflow_run_id
-    assert run.data["tags"].get(run.PCS_RUN_TAG) == "True"
-    for attribute in SPEC_ATTRS:
-        assert run.attribute_is_registered(attribute)
-
-
 class MLflowRun(Component):
     """
     A wrapper around MLflow Run.
@@ -84,8 +72,7 @@ class MLflowRun(Component):
         resolved_tags = context_registry.resolve_tags()
         for tag_k, tag_v in resolved_tags.items():
             self.set_tag(tag_k, tag_v)
-        _register_attributes(self)
-        _check_initialization(self)
+        self._register_attributes(SPEC_ATTRS)
 
     @classmethod
     def from_existing_mlflow_run(cls, run_id: str) -> "MLflowRun":
@@ -109,8 +96,7 @@ class MLflowRun(Component):
             cls.__init__ = orig_init
 
         run._mlflow_run_id = run_id
-        _register_attributes(run)
-        _check_initialization(run)
+        run._register_attributes(SPEC_ATTRS)
         return run
 
     @classmethod
@@ -177,6 +163,20 @@ class MLflowRun(Component):
                 f"type object '{self.__class__}' has no attribute "
                 f"'{attr_name}'"
             )
+
+    def _register_attributes(self, attributes: Sequence[str]):
+        for attribute in attributes:
+            self.register_attribute(attribute)
+
+    def _check_initialization(self):
+        assert self._mlflow_run_id
+        assert self.data["tags"].get(self.PCS_RUN_TAG) == "True"
+        self._check_attributes_registered(SPEC_ATTRS)
+
+    def _check_attributes_registered(self, attributes):
+        for attribute in attributes:
+            error_msg = f"Attribute {attribute} is not registered"
+            assert self.attribute_is_registered(attribute), error_msg
 
     def _get_artifact_paths(self) -> Sequence[Path]:
         artifacts_dir = self.download_artifacts(".")

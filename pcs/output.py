@@ -15,20 +15,6 @@ from pcs.registry import Registry
 SPEC_ATTRS = ["command"]
 
 
-def _register_attributes(run):
-    for attribute in SPEC_ATTRS:
-        run.register_attribute(attribute)
-
-
-def _check_initialization(run):
-    assert hasattr(run, "_return_value")
-    assert hasattr(run, "_command")
-    for attribute in SPEC_ATTRS:
-        assert run.attribute_is_registered(attribute)
-    assert run.data["tags"].get(run.IS_COMPONENT_RUN_TAG) == "True"
-    assert run.data["tags"].get(MLFLOW_RUN_NAME)
-
-
 class Output(MLflowRun):
     IS_FROZEN_KEY = "agentos.spec_is_frozen"
     IS_COMPONENT_RUN_TAG = "pcs.is_component_run"
@@ -57,7 +43,6 @@ class Output(MLflowRun):
         super().__init__(experiment_id=experiment_id)
         self._return_value = None
         self._command = command
-        _register_attributes(self)
         self._log_command()
         self.set_tag(self.IS_COMPONENT_RUN_TAG, "True")
         self.set_tag(
@@ -65,7 +50,8 @@ class Output(MLflowRun):
             f"Running function '{self.command.function_name}' on Component "
             f"'{self.command.component.identifier[0:7]}'.",
         )
-        _check_initialization(self)
+        self._register_attributes(SPEC_ATTRS)
+        self._check_initialization()
 
     @classmethod
     def from_existing_mlflow_run(cls, run_id: str) -> "Output":
@@ -73,8 +59,8 @@ class Output(MLflowRun):
         output._command = output._fetch_command()
         # TODO - need to pull return value from attributes
         output._return_value = None
-        _register_attributes(output)
-        _check_initialization(output)
+        output.register_attributes(SPEC_ATTRS)
+        output._check_initialization()
         return output
 
     @property
@@ -131,6 +117,14 @@ class Output(MLflowRun):
         self.set_tag(self.COMMAND_ID_KEY, self._command.identifier)
         command_dict = self._command.to_registry().to_dict()
         self.log_dict(command_dict, self.COMMAND_REGISTRY_FILENAME)
+
+    def _check_initialization(self):
+        super()._check_initialization()
+        assert hasattr(self, "_return_value")
+        assert hasattr(self, "_command")
+        assert self.data["tags"].get(self.IS_COMPONENT_RUN_TAG) == "True"
+        assert self.data["tags"].get(MLFLOW_RUN_NAME)
+        self._check_attributes_registered(SPEC_ATTRS)
 
     def _validate_no_command_logged(self):
         assert self.COMMAND_ID_KEY not in self._mlflow_run.data.tags, (

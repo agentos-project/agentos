@@ -28,28 +28,6 @@ RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 SPEC_ATTRS = []
 
 
-def _register_attributes(run):
-    for attribute in SPEC_ATTRS:
-        run.register_attribute(attribute)
-
-
-def _check_initialization(run):
-    assert hasattr(run, "outer_run")
-    assert hasattr(run, "model_input_run")
-    assert hasattr(run, "episode_data")
-    assert hasattr(run, "run_type")
-    assert hasattr(run, "agent_identifier")
-    assert hasattr(run, "environment_identifier")
-    assert run.data["tags"].get(run.IS_AGENT_RUN_TAG) == "True"
-    assert run.data["tags"].get(MLFLOW_RUN_NAME)
-    outer_run = getattr(run, "outer_run")
-    if outer_run:
-        assert run.data["tags"].get(MLFLOW_PARENT_RUN_ID)
-    model_input_run = getattr(run, "model_input_run")
-    if model_input_run:
-        assert run.data["tags"].get(run.MODEL_INPUT_RUN_ID)
-
-
 class AgentRun(MLflowRun):
     """
     An AgentRun provides an API that agents can use to log agent related
@@ -130,8 +108,8 @@ class AgentRun(MLflowRun):
         self.log_run_type(self.run_type)
         self.log_agent_identifier(self.agent_identifier)
         self.log_environment_identifier(self.environment_identifier)
-        _register_attributes(self)
-        _check_initialization(self)
+        self._register_attributes(SPEC_ATTRS)
+        self._check_initialization()
 
     @classmethod
     def evaluate_run(
@@ -239,6 +217,24 @@ class AgentRun(MLflowRun):
         )
         print()
 
+    def _check_initialization(self):
+        super()._check_initialization()
+        assert hasattr(self, "outer_run")
+        assert hasattr(self, "model_input_run")
+        assert hasattr(self, "episode_data")
+        assert hasattr(self, "run_type")
+        assert hasattr(self, "agent_identifier")
+        assert hasattr(self, "environment_identifier")
+        assert self.data["tags"].get(self.IS_AGENT_RUN_TAG) == "True"
+        assert self.data["tags"].get(MLFLOW_RUN_NAME)
+        outer_run = getattr(self, "outer_run")
+        if outer_run:
+            assert self.data["tags"].get(MLFLOW_PARENT_RUN_ID)
+        model_input_run = getattr(self, "model_input_run")
+        if model_input_run:
+            assert self.data["tags"].get(self.MODEL_INPUT_RUN_ID)
+        self._check_attributes_registered(SPEC_ATTRS)
+
     def _get_run_stats(self):
         episode_lengths = [d["steps"] for d in self.episode_data]
         episode_returns = [d["reward"] for d in self.episode_data]
@@ -311,8 +307,8 @@ class AgentRun(MLflowRun):
         run.run_type = run.data["tags"][cls.RUN_TYPE_TAG]
         run.agent_identifier = run.data["tags"][cls.AGENT_ID_KEY]
         run.environment_identifier = run.data["tags"][cls.ENV_ID_KEY]
-        _register_attributes(run)
-        _check_initialization(run)
+        run._register_attributes(SPEC_ATTRS)
+        run._check_initialization()
         return run
 
     def __enter__(self) -> "AgentRun":
