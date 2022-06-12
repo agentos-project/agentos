@@ -7,6 +7,7 @@ import pprint
 import shutil
 import tarfile
 import tempfile
+from collections import defaultdict, deque, namedtuple
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
 
@@ -17,6 +18,9 @@ from dotenv import load_dotenv
 
 from pcs.specs import Spec, flatten_spec, is_flat_spec, unflatten_spec
 from pcs.utils import (
+    IDENTIFIER_REF_PREFIX,
+    extract_identifier,
+    filter_leaves,
     is_identifier,
     is_spec_body,
     make_identifier_ref,
@@ -250,25 +254,63 @@ class Registry(abc.ABC):
                 self.add_alias(alias, i)
 
     def replace_spec(self, identifier, new_spec):
-        replacements_to_do = [(identifier, new_spec)]
+        if type(new_spec) != Spec:
+            new_spec = Spec(input_dict=new_spec)
+        if identifier in self.aliases:
+            identifier = self.aliases[identifier]
+        dependee_ids = defaultdict(set)  # {id: set(ids that depend on it)}
+        dependency_ids = defaultdict(set)  # {id: set(ids that it depends on)}
+        for ident, spec_body in self.specs.items():
+            for _, spec_ref in filter_leaves(
+                    spec_body,
+                    lambda x: type(x) == str and IDENTIFIER_REF_PREFIX in x
+            ).items():
+                ref_id = extract_identifier(spec_ref)
+                dependee_ids[ref_id].add(ident)
+                dependency_ids[ident].add(ref_id)
+        specs_copy = copy.deepcopy(self.specs)
+        specs_copy.pop(identifier)
+        specs_copy.update(new_spec)
+        replacements_to_do = deque(dependee_ids[identifier])
+        old_ident_to_new = {identifier: new_spec.identifier}
         while replacements_to_do:
-            ident_to_replace, new_spec = replacements_to_do.pop()
-            self.add_spec(new_spec)
-            for ident, spec_body in self.specs.items():
-                spec_copy = Spec.from_flat(spec_body)  # Makes deepcopy
-                found = spec_copy.replace_in_body(
-                    lambda x: x == make_identifier_ref(ident_to_replace),
-                    lambda x: make_identifier_ref(new_spec.identifier),
-                )
-                if found:
-                    replacements_to_do.append((ident, spec_copy))
+            # deque ident of spec that is being replaced
+            ident_to_replace = replacements_to_do.popleft()
+            spec_to_replace = Spec(
+                {ident_to_replace: specs_copy.pop(ident_to_replace)}
+            )
+            # find and enqueue its parents
+            replacements_to_do += dependee_ids[ident_to_replace]
+            # Update body of spec replacing all child refs found in old_to_new
+            # Compute new identifier (i.e. hash)
+            updated_deps = set()
+            for dependency_id in dependency_ids[ident_to_replace]:
+                if dependency_id in old_ident_to_new:
+                    spec_to_replace.replace_in_body(
+                        lambda x: x == dependency_id,
+                        lambda x: old_ident_to_new[dependency_id],
+                    )
+                    updated_deps.add(old_ident_to_new[dependency_id])
+                else:
+                    updated_deps.add(dependency_id)
+            # Store new mapping into old_to_new & update helper dicts
+            old_ident_to_new[ident_to_replace] = spec_to_replace.identifier
+            dependency_ids[spec_to_replace.identifier] = updated_deps
+            dependee_ids[spec_to_replace.identifier] = dependee_ids.pop(
+                ident_to_replace
+            )
+            # add new spec (identifier->updated_body) to graph
+            specs_copy.update(spec_to_replace)
+            # update aliases
             aliases_to_update = [
                 alias
                 for alias, ident in self.aliases.items()
                 if ident == ident_to_replace
             ]
             for alias in aliases_to_update:
-                self.aliases[alias] = new_spec.identifier
+                self.aliases[alias] = spec_to_replace.identifier
+        new_reg = namedtuple("dummy_reg", "specs aliases")(specs_copy, {})
+        self.update(new_reg)
 
 
 class InMemoryRegistry(Registry):

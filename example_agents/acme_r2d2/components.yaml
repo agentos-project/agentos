@@ -15,7 +15,7 @@ specs:
                 AcmeRun: spec:AcmeRun
                 network: spec:network
         instance_of:
-            type: class
+            type: Class
             name: AcmeR2D2Agent
             module:
                 type: Module

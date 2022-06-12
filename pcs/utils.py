@@ -268,3 +268,28 @@ def copy_find_and_replace_leaves(
         else:
             transform_leaf(data_struct, copy_struct, leaf_list, lambda x: x)
     return match_found, copy_struct
+
+
+class spec_digraph:
+    def __init__(self, init_dict: Dict):
+        self._dict = {}  # a dict of Specs
+        self.dependee_ids = defaultdict(set)
+        self.dependency_ids = defaultdict(set)
+        for ident, spec_body in init_dict.items():
+            self.add(Spec({ident: spec_body}))
+
+    def add_spec(self, spec: Spec):
+        self._dict.update(spec)
+        for _, spec_ref in filter_leaves(
+                spec.body,
+                lambda x: type(x) == str and IDENTIFIER_REF_PREFIX in x
+        ).items():
+            ref_id = extract_identifier(spec_ref)
+            self.dependee_ids[ref_id].add(spec.identifier)
+            self.dependency_ids[spec.identifier].add(ref_id)
+
+    def pop_spec(self, identifier: str):
+
+    def to_dict(self):
+        return self._dict
+

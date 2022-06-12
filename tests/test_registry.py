@@ -1,9 +1,13 @@
 """Test suite for AgentOS Registry."""
 
+import yaml
+import pprint
+
 from pcs import Module
 from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
+from pcs.specs import Spec
 from pcs.utils import make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
@@ -68,3 +72,30 @@ def test_registry_from_repo():
     assert "pcs/component.py" in [
         body["file_path"] for body in reg.specs.values() if "file_path" in body
     ]
+
+
+def test_triangle_dependency_graphs():
+    registry_yaml = """
+specs:
+    one:
+        type: LocalRepo
+        path: .
+    two:
+        type: ArgumentSet
+        args:
+            - spec:one
+            - this is two
+    three:
+        type: ArgumentSet
+        args:
+            - spec:one
+            - this is three
+    four:
+        type: ArgumentSet
+        args:
+            - spec:two
+            - spec:three
+"""
+    reg = Registry.from_dict(yaml.load(registry_yaml))
+    pprint.pprint(reg.to_dict())
+    reg.replace_spec("one", Spec.from_flat({"type": "LocalRepo", "path": "/tmp"}))
