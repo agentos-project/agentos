@@ -98,4 +98,5 @@ specs:
 """
     reg = Registry.from_dict(yaml.load(registry_yaml))
     pprint.pprint(reg.to_dict())
-    reg.replace_spec("one", Spec.from_flat({"type": "LocalRepo", "path": "/tmp"}))
+    replacement_spec = Spec.from_flat({"type": "LocalRepo", "path": "/tmp"})
+    reg.replace_spec("one", replacement_spec)

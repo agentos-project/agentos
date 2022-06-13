@@ -21,6 +21,7 @@ from pcs.utils import (
     IDENTIFIER_REF_PREFIX,
     extract_identifier,
     filter_leaves,
+    find_and_replace_leaves,
     is_identifier,
     is_spec_body,
     make_identifier_ref,
@@ -254,63 +255,7 @@ class Registry(abc.ABC):
                 self.add_alias(alias, i)
 
     def replace_spec(self, identifier, new_spec):
-        if type(new_spec) != Spec:
-            new_spec = Spec(input_dict=new_spec)
-        if identifier in self.aliases:
-            identifier = self.aliases[identifier]
-        dependee_ids = defaultdict(set)  # {id: set(ids that depend on it)}
-        dependency_ids = defaultdict(set)  # {id: set(ids that it depends on)}
-        for ident, spec_body in self.specs.items():
-            for _, spec_ref in filter_leaves(
-                    spec_body,
-                    lambda x: type(x) == str and IDENTIFIER_REF_PREFIX in x
-            ).items():
-                ref_id = extract_identifier(spec_ref)
-                dependee_ids[ref_id].add(ident)
-                dependency_ids[ident].add(ref_id)
-        specs_copy = copy.deepcopy(self.specs)
-        specs_copy.pop(identifier)
-        specs_copy.update(new_spec)
-        replacements_to_do = deque(dependee_ids[identifier])
-        old_ident_to_new = {identifier: new_spec.identifier}
-        while replacements_to_do:
-            # deque ident of spec that is being replaced
-            ident_to_replace = replacements_to_do.popleft()
-            spec_to_replace = Spec(
-                {ident_to_replace: specs_copy.pop(ident_to_replace)}
-            )
-            # find and enqueue its parents
-            replacements_to_do += dependee_ids[ident_to_replace]
-            # Update body of spec replacing all child refs found in old_to_new
-            # Compute new identifier (i.e. hash)
-            updated_deps = set()
-            for dependency_id in dependency_ids[ident_to_replace]:
-                if dependency_id in old_ident_to_new:
-                    spec_to_replace.replace_in_body(
-                        lambda x: x == dependency_id,
-                        lambda x: old_ident_to_new[dependency_id],
-                    )
-                    updated_deps.add(old_ident_to_new[dependency_id])
-                else:
-                    updated_deps.add(dependency_id)
-            # Store new mapping into old_to_new & update helper dicts
-            old_ident_to_new[ident_to_replace] = spec_to_replace.identifier
-            dependency_ids[spec_to_replace.identifier] = updated_deps
-            dependee_ids[spec_to_replace.identifier] = dependee_ids.pop(
-                ident_to_replace
-            )
-            # add new spec (identifier->updated_body) to graph
-            specs_copy.update(spec_to_replace)
-            # update aliases
-            aliases_to_update = [
-                alias
-                for alias, ident in self.aliases.items()
-                if ident == ident_to_replace
-            ]
-            for alias in aliases_to_update:
-                self.aliases[alias] = spec_to_replace.identifier
-        new_reg = namedtuple("dummy_reg", "specs aliases")(specs_copy, {})
-        self.update(new_reg)
+        raise NotImplementedError
 
 
 class InMemoryRegistry(Registry):
@@ -333,6 +278,24 @@ class InMemoryRegistry(Registry):
             self._registry.update(input_dict)
             self._resolve_inline_specs()
             self._resolve_aliases()
+
+        # Setup helper dicts (for performance).
+        self._dependee_ids = defaultdict(set)  # {id: set(ids that depend on it)}
+        self._dependency_ids = defaultdict(set)  # {id: set(ids that it depends on)}
+        self._update_helpers()
+
+    def _update_helpers(self, specs_dict: Dict = None):
+        specs_dict = specs_dict if specs_dict else self.specs
+        for ident, spec_body in specs_dict.items():
+            for _, spec_ref in filter_leaves(
+                    spec_body,
+                    lambda x: type(x) == str and x.startswith(
+                        IDENTIFIER_REF_PREFIX
+                    )
+            ).items():
+                ref_id = extract_identifier(spec_ref)
+                self._dependee_ids[ref_id].add(ident)
+                self._dependency_ids[ident].add(ref_id)
 
     @property
     def specs(self) -> Mapping:
@@ -474,14 +437,17 @@ class InMemoryRegistry(Registry):
                 else:
                     new_aliases[id_or_alias] = hash
                 new_specs[hash] = body
-        # replace uses of aliases within the body of the spec.
+        # replace uses of aliases within the body of specs.
+        specs_to_update = []
         for alias in new_aliases.keys():
             for spec in new_specs:
-                nested_dict_list_replace(
-                    new_specs,
-                    f"^{make_identifier_ref(alias)}$",
-                    make_identifier_ref(new_aliases[alias]),
+                found = find_and_replace_leaves(
+                    spec,
+                    lambda x: x == make_identifier_ref(alias),
+                    lambda x: make_identifier_ref(new_aliases[alias])
                 )
+                if found:
+
         self._registry[self.SPECS_KEY] = new_specs
         if new_aliases:
             self._registry[self.ALIASES_KEY] = new_aliases
@@ -499,12 +465,93 @@ class InMemoryRegistry(Registry):
             )
             print(f"Spec {identifier} is already in registry; nothing to do.")
         self._registry[self.SPECS_KEY].update(spec)
+        self._update_helpers(spec)
 
     def add_alias(self, alias: str, identifier: str) -> None:
         self._registry[self.ALIASES_KEY][alias] = identifier
 
     def to_dict(self) -> Dict:
         return self._registry
+
+    def replace_spec(self, identifier, new_spec):
+        """
+        Adds replacements for, but does not remove, spec with `identifier`
+        and all of its ancestors.
+
+        IN SUMMARY:
+            - add new node and update its child (i.e., dependency) edges
+            - push new nodes parents' ids onto queue
+            - while queue not empty:
+                - x = queue.dequeue()
+                - update edges between x and its children (dependencies)
+                - enqueue ids of its parents
+
+        IN DETAIL
+        Algo for when replace_spec() function is called with args:
+        `identifer` = id of spec to replace, `spec` = new Spec to replace it with.
+        1. set up helper dicts `dependee_ids` (child->parents) and `dependency_ids` (parent->children)
+        2. add the new node, update its children to point at new instead of old
+           and enqueue parents
+        3. Dequeue id of element to update
+        4. copy node from graph (it's parents will have hanging references to it)
+        4. Find & enqueue its parents using `dependee_ids` (things that depend on it)
+        5. Find & update its pointers to its children using `dependency_ids` and `old_to_new`
+        6. Update dependee_ids and dependency_ids to reflect the new mapping between this node and its dependencies
+        7. Add new node to graph
+
+        """
+        if type(new_spec) != Spec:
+            new_spec = Spec(input_dict=new_spec)
+        while identifier in self.aliases:
+            identifier = self.aliases[identifier]
+        # add the new node and enqueue its new parents.
+        self.add_spec(new_spec)
+        parent_ids = self._dependee_ids[identifier]
+        replacements_to_do = deque(parent_ids)
+        old_ident_to_new = {identifier: new_spec.identifier}
+
+        while replacements_to_do:
+            # dequeue ident of spec that is being replaced
+            ident_to_replace = replacements_to_do.popleft()
+            replacement_spec = Spec(
+                {ident_to_replace: self.specs[ident_to_replace]}
+            )
+            # find and enqueue its parents
+            replacements_to_do += self._dependee_ids[ident_to_replace]
+            # Update body of spec replacing all child refs found in old_to_new,
+            # making sure to follow references in old_to_new till no more are
+            # found.
+            updated_children = set()
+            for dependency_id in self._dependency_ids[ident_to_replace]:
+                new_ident = dependency_id
+                while dependency_id in old_ident_to_new:
+                    new_ident = old_ident_to_new[new_ident]
+                if new_ident != dependency_id:
+                    replacement_spec.replace_in_body(
+                        lambda x: x == dependency_id,
+                        lambda x: new_ident,
+                    )
+                    updated_children.add(old_ident_to_new[dependency_id])
+                else:
+                    updated_children.add(dependency_id)
+            # Store new mapping into old_to_new
+            old_ident_to_new[ident_to_replace] = replacement_spec.identifier
+            # Update `dependee_ids` helper dict since this node's children
+            # didn't know the new identifier of their to-be-updated parents
+            # when they were added to the graph, so we couldn't have updated
+            # the helper dicts at that time.
+            for child_id in updated_children:
+                self._dependee_ids[child_id] = replacement_spec.identifier
+            # add new spec (identifier->updated_body) to graph
+            self.add_spec(replacement_spec)
+            # update aliases
+            aliases_to_update = [
+                alias
+                for alias, ident in self.aliases.items()
+                if ident == ident_to_replace
+            ]
+            for alias in aliases_to_update:
+                self.aliases[alias] = replacement_spec.identifier
 
 
 class WebRegistry(Registry):
