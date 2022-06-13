@@ -7,7 +7,6 @@ from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
 from pcs.mlflow_run import MLflowRun
 from pcs.output import Output
-from pcs.registry import InMemoryRegistry, Registry
 
 _EPISODE_KEY = "episode_count"
 _STEP_KEY = "step_count"
@@ -25,7 +24,7 @@ _RUN_STATS_MEMBERS = [
 
 RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 
-SPEC_ATTRS = []
+SPEC_ATTRS = ["outer_run", "model_input_run"]
 
 
 class AgentRun(MLflowRun):
@@ -257,28 +256,6 @@ class AgentRun(MLflowRun):
                 "reward": reward,
             }
         )
-
-    def to_registry(
-        self,
-        registry: Registry = None,
-        recurse: bool = True,
-        include_artifacts: bool = False,
-    ) -> Registry:
-        if not registry:
-            registry = InMemoryRegistry()
-        # TODO - push artifacts to registry
-        if recurse:
-            if self.outer_run:
-                self.outer_run.to_registry(
-                    registry=registry,
-                    recurse=recurse,
-                )
-            if self.model_input_run:
-                self.model_input_run.to_registry(
-                    registry=registry,
-                    recurse=recurse,
-                )
-        return super().to_registry(registry=registry)
 
     def end(
         self,
