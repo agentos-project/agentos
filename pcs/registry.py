@@ -279,18 +279,21 @@ class InMemoryRegistry(Registry):
             self._resolve_aliases()
 
         # Setup helper dicts (for performance).
-        self._dependee_ids = defaultdict(set)  # {id: set(ids that depend on it)}
-        self._dependency_ids = defaultdict(set)  # {id: set(ids that it depends on)}
+        self._dependee_ids = defaultdict(
+            set
+        )  # {id: set(ids that depend on it)}
+        self._dependency_ids = defaultdict(
+            set
+        )  # {id: set(ids that it depends on)}
         self._update_helpers()
 
     def _update_helpers(self, specs_dict: Dict = None):
         specs_dict = specs_dict if specs_dict else self.specs
         for ident, spec_body in specs_dict.items():
             for _, spec_ref in filter_leaves(
-                    spec_body,
-                    lambda x: type(x) == str and x.startswith(
-                        IDENTIFIER_REF_PREFIX
-                    )
+                spec_body,
+                lambda x: type(x) == str
+                and x.startswith(IDENTIFIER_REF_PREFIX),
             ).items():
                 ref_id = extract_identifier(spec_ref)
                 self._dependee_ids[ref_id].add(ident)
@@ -443,7 +446,7 @@ class InMemoryRegistry(Registry):
                 found = found or find_and_replace_leaves(
                     spec,
                     lambda x: x == make_identifier_ref(alias),
-                    lambda x: make_identifier_ref(new_aliases[alias])
+                    lambda x: make_identifier_ref(new_aliases[alias]),
                 )
             if found:
                 updated_body = new_specs.pop(identifier)
@@ -480,27 +483,13 @@ class InMemoryRegistry(Registry):
         Adds replacements for, but does not remove, spec with `identifier`
         and all of its ancestors.
 
-        IN SUMMARY:
+        Summary of the algorithm:
             - add new node and update its child (i.e., dependency) edges
             - push new nodes parents' ids onto queue
             - while queue not empty:
                 - x = queue.dequeue()
                 - update edges between x and its children (dependencies)
                 - enqueue ids of its parents
-
-        IN DETAIL
-        Algo for when replace_spec() function is called with args:
-        `identifer` = id of spec to replace, `spec` = new Spec to replace it with.
-        1. set up helper dicts `dependee_ids` (child->parents) and `dependency_ids` (parent->children)
-        2. add the new node, update its children to point at new instead of old
-           and enqueue parents
-        3. Dequeue id of element to update
-        4. copy node from graph (it's parents will have hanging references to it)
-        4. Find & enqueue its parents using `dependee_ids` (things that depend on it)
-        5. Find & update its pointers to its children using `dependency_ids` and `old_to_new`
-        6. Update dependee_ids and dependency_ids to reflect the new mapping between this node and its dependencies
-        7. Add new node to graph
-
         """
         if type(new_spec) != Spec:
             new_spec = Spec(input_dict=new_spec)

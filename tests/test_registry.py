@@ -1,7 +1,8 @@
 """Test suite for AgentOS Registry."""
 
-import yaml
 import pprint
+
+import yaml
 
 from pcs import Module
 from pcs.component import Component
