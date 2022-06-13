@@ -70,7 +70,7 @@ class Component(TimeStampedModel):
     def start_time(self):
         start_time_ms = int(self.body["info"]["start_time"])
         start_time = datetime.datetime.fromtimestamp(start_time_ms / 1000)
-        return start_time.strftime("%m/%d/%y %H:%m")
+        return start_time.strftime("%m/%d/%y %H:%M")
 
     @property
     def environment(self):
