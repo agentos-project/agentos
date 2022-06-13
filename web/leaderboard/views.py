@@ -8,15 +8,13 @@ from registry.models import Component
 
 
 def index(request):
-    # run_obj_by_id, env_obj_by_id, _, terminals, _, _ = Run.agent_run_dags()
-    run_obj_by_id = {}
-    env_obj_by_id = {}
-    terminals = {}
+    agent_run_dags = Component.agent_run_dags()
+    run_obj_by_id, env_obj_by_id, _, terminals, _, _ = agent_run_dags
     env_dict = defaultdict(list)
     for env_id, run_list in terminals.items():
         runs = sorted(
             run_list,
-            key=(lambda i: run_obj_by_id[i].data["metrics"]["mean_reward"]),
+            key=lambda i: run_obj_by_id[i].mean_reward,
             reverse=True,
         )
         env_obj = env_obj_by_id[env_id]

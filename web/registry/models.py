@@ -1,3 +1,4 @@
+import datetime
 import json
 from collections import defaultdict
 from typing import List, Tuple
@@ -18,8 +19,71 @@ class TimeStampedModel(models.Model):
 
 
 class Component(TimeStampedModel):
+    SPEC_PREFIX = "spec:"
+
     identifier = models.CharField(max_length=200, primary_key=True)
     body = models.JSONField(default=dict)
+
+    @staticmethod
+    def spec_id_to_identifier(spec_id):
+        assert spec_id.startswith(Component.SPEC_PREFIX)
+        return spec_id.replace(Component.SPEC_PREFIX, "", 1)
+
+    # TODO: should be an object manager
+    @staticmethod
+    def get_from_spec_id(spec_id):
+        identifier = Component.spec_id_to_identifier(spec_id)
+        return Component.objects.get(identifier=identifier)
+
+    @property
+    def model_input_run_identifier(self):
+        input_id = self.body["model_input_run"]
+        if input_id is None:
+            return input_id
+        return Component.spec_id_to_identifier(input_id)
+
+    @property
+    def environment_identifier(self):
+        return self.body["data"]["tags"]["environment_identifier"]
+
+    @property
+    def agent_identifier(self):
+        return self.body["data"]["tags"]["agent_identifier"]
+
+    @property
+    def run_name(self):
+        return self.body["data"]["tags"]["mlflow.runName"]
+
+    @property
+    def mean_reward(self):
+        return self.body["data"]["metrics"]["mean_reward"]
+
+    @property
+    def training_episode_count(self):
+        return self.body["data"]["metrics"]["training_episode_count"]
+
+    @property
+    def training_step_count(self):
+        return self.body["data"]["metrics"]["training_step_count"]
+
+    @property
+    def start_time(self):
+        start_time_ms = int(self.body["info"]["start_time"])
+        start_time = datetime.datetime.fromtimestamp(start_time_ms / 1000)
+        return start_time.strftime("%m/%d/%y %H:%m")
+
+    @property
+    def environment(self):
+        return Component.objects.get(identifier=self.environment_identifier)
+
+    @property
+    def agent(self):
+        return Component.objects.get(identifier=self.agent_identifier)
+
+    @property
+    def agent_name(self):
+        instance = Component.get_from_spec_id(self.agent.body["instance_of"])
+        return instance.body["name"]
 
     @staticmethod
     def create_from_request_data(request_data: QueryDict):
@@ -40,34 +104,32 @@ class Component(TimeStampedModel):
 
     @staticmethod
     def agent_run_dags() -> Tuple:
-        # TODO: FIX ME BY PORTING ME TO COMPONENTS_V2
-        run_objs = Component.objects.filter(body__environment__isnull=False)
+        agent_runs = Component.objects.filter(body__type="AgentRun")
         run_obj_by_id = {}
         env_obj_by_id = {}
         run_to_env_id = {}
-        node_to_root = {}
 
         # {env_id: {agent_id: [ids_of_runs_without_input_parents]}}
         root_run_ids = defaultdict(lambda: defaultdict(list))
         run_graph = {}  # {parent_id: child_id}
-        for run in run_objs:
-            run_obj_by_id[run.identifier] = run
-            env_obj_by_id[run.body["environment"]] = run.environment
-            agent_id = run.agent.identifier
-            env_id = run.environment.identifier
+        for run in agent_runs:
             run_id = run.identifier
-            tags = run.data["tags"]
+            env_id = run.environment_identifier
+            agent_id = run.agent_identifier
+            run_obj_by_id[run_id] = run
+            env_obj_by_id[env_id] = run.environment
             run_to_env_id[run_id] = env_id
-            # Store our roots, which we'll use to for traversal later
-            if "model_input_run_id" not in tags:
-                root_run_ids[env_id][agent_id].append(run_id)
-            # store graph edges from parent to child (opposite of how they are)
-            else:
-                parent_id = tags["model_input_run_id"]
-                run_graph[parent_id] = run_id
 
-        # find the terminal node for every root_run (might be itself)
+            # Store our roots, which we'll use to for traversal later
+            if not run.model_input_run_identifier:
+                root_run_ids[env_id][agent_id].append(run_id)
+            # Store graph edges from parent to child (opposite of how they are)
+            else:
+                run_graph[run.model_input_run_identifier] = run_id
+
+        # Find the terminal node for every root_run (might be itself)
         terminals = defaultdict(list)
+        node_to_root = {}
         for env_id in root_run_ids.values():
             for root_id_list in env_id.values():
                 for root_id in root_id_list:
