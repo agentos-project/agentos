@@ -24,7 +24,7 @@ _RUN_STATS_MEMBERS = [
 
 RunStats = namedtuple("RunStats", _RUN_STATS_MEMBERS)
 
-SPEC_ATTRS = ["outer_run"]
+SPEC_ATTRS = ["outer_run", "model_input_run"]
 
 
 class AgentRun(MLflowRun):
