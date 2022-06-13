@@ -7,7 +7,7 @@ import pprint
 import shutil
 import tarfile
 import tempfile
-from collections import defaultdict, deque, namedtuple
+from collections import defaultdict, deque
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
 
@@ -25,7 +25,6 @@ from pcs.utils import (
     is_identifier,
     is_spec_body,
     make_identifier_ref,
-    nested_dict_list_replace,
 )
 
 logger = logging.getLogger(__name__)
@@ -387,7 +386,7 @@ class InMemoryRegistry(Registry):
 
         self._registry[self.SPECS_KEY] = new_specs
 
-    # TODO: This function probably belongs in the Registry class.
+    # TODO: This function might belong in the Registry class.
     def _resolve_aliases(self):
         """
         To make it easier for developers to write specs, we allow for
@@ -437,16 +436,19 @@ class InMemoryRegistry(Registry):
                 else:
                     new_aliases[id_or_alias] = hash
                 new_specs[hash] = body
-        # replace uses of aliases within the body of specs.
-        specs_to_update = []
-        for alias in new_aliases.keys():
-            for spec in new_specs:
-                found = find_and_replace_leaves(
+        # replace uses of aliases within spec bodies.
+        for identifier, spec in new_specs.items():
+            found = False
+            for alias in new_aliases.keys():
+                found = found or find_and_replace_leaves(
                     spec,
                     lambda x: x == make_identifier_ref(alias),
                     lambda x: make_identifier_ref(new_aliases[alias])
                 )
-                if found:
+            if found:
+                updated_body = new_specs.pop(identifier)
+                updated_hash = Component.spec_body_to_identifier(updated_body)
+                new_specs[updated_hash] = updated_body
 
         self._registry[self.SPECS_KEY] = new_specs
         if new_aliases:
@@ -524,7 +526,7 @@ class InMemoryRegistry(Registry):
             updated_children = set()
             for dependency_id in self._dependency_ids[ident_to_replace]:
                 new_ident = dependency_id
-                while dependency_id in old_ident_to_new:
+                while new_ident in old_ident_to_new:
                     new_ident = old_ident_to_new[new_ident]
                 if new_ident != dependency_id:
                     replacement_spec.replace_in_body(
