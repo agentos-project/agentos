@@ -33,10 +33,23 @@ def is_identifier(token: Any) -> bool:
     return is_id
 
 
+def get_identifier(spec_dict: Dict) -> str:
+    assert len(spec_dict) == 1
+    for identifier in spec_dict.keys():
+        return identifier
+
+
+def get_body(spec_dict: Dict) -> str:
+    assert len(spec_dict) == 1
+    for body in spec_dict.values():
+        return body
+
+
 def is_identifier_ref(token: Any) -> bool:
     return str(token).startswith(IDENTIFIER_REF_PREFIX)
 
 
+# Probably should rename to extract_identifier_from_ref.
 def extract_identifier(identifier_ref: str) -> str:
     assert identifier_ref.startswith(IDENTIFIER_REF_PREFIX)
     prefix_len = len(IDENTIFIER_REF_PREFIX)

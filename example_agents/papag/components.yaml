@@ -1,3 +1,5 @@
+imports:
+    - ./a2c_cartpole_args.yaml
 specs:
     papag_agent_dir:
         type: LocalRepo

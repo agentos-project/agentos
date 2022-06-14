@@ -160,10 +160,12 @@ def run(
     registry_string,
     log_return_value,
 ):
-
-    registry = InMemoryRegistry()
-    for reg in registry_file:
-        registry.update(Registry.from_yaml(reg))
+    if len(registry_file) == 0:
+        registry = InMemoryRegistry()
+    elif len(registry_file) == 1:
+        registry = Registry.from_yaml(registry_file[0])
+    elif len(registry_file) > 1:
+        registry = Registry.from_yamls(registry_file)
     if registry_string:
         registry.update(Registry.from_dict(literal_eval(registry_string)))
     print(registry.to_dict())

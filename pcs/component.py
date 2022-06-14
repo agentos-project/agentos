@@ -77,6 +77,7 @@ class Component:
     def __hash__(self) -> int:
         return int(self.sha1(), 16)
 
+    # TODO: This should be moved to utils.py
     @staticmethod
     def spec_body_to_identifier(spec_body: Dict) -> str:
         return DeepHash(spec_body, hasher=DeepHash.sha1hex)[spec_body]

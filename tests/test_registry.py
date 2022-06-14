@@ -9,7 +9,7 @@ from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.specs import Spec
-from pcs.utils import make_identifier_ref
+from pcs.utils import make_identifier_ref, is_identifier
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
@@ -20,27 +20,42 @@ from tests.utils import (
 
 
 def test_resolve_inline_specs():
-    inner_spec_body = {"type": "Module", "key": "val"}
+    inner_spec_body = {"type": "LocalRepo", "path": "."}
 
-    def get_outer_spec_body(what_to_inline):
-        return {"type": "Class", "some_module": what_to_inline}
+    def get_outer_spec_body(what_to_ref):
+        return {"type": "ArgumentSet", "args": [what_to_ref]}
 
     inner_spec_id = Component.spec_body_to_identifier(inner_spec_body)
     normalized_outer = get_outer_spec_body(make_identifier_ref(inner_spec_id))
-    nested_outer = get_outer_spec_body(inner_spec_body)
+    nested_outer = get_outer_spec_body({inner_spec_id: inner_spec_body})
     normalized_outer_id = Component.spec_body_to_identifier(normalized_outer)
     r = Registry.from_dict({"specs": {normalized_outer_id: nested_outer}})
-    outer_id = r.get_spec(normalized_outer_id, flatten=True)["some_module"]
-    assert outer_id == make_identifier_ref(inner_spec_id)
-    assert r.get_spec(inner_spec_id, flatten=True)["type"] == "Module"
+    id_from_outer = r.get_spec(normalized_outer_id, flatten=True)["args"][0]
+    assert id_from_outer == make_identifier_ref(inner_spec_id)
+    assert r.get_spec(inner_spec_id, flatten=True)["type"] == "LocalRepo"
 
 
 def test_resolve_inline_aliases():
-    test_reg_dict = {"specs": {"inline_alias": {"type": "Module", "k": "v"}}}
+    test_reg_dict = {
+        "specs": {
+            "inline_alias": {
+                "type": "ArgumentSet",
+                "kwargs": {"repo": "spec:other_spec"}
+            },
+            "other_spec": {"type": "LocalRepo", "path": "."}
+        }
+    }
     r = Registry.from_dict(test_reg_dict)
+    assert "inline_alias" in r.aliases
     spec_id = r.aliases["inline_alias"]
-    assert r.get_spec(spec_id, flatten=True)["k"] == "v"
-    assert r.get_spec("inline_alias", flatten=True)["k"] == "v"
+    assert is_identifier(spec_id)
+    assert r.get_spec(spec_id, flatten=True)["type"] == "ArgumentSet"
+    flat_spec = r.get_spec("inline_alias", flatten=True)
+    assert flat_spec["type"] == "ArgumentSet"
+    # Check that uses of aliases in spec bodies are replaced with specs
+    assert flat_spec["kwargs"]["repo"] == make_identifier_ref(
+        r.aliases["other_spec"]
+    )
 
 
 def test_registry_from_file():
