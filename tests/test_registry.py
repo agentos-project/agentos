@@ -22,13 +22,7 @@ def test_resolve_inline_specs():
     test_spec_dict = {
         "outer_spec": {
             "type": "ArgumentSet",
-            "args": [
-                {
-                    "inner_spec": {
-                        "type": "LocalRepo", "path": "."
-                    }
-                }
-            ]
+            "args": [{"inner_spec": {"type": "LocalRepo", "path": "."}}],
         }
     }
     r = Registry.from_dict({"specs": test_spec_dict})
