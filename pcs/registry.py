@@ -11,6 +11,7 @@ from pathlib import Path, PurePath
 from typing import (
     TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Tuple
 )
+from uuid import uuid4
 
 import requests
 import yaml
@@ -354,14 +355,14 @@ class InMemoryRegistry(Registry):
 
             specs:
                 c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
-                    nested_spec1: 271dfe754c6af7bc9d0729adfdc4338c8ee34398
+                    nested_spec1: spec:271dfe754c6af7bc9d0729adfdc4338c8ee34398
                     non_spec_dict:
-                        - 64d0729adf2e75caf7bc971d4398dc43cf883e3e
+                        - spec:64d0729adf2e75caf7bc971d4398dc43cf883e3e
                         - "a string"
 
                 271dfe754c6af7bc9d0729adfdc4338c8ee34398:
                     type: ComponentType1
-                    nested_spec2: e75caf7bc964d0729adf271df838ee34398dc43c
+                    nested_spec2: spec:e75caf7bc964d0729adf271df838ee34398dc43c
 
                 e75caf7bc964d0729adf271df838ee34398dc43c:
                     type: ComponentType2
@@ -377,27 +378,24 @@ class InMemoryRegistry(Registry):
         for ident, body in self.specs.items():
             new_specs[ident] = {}
             to_handle += [(new_specs, ident, {k: v}) for k, v in body.items()]
+        rand_alias_prefix = "alias_"
         while to_handle:
             struct, key, elt = to_handle.pop()
             if elt and isinstance(elt, dict):  # handling dict
                 for attr_key, attr_val in elt.items():
                     if is_spec_body(attr_val):  # normalize nested_spec
                         inner_spec = attr_val
-                        from pcs.component import Component
-
-                        inner_id = Component.spec_body_to_identifier(
-                            inner_spec
-                        )
+                        alias = rand_alias_prefix + str(uuid4())
                         if isinstance(struct, list):
                             assert isinstance(key, int)
                             while key >= len(struct):  # List too short
                                 struct.append(None)
-                            struct[key] = make_identifier_ref(inner_id)
+                            struct[key] = make_identifier_ref(alias)
                         else:
                             assert isinstance(struct[key], dict)
-                            struct[key][attr_key] = make_identifier_ref(inner_id)
-                        new_specs[inner_id] = {}
-                        to_handle.append((new_specs, inner_id, inner_spec))
+                            struct[key][attr_key] = make_identifier_ref(alias)
+                        new_specs[alias] = {}
+                        to_handle.append((new_specs, alias, inner_spec))
                     else:
                         try:
                             struct[key]
