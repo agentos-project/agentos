@@ -165,7 +165,8 @@ class Component(TimeStampedModel):
         res = [run_map[ident]]
         while ident in graph:
             ident = graph[ident]
-            run_type = run_map[ident].data.get("tags", {}).get("run_type", "")
+            tags = run_map[ident].body['data'].get("tags", {})
+            run_type = tags.get('run_type',"")
             if not learn_only or run_type == "learn":
                 res.append(run_map[ident])
         return res

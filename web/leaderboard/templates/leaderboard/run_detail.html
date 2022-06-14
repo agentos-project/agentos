@@ -79,14 +79,14 @@ $(document).ready( function () {
     <ul>
       <li>
         Agent:
-        <a href="{% url 'component-detail' run.agent.identifier %}">
-          {{ run.agent.identifier|truncatechars:20 }}
+        <a href="{% url 'component-detail' run.agent_identifier %}">
+          {{ run.agent_identifier|truncatechars:20 }}
         </a>
       </li>
       <li>
         Environment:
-        <a href="{% url 'component-detail' run.environment.identifier %}">
-          {{ run.environment.identifier|truncatechars:20 }}
+        <a href="{% url 'component-detail' run.environment_identifier %}">
+          {{ run.environment_identifier|truncatechars:20 }}
         </a>
       </li>
       <li id="run_info_header">
@@ -97,7 +97,7 @@ $(document).ready( function () {
         <button style="font-size:0.65em; font-weight: bold" class="hide" id="run_info_hide">
           hide
         </button>
-        <pre id="run_info_content" style="display:none">{{ run.info|pprint }}</pre>
+        <pre id="run_info_content" style="display:none">{{ run.body.info|pprint }}</pre>
       </li>
       <li id="run_metrics_header">
         Run.metrics
@@ -107,7 +107,7 @@ $(document).ready( function () {
         <button style="font-size:0.65em; font-weight: bold" class="hide" id="run_metrics_hide">
           hide
         </button>
-        <pre id="run_metrics_content" style="display:none">{{ run.data.metrics|pprint }}</pre>
+        <pre id="run_metrics_content" style="display:none">{{ run.body.data.metrics|pprint }}</pre>
       </li>
       <li id="run_tags_header">
         Run.tags
@@ -117,10 +117,10 @@ $(document).ready( function () {
         <button style="font-size:0.65em; font-weight: bold" class="hide" id="run_tags_hide">
           hide
         </button>
-        <pre id="run_tags_content" style="display:none">{{ run.data.tags|pprint }}</pre>
+        <pre id="run_tags_content" style="display:none">{{ run.body.data.tags|pprint }}</pre>
       </li>
       <li>
-        <a href="{% url 'run-detail' run.identifier %}">View run in REST API</a>
+        <a href="{% url 'component-detail' run.identifier %}">View run in REST API</a>
       </li>
     </ul>
   </div>
@@ -149,16 +149,12 @@ $(document).ready( function () {
           </td>
           <td>
             <a href="/run/{{ r.identifier }}">
-              {% for k, v in r.data.tags.items %}
-                {% if k == "mlflow.runName" %}
-                  {{ v|truncatechars:40 }}
-                {% endif %}
-              {% endfor %}
+              {{ run.run_name|truncatechars:40 }}
             </a>
           </td>
-          <td>{{ r.data.metrics.mean_reward|floatformat:"g" }}</td>
-          <td>{{ r.data.metrics.training_episode_count|floatformat:"g" }}</td>
-          <td>{{ r.data.metrics.training_step_count|floatformat:"g" }}</td>
+          <td>{{ r.mean_reward|floatformat:"g" }}</td>
+          <td>{{ r.training_episode_count|floatformat:"g" }}</td>
+          <td>{{ r.training_step_count|floatformat:"g" }}</td>
         </tr>
       {% endfor %}
       </tbody>
