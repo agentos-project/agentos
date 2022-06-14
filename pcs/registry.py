@@ -499,7 +499,7 @@ class InMemoryRegistry(Registry):
             if spec_body["type"] == "LocalRepo":
                 p = PurePath(spec_body["path"])
                 if not p.is_absolute():
-                    abs_path = (Path(base_path).parent / p).resolve()
+                    abs_path = (base_path / p).resolve()
                     updated_spec = Spec.from_flat(spec_body)
                     updated_spec.update_body({"path": str(abs_path)})
                     updated_specs.append((spec_id, updated_spec))
