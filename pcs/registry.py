@@ -9,7 +9,13 @@ import tempfile
 from collections import defaultdict, deque
 from pathlib import Path, PurePath
 from typing import (
-    TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Tuple
+    TYPE_CHECKING,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
 )
 from uuid import uuid4
 
@@ -23,8 +29,6 @@ from pcs.utils import (
     IDENTIFIER_REF_PREFIX,
     extract_identifier,
     filter_leaves,
-    get_body,
-    get_identifier,
     is_identifier,
     is_spec_body,
     make_identifier_ref,
@@ -69,9 +73,9 @@ class Registry(abc.ABC):
         parent_path = Path(file_paths[0]).parent
         for path in file_paths:
             # TODO(andyk): Remove this constraint.
-            assert Path(path).parent == parent_path, (
-                "all registry yaml files must be in the same dir."
-            )
+            assert (
+                Path(path).parent == parent_path
+            ), "all registry yaml files must be in the same dir."
             with open(path) as f:
                 file_dict = yaml.safe_load(f)
                 if SPECS_KEY in file_dict:
@@ -81,7 +85,6 @@ class Registry(abc.ABC):
         reg = InMemoryRegistry.from_dict(input_dict)
         reg._make_relative_local_repo_paths_absolute(parent_path)
         return reg
-
 
     @classmethod
     def from_file_in_repo(
@@ -174,7 +177,6 @@ class Registry(abc.ABC):
     def specs(self) -> Mapping:
         raise NotImplementedError
 
-    @property
     def __contains__(self, identifier: str):
         return identifier in self.specs
 
@@ -480,14 +482,16 @@ class InMemoryRegistry(Registry):
             component.to_registry(self)
             self._update_aliases(curr_spec.identifier, component.identifier)
 
-
     def _update_aliases(self, ident_to_replace, new_identifier):
         """
         Change all aliases that currently point to `ident_to_replace` to
         instead point to `new_identifier`.
         """
-        aliases_to_update = [alias for alias, ident in
-                             self.aliases.items() if ident == ident_to_replace]
+        aliases_to_update = [
+            alias
+            for alias, ident in self.aliases.items()
+            if ident == ident_to_replace
+        ]
         for alias in aliases_to_update:
             self.aliases[alias] = new_identifier
 

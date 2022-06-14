@@ -5,11 +5,10 @@ import pprint
 import yaml
 
 from pcs import Module
-from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.specs import Spec
-from pcs.utils import make_identifier_ref, is_identifier
+from pcs.utils import extract_identifier, is_identifier, make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
@@ -20,19 +19,25 @@ from tests.utils import (
 
 
 def test_resolve_inline_specs():
-    inner_spec_body = {"type": "LocalRepo", "path": "."}
+    test_spec_dict = {
+        "outer_spec": {
+            "type": "ArgumentSet",
+            "args": [
+                {
+                    "inner_spec": {
+                        "type": "LocalRepo", "path": "."
+                    }
+                }
+            ]
+        }
+    }
+    r = Registry.from_dict({"specs": test_spec_dict})
 
-    def get_outer_spec_body(what_to_ref):
-        return {"type": "ArgumentSet", "args": [what_to_ref]}
-
-    inner_spec_id = Component.spec_body_to_identifier(inner_spec_body)
-    normalized_outer = get_outer_spec_body(make_identifier_ref(inner_spec_id))
-    nested_outer = get_outer_spec_body({inner_spec_id: inner_spec_body})
-    normalized_outer_id = Component.spec_body_to_identifier(normalized_outer)
-    r = Registry.from_dict({"specs": {normalized_outer_id: nested_outer}})
-    id_from_outer = r.get_spec(normalized_outer_id, flatten=True)["args"][0]
-    assert id_from_outer == make_identifier_ref(inner_spec_id)
-    assert r.get_spec(inner_spec_id, flatten=True)["type"] == "LocalRepo"
+    outer = r.get_spec("outer_spec")
+    inner_id = extract_identifier(outer.body["args"][0])
+    assert inner_id in r
+    assert inner_id in r.specs
+    assert r.get_spec(inner_id).to_flat()["type"] == "LocalRepo"
 
 
 def test_resolve_inline_aliases():
@@ -40,9 +45,9 @@ def test_resolve_inline_aliases():
         "specs": {
             "inline_alias": {
                 "type": "ArgumentSet",
-                "kwargs": {"repo": "spec:other_spec"}
+                "kwargs": {"repo": "spec:other_spec"},
             },
-            "other_spec": {"type": "LocalRepo", "path": "."}
+            "other_spec": {"type": "LocalRepo", "path": "."},
         }
     }
     r = Registry.from_dict(test_reg_dict)
