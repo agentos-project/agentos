@@ -61,7 +61,7 @@ class Registry(abc.ABC):
                 p = PurePath(spec_body["path"])
                 if not p.is_absolute():
                     abs_path = (Path(file_path).parent / p).resolve()
-                    updated_spec = Spec.from_flat(copy.deepcopy(spec_body))
+                    updated_spec = Spec.from_flat(spec_body)
                     updated_spec.update_body({"path": str(abs_path)})
                     updated_specs.append((spec_id, updated_spec))
         for old_id, updated in updated_specs:
@@ -267,6 +267,13 @@ class InMemoryRegistry(Registry):
 
     def __init__(self, input_dict: Dict = None):
         self._registry = {self.SPECS_KEY: {}, self.ALIASES_KEY: {}}
+        # Setup helper dicts (for performance).
+        self._dependee_ids = defaultdict(
+            set
+        )  # {id: set(ids that depend on it)}
+        self._dependency_ids = defaultdict(
+            set
+        )  # {id: set(ids that it depends on)}
         if input_dict:
             for key in input_dict.keys():
                 assert key == self.SPECS_KEY or key == self.ALIASES_KEY, (
@@ -278,13 +285,6 @@ class InMemoryRegistry(Registry):
             self._resolve_inline_specs()
             self._resolve_aliases()
 
-        # Setup helper dicts (for performance).
-        self._dependee_ids = defaultdict(
-            set
-        )  # {id: set(ids that depend on it)}
-        self._dependency_ids = defaultdict(
-            set
-        )  # {id: set(ids that it depends on)}
         self._update_helpers()
 
     def _update_helpers(self, specs_dict: Dict = None):
@@ -306,6 +306,11 @@ class InMemoryRegistry(Registry):
     @property
     def aliases(self) -> Mapping:
         return self._registry.get(self.ALIASES_KEY, {})
+
+    def identifier_to_aliases(self, identifier):
+        return [
+            alias for alias, hash in self.aliases.items() if hash == identifier
+        ]
 
     # TODO: This function probably belongs in the Registry class.
     def _resolve_inline_specs(self):
@@ -439,23 +444,18 @@ class InMemoryRegistry(Registry):
                 else:
                     new_aliases[id_or_alias] = hash
                 new_specs[hash] = body
-        # replace uses of aliases within spec bodies.
-        for identifier, spec in new_specs.items():
-            found = False
-            for alias in new_aliases.keys():
-                found = found or find_and_replace_leaves(
-                    spec,
-                    lambda x: x == make_identifier_ref(alias),
-                    lambda x: make_identifier_ref(new_aliases[alias]),
-                )
-            if found:
-                updated_body = new_specs.pop(identifier)
-                updated_hash = Component.spec_body_to_identifier(updated_body)
-                new_specs[updated_hash] = updated_body
-
         self._registry[self.SPECS_KEY] = new_specs
+
         if new_aliases:
             self._registry[self.ALIASES_KEY] = new_aliases
+
+        # replace uses of aliases within spec bodies.
+        to_resolve = [Spec.from_flat(body) for body in self.specs.values()]
+        while to_resolve:
+            curr_spec = to_resolve.pop()
+            component = Component.from_spec(curr_spec, self)
+            component.to_registry(self)
+
 
     def add_spec(self, spec: Dict) -> None:
         from pcs.component import Component  # Avoid circular import.
@@ -512,27 +512,26 @@ class InMemoryRegistry(Registry):
             # Update body of spec replacing all child refs found in old_to_new,
             # making sure to follow references in old_to_new till no more are
             # found.
-            updated_children = set()
+            children_to_update = set()
             for dependency_id in self._dependency_ids[ident_to_replace]:
                 new_ident = dependency_id
                 while new_ident in old_ident_to_new:
                     new_ident = old_ident_to_new[new_ident]
                 if new_ident != dependency_id:
                     replacement_spec.replace_in_body(
-                        lambda x: x == dependency_id,
-                        lambda x: new_ident,
+                        lambda x: x == make_identifier_ref(dependency_id),
+                        lambda x: make_identifier_ref(new_ident),
                     )
-                    updated_children.add(old_ident_to_new[dependency_id])
-                else:
-                    updated_children.add(dependency_id)
+                    children_to_update.add(new_ident)
             # Store new mapping into old_to_new
+            assert ident_to_replace != replacement_spec.identifier
             old_ident_to_new[ident_to_replace] = replacement_spec.identifier
             # Update `dependee_ids` helper dict since this node's children
             # didn't know the new identifier of their to-be-updated parents
             # when they were added to the graph, so we couldn't have updated
             # the helper dicts at that time.
-            for child_id in updated_children:
-                self._dependee_ids[child_id] = replacement_spec.identifier
+            for child_id in children_to_update:
+                self._dependee_ids[child_id].add(replacement_spec.identifier)
             # add new spec (identifier->updated_body) to graph
             self.add_spec(replacement_spec)
             # update aliases
