@@ -1,5 +1,4 @@
 import abc
-import copy
 import json
 import logging
 import os
@@ -21,7 +20,6 @@ from pcs.utils import (
     IDENTIFIER_REF_PREFIX,
     extract_identifier,
     filter_leaves,
-    find_and_replace_leaves,
     is_identifier,
     is_spec_body,
     make_identifier_ref,
@@ -455,7 +453,6 @@ class InMemoryRegistry(Registry):
             curr_spec = to_resolve.pop()
             component = Component.from_spec(curr_spec, self)
             component.to_registry(self)
-
 
     def add_spec(self, spec: Dict) -> None:
         from pcs.component import Component  # Avoid circular import.
