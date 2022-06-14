@@ -7,13 +7,13 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-            kwargs:
-                environment: spec:environment
-                policy: spec:policy
-                dataset: spec:dataset
-                trainer: spec:trainer
-                AcmeRun: spec:AcmeRun
-                network: spec:network
+            args:
+                - spec:environment
+                - spec:policy
+                - spec:dataset
+                - spec:trainer
+                - spec:AcmeRun
+                - spec:network
         instance_of:
             type: Class
             name: AcmeR2D2Agent
@@ -55,10 +55,9 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-            kwargs:
-                environment: spec:environment
-                AcmeRun: spec:AcmeRun
-                TFModelSaver: spec:TFModelSaver
+            args:
+                - spec:environment
+                - spec:TFModelSaver
         instance_of:
             type: Class
             name: R2D2Network

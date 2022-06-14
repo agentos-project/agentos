@@ -3,7 +3,9 @@ from acme.tf import networks
 
 
 class R2D2Network:
-    def __init__(self):
+    def __init__(self, environment, TFModelSaver):
+        self.environment = environment
+        self.TFModelSaver = TFModelSaver
         self.rnn = BasicRNN(self.environment)
 
     def save(self, run=None):
