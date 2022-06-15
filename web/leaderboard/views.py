@@ -41,10 +41,8 @@ def run_list(request):
 
 
 def run_detail(request, identifier):
-    # run = Run.objects.get(identifier=identifier)
-    # run_dag = Run.agent_run_dag(identifier, learn_only=True)
-    run = []
-    run_dag = {}
+    run = Component.objects.get(identifier=identifier)
+    run_dag = Component.agent_run_dag(identifier, learn_only=True)
     context = {"run": run, "run_dag": run_dag, "is_debug": settings.DEBUG}
     return render(request, "leaderboard/run_detail.html", context)
 
