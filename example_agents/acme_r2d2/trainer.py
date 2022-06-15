@@ -14,7 +14,10 @@ import agentos
 
 
 class R2D2Trainer(agentos.Trainer):
-    def __init__(self, **kwargs):
+    def __init__(self, environment, network, dataset, **kwargs):
+        self.environment = environment
+        self.network = network
+        self.dataset = dataset
         self.parameters = AttrDict(kwargs)
         self.target_network = copy.deepcopy(self.network.rnn)
         self.optimizer = snt.optimizers.Adam(

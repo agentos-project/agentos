@@ -12,6 +12,7 @@ class ReverbDataset(agentos.Dataset):
     def __init__(self, environment, network, **kwargs):
         self.environment = environment
         self.network = network
+        # Could use super().__init__(**kwargs) since is a MemberInitializer.
         self.parameters = kwargs
         initial_state = self.network.rnn.initial_state(1)
         extra_spec = {
