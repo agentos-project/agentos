@@ -24,14 +24,12 @@ def index(request):
 
 
 def run_list(request):
-    # agent_runs = Run.objects.filter(
-    #    data__tags__contains={"pcs.is_agent_run": "True"}
-    # )
-    # component_runs = Run.objects.filter(
-    #    data__tags__contains={"pcs.is_component_run": "True"}
-    # )
-    agent_runs = []
-    component_runs = []
+    agent_runs = Component.objects.filter(
+        body__data__tags__contains={"pcs.is_agent_run": "True"}
+    )
+    component_runs = Component.objects.filter(
+        body__data__tags__contains={"pcs.is_component_run": "True"}
+    )
     context = {
         "agent_runs": agent_runs,
         "component_runs": component_runs,

@@ -51,6 +51,10 @@ class Component(TimeStampedModel):
         return self.body["data"]["tags"]["agent_identifier"]
 
     @property
+    def run_command_identifier(self):
+        return Component.spec_id_to_identifier(self.body["command"])
+
+    @property
     def run_name(self):
         return self.body["data"]["tags"]["mlflow.runName"]
 
@@ -84,6 +88,10 @@ class Component(TimeStampedModel):
     def agent_name(self):
         instance = Component.get_from_spec_id(self.agent.body["instance_of"])
         return instance.body["name"]
+
+    @property
+    def environment_name(self):
+        return self.environment.body["name"]
 
     @staticmethod
     def create_from_request_data(request_data: QueryDict):
