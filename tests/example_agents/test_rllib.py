@@ -1,5 +1,3 @@
-import pytest
-
 from agentos.cli import run
 from tests.utils import RLLIB_AGENT_DIR, run_test_command
 
