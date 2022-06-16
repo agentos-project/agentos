@@ -1,7 +1,6 @@
 import logging
 
 from django.test import LiveServerTestCase
-
 from registry.models import Component
 from registry.serializers import ComponentSerializer
 
