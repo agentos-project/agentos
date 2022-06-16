@@ -1,6 +1,7 @@
 import logging
 
 from django.test import LiveServerTestCase
+
 from registry.models import Component
 from registry.serializers import ComponentSerializer
 
@@ -12,34 +13,25 @@ class ModelTests(LiveServerTestCase):
         pass
 
     def test_serializers(self):
-        # r = Repo.objects.create(identifier="r")
-        r = {}  # NJTODO - FIXME
+        self.assertEqual(Component.objects.count(), 0)
+        # Create two Components
+        c_id = "aabbcc"
         component = Component.objects.create(
-            identifier="x",
-            name="x",
-            version="1",
-            repo=r,
-            class_name="X",
-            file_path=".",
-            instantiate=False,
+            identifier=c_id, body={"foo": "bar", "baz": "bat"}
         )
+        component = Component.objects.get(identifier=c_id)
+        c_two_id = "ddeeff"
         component_two = Component.objects.create(
-            identifier="y",
-            name="y",
-            version="1",
-            repo=r,
-            class_name="X",
-            file_path=".",
-            instantiate=False,
+            identifier=c_two_id, body={"fooz": "barz", "bazz": "batz"}
         )
-        # cd = ComponentDependency(
-        #    depender=component, dependee=component_two, attribute_name="x"
-        # )
-        cd = {}  # NJTODO - FIXME
-        self.assertIsNotNone(component_two.dependencies().all())
-        cd.save()
-        self.assertEqual(component.depender_set.count(), 1)
-        self.assertEqual(component.dependee_set.count(), 0)
-        self.assertEqual(component.dependencies().count(), 1)
+        component_two = Component.objects.get(identifier=c_two_id)
+        # Check they made it to the DB
+        self.assertEqual(Component.objects.count(), 2)
         c_ser = ComponentSerializer(component)
-        self.assertEqual(c_ser.data["identifier"], "x")
+        self.assertEqual(c_ser.data["identifier"], c_id)
+        self.assertEqual(c_ser.data["body"]["foo"], "bar")
+        self.assertEqual(c_ser.data["body"]["baz"], "bat")
+        c_two_ser = ComponentSerializer(component_two)
+        self.assertEqual(c_two_ser.data["identifier"], c_two_id)
+        self.assertEqual(c_two_ser.data["body"]["fooz"], "barz")
+        self.assertEqual(c_two_ser.data["body"]["bazz"], "batz")
