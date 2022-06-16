@@ -115,3 +115,4 @@ specs:
     pprint.pprint(reg.to_dict())
     replacement_spec = Spec.from_flat({"type": "LocalRepo", "path": "/tmp"})
     reg.replace_spec("one", replacement_spec)
+    assert reg.get_spec("one").to_flat()["path"] == "/tmp"
