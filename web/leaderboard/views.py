@@ -24,17 +24,24 @@ def index(request):
 
 
 def run_list(request):
+    print('HERE0')
     agent_runs = Component.objects.filter(
         body__data__tags__contains={"pcs.is_agent_run": "True"}
     )
+    print(agent_runs)
+    print('HERE1')
     component_runs = Component.objects.filter(
         body__data__tags__contains={"pcs.is_component_run": "True"}
     )
+    print('HERE2')
     context = {
         "agent_runs": agent_runs,
         "component_runs": component_runs,
         "is_debug": settings.DEBUG,
     }
+    print('CONTEXT')
+    print(context)
+    print('CONTEXT_DONE')
     return render(request, "leaderboard/runs.html", context)
 
 
@@ -47,7 +54,7 @@ def run_detail(request, identifier):
 
 def empty_database(request):
     if not settings.DEBUG:
-        raise HttpResponseBadRequest("Not allowed.")
+        return HttpResponseBadRequest("Not allowed.")
     # ComponentDependency.objects.all().delete()
     Component.objects.all().delete()
     # Repo.objects.all().delete()

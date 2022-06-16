@@ -30,6 +30,25 @@ grant all privileges on database aos_web to aos_web_user;
 # navigate to http://localhost:8000
 ```
 
+## If you get an error during testing
+
+
+Got an error creating the test database during testing that looks like the
+following:
+
+```bash
+$ ./manage.py test
+Creating test database for alias 'default'...
+Got an error creating the test database: permission denied to create database
+```
+
+Fix by running the following:
+
+```bash
+sudo -u postgres psql
+alter user aos_web_user createdb;
+```
+
 ## To drop your local DB and recreate it
 
 ```bash
