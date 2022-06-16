@@ -40,16 +40,10 @@ if TYPE_CHECKING:
     from pcs.component import Component
     from pcs.repo import Repo
 
-# add USE_LOCAL_SERVER=True to .env to talk to local server
-load_dotenv()
-
-AOS_WEB_BASE_URL = "https://aos-web.herokuapp.com"
-if os.getenv("USE_LOCAL_SERVER", False) == "True":
-    AOS_WEB_BASE_URL = "http://localhost:8000"
-AOS_WEB_API_EXTENSION = "/api/v1"
-
-AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
 DEFAULT_REG_FILE = "components.yaml"
+DEFAULT_WEB_URL = "https://aos-web.herokuapp.com"
+DEFAULT_LOCAL_URL = "http://localhost:8000"
+WEB_API_EXTENSION = "/api/v1"
 
 
 class Registry(abc.ABC):
@@ -158,7 +152,13 @@ class Registry(abc.ABC):
     @classmethod
     def from_default(cls):
         if not hasattr(cls, "_default_registry"):
-            cls._default_registry = WebRegistry(AOS_WEB_API_ROOT)
+            load_dotenv()
+            url = DEFAULT_WEB_URL
+            if os.getenv("USE_LOCAL_SERVER", False):
+                url = DEFAULT_LOCAL_URL
+            elif os.getenv("DEFAULT_REGISTRY_URL", False):
+                url = os.getenv("DEFAULT_REGISTRY_URL")
+            cls._default_registry = WebRegistry(f"{url}{WEB_API_EXTENSION}")
         return cls._default_registry
 
     @abc.abstractmethod
