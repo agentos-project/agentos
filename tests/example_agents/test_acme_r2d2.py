@@ -1,7 +1,7 @@
 import pytest
 
 from agentos.cli import run
-from tests.utils import ACME_R2D2_AGENT_DIR, run_test_command
+from tests.utils import ACME_R2D2_AGENT_DIR, is_linux, run_test_command
 
 test_args = [
     "agent",
@@ -15,8 +15,7 @@ test_kwargs = {
 }
 
 
-# @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
-@pytest.mark.skip()
+@pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_acme_r2d2_agent_evaluate(cli_runner):
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "evaluate"
@@ -24,8 +23,7 @@ def test_acme_r2d2_agent_evaluate(cli_runner):
     run_test_command(cli_runner, run, cli_args=test_args, cli_kwargs=kwargs)
 
 
-# @pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
-@pytest.mark.skip()
+@pytest.mark.skipif(not is_linux(), reason="Acme only available on posix")
 def test_acme_r2d2_agent_learn(cli_runner):
     kwargs = {k: v for k, v in test_kwargs.items()}
     kwargs["--function-name"] = "learn"

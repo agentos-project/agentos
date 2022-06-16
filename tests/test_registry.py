@@ -1,10 +1,14 @@
 """Test suite for AgentOS Registry."""
 
+import pprint
+
+import yaml
+
 from pcs import Module
-from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
-from pcs.utils import make_identifier_ref
+from pcs.specs import Spec
+from pcs.utils import extract_identifier, is_identifier, make_identifier_ref
 from tests.utils import (
     CHATBOT_AGENT_DIR,
     RANDOM_AGENT_DIR,
@@ -15,27 +19,42 @@ from tests.utils import (
 
 
 def test_resolve_inline_specs():
-    inner_spec_body = {"type": "Module", "key": "val"}
+    test_spec_dict = {
+        "outer_spec": {
+            "type": "ArgumentSet",
+            "args": [{"inner_spec": {"type": "LocalRepo", "path": "."}}],
+        }
+    }
+    r = Registry.from_dict({"specs": test_spec_dict})
 
-    def get_outer_spec_body(what_to_inline):
-        return {"type": "Class", "some_module": what_to_inline}
-
-    inner_spec_id = Component.spec_body_to_identifier(inner_spec_body)
-    normalized_outer = get_outer_spec_body(make_identifier_ref(inner_spec_id))
-    nested_outer = get_outer_spec_body(inner_spec_body)
-    normalized_outer_id = Component.spec_body_to_identifier(normalized_outer)
-    r = Registry.from_dict({"specs": {normalized_outer_id: nested_outer}})
-    outer_id = r.get_spec(normalized_outer_id, flatten=True)["some_module"]
-    assert outer_id == make_identifier_ref(inner_spec_id)
-    assert r.get_spec(inner_spec_id, flatten=True)["type"] == "Module"
+    outer = r.get_spec("outer_spec")
+    inner_id = extract_identifier(outer.body["args"][0])
+    assert inner_id in r
+    assert inner_id in r.specs
+    assert r.get_spec(inner_id).to_flat()["type"] == "LocalRepo"
 
 
 def test_resolve_inline_aliases():
-    test_reg_dict = {"specs": {"inline_alias": {"type": "Module", "k": "v"}}}
+    test_reg_dict = {
+        "specs": {
+            "inline_alias": {
+                "type": "ArgumentSet",
+                "kwargs": {"repo": "spec:other_spec"},
+            },
+            "other_spec": {"type": "LocalRepo", "path": "."},
+        }
+    }
     r = Registry.from_dict(test_reg_dict)
+    assert "inline_alias" in r.aliases
     spec_id = r.aliases["inline_alias"]
-    assert r.get_spec(spec_id, flatten=True)["k"] == "v"
-    assert r.get_spec("inline_alias", flatten=True)["k"] == "v"
+    assert is_identifier(spec_id)
+    assert r.get_spec(spec_id, flatten=True)["type"] == "ArgumentSet"
+    flat_spec = r.get_spec("inline_alias", flatten=True)
+    assert flat_spec["type"] == "ArgumentSet"
+    # Check that uses of aliases in spec bodies are replaced with specs
+    assert flat_spec["kwargs"]["repo"] == make_identifier_ref(
+        r.aliases["other_spec"]
+    )
 
 
 def test_registry_from_file():
@@ -68,3 +87,32 @@ def test_registry_from_repo():
     assert "pcs/component.py" in [
         body["file_path"] for body in reg.specs.values() if "file_path" in body
     ]
+
+
+def test_triangle_dependency_graphs():
+    registry_yaml = """
+specs:
+    one:
+        type: LocalRepo
+        path: .
+    two:
+        type: ArgumentSet
+        args:
+            - spec:one
+            - this is two
+    three:
+        type: ArgumentSet
+        args:
+            - spec:one
+            - this is three
+    four:
+        type: ArgumentSet
+        args:
+            - spec:two
+            - spec:three
+"""
+    reg = Registry.from_dict(yaml.load(registry_yaml))
+    pprint.pprint(reg.to_dict())
+    replacement_spec = Spec.from_flat({"type": "LocalRepo", "path": "/tmp"})
+    reg.replace_spec("one", replacement_spec)
+    assert reg.get_spec("one").to_flat()["path"] == "/tmp"

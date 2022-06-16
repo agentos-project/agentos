@@ -7,12 +7,14 @@ specs:
         component: spec:a2c_cartpole_papag_agent
         function_name: evaluate
         argument_set: spec:evaluation_args
+        log_return_value: False
 
     a2c_cartpole_papag_learn_command:
         type: Command
         component: spec:a2c_cartpole_papag_agent
         function_name: evaluate
         argument_set: spec:a2c_cartpole_learn_args
+        log_return_value: False
 
     a2c_cartpole_papag_agent:
         type: Instance

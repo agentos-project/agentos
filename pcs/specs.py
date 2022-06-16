@@ -37,18 +37,18 @@ class Spec(UserDict):
 
     def __init__(self, input_dict: Dict):
         super().__init__()
-        self.data = input_dict
+        self.data = copy.deepcopy(input_dict)
         self._check_format()
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         self._check_format()
         for ident, body in self.data.items():
             return ident
         raise Exception(f"{self} is a malformed")
 
     @property
-    def body(self):
+    def body(self) -> Dict:
         self._check_format()
         for ident, body in self.data.items():
             return body
@@ -60,10 +60,10 @@ class Spec(UserDict):
         return self.body[Component.TYPE_KEY]
 
     @property
-    def as_kwargs(self):
+    def as_kwargs(self) -> Dict:
         return {k: v for k, v in self.body.items() if k != "type"}
 
-    def to_dict(self, flatten=False):
+    def to_dict(self, flatten=False) -> Dict:
         from pcs.component import Component  # Avoid circular import.
 
         if flatten:
@@ -74,7 +74,7 @@ class Spec(UserDict):
         else:
             return {self.identifier[:]: self.body.copy()}
 
-    def _check_format(self):
+    def _check_format(self) -> None:
         assert len(self.data) == 1, (
             f"len(self.data) must be 1, but is {len(self.data)}. self.data "
             f"is:\n{self.data}"
@@ -87,7 +87,7 @@ class Spec(UserDict):
                 f"body is:\n{body}"
             )
 
-    def _update_identifier(self):
+    def _update_identifier(self) -> None:
         from pcs.component import Component  # Avoid circular import.
 
         for ident, body in self.data.items():
@@ -111,21 +111,20 @@ class Spec(UserDict):
 
         assert Component.TYPE_KEY in flat_spec
         ident_computed = Component.spec_body_to_identifier(flat_spec)
-        flat_spec_copy = copy.deepcopy(flat_spec)
         if Component.IDENTIFIER_KEY in flat_spec:
-            ident_in = flat_spec_copy.pop(Component.IDENTIFIER_KEY)
+            ident_in = flat_spec[Component.IDENTIFIER_KEY]
             assert ident_computed == ident_in, (
                 "The identifier in the provided dict does not match the "
                 "hash of the other contents (i.e. the attributes) of the "
                 "dict provided."
             )
-        return cls({ident_computed: flat_spec_copy})
+        return cls({ident_computed: flat_spec})
 
-    def to_flat(self):
+    def to_flat(self) -> Dict:
         return flatten_spec(self.data)
 
 
-def flatten_spec(nested_spec: Mapping) -> Mapping:
+def flatten_spec(nested_spec: Mapping) -> Dict:
     assert (
         len(nested_spec.keys()) == 1
     ), f"Only specs w/ one key can be flattened: {nested_spec}"

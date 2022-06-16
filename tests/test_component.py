@@ -5,7 +5,9 @@ from agentos.cli import init
 from pcs import Class, Instance, Module
 from pcs.argument_set import ArgumentSet
 from pcs.command import Command
+from pcs.component import Component
 from pcs.output import Output
+from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.utils import extract_identifier
 from pcs.virtual_env import auto_revert_venv
@@ -184,3 +186,17 @@ def test_module_component_from_agentos_github_repo():
         ),
     )
     agent.run("run_episode")
+
+
+def test_diamond_dependencies():
+    registry_dict = {
+        "specs": {
+            "one": {"type": "ArgumentSet", "args": ["spec:two", "spec:three"]},
+            "two": {"type": "ArgumentSet", "args": ["spec:four", "I'm three"]},
+            "three": {"type": "ArgumentSet", "args": ["spec:four", "I'm two"]},
+            "four": {"type": "LocalRepo", "path": "."},
+        }
+    }
+    reg = Registry.from_dict(registry_dict)
+    one = Component.from_registry(reg, "one")
+    assert one.args[0].args[0] is one.args[1].args[0]

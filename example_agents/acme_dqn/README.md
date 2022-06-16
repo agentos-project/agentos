@@ -5,7 +5,7 @@
 Train the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --function-name learn --arg-set-file arguments.yaml
+agentos run agent --function-name learn --registry-file components.yaml --arg-set-id learn_args
 ```
 
 Optional command-line arguments:
@@ -18,21 +18,9 @@ Optional command-line arguments:
 Evaluate the agent by running the following from the command-line:
 
 ```bash
-agentos run agent --function-name evaluate --arg-set-file arguments.yaml
+agentos run agent --function-name evaluate --registry-file components.yaml --arg-set-id evaluate_args
 ```
 
 Optional command-line arguments:
 
-* `-A num_episodes=X` - Evaluate the agent over X episodes.
-
-
-### Agent Reset
-
-Reset agent (including the backing model) by running the following from the
-command-line:
-
-```bash
-agentos run agent --function-name reset --arg-set-file arguments.yaml
-```
-
-
+* `--arg-set-kwargs "{'num_episodes': 1}"` - Evaluate the agent over X episodes.

@@ -8,12 +8,13 @@ from ray.tune.registry import register_env as rllib_reg_env
 class RLlibAgent:
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self, algo_name="PPO", trainer_config=None):
+    def __init__(self, env, algo_name="PPO", trainer_config=None):
         """Init a Ray agent with the given env_class and an algorithm name.
 
         :param algo_name: A string. For valid values of algo_name, see
         https://github.com/ray-project/ray/blob/master/rllib/agents/registry.py
         """
+        self.env = env
         if not trainer_config:
             trainer_config = merge_dicts(COMMON_CONFIG, {"framework": "torch"})
         if not ray.is_initialized():

@@ -1,8 +1,7 @@
-import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pcs.component import Component
-from pcs.utils import find_and_replace_leaves
+from pcs.utils import copy_find_and_replace_leaves
 
 
 class ArgumentSet(Component):
@@ -51,18 +50,15 @@ class ArgumentSet(Component):
     def _resolve_objs(data_structure: Any):
         from pcs.object_manager import ObjectManager
 
-        find_and_replace_leaves(
+        _, updated_struct = copy_find_and_replace_leaves(
             data_structure,
             lambda leaf: isinstance(leaf, ObjectManager),
             lambda leaf: leaf.get_object(),
         )
+        return updated_struct
 
     def get_arg_objs(self):
-        resolved_args = copy.deepcopy(self.args)
-        self._resolve_objs(resolved_args)
-        return resolved_args
+        return self._resolve_objs(self.args)
 
     def get_kwarg_objs(self):
-        resolved_args = copy.deepcopy(self.kwargs)
-        self._resolve_objs(resolved_args)
-        return resolved_args
+        return self._resolve_objs(self.kwargs)

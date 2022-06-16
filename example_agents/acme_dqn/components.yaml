@@ -29,11 +29,11 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-            kwargs:
-                environment: spec:environment
-                AcmeRun: spec:AcmeRun
+            args:
+                - spec:environment
+                - spec:AcmeRun
         instance_of:
-            type: class
+            type: Class
             name: AcmeDQNNetwork
             module:
                 type: Module
@@ -47,7 +47,7 @@ specs:
             kwargs:
                 discount: .99
         instance_of:
-            type: class
+            type: Class
             name: CartPole
             module:
                 type: Module

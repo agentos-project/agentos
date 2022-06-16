@@ -6,8 +6,15 @@ from pcs import active_output
 class AcmeR2D2Agent:
     DEFAULT_ENTRY_POINT = "evaluate"
 
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(
+        self, environment, policy, dataset, trainer, AcmeRun, network, **kwargs
+    ):
+        self.environment = environment
+        self.policy = policy
+        self.dataset = dataset
+        self.trainer = trainer
+        self.AcmeRun = AcmeRun
+        self.network = network
 
     def evaluate(self, num_episodes):
         with self.AcmeRun.evaluate_run(

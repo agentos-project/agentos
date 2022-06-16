@@ -6,7 +6,10 @@ from acme.tf import utils as tf2_utils
 
 
 class R2D2Policy:
-    def __init__(self, **kwargs):
+    def __init__(self, environment, network, dataset, **kwargs):
+        self.environment = environment
+        self.network = network
+        self.dataset = dataset
         self.epsilon = kwargs["epsilon"]
         self.store_lstm_state = kwargs["store_lstm_state"]
         self.network.restore()

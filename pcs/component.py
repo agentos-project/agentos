@@ -77,6 +77,7 @@ class Component:
     def __hash__(self) -> int:
         return int(self.sha1(), 16)
 
+    # TODO: This should be moved to utils.py
     @staticmethod
     def spec_body_to_identifier(spec_body: Dict) -> str:
         return DeepHash(spec_body, hasher=DeepHash.sha1hex)[spec_body]
@@ -248,10 +249,20 @@ class Component:
 
     @classmethod
     def from_spec(cls, spec: Mapping, registry: Registry = None) -> Mapping:
+        # TODO: assert if spec has dependencies then registry is not None
+        resolved_deps = {}
+        return cls._from_spec(spec, registry, resolved_deps)
+
+    @classmethod
+    def _from_spec(
+        cls, spec: Mapping, registry: Registry, resolved_deps: Dict
+    ) -> Mapping:
         spec = Spec(copy.deepcopy(spec))
         spec.replace_in_body(
             is_identifier_ref,
-            lambda leaf: cls._resolve_dep(extract_identifier(leaf), registry),
+            lambda leaf: cls._resolve_dep(
+                extract_identifier(leaf), registry, resolved_deps
+            ),
         )
         assert hasattr(pcs, spec.type), (
             f"No Component type '{spec.type}' found in " "module 'pcs'."
@@ -262,7 +273,11 @@ class Component:
         return comp_class
 
     @classmethod
-    def _resolve_dep(cls, identifier: str, registry: Registry):
+    def _resolve_dep(
+        cls, identifier: str, registry: Registry, resolved_deps: Dict
+    ):
+        if identifier in resolved_deps:
+            return resolved_deps[identifier]
         assert registry, (
             f"{cls.__name__} requires a registry to be "
             "passed in order to create a Component from the provided "
@@ -272,9 +287,12 @@ class Component:
         assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
         dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
         assert issubclass(dep_comp_cls, Component)
-        return dep_comp_cls.from_spec(
-            unflatten_spec(dep_spec), registry=registry
+        dep = dep_comp_cls._from_spec(
+            unflatten_spec(dep_spec), registry, resolved_deps
         )
+        assert identifier not in resolved_deps
+        resolved_deps[identifier] = dep
+        return dep
 
     @classmethod
     def from_yaml_str(cls, yaml_str: str):
@@ -338,7 +356,7 @@ class Component:
         rich_print(tree)
 
     def get_status_tree(self, parent_tree: Tree = None) -> Tree:
-        self_tree = Tree(f"Module: {self.identifier}")
+        self_tree = Tree(f"{self.type}: {self.identifier}")
         if parent_tree is not None:
             parent_tree.add(self_tree)
         for dep_attr_name, dep_module in self.dependencies().items():

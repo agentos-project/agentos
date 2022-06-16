@@ -7,15 +7,15 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
-            kwargs:
-                environment: spec:environment
-                policy: spec:policy
-                dataset: spec:dataset
-                trainer: spec:trainer
-                AcmeRun: spec:AcmeRun
-                network: spec:network
+            args:
+                - spec:environment
+                - spec:policy
+                - spec:dataset
+                - spec:trainer
+                - spec:AcmeRun
+                - spec:network
         instance_of:
-            type: class
+            type: Class
             name: AcmeR2D2Agent
             module:
                 type: Module
@@ -25,7 +25,7 @@ specs:
 
     environment:
         type: Instance
-        argument_set: None
+        argument_set: spec:base_arg_set
         instance_of:
             type: Class
             name: CartPole
@@ -37,7 +37,8 @@ specs:
     policy:
         type: Instance
         argument_set:
-            type: Argument_set
+            type: ArgumentSet
+            parent: spec:policy_inst_args
             kwargs:
                 environment: spec:environment
                 network: spec:network
@@ -53,18 +54,17 @@ specs:
     network:
         type: Instance
         argument_set:
-            type: Argument_set
-            kwargs:
-                environment: spec:environment
-                AcmeRun: spec:AcmeRun
-                TFModelSaver: spec:TFModelSaver
+            type: ArgumentSet
+            args:
+                - spec:environment
+                - spec:TFModelSaver
         instance_of:
             type: Class
             name: R2D2Network
             module:
                 type: Module
-            repo: spec:local_dir
-            file_path: ./network.py
+                repo: spec:local_dir
+                file_path: ./network.py
 
     TFModelSaver:
         type: Class
@@ -78,6 +78,7 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
+            parent: spec:dataset_inst_args
             args:
                 - spec:environment
                 - spec:network
@@ -96,6 +97,7 @@ specs:
         type: Instance
         argument_set:
             type: ArgumentSet
+            parent: spec:trainer_inst_args
             kwargs:
                 environment: spec:environment
                 network: spec:network
