@@ -48,39 +48,35 @@
             <td>
               <span class="start_time">{{ run.start_time }}</span>
             </td>
-            <td><a href="run/{{ run.identifier }}">{{ run.identifier|truncatechars:7 }}</a></td>
             <td>
-              <a href="run/{{ run.identifier }}">
-                {% for k, v in run.data.tags.items %}
-                  {% if k == "mlflow.runName" %}
-                    {{ v|truncatechars:40 }}
-                  {% endif %}
-                {% endfor %}
+                <a href="{% url 'run-detail' run.identifier %}">
+                  {{ run.identifier|truncatechars:7 }}
               </a>
             </td>
             <td>
-              <a href="{% url 'component-detail' run.agent.identifier %}">{{ run.agent.name }}</a>
+              <a href="{% url 'run-detail' run.identifier %}">
+                {{ run.run_name|truncatechars:40 }}
+              </a>
             </td>
             <td>
-              <a href="{% url 'component-detail' run.environment.identifier %}">{{ run.environment.name }}</a>
+              <a href="{% url 'component-detail' run.agent_identifier %}">
+                {{ run.agent_name }}
+              </a>
             </td>
-            {% if run.data.metrics %}
-              {%  for metric_name, metric_val in run.data.metrics.items %}
-                {% if metric_name == "mean_reward" %}
-                  <td>{{ metric_val|floatformat:"g" }}</td>
-                {% endif %}
-                {% if metric_name == "training_episode_count" %}
-                  <td>{{ metric_val|floatformat:"g" }}</td>
-                {% endif %}
-                {% if metric_name == "training_step_count" %}
-                  <td>{{ metric_val|floatformat:"g" }}</td>
-                {% endif %}
-              {% endfor %}
-            {% else %}
-              <td></td>
-              <td></td>
-              <td></td>
-            {%  endif %}
+            <td>
+              <a href="{% url 'component-detail' run.environment_identifier %}">
+                {{ run.environment_name }}
+              </a>
+            </td>
+            <td>
+              {{ run.mean_reward|floatformat:"g" }}
+            </td>
+            <td>
+              {{ run.training_episode_count|floatformat:"g" }}
+            </td>
+            <td>
+              {{ run.training_step_count|floatformat:"g" }}
+            </td>
           </tr>
         {%  endfor %}
         </tbody>
@@ -106,21 +102,21 @@
             <td>
               <span class="start_time">{{ run.start_time }}</span>
             </td>
-            <td><a href="{% url 'run-detail' run.identifier %}">{{ run.identifier|truncatechars:7 }}</a></td>
             <td>
               <a href="{% url 'run-detail' run.identifier %}">
-                {% for k, v in run.data.tags.items %}
-                  {% if k == "mlflow.runName" %}
-                    {{ v|truncatechars:40 }}
-                  {% endif %}
-                {% endfor %}
+                {{ run.identifier|truncatechars:7 }}
               </a>
             </td>
-              <td>
-                <a href="{% url 'runcommand-detail' run.run_command.identifier %}">
-                  {{ run.run_command.identifier }}
-                </a>
-              </td>
+            <td>
+              <a href="{% url 'run-detail' run.identifier %}">
+                {{ run.run_name|truncatechars:40 }}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'component-detail' run.run_command_identifier %}">
+                {{ run.run_command_identifier }}
+              </a>
+            </td>
           </tr>
         {%  endfor %}
         </tbody>

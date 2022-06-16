@@ -59,12 +59,12 @@ $(document).ready( function () {
                     </a>
                   </td>
                   <td>
-                    <a href="{% url 'identifier' run.identifier %}">
+                    <a href="{% url 'run-detail' run.identifier %}">
                       {{ run.identifier | truncatechars:7 }}
                     </a>
                   </td>
                   <td>
-                    <a href="{% url 'identifier' run.identifier %}">
+                    <a href="{% url 'run-detail' run.identifier %}">
                       {{ run.run_name | truncatechars:40 }}
                     </a>
                   </td>
