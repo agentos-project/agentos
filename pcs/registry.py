@@ -7,6 +7,7 @@ import shutil
 import tarfile
 import tempfile
 from collections import defaultdict, deque
+from dotenv import load_dotenv
 from pathlib import Path, PurePath
 from typing import (
     TYPE_CHECKING,
@@ -22,7 +23,6 @@ from uuid import uuid4
 import requests
 import yaml
 from deepdiff import DeepDiff
-from dotenv import load_dotenv
 
 from pcs.specs import Spec, flatten_spec, is_flat_spec, unflatten_spec
 from pcs.utils import (
@@ -40,15 +40,6 @@ if TYPE_CHECKING:
     from pcs.component import Component
     from pcs.repo import Repo
 
-# add USE_LOCAL_SERVER=True to .env to talk to local server
-load_dotenv()
-
-AOS_WEB_BASE_URL = "https://aos-web.herokuapp.com"
-if os.getenv("USE_LOCAL_SERVER", False) == "True":
-    AOS_WEB_BASE_URL = "http://localhost:8000"
-AOS_WEB_API_EXTENSION = "/api/v1"
-
-AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
 DEFAULT_REG_FILE = "components.yaml"
 
 
@@ -157,7 +148,20 @@ class Registry(abc.ABC):
 
     @classmethod
     def from_default(cls):
+
         if not hasattr(cls, "_default_registry"):
+            # add USE_LOCAL_SERVER=True to .env to talk to local server
+            load_dotenv()
+            AOS_WEB_BASE_URL = "https://aos-web.herokuapp.com"
+            if os.getenv("USE_LOCAL_SERVER", False) == "True":
+                AOS_WEB_BASE_URL = "http://localhost:8000"
+            if os.getenv("LOCAL_SERVER_URL", False):
+                AOS_WEB_BASE_URL = os.getenv("LOCAL_SERVER_URL")
+            
+            AOS_WEB_API_EXTENSION = "/api/v1"
+            
+            AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
+
             cls._default_registry = WebRegistry(AOS_WEB_API_ROOT)
         return cls._default_registry
 

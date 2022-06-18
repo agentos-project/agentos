@@ -271,6 +271,7 @@ def freeze(identifier, registry_file, force, output_file):
 
 
 # NJTODO - does this need force arg?
+# NJTODO - does this need registry_file arg?
 @agentos_cmd.command()
 @_arg_identifier
 @_option_registry_file
