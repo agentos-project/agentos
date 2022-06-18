@@ -23,6 +23,7 @@ from uuid import uuid4
 import requests
 import yaml
 from deepdiff import DeepDiff
+from dotenv import load_dotenv
 
 from pcs.specs import Spec, flatten_spec, is_flat_spec, unflatten_spec
 from pcs.utils import (
@@ -157,9 +158,9 @@ class Registry(abc.ABC):
                 AOS_WEB_BASE_URL = "http://localhost:8000"
             if os.getenv("LOCAL_SERVER_URL", False):
                 AOS_WEB_BASE_URL = os.getenv("LOCAL_SERVER_URL")
-            
+
             AOS_WEB_API_EXTENSION = "/api/v1"
-            
+
             AOS_WEB_API_ROOT = f"{AOS_WEB_BASE_URL}{AOS_WEB_API_EXTENSION}"
 
             cls._default_registry = WebRegistry(AOS_WEB_API_ROOT)
