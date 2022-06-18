@@ -7,7 +7,6 @@ import shutil
 import tarfile
 import tempfile
 from collections import defaultdict, deque
-from dotenv import load_dotenv
 from pathlib import Path, PurePath
 from typing import (
     TYPE_CHECKING,
