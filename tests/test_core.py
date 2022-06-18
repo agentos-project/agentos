@@ -18,6 +18,7 @@ def test_cli_init(cli_runner, tmpdir):
             "environment.py",
             "policy.py",
             "dataset.py",
+            "run.py",
             "README.md",
             "components.yaml",
             "requirements.txt",

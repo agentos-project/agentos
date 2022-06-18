@@ -3,11 +3,12 @@
 
 # Simulates a 1D corridor
 class Corridor:
+
+    action_space = (0, 1)
+
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.length = 5
-        self.action_space = [0, 1]
-        self.observation_space = [0, 1, 2, 3, 4, 5]
+        self.length = kwargs.get("length", 5)
+        self.observation_space = list(range(self.length))
         self.reset()
 
     def step(self, action):

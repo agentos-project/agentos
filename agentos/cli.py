@@ -344,6 +344,7 @@ _AGENT_DEF_FILE = Path("./templates/agent.py")
 _ENV_DEF_FILE = Path("./templates/environment.py")
 _DATASET_DEF_FILE = Path("./templates/dataset.py")
 _POLICY_DEF_FILE = Path("./templates/policy.py")
+_RUN_DEF_FILE = Path("./templates/run.py")
 _AGENT_YAML_FILE = Path("./templates/components.yaml")
 _REQUIREMENTS_FILE = Path("./templates/requirements.txt")
 _README_FILE = Path("./templates/README.md")
@@ -352,8 +353,9 @@ _README_FILE = Path("./templates/README.md")
 _INIT_FILES = [
     _AGENT_DEF_FILE,
     _ENV_DEF_FILE,
-    _POLICY_DEF_FILE,
     _DATASET_DEF_FILE,
+    _POLICY_DEF_FILE,
+    _RUN_DEF_FILE,
     _AGENT_YAML_FILE,
     _REQUIREMENTS_FILE,
     _README_FILE,

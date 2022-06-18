@@ -62,9 +62,9 @@ def test_registry_from_file():
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
     random_local_ag = Module.from_registry(r, "agent")
-    assert "environment" in random_local_ag.argument_set.kwargs
+    assert "environment_cls" in random_local_ag.argument_set.kwargs
     random_local_ag.run_with_arg_set(
-        "run_episodes", ArgumentSet(kwargs={"num_episodes": 5})
+        "evaluate", ArgumentSet(kwargs={"num_episodes": 5})
     )
 
     # Test publishing a component to an InMemoryRegistry

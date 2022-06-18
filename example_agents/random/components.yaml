@@ -3,53 +3,84 @@ specs:
         type: LocalRepo
         path: .
 
+    agent_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./agent.py
+        requirements_path: ./requirements.txt
+
+    agent_class:
+        type: Class
+        module: spec:agent_module
+        name: BasicAgent
+
+    agent_argument_set:
+        type: ArgumentSet
+        kwargs:
+            environment_cls: spec:environment_class
+            policy: spec:policy
+            dataset: spec:dataset
+            run_cls: spec:run_class
+
     agent:
         type: Instance
-        argument_set:
-            type: ArgumentSet
-            kwargs:
-                environment: spec:environment
-                policy: spec:policy
-                dataset: spec:dataset
-        instance_of:
-            type: Class
-            name: BasicAgent
-            module:
-                type: Module
-                repo: spec:local_dir
-                file_path: ./agent.py
-                requirements_path: ./requirements.txt
+        instance_of: spec:agent_class
+        name: null
+        argument_set: spec:agent_argument_set
 
-    environment:
-        type: Instance
-        instance_of:
-            type: Class
-            name: Corridor
-            module:
-                type: Module
-                repo: spec:local_dir
-                file_path: ./environment.py
+    environment_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./environment.py
+
+    environment_class:
+        type: Class
+        module: spec:environment_module
+        name: Corridor
+
+    policy_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./policy.py
+
+    policy_class:
+        type: Class
+        module: spec:policy_module
+        name: RandomPolicy
 
     policy:
         type: Instance
+        instance_of: spec:policy_class
         argument_set:
             type: ArgumentSet
             kwargs:
-                environment: spec:environment
-        instance_of:
-            type: Class
-            name: RandomPolicy
-            module:
-                type: Module
-                repo: spec:local_dir
-                file_path: ./policy.py
+                environment_cls: spec:environment_class
+        name: null
+
+    dataset_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./dataset.py
+
+    dataset_class:
+        type: Class
+        module: spec:dataset_module
+        name: BasicDataset
 
     dataset:
         type: Instance
-        instance_of:
-            type: Class
-            name: BasicDataset
-            module:
-                type: Module
-                repo: spec:local_dir
-                file_path: ./dataset.py
+        instance_of: spec:dataset_class
+        argument_set: null
+        name: null
+
+    run_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./run.py
+
+    run_class:
+        type: Class
+        module: spec:run_module
+        name: BasicRun
+
+
