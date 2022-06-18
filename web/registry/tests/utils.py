@@ -10,6 +10,9 @@ from django.core.management import call_command
 
 from agentos.cli import init, publish, run
 
+FIXTURE_DIR = settings.BASE_DIR / "registry" / "tests" / "fixtures"
+FIXTURE_FILE = FIXTURE_DIR / "fixture.json"
+
 
 @contextmanager
 def run_in_temp_dir(description=None):
@@ -22,6 +25,14 @@ def run_in_temp_dir(description=None):
     finally:
         os.chdir(curr_dir)
         shutil.rmtree(tmp_dir)
+
+
+def load_or_create_fixture(server_url):
+    if FIXTURE_FILE.exists():
+        print(f"Loading fixture at {FIXTURE_FILE}")
+        call_command("loaddata", FIXTURE_FILE)
+    else:
+        create_test_fixture(server_url)
 
 
 def create_test_fixture(server_url):
@@ -62,6 +73,6 @@ def create_test_fixture(server_url):
         runner.invoke(
             publish, publish_args, env=publish_env, catch_exceptions=False
         )
-        print(f"Creating fixture at {str(settings.FIXTURE_FILE)}")
-        with open(settings.FIXTURE_FILE, "w") as fixture_file:
-            call_command("dumpdata", stdout=fixture_file)
+        print(f"Creating fixture at {str(FIXTURE_FILE)}")
+        with open(FIXTURE_FILE, "w") as fixture_file:
+            call_command("dumpdata", "registry", stdout=fixture_file)
