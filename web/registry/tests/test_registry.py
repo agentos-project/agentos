@@ -6,6 +6,7 @@ from django.core.files.base import File
 from django.test import Client, TestCase
 from django.urls import reverse
 from registry.models import Component
+from registry.tests.utils import load_or_create_fixture
 
 # from .static.data import RUN_CREATE_DATA
 
@@ -13,57 +14,8 @@ from registry.models import Component
 class RegistryTestCases(TestCase):
     def setUp(self):
         self.client = Client()
-        # self.repo = Repo.objects.create(
-        #    identifier="test-repo-a38",
-        #    type="github",
-        #    url="https://github.com/example/example",
-        # )
-        self.component = Component.objects.create(
-            identifier="test-component-h42==1.0.1",
-            name="test-component-h42",
-            version="1.0.1",
-            repo=self.repo,
-            file_path="/foo/bar/baz",
-            class_name="TestComponentH42",
-            instantiate=True,
-        )
-        # self.run_command = RunCommand.objects.create(
-        #    entry_point="test_entry_pt",
-        #    argument_set={},
-        #    component=self.component,
-        #    log_return_value=False,
-        # )
-        # self.run = Run.objects.create(
-        #    identifier="sklldfjiekls",
-        #    agent=self.component,
-        #    environment=self.component,
-        # )
+        load_or_create_fixture(self.live_server_url)
         self.static_dir = Path(__file__).parent / "static"
-
-    # TODO: update these test once we've finished reworking ingest_spec
-    #       to be ingest_registry (it is moving out from under the Module
-    #       model/view).
-    # def test_registry_ingest(self):
-    #     self.assertEqual(Module.objects.count(), 1)
-    #     self.assertEqual(ComponentDependency.objects.count(), 0)
-    #     self.assertEqual(Repo.objects.count(), 1)
-    #     # the ingest registry functionality doesn't live under the Module
-    #     # model/viewset anymore so this URL will be different.
-    #     url = reverse("component-ingest-registry")
-    #     yaml_file = open(self.static_dir / "test_spec_ingest.yaml")
-    #     response = self.client.post(url, {"components.yaml": yaml_file})
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(Module.objects.count(), 7)
-    #     self.assertEqual(ComponentDependency.objects.count(), 6)
-    #     self.assertEqual(Repo.objects.count(), 2)
-    #
-    # def test_run_create(self):
-    #     self.assertEqual(Run.objects.count(), 1)
-    #     url = reverse("run-list")
-    #     data = {"run_data": yaml.dump(RUN_CREATE_DATA)}
-    #     response = self.client.post(url, data)
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(Run.objects.count(), 2)
 
     def test_run_upload_artifact(self):
         self.assertFalse(bool(self.run.artifact_tarball))

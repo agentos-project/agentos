@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 @override_settings(DEBUG=True)
 class ViewTests(LiveServerTestCase):
     def setUp(self):
-        load_or_create_fixture(self.live_server_url)
         self.client = Client()
+        load_or_create_fixture(self.live_server_url)
 
     def test_index(self):
         self.client.get(reverse("index"))

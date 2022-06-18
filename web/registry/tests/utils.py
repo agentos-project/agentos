@@ -46,9 +46,11 @@ def create_test_fixture(server_url):
         mlruns_dst_dir = mlruns_dir / EXPERIMENT_ID
         existing_mlruns = os.listdir(mlruns_dst_dir)
 
-        # Run init and run the default agent
+        # Init the default agent via AOS CLI
         init_args = [str(tmp_dir)]
         runner.invoke(init, init_args, catch_exceptions=False)
+
+        # Run the default agent via AOS CLI
         run_args = [
             "agent",
             "--registry-file",
@@ -67,12 +69,14 @@ def create_test_fixture(server_url):
                     new_run_ids.append(item)
         assert len(new_run_ids) == 1, f"Unexpected runs in {mlruns_dst_dir}"
 
-        # Publish the AgentRun
+        # Publish the AgentRun via AOS CLI
         publish_args = [new_run_ids[0]]
         publish_env = {"LOCAL_SERVER_URL": server_url}
         runner.invoke(
             publish, publish_args, env=publish_env, catch_exceptions=False
         )
+
+        # Create a fixture to use this DB for other tests
         print(f"Creating fixture at {str(FIXTURE_FILE)}")
         with open(FIXTURE_FILE, "w") as fixture_file:
             call_command("dumpdata", "registry", stdout=fixture_file)
