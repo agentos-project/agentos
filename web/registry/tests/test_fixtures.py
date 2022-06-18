@@ -46,7 +46,10 @@ class FixtureTests(LiveServerTestCase):
         new_run_ids = []
         for item in curr_mlruns:
             if item not in self._existing_mlruns:
-                new_run_ids.append(item)
+                run_dir = self._mlruns_dst_dir / item 
+                agent_run_tag = run_dir / 'tags' / 'pcs.is_agent_run'
+                if agent_run_tag.exists():
+                    new_run_ids.append(item)
         self.assertEqual(len(new_run_ids), 1)
         return new_run_ids[0]
 
@@ -67,7 +70,7 @@ class FixtureTests(LiveServerTestCase):
             self.runner.invoke(
                 publish, publish_args, env=publish_env, catch_exceptions=False
             )
-            self.assertEqual(Component.objects.count(), 18)
+            self.assertEqual(Component.objects.count(), 20)
 
             registry_path = Path(settings.BASE_DIR) / "registry"
             fixture_dir_path = registry_path / "tests" / "fixtures"
