@@ -16,6 +16,16 @@ T = TypeVar("T")
 
 
 class Repo(Component, abc.ABC):
+    @abc.abstractmethod
+    def get_local_dir(self) -> Path:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_local_file_path(self, relative_path: str) -> Path:
+        raise NotImplementedError()
+
+
+class VersionedRepo(Repo, abc.ABC):
     """
     Base class used to encapsulate information about where a Module
     is located.
@@ -48,11 +58,13 @@ class Repo(Component, abc.ABC):
         cls.GIT.clear_repo_cache(repo_cache_path, assume_yes)
 
     @abc.abstractmethod
-    def get_local_repo_dir(self, version: str = None) -> Path:
+    def get_local_dir(self, version: str = None) -> Path:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
+    def get_local_file_path(
+        self, relative_path: str, version: str = None
+    ) -> Path:
         raise NotImplementedError()
 
     def get_version_from_git(
@@ -110,7 +122,7 @@ class GitHubRepo(Repo):
         self.local_repo_path = None
         self.porcelain_repo = None
 
-    def get_local_repo_dir(self, version: str = None) -> Path:
+    def get_local_dir(self, version: str = None) -> Path:
         version = self._get_valid_version_sha1(version)
         local_repo_path = self.GIT.clone_repo(
             self.org_name, self.project_name, version
@@ -120,7 +132,7 @@ class GitHubRepo(Repo):
 
     def get_local_file_path(self, file_path: str, version: str = None) -> Path:
         version = self._get_valid_version_sha1(version)
-        local_repo_path = self.get_local_repo_dir(version)
+        local_repo_path = self.get_local_dir(version)
         return (local_repo_path / file_path).absolute()
 
     def _get_valid_version_sha1(self, version):
@@ -149,9 +161,8 @@ class LocalRepo(Repo):
     def __init__(
         self,
         path: str = None,
-        default_version: str = None,
     ):
-        super().__init__(default_version=default_version)
+        super().__init__()
         if not path:
             path = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.path = path
@@ -169,7 +180,7 @@ class LocalRepo(Repo):
                 f"LocalRepo {self.identifier}."
             )
 
-    def get_local_repo_dir(self, version: str = None) -> Path:
+    def get_local_dir(self, version: str = None) -> Path:
         assert version is None, "LocalRepos don't support versioning."
         return Path(self.path)
 

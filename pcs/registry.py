@@ -32,6 +32,7 @@ from pcs.utils import (
     is_identifier,
     is_spec_body,
     make_identifier_ref,
+    pad_list_if_necessary,
 )
 
 logger = logging.getLogger(__name__)
@@ -305,7 +306,7 @@ class InMemoryRegistry(Registry):
             reg._registry[cls.ALIASES_KEY] = input_dict[cls.ALIASES_KEY]
         if cls.SPECS_KEY in input_dict:
             reg._registry[cls.SPECS_KEY] = input_dict[cls.SPECS_KEY]
-        reg._resolve_inline_specs()
+        reg._resolve_inline_spec_bodies()
         reg._resolve_aliases()
         reg._update_helpers()
         return reg
@@ -335,22 +336,22 @@ class InMemoryRegistry(Registry):
             alias for alias, hash in self.aliases.items() if hash == identifier
         ]
 
-    def _resolve_inline_specs(self) -> Dict:
+    def _resolve_inline_spec_bodies(self) -> Dict:
         """
-        Allow developers to specify specs in-line. This will rewrite those
-        in a more normalized form. So, for example, resolve the following::
+        Allow developers to specify specs "in-line", i.e., in a nested form.
+        This will rewrite those in a non-nested form. So, for example,
+        resolve the following::
 
             specs:
                 c6af7bc9d07271dfe75429ac8ee34398dfdc4338:
-                    nested_spec1:  # nested spec
-                        type: ComponentType1
-                        nested_spec2:  # nested spec
-                            type: ComponentType2
+                    nested_spec1:
+                        type: ComponentType1  # inline spec body
+                        nested_spec2:
+                            type: ComponentType2  # inline spec body
                             key2: val2
                     non_spec_dict:
-                        - nested_spec3:  # nested spec
-                            type: ComponentType3
-                            key3: val3
+                        - type: ComponentType3  # inline spec body
+                          key3: val3
                         - "a string"
 
         ...into::
@@ -377,45 +378,36 @@ class InMemoryRegistry(Registry):
         """
         new_specs = {}
         to_handle = []
+        # Handle first layer of specs.
         for ident, body in self.specs.items():
+            assert is_spec_body(body)
             new_specs[ident] = {}
-            to_handle += [(new_specs, ident, {k: v}) for k, v in body.items()]
+            for k, v in body.items():
+                to_handle.append((new_specs[ident], k, v))
         rand_alias_prefix = "alias_"
         while to_handle:
             struct, key, elt = to_handle.pop()
-            if elt and isinstance(elt, dict):  # handling dict
+            if is_spec_body(elt):  # handle inline spec body
+                alias = rand_alias_prefix + str(uuid4())
+                struct[key] = make_identifier_ref(alias)
+                new_specs[alias] = {}
+                for k, v in elt.items():
+                    to_handle.append((new_specs[alias], k, v))
+            elif elt and isinstance(elt, dict):  # handle non-spec body dict
+                try:
+                    struct[key]
+                except (IndexError, KeyError):
+                    struct[key] = {}
                 for attr_key, attr_val in elt.items():
-                    if is_spec_body(attr_val):  # normalize nested_spec
-                        inner_spec = attr_val
-                        alias = rand_alias_prefix + str(uuid4())
-                        if isinstance(struct, list):
-                            assert isinstance(key, int)
-                            while key >= len(struct):  # List too short
-                                struct.append(None)
-                            struct[key] = make_identifier_ref(alias)
-                        else:
-                            assert isinstance(struct[key], dict)
-                            struct[key][attr_key] = make_identifier_ref(alias)
-                        new_specs[alias] = {}
-                        to_handle.append((new_specs, alias, inner_spec))
-                    else:
-                        try:
-                            struct[key]
-                        except (IndexError, KeyError):
-                            struct[key] = {}
-                        to_handle.append((struct[key], attr_key, attr_val))
+                    to_handle.append((struct[key], attr_key, attr_val))
             elif elt and isinstance(elt, list):  # handling list
                 try:
                     struct[key]
                 except (IndexError, KeyError):
-                    struct[key] = []
+                    struct[key] = [None] * len(elt)
                 for i, sub_elt in enumerate(elt):
                     to_handle.append((struct[key], i, sub_elt))
             else:  # elt must be leaf
-                if isinstance(struct, list):
-                    assert isinstance(key, int)
-                    while key >= len(struct):  # List too short
-                        struct.append(None)
                 struct[key] = elt
 
         self._registry[self.SPECS_KEY] = new_specs

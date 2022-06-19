@@ -41,7 +41,7 @@ class Class(ObjectManager):
             if not repo:
                 repo = LocalRepo()
             sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
-            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
+            src_file = repo.get_local_dir() / f"{name}-{sha}.py"
             if src_file.exists():
                 print(f"Re-using existing source file {src_file}.")
             else:

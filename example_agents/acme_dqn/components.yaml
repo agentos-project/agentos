@@ -3,6 +3,16 @@ specs:
         type: LocalRepo
         path: .
 
+    virtual_env:
+        type: VirtualEnvComponent
+        runtime:
+            type: PythonRuntime
+            version: 3.9.10
+        requirements_files:
+            - type: Path
+              relative_path: ./requirements.txt
+              repo: spec:local_cir
+
     agent:
         type: Instance
         argument_set:
@@ -21,9 +31,10 @@ specs:
             name: AcmeDQNAgent
             module:
                 type: Module
-                repo: spec:local_dir
                 file_path: ./agent.py
-                requirements_path: ./requirements.txt
+                repo:
+                    repo: spec:virtual_env
+                    path: agentos/example_agents/acme_dqn/agent.py
 
     network:
         type: Instance

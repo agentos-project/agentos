@@ -281,3 +281,8 @@ def copy_find_and_replace_leaves(
         else:
             transform_leaf(data_struct, copy_struct, leaf_list, lambda x: x)
     return match_found, copy_struct
+
+
+def pad_list_if_necessary(list_in, index):
+    while index >= len(list_in):  # List too short
+        list_in.append(None)

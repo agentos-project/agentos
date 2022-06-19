@@ -22,13 +22,15 @@ def test_resolve_inline_specs():
     test_spec_dict = {
         "outer_spec": {
             "type": "ArgumentSet",
-            "args": [{"inner_spec": {"type": "LocalRepo", "path": "."}}],
+            "kwargs": {"other_spec": {"type": "LocalRepo", "path": "./1"}},
+            "args": [{"type": "LocalRepo", "path": "./2"}],
         }
     }
     r = Registry.from_dict({"specs": test_spec_dict})
 
     outer = r.get_spec("outer_spec")
     inner_id = extract_identifier(outer.body["args"][0])
+    assert len(r.aliases) == 3
     assert inner_id in r
     assert inner_id in r.specs
     assert r.get_spec(inner_id).to_flat()["type"] == "LocalRepo"

@@ -7,7 +7,14 @@ specs:
             module:
                 type: Module
                 file_path: ./agent.py
-                requirements_path: ./requirements.txt
                 repo:
-                    type: LocalRepo
-                    path: .
+                    type: VirtualEnvComponent
+                    runtime:
+                        type: PythonRuntime
+                        version: null
+                    requirements_files:
+                        - type: Path
+                          relative_path: ./requirements.txt
+                          repo:
+                              type: LocalRepo
+                              path: .

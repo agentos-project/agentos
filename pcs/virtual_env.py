@@ -3,13 +3,15 @@ import logging
 import os
 import subprocess
 import sys
-import sysconfig
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Sequence
+from typing import List, Sequence
 
 import yaml
 
+from pcs.path import Path as PcsPath
+from pcs.repo import Repo
+from pcs.runtime import PythonRuntime
 from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path
 
 logger = logging.getLogger(__name__)
@@ -22,12 +24,31 @@ class VirtualEnv:
     such as one to clear the whole virtual environment cache.
     """
 
-    def __init__(self, venv_path: Path = None):
+    def __init__(
+        self,
+        venv_path: Path = None,
+        python_version: str = None,
+        req_paths: Sequence[Path] = None,
+    ):
+        """
+        Creates a new virtual environment.
+
+        :param venv_path: the path to the root dir of this venv.
+        :param python_version: The version of Python to init this venv with.
+        :param req_paths: a sequence of full paths to pip-compatible
+        requirements files, which are installed into this environment.
+        """
         self.venv_path = venv_path
         self._saved_venv_sys_path = None
         self._venv_is_active = False
         self.set_env_cache_path(AOS_GLOBAL_REQS_DIR)
-        self._py_version = f"python{sysconfig.get_python_version()}"
+        py_ver = sys.version_info
+        full_ver = f"{py_ver.major}.{py_ver.minor}.{py_ver.micro}"
+        self._py_version = python_version if python_version else full_ver
+        if req_paths:
+            self._build_virtual_env(req_paths)
+        else:
+            print("VirtualEnv: no requirement paths; Running in an empty env!")
 
     def __enter__(self):
         """
@@ -44,22 +65,6 @@ class VirtualEnv:
     def __exit__(self, exc_type, exc_value, exc_tb):
         """Deactivates the virtual environment on context exit."""
         self.deactivate()
-
-    @classmethod
-    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
-        """
-        Takes a sequence of full paths to pip-compatible requirements files,
-        creates a new virtual environment, installs all those requirements into
-        that environment, and then returns a VirtualEnv object corresponding to
-        that virtual environment.
-        """
-        venv = cls()
-        if not req_paths:
-            logger.info(
-                "VirtualEnv: no requirement paths; Running in an empty env!"
-            )
-        venv._build_virtual_env(req_paths)
-        return venv
 
     def set_env_cache_path(self, env_cache_path: Path) -> None:
         """
@@ -318,10 +323,6 @@ class NoOpVirtualEnv(VirtualEnv):
     existing Python environment).
     """
 
-    @classmethod
-    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
-        return cls()
-
     def activate(self) -> None:
         print("VirtualEnv: Running in outer Python environment")
 
@@ -359,3 +360,36 @@ def auto_revert_venv():
         yield
     finally:
         venv.deactivate()
+
+
+class VirtualEnvComponent(Repo):
+    def __init__(
+        self,
+        runtime: PythonRuntime,
+        requirements_files: List[PcsPath] = None
+    ):
+        super().__init__()
+        self.requirements_files = requirements_files
+        self.runtime = runtime
+        self.register_attributes(["runtime", "requirements_files"])
+        self._virtual_env = None
+
+    @property
+    def virtual_env(self):
+        if not self._virtual_env:
+            req_paths = [p.get() for p in self.requirements_files]
+            self._virtual_env = VirtualEnv(
+                python_version=self.runtime.version, req_paths=req_paths
+            )
+            self._virtual_env.activate()
+        return self._virtual_env
+
+    @staticmethod
+    def no_op_venv() -> VirtualEnv:
+        return NoOpVirtualEnv()
+
+    def get_local_dir(self) -> Path:
+        return self.virtual_env.venv_path
+
+    def get_local_file_path(self, relative_path: str) -> Path:
+        return self.virtual_env.venv_path / relative_path

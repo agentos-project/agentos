@@ -7,7 +7,6 @@ from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
 from pcs.repo import GitHubRepo, Repo
 from pcs.utils import parse_github_web_ui_url
-from pcs.virtual_env import NoOpVirtualEnv, VirtualEnv
 
 
 class Module(ObjectManager):
@@ -35,7 +34,6 @@ class Module(ObjectManager):
         repo: Repo,
         file_path: str,
         version: str = None,
-        requirements_path: str = None,
         imported_modules: Dict[str, "Module"] = None,
     ):
         """
@@ -45,7 +43,6 @@ class Module(ObjectManager):
         :param name: Optionally, the name of the class that is being
             managed. If none provided, then by default this is a
             managed Python Module.
-        :param requirements_path: Optional path to a pip installable file.
         :param imported_modules: Dict from modules found in import statements
             in self's managed_object (i.e. the Python Module that this
             Module Component represents) to a `pcs.Module`.
@@ -54,21 +51,16 @@ class Module(ObjectManager):
         self.repo = repo
         self.file_path = file_path
         self.version = version
-        self.requirements_path = requirements_path
         self.imported_modules = imported_modules if imported_modules else {}
         self.register_attributes(
             [
                 "repo",
                 "file_path",
                 "version",
-                "requirements_path",
                 "imported_modules",
             ]
         )
-        self._venv = None
-        self._requirements = []
         self._parent_modules = set()
-        self._use_venv = True
 
     @classmethod
     def from_github_registry(
@@ -101,7 +93,6 @@ class Module(ObjectManager):
         repo: Repo,
         version: str,
         file_path: str,
-        requirements_path: str = None,
     ) -> "Module":
         full_path = repo.get_local_file_path(file_path, version)
         assert full_path.is_file(), f"{full_path} does not exist"
@@ -109,14 +100,10 @@ class Module(ObjectManager):
             repo=repo,
             file_path=file_path,
             version=version,
-            requirements_path=requirements_path,
         )
 
     def get_object(self):
         """Return managed Python Module."""
-        if not self._venv:
-            self._venv = self._build_virtual_env()
-            self._venv.activate()
         full_path = self.repo.get_local_file_path(self.file_path, self.version)
         assert full_path.is_file(), f"{full_path} does not exist"
         spec = importlib.util.spec_from_file_location(
@@ -127,23 +114,6 @@ class Module(ObjectManager):
         spec.loader.exec_module(managed_obj)
         setattr(managed_obj, "__component__", self)
         return managed_obj
-
-    def _build_virtual_env(self) -> VirtualEnv:
-        # Only the root Module will setup and activate the VirtualEnv
-        if not self._use_venv or self._parent_modules:
-            return NoOpVirtualEnv()
-        req_paths = set()
-        for c in self.dependency_list(
-            include_parents=True, filter_by_types=[Module]
-        ):
-            if c.requirements_path is None:
-                continue
-            for req_path in str(c.requirements_path).split(";"):
-                full_req_path = self.repo.get_local_file_path(
-                    req_path, c.version
-                ).absolute()
-                req_paths.add(full_req_path)
-        return VirtualEnv.from_requirements_paths(req_paths)
 
     def _handle_repo_spec(self, repos):
         existing_repo = repos.get(self.repo.name)
@@ -160,15 +130,10 @@ class Module(ObjectManager):
             version, self.file_path
         )
         prefixed_reqs_path = None
-        if self.requirements_path:
-            prefixed_reqs_path = self.repo.get_prefixed_path_from_repo_root(
-                version, self.requirements_path
-            )
         clone = Module(
             repo=GitHubRepo(url=repo_url),
             file_path=prefixed_file_path,
             version=version,
-            requirements_path=prefixed_reqs_path,
         )
         frozen_imported_mods = {}
         for name, mod in self.imported_modules.items():
