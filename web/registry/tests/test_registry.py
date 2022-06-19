@@ -19,7 +19,8 @@ class RegistryTestCases(LiveServerTestCase):
         url = reverse(
             "component-upload-artifact", kwargs={"pk": component.identifier}
         )
-        tarball = open(self.static_dir / "test_artifacts.tar.gz", "rb")
+        test_tarball = self.static_dir / "test_artifact_tarball.tar.gz"
+        tarball = open(test_tarball, "rb")
         response = self.client.post(url, {"tarball": tarball})
         self.assertEqual(response.status_code, 200)
         component.refresh_from_db()
@@ -27,9 +28,10 @@ class RegistryTestCases(LiveServerTestCase):
 
     def test_run_download_artifact(self):
         component = Component.objects.all()[0]
-        with open(self.static_dir / "test_artifacts.tar.gz", "rb") as file_in:
+        test_tarball = self.static_dir / "test_artifact_tarball.tar.gz"
+        with open(test_tarball, "rb") as file_in:
             component.artifact_tarball.save(
-                "test_artifacts.tar.gz", File(file_in)
+                "test_artifact_tarball.tar.gz", File(file_in)
             )
             component.save()
         url = reverse(
