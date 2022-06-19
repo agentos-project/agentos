@@ -3,15 +3,13 @@
 from pathlib import Path
 
 from django.core.files.base import File
-from django.test import Client, TestCase
+from django.test import Client, LiveServerTestCase
 from django.urls import reverse
 from registry.models import Component
 from registry.tests.utils import load_or_create_fixture
 
-# from .static.data import RUN_CREATE_DATA
 
-
-class RegistryTestCases(TestCase):
+class RegistryTestCases(LiveServerTestCase):
     def setUp(self):
         self.client = Client()
         load_or_create_fixture(self.live_server_url)
