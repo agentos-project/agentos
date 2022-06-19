@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://github.com/agentos-project/agentos/blob/8c0dd65ea0f98b9496be33f6be5955541649ef5e/web/registry/tests/static/test_artifacts.tar.gz
+HostUrl=https://raw.githubusercontent.com/agentos-project/agentos/8c0dd65ea0f98b9496be33f6be5955541649ef5e/web/registry/tests/static/test_artifacts.tar.gz
