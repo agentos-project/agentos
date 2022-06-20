@@ -235,7 +235,10 @@ class GitManager:
             print(f"GitManager: fetching {default_repo_path}...")
             with porcelain.open_repo_closing(default_repo_path) as repo:
                 try:
-                    porcelain.fetch(repo)
+                    with open(os.devnull, "wb") as devnull:
+                        porcelain.fetch(
+                            repo, outstream=devnull, errstream=devnull
+                        )
                 except urllib3.exceptions.MaxRetryError:
                     error_msg = (
                         "GitManager: couldn't contact GitHub "
@@ -298,9 +301,13 @@ class GitManager:
         if not clone_destination.exists():
             clone_destination.mkdir(parents=True)
             print(f"GitManager: cloning {src} to {str(clone_destination)}")
-            porcelain.clone(
-                source=str(src), target=str(clone_destination), checkout=True
-            )
+            with open(os.devnull, "wb") as devnull:
+                porcelain.clone(
+                    source=str(src),
+                    target=str(clone_destination),
+                    checkout=True,
+                    errstream=devnull,
+                )
             self._write_repo_info(clone_destination)
             if version:
                 self._checkout_version(clone_destination, version)
