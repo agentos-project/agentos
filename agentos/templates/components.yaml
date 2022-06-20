@@ -17,9 +17,10 @@ specs:
     agent_argument_set:
         type: ArgumentSet
         kwargs:
-            environment: spec:environment
+            environment_cls: spec:environment_class
             policy: spec:policy
             dataset: spec:dataset
+            run_cls: spec:run_class
 
     agent:
         type: Instance
@@ -37,12 +38,6 @@ specs:
         module: spec:environment_module
         name: Corridor
 
-    environment:
-        type: Instance
-        instance_of: spec:environment_class
-        argument_set: null
-        name: null
-
     policy_module:
         type: Module
         repo: spec:local_dir
@@ -59,7 +54,7 @@ specs:
         argument_set:
             type: ArgumentSet
             kwargs:
-                environment: spec:environment
+                environment_cls: spec:environment_class
         name: null
 
     dataset_module:
@@ -77,3 +72,15 @@ specs:
         instance_of: spec:dataset_class
         argument_set: null
         name: null
+
+    run_module:
+        type: Module
+        repo: spec:local_dir
+        file_path: ./run.py
+
+    run_class:
+        type: Class
+        module: spec:run_module
+        name: BasicRun
+
+
