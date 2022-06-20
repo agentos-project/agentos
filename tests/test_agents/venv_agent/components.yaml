@@ -8,13 +8,16 @@ specs:
                 type: Module
                 file_path: ./agent.py
                 repo:
-                    type: VirtualEnvComponent
-                    runtime:
-                        type: PythonRuntime
-                        version: null
-                    requirements_files:
-                        - type: Path
-                          relative_path: ./requirements.txt
-                          repo:
-                              type: LocalRepo
-                              path: .
+                    type: VirtualEnvPackage
+                    name: agentos
+                    virtualenv:
+                        type: VirtualEnvComponent
+                        runtime:
+                            type: PythonRuntime
+                            version: null
+                        requirements_files:
+                            - type: Path
+                              relative_path: ./requirements.txt
+                              repo:
+                                  type: LocalRepo
+                                  path: .

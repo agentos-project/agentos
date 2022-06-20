@@ -40,7 +40,7 @@ class Instance(ObjectManager):
             return self._instance
 
     def freeze(self: T, force: bool = False) -> T:
-        self_copy = copy.deepcopy(self)
+        self_copy = self.copy()
         self_copy.instance_of = self.instance_of.freeze(force)
         for i in [self_copy.argument_set.args, self_copy.argument_set.kwargs]:
             find_and_replace_leaves(

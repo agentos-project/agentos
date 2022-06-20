@@ -41,7 +41,7 @@ class Class(ObjectManager):
             if not repo:
                 repo = LocalRepo()
             sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
-            src_file = repo.get_local_dir() / f"{name}-{sha}.py"
+            src_file = repo.get_local_file_path(f"{name}-{sha}.py")
             if src_file.exists():
                 print(f"Re-using existing source file {src_file}.")
             else:
@@ -82,6 +82,6 @@ class Class(ObjectManager):
         return Instance(self, argument_set=argument_set)
 
     def freeze(self: T, force: bool = False) -> T:
-        self_copy = copy.deepcopy(self)
-        self_copy.module = self.module.freeze(force)
+        self_copy = self.copy()
+        self_copy.module = self_copy.module.freeze(force)
         return self_copy

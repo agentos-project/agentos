@@ -388,8 +388,6 @@ class VirtualEnvComponent(Repo):
     def no_op_venv() -> VirtualEnv:
         return NoOpVirtualEnv()
 
-    def get_local_dir(self) -> Path:
-        return self.virtual_env.venv_path
-
     def get_local_file_path(self, relative_path: str) -> Path:
+
         return self.virtual_env.venv_path / relative_path

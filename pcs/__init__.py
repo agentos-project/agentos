@@ -11,7 +11,7 @@ from pcs.output import Output, active_output
 from pcs.path import Path
 from pcs.registry import Registry
 from pcs.runtime import PythonRuntime
-from pcs.repo import GitHubRepo, LocalRepo, Repo
+from pcs.repo import GitRepo, LocalRepo, Repo
 from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.version import VERSION as __version__  # noqa: F401
 from pcs.virtual_env import VirtualEnvComponent
@@ -21,7 +21,7 @@ __all__ = [
     "Class",
     "Command",
     "Component",
-    "GitHubRepo",
+    "GitRepo",
     "Instance",
     "LocalRepo",
     "MLflowRun",

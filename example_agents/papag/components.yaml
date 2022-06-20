@@ -4,15 +4,15 @@ specs:
         path: .
 
     openai_gym:
-        type: GitHubRepo
+        type: GitRepo
         url: git@github.com:openai/gym.git
 
     ikostrikov_papag:
-        type: GitHubRepo
+        type: GitRepo
         url: git@github.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
 
     mgbellemare_ale:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
     papag_class:

@@ -5,7 +5,7 @@ from typing import Dict
 
 from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
-from pcs.repo import GitHubRepo, Repo
+from pcs.repo import GitRepo, Repo
 from pcs.utils import parse_github_web_ui_url
 
 
@@ -33,7 +33,6 @@ class Module(ObjectManager):
         self,
         repo: Repo,
         file_path: str,
-        version: str = None,
         imported_modules: Dict[str, "Module"] = None,
     ):
         """
@@ -50,16 +49,8 @@ class Module(ObjectManager):
         super().__init__()
         self.repo = repo
         self.file_path = file_path
-        self.version = version
         self.imported_modules = imported_modules if imported_modules else {}
-        self.register_attributes(
-            [
-                "repo",
-                "file_path",
-                "version",
-                "imported_modules",
-            ]
-        )
+        self.register_attributes(["repo", "file_path", "imported_modules"])
         self._parent_modules = set()
 
     @classmethod
@@ -71,7 +62,7 @@ class Module(ObjectManager):
         """
         This method gets a Module from a registry file found on GitHub.  If
         the registry file contains a LocalRepo, this method automatically
-        translates that LocalRepo into a GitHubRepo.
+        translates that LocalRepo into a GitRepo.
 
         The ``github_url`` argument can be found by navigating to the
         registry file on the GitHub web UI.  It should look like the
@@ -88,23 +79,14 @@ class Module(ObjectManager):
         return module
 
     @classmethod
-    def from_repo(
-        cls,
-        repo: Repo,
-        version: str,
-        file_path: str,
-    ) -> "Module":
-        full_path = repo.get_local_file_path(file_path, version)
+    def from_repo(cls, repo: Repo, file_path: str) -> "Module":
+        full_path = repo.get_local_file_path(file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
-        return cls(
-            repo=repo,
-            file_path=file_path,
-            version=version,
-        )
+        return cls(repo=repo, file_path=file_path)
 
     def get_object(self):
         """Return managed Python Module."""
-        full_path = self.repo.get_local_file_path(self.file_path, self.version)
+        full_path = self.repo.get_local_file_path(self.file_path)
         assert full_path.is_file(), f"{full_path} does not exist"
         spec = importlib.util.spec_from_file_location(
             "AOS_MODULE", str(full_path)
@@ -122,28 +104,19 @@ class Module(ObjectManager):
                 self.repo.name = str(uuid.uuid4())
         repos[self.repo.name] = self.repo.to_dict()
 
-    def to_versioned_module(self, force: bool = False) -> "Module":
-        repo_url, version = self.repo.get_version_from_git(
-            self.file_path, version=self.version, force=force
-        )
-        prefixed_file_path = self.repo.get_prefixed_path_from_repo_root(
-            version, self.file_path
-        )
-        prefixed_reqs_path = None
-        clone = Module(
-            repo=GitHubRepo(url=repo_url),
-            file_path=prefixed_file_path,
-            version=version,
-        )
-        frozen_imported_mods = {}
-        for name, mod in self.imported_modules.items():
-            frozen_imported_mods.update[name] = mod.freeze(force=force)
-        self.imported_modules.update(frozen_imported_mods)
-        return clone
-
     def freeze(self: T, force: bool = False) -> T:
         """
-        Return a copy of self whose parent Module (or self if this is a Module)
-        is versioned.
+        Return a copy of self that has a GitRepo.
         """
-        return self.to_versioned_module(force)
+        copy_self = self.copy()
+        if not isinstance(self.repo, GitRepo):
+            try:
+                copy_self.repo = copy_self.repo.to_gitrepo()
+            except Exception:
+                print(
+                    f"Failed to convert Repo {self.repo} of type "
+                    f"{self.repo.type} (belonging to Module {self}) to a "
+                    f"GitRepo"
+                )
+                raise
+        return copy_self

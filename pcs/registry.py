@@ -83,7 +83,7 @@ class Registry(abc.ABC):
 
     @classmethod
     def from_file_in_repo(
-        cls, repo: "Repo", file_path: str, version: str, format: str = "yaml"
+        cls, repo: "Repo", file_path: str, format: str = "yaml"
     ) -> "Registry":
         """
         Read in a registry file from a repo.

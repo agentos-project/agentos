@@ -124,6 +124,9 @@ class Component:
             self._update_body()
             self._update_identifier()
 
+    def copy(self):
+        return self.from_registry(self.to_registry())
+
     @property
     def type(self):
         return self.__class__.__name__

@@ -6,7 +6,7 @@ import pytest
 from agentos.cli import run
 from pcs import Class, Instance, Module
 from pcs.component import Component
-from pcs.repo import VersionedRepo
+from pcs.repo import Repo
 from pcs.specs import Spec
 from pcs.virtual_env import VirtualEnv, auto_revert_venv
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
@@ -44,7 +44,7 @@ def test_venv_management(cli_runner, tmpdir):
         VirtualEnv.clear_env_cache(
             env_cache_path=env_cache_path, assume_yes=True
         )
-        VersionedRepo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
+        Repo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
         assert not touch_test.exists()
 
         test_kwargs = {
@@ -104,7 +104,6 @@ def test_setup_py_agent():
                 name="BasicAgent",
                 module=Module.from_repo(
                     repo=agent_repo,
-                    version=None,
                     file_path="./agent.py",
                     requirements_path="./setup.py",
                 ),

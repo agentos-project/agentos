@@ -1,18 +1,18 @@
 specs:
     aos_github:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/agentos-project/agentos.git
 
     openai_gym:
-        type: GitHubRepo
+        type: GitRepo
         url: git@github.com:openai/gym.git
 
     stable_baselines3:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/DLR-RM/stable-baselines3.git
 
     mgbellemare_ale:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
 
     agent:
