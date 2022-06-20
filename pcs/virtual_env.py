@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import subprocess
 import sys
@@ -10,6 +11,8 @@ from typing import Sequence
 import yaml
 
 from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path
+
+logger = logging.getLogger(__name__)
 
 
 class VirtualEnv:
@@ -52,7 +55,9 @@ class VirtualEnv:
         """
         venv = cls()
         if not req_paths:
-            print("VirtualEnv: no requirement paths; Running in an empty env!")
+            logger.info(
+                "VirtualEnv: no requirement paths; Running in an empty env!"
+            )
         venv._build_virtual_env(req_paths)
         return venv
 
@@ -94,7 +99,7 @@ class VirtualEnv:
         self._save_default_env_info()
         self._exec_activate_this_script()
         self._venv_is_active = True
-        print(f"VirtualEnv: Running in Python venv at {self.venv_path}")
+        logger.info(f"VirtualEnv: Running in Python venv at {self.venv_path}")
 
     def _exec_activate_this_script(self):
         """

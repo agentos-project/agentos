@@ -113,7 +113,7 @@ class ObjectManager(abc.ABC, Component):
     ) -> Any:
         fn = getattr(instance, function_name)
         assert fn is not None, f"{instance} has no attr {function_name}"
-        print(
+        logger.debug(
             f"Calling {self.identifier}.{function_name} with "
             f"args: {arg_set.args} and kwargs: {arg_set.kwargs})"
         )
