@@ -389,5 +389,19 @@ class VirtualEnvComponent(Repo):
         return NoOpVirtualEnv()
 
     def get_local_file_path(self, relative_path: str) -> Path:
-
-        return self.virtual_env.venv_path / relative_path
+        """
+        `relative_path` must have the form [./]package_name/path_to_file
+        """
+        relative_path = Path(relative_path)
+        assert not relative_path.is_absolute()
+        assert len(relative_path.parts) >= 2
+        assert self.virtual_env.venv_path.is_dir()
+        package_name = relative_path.parts[0]
+        for child in self.virtual_env.venv_path.iterdir():
+            if (child.name == package_name or
+                child.name == f"{package_name}.egg-link"
+            ):
+                return child / relative_path.par
+            else:
+                raise FileNotFoundError(
+                    f"VirtualEnv cannot resolve {relative_path} not found")

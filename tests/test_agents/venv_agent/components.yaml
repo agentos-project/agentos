@@ -6,18 +6,15 @@ specs:
             name: BasicAgent
             module:
                 type: Module
-                file_path: ./agent.py
+                file_path: ./agentos/tests/test_agents/venv_agent/agent.py
                 repo:
-                    type: VirtualEnvPackage
-                    name: agentos
-                    virtualenv:
-                        type: VirtualEnvComponent
-                        runtime:
-                            type: PythonRuntime
-                            version: null
-                        requirements_files:
-                            - type: Path
-                              relative_path: ./requirements.txt
-                              repo:
-                                  type: LocalRepo
-                                  path: .
+                    type: VirtualEnvComponent
+                    runtime:
+                        type: PythonRuntime
+                        version: null
+                    requirements_files:
+                        - type: Path
+                          relative_path: ./requirements.txt
+                          repo:
+                              type: LocalRepo
+                              path: .
