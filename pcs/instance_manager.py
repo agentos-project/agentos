@@ -24,7 +24,7 @@ class Instance(ObjectManager):
         super().__init__()
         self.instance_of = instance_of
         self.argument_set = argument_set if argument_set else ArgumentSet()
-        self.register_attributes(["instance_of", "argument_set", "name"])
+        self.register_attributes(["instance_of", "argument_set"])
         self._instance = None
 
     def get_object(self):

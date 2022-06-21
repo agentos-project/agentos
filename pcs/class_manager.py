@@ -76,10 +76,10 @@ class Class(ObjectManager):
         setattr(cls, "__component__", self)
         return cls
 
-    def instantiate(self, argument_set: ArgumentSet, name: str = None):
+    def instantiate(self, argument_set: ArgumentSet):
         from pcs.instance_manager import Instance
 
-        return Instance(self, argument_set=argument_set, name=name)
+        return Instance(self, argument_set=argument_set)
 
     def freeze(self: T, force: bool = False) -> T:
         self_copy = copy.deepcopy(self)
