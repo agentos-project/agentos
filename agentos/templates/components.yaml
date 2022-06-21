@@ -3,11 +3,20 @@ specs:
         type: LocalRepo
         path: .
 
+    virtual_env:
+        type: VirtualEnvComponent
+        runtime:
+            type: PythonRuntime
+            version: null
+        requirements_files:
+            - type: Path
+              relative_path: ./requirements.txt
+              repo: spec:local_dir
+
     agent_module:
         type: Module
         repo: spec:local_dir
         file_path: ./agent.py
-        requirements_path: ./requirements.txt
 
     agent_class:
         type: Class
