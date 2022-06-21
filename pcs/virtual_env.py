@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from contextlib import contextmanager
@@ -12,7 +13,7 @@ import yaml
 from pcs.path import Path as PcsPath
 from pcs.repo import Repo
 from pcs.runtime import PythonRuntime
-from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path
+from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path, PCSException
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +231,9 @@ class VirtualEnv:
             "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
         }
         print(f"Running {cmd}")
-        proc = subprocess.Popen(cmd, env=component_env, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            cmd, env=component_env, stdout=subprocess.PIPE, cwd=req_path.parent
+        )
         # Copied from https://stackoverflow.com/questions/17411966/printing-stdout-in-realtime-from-a-subprocess-that-requires-stdin/17413045#17413045  # noqa: E501
         # Grab stdout line by line as it becomes available. This will loop
         # until proc terminates.
@@ -241,7 +244,12 @@ class VirtualEnv:
         # When the subprocess terminates there might be unconsumed output
         # that still needs to be processed.
         print(proc.stdout.read(), end="")
-        assert proc.returncode == 0, "virtualenv install requirements failed."
+        if proc.returncode != 0:
+            self._delete_virtual_env()
+            raise PCSException(
+                "virtualenv install requirements failed. Removed "
+                f"virtualenv that was in bad state: {self.venv_path}"
+            )
 
     def _build_virtual_env(self, req_paths: Sequence):
         hashed = self._hash_req_paths(req_paths)
@@ -250,6 +258,13 @@ class VirtualEnv:
             self.create_virtual_env()
             for req_path in self._sort_req_paths(req_paths):
                 self.install_requirements_file(req_path)
+
+    def _delete_virtual_env(self):
+        assert self.venv_path.relative_to(AOS_GLOBAL_REQS_DIR), (
+            "Cannot delete folders or directories that are not in "
+            "{AOS_GLOBAL_REQS_DIR}."
+        )
+        shutil.rmtree(self.venv_path)
 
     def _hash_req_paths(self, req_paths: Sequence) -> str:
         sorted_req_paths = self._sort_req_paths(req_paths)
@@ -397,11 +412,19 @@ class VirtualEnvComponent(Repo):
         assert len(relative_path.parts) >= 2
         assert self.virtual_env.venv_path.is_dir()
         package_name = relative_path.parts[0]
-        for child in self.virtual_env.venv_path.iterdir():
-            if (child.name == package_name or
-                child.name == f"{package_name}.egg-link"
-            ):
-                return child / relative_path.par
-            else:
-                raise FileNotFoundError(
-                    f"VirtualEnv cannot resolve {relative_path} not found")
+        py_dir = (
+            f"python{self.runtime.major_version}.{self.runtime.minor_version}"
+        )
+        pkgs = self.virtual_env.venv_path / "lib" / py_dir / "site-packages"
+        for child in pkgs.iterdir():
+            if child.name == package_name:
+                return child.joinpath(*relative_path.parts[1:])
+            elif child.name == f"{package_name}.egg-link":
+                with child.open() as f:
+                    # For more about the format of "egg links", see https://setuptools.pypa.io/en/latest/deprecated/python_eggs.html#egg-links  # noqa: E501
+                    # TODO: deal with the case where this is a relative path.
+                    pkg_path = f.readline().strip()
+                return Path(pkg_path).joinpath(*relative_path.parts[1:])
+        raise FileNotFoundError(
+            f"VirtualEnv cannot resolve: {relative_path} not found"
+        )

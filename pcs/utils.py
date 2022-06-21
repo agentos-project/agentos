@@ -15,6 +15,10 @@ IDENTIFIER_REF_PREFIX = "spec:"
 HASH_REGEXES = ["^[a-fA-F0-9]{32}$", "^[a-fA-F0-9]{40}$", "^[a-fA-F0-9]{64}$"]
 
 
+class PCSException(Exception):
+    pass
+
+
 def is_spec_body(item: Any) -> bool:
     if not isinstance(item, Mapping):
         return False
