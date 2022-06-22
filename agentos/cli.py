@@ -168,7 +168,6 @@ def run(
         registry = Registry.from_yamls(registry_file)
     if registry_string:
         registry.update(Registry.from_dict(literal_eval(registry_string)))
-    print(registry.to_dict())
     from pcs.component import Component
 
     comp = Component.from_registry(registry, identifier)
@@ -191,12 +190,17 @@ def run(
     )
     children = output.get_child_mlflow_runs()
     print()
-    print(f"Output {output.identifier} recorded.")
-    print(f"\tpublish: agentos publish {output.info['run_id']}")
-    print(f"\tdetails: agentos status {output.info['run_id']}")
+    print("Output recorded.")
+    print(f"\tPCS Identifier: {output.identifier}")
+    print(f"\tMLflow Run ID: {output.info['run_id']}")
+    print(f"\t\tagentos publish {output.info['run_id']}")
+    print(f"\t\tdetails: agentos status {output.info['run_id']}")
     if children:
         print()
-        print(f"Output {output.identifier} has the following children:")
+        print(
+            f"Output with PCS Identifier {output.identifier} has the "
+            f"following child MLflow Runs:"
+        )
         print()
         for child in children:
             if child.data.tags.get(AgentRun.IS_AGENT_RUN_TAG):

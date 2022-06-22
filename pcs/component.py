@@ -268,7 +268,7 @@ class Component:
             f"No Component type '{spec.type}' found in " "module 'pcs'."
         )
         comp_cls = getattr(pcs, spec.type)
-        print(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
+        logger.debug(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
         comp_class = comp_cls(**spec.as_kwargs)
         return comp_class
 
