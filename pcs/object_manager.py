@@ -1,13 +1,17 @@
 import abc
 import logging
 from functools import partial
-from typing import Any, TypeVar
+from typing import Any, TYPE_CHECKING, TypeVar
 
 from pcs.argument_set import ArgumentSet
 from pcs.command import Command
 from pcs.component import Component
 from pcs.output import Output
 from pcs.registry import Registry
+from pcs.python_executable import PythonExecutable
+
+if TYPE_CHECKING:
+    from pcs.python_executable import PythonExecutable
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +73,7 @@ class ObjectManager(abc.ABC, Component):
         publish_to: Registry = None,
         log_return_value: bool = True,
         return_value_log_format: str = "yaml",
+        python_exec: "PythonExecutable" = None,
     ) -> Output:
         """
         Run the specified entry point a new instance of this Module's
@@ -85,10 +90,17 @@ class ObjectManager(abc.ABC, Component):
             to the provided registry.
         :param log_return_value: If True, log the return value of the entry
             point being run.
+        :param python_exec: A component representing the python executable
+            to use when creating this object.
         :param return_value_log_format: Specify which format to use when
             serializing the return value. Only used if ``log_return_value``
             is True.
         """
+        if python_exec:
+            raise NotImplementedError
+            # TODO: run the python runtime provided via subprocess and
+            #       execute this run command inside of it.
+            # TODO: return Output that was generated via that subprocess run.
         assert not self.active_output, (
             f"Module {self.identifier} already has an active_output, so a "
             "new run is not allowed."

@@ -1,5 +1,9 @@
+from typing import TYPE_CHECKING
 from pcs.component import Component
 from pcs.repo import Repo
+
+if TYPE_CHECKING:
+    from pathlib import Path as PathlibPath
 
 
 class Path(Component):
@@ -15,5 +19,5 @@ class Path(Component):
         self.repo = repo
         self.register_attributes(["relative_path", "repo"])
 
-    def get(self):
+    def get(self) -> "PathlibPath":
         return self.repo.get_local_file_path(self.relative_path)

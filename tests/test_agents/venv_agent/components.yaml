@@ -9,12 +9,14 @@ specs:
                 file_path: ./agentos/tests/test_agents/venv_agent/agent.py
                 repo:
                     type: VirtualEnvComponent
-                    runtime:
-                        type: PythonRuntime
-                        version: null
+                    version: null
                     requirements_files:
                         - type: Path
                           relative_path: ./requirements.txt
                           repo:
                               type: LocalRepo
                               path: .
+                    #packages:
+                    #    - type: PyPIPackage
+                    #      name: arrow
+                    #      version: null

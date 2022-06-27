@@ -10,7 +10,7 @@ from pcs.module_manager import Module
 from pcs.output import Output, active_output
 from pcs.path import Path
 from pcs.registry import Registry
-from pcs.runtime import PythonRuntime
+from pcs.python_executable import PythonExecutable
 from pcs.repo import GitRepo, LocalRepo, Repo
 from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.version import VERSION as __version__  # noqa: F401
@@ -28,7 +28,7 @@ __all__ = [
     "Module",
     "Output",
     "Path",
-    "PythonRuntime",
+    "PythonExecutable",
     "Registry",
     "Repo",
     "Spec",
