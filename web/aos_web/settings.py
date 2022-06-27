@@ -23,7 +23,6 @@ IS_DEPLOY = bool(os.environ.get("IS_DEPLOY", False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
@@ -107,14 +106,6 @@ DATABASES = {
         "PORT": "5432",  # 5432 by default
     }
 }
-
-if IS_TEST:
-    assert DEBUG
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "mydatabase",
-    }
-
 
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES["default"].update(db_from_env)

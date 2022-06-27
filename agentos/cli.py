@@ -274,12 +274,9 @@ def freeze(identifier, registry_file, force, output_file):
         print(yaml.dump(frozen_reg.to_dict()))
 
 
-# NJTODO - does this need force arg?
 @agentos_cmd.command()
 @_arg_identifier
-@_option_registry_file
-@_option_force
-def publish(identifier, registry_file, force):
+def publish(identifier):
     # If identifier is a Run.
     r = MLflowRun.from_existing_mlflow_run(run_id=identifier)
     if AgentRun.IS_AGENT_RUN_TAG in r.data["tags"]:

@@ -18,29 +18,33 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
+class ComponentManager(models.Manager):
+    def spec_id_to_identifier(self, spec_id):
+        assert spec_id.startswith(Component.SPEC_PREFIX)
+        return spec_id.replace(Component.SPEC_PREFIX, "", 1)
+
+    def get_from_spec_id(self, spec_id):
+        identifier = self.spec_id_to_identifier(spec_id)
+        return Component.objects.get(identifier=identifier)
+
+
 class Component(TimeStampedModel):
     SPEC_PREFIX = "spec:"
 
     identifier = models.CharField(max_length=200, primary_key=True)
     body = models.JSONField(default=dict)
+    artifact_tarball = models.FileField(
+        upload_to="artifact_tarballs/", null=True
+    )
 
-    @staticmethod
-    def spec_id_to_identifier(spec_id):
-        assert spec_id.startswith(Component.SPEC_PREFIX)
-        return spec_id.replace(Component.SPEC_PREFIX, "", 1)
-
-    # TODO: should be an object manager
-    @staticmethod
-    def get_from_spec_id(spec_id):
-        identifier = Component.spec_id_to_identifier(spec_id)
-        return Component.objects.get(identifier=identifier)
+    objects = ComponentManager()
 
     @property
     def model_input_run_identifier(self):
         input_id = self.body["model_input_run"]
         if input_id is None:
             return input_id
-        return Component.spec_id_to_identifier(input_id)
+        return Component.objects.spec_id_to_identifier(input_id)
 
     @property
     def environment_identifier(self):
@@ -52,7 +56,7 @@ class Component(TimeStampedModel):
 
     @property
     def run_command_identifier(self):
-        return Component.spec_id_to_identifier(self.body["command"])
+        return Component.objects.spec_id_to_identifier(self.body["command"])
 
     @property
     def run_name(self):
@@ -86,7 +90,9 @@ class Component(TimeStampedModel):
 
     @property
     def agent_name(self):
-        instance = Component.get_from_spec_id(self.agent.body["instance_of"])
+        instance = Component.objects.get_from_spec_id(
+            self.agent.body["instance_of"]
+        )
         return instance.body["name"]
 
     @property

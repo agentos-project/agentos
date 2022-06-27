@@ -18,3 +18,4 @@ website/_site
 docs
 web/static
 web/uploaded_media
+web/registry/tests/fixtures

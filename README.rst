@@ -157,7 +157,9 @@ and pull request (see the `test workflow
 <https://github.com/agentos-project/agentos/blob/master/.github/workflows/run-tests.yml>`_)
 
 If you want to the CLI to interact with a local development server, define the
-environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.
+environment variable (or create a `.env` file) `USE_LOCAL_SERVER=True`.  This
+defaults to interacting with URL `http://localhost:8000`. To specify a URL,
+define the environment variable `DEFAULT_REGISTRY_URL=<url>`.
 
 To run website tests::
 

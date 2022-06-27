@@ -47,7 +47,7 @@ def run_detail(request, identifier):
 
 def empty_database(request):
     if not settings.DEBUG:
-        raise HttpResponseBadRequest("Not allowed.")
+        return HttpResponseBadRequest("Not allowed.")
     # ComponentDependency.objects.all().delete()
     Component.objects.all().delete()
     # Repo.objects.all().delete()
