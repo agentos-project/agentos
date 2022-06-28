@@ -306,7 +306,6 @@ class GitManager:
                     source=str(src),
                     target=str(clone_destination),
                     checkout=True,
-                    errstream=devnull,
                 )
             self._write_repo_info(clone_destination)
             if version:
