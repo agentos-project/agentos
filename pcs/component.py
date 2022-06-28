@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 C = TypeVar("C", bound="Component")
 
 
+# NJTODO - remove this comment
 class Component:
     """
     Conceptually, a Component is a graph node with edges and attributes, that
