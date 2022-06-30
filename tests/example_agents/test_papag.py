@@ -1,5 +1,7 @@
+import pytest
+
 from agentos.cli import run
-from tests.utils import PAPAG_AGENT_DIR, run_test_command
+from tests.utils import PAPAG_AGENT_DIR, is_windows, run_test_command
 
 # Use CartPole because Atari ROM licensing issues break tests on Windows.
 test_args = [
@@ -13,6 +15,7 @@ test_args = [
 ]
 
 
+@pytest.mark.skipif(is_windows(), reason="See issue #417, bad symlinks")
 def test_papag_agent_evaluate(cli_runner):
     kwargs = {
         "--function-name": "evaluate",
@@ -21,6 +24,7 @@ def test_papag_agent_evaluate(cli_runner):
     run_test_command(cli_runner, run, cli_args=test_args, cli_kwargs=kwargs)
 
 
+@pytest.mark.skipif(is_windows(), reason="See issue #417, bad symlinks")
 def test_papag_agent_learn(cli_runner):
     kwargs = {
         "--function-name": "learn",

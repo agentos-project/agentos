@@ -5,7 +5,8 @@ See repo README for instructions to run tests.
 import os
 from pathlib import Path
 
-from utils import SB3_AGENT_DIR, run_in_dir, run_test_command
+import pytest
+from utils import SB3_AGENT_DIR, is_windows, run_in_dir, run_test_command
 
 from agentos.cli import freeze, init, run, status
 
@@ -51,6 +52,7 @@ def test_cli_status(cli_runner):
         run_test_command(cli_runner, status, cli_args=run_args)
 
 
+@pytest.mark.skipif(is_windows(), reason="See issue #417, bad sym links")
 def test_cli_freeze(cli_runner, tmpdir):
     run_args = ["sb3_agent", "-f"]
     run_kwargs = {"--registry-file": str(SB3_AGENT_DIR / "components.yaml")}
