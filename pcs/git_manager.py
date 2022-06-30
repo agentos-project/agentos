@@ -124,9 +124,16 @@ class GitManager:
         if len(remotes) == 1:
             remote_name, remote_uri = remotes[0]
             # If path, assume a default repo clone and find default repo URLs.
-            if remote_name == "origin" and Path(remote_uri).exists():
-                with porcelain.open_repo_closing(remote_uri) as local_repo:
-                    return self._get_all_remotes(local_repo)
+            if remote_name == "origin":
+                is_path = False
+                try:
+                    is_path = Path(remote_uri).exists()
+                except OSError:
+                    # Windows raises OSError when remote_uri is 'https://...'
+                    pass
+                if is_path:
+                    with porcelain.open_repo_closing(remote_uri) as local_repo:
+                        return self._get_all_remotes(local_repo)
         return remotes
 
     def _check_remote_branch_status(
