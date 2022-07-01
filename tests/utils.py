@@ -65,3 +65,7 @@ def run_in_dir(dir_path):
 
 def is_linux():
     return "linux" in sys.platform
+
+
+def is_windows():
+    return "win32" == sys.platform
