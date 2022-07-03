@@ -1,14 +1,23 @@
 import sys
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
 from agentos.cli import run
 from pcs import Class, Instance, Module
 from pcs.component import Component
-from pcs.repo import Repo
+from pcs.module_manager import VirtualEnvModule
+from pcs.path import Path as PathComponent
+from pcs.repo import Repo, LocalRepo
 from pcs.specs import Spec
-from pcs.virtual_env import VirtualEnv, auto_revert_venv
+from pcs.virtual_env import (
+    VirtualEnv,
+    ManagedVirtualEnv,
+    auto_revert_venv,
+)
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
 
@@ -27,6 +36,27 @@ def _confirm_modules_not_in_env():
         import arrow  # noqa: F401
     with pytest.raises(ModuleNotFoundError):
         import bottle  # noqa: F401
+
+
+def test_venv_module(tmp_path):
+    filename = "requirements.txt"
+    req_file = tmp_path / filename
+    req_file.write_text("pycowsay")
+
+    repo = LocalRepo(path=tmp_path)
+    path = PathComponent(repo=repo, relative_path=filename)
+    venv = ManagedVirtualEnv(requirements_files=[path])
+    venv_module = VirtualEnvModule(virtual_env=venv, name="pycowsay.main")
+    print(venv_module)
+    print(venv_module.get_object())
+    assert type(venv_module.get_object()) is type(sys)
+    # See the pycow ascii art at:
+    # https://github.com/cs01/pycowsay/blob/master/pycowsay/main.py
+    pycow_eyes = "(oo)"
+    with redirect_stdout(StringIO()) as f:
+        venv_module.get_object().main()
+    pycowmain_returned = f.getvalue()
+    assert pycow_eyes in pycowmain_returned
 
 
 def test_venv_management(cli_runner, tmpdir):
@@ -62,9 +92,8 @@ def test_venv_repl(tmpdir):
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
         venv_path = Path(tmpdir) / "reqs"
-        venv = VirtualEnv(venv_path=venv_path)
         assert not venv_path.exists()
-        venv.create_virtual_env()
+        venv = VirtualEnv(venv_path=venv_path)
         assert venv_path.exists()
 
         # These packages are not found in our venv either

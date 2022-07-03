@@ -18,7 +18,7 @@ from pcs.module_manager import Module
 from pcs.output import Output
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.repo import Repo
-from pcs.virtual_env import VirtualEnv
+from pcs.virtual_env import ManagedVirtualEnv
 
 
 @click.group()
@@ -295,7 +295,7 @@ def clear_env_cache(assume_yes):
     automatically recreated when re-running a Module that has
     ``requirements_path`` specified.
     """
-    VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+    ManagedVirtualEnv.clear_env_cache(assume_yes=assume_yes)
 
 
 @agentos_cmd.command()
@@ -316,7 +316,7 @@ def clear_cache(assume_yes):
     This command clears all virtual environments AND git repos that have been
     cached by AgentOS on your local file system.
     """
-    VirtualEnv.clear_env_cache(assume_yes=assume_yes)
+    ManagedVirtualEnv.clear_env_cache(assume_yes=assume_yes)
     Repo.clear_repo_cache(assume_yes=assume_yes)
 
 

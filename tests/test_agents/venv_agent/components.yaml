@@ -5,18 +5,20 @@ specs:
             type: Class
             name: BasicAgent
             module:
-                type: Module
+                type: FileModule
                 file_path: ./agentos/tests/test_agents/venv_agent/agent.py
                 repo:
-                    type: VirtualEnvComponent
-                    version: null
-                    requirements_files:
-                        - type: Path
-                          relative_path: ./requirements.txt
-                          repo:
-                              type: LocalRepo
-                              path: .
-                    #packages:
-                    #    - type: PyPIPackage
-                    #      name: arrow
-                    #      version: null
+                    type: VirtualEnvLibRepo
+                    virtual_env:
+                        type: VirtualEnvComponent
+                        version: null
+                        requirements_files:
+                            - type: Path
+                              relative_path: ./requirements.txt
+                              repo:
+                                  type: LocalRepo
+                                  path: .
+                        #packages:
+                        #    - type: PyPIPackage
+                        #      name: arrow
+                        #      version: null

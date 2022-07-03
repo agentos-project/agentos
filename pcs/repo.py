@@ -8,6 +8,7 @@ from typing import Tuple, TypeVar
 from pcs.component import Component
 from pcs.git_manager import GitManager
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
+from pcs.virtual_env import VirtualEnv
 
 logger = logging.getLogger(__name__)
 
@@ -170,3 +171,36 @@ class LocalRepo(Repo):
 
     def get_local_file_path(self, relative_path: str) -> Path:
         return Path(self.path) / relative_path
+
+
+class VirtualEnvLibRepo(Repo):
+    def __init__(self, virtual_env: VirtualEnv):
+        super().__init__()
+        self.virtual_env = virtual_env
+        self.register_attribute("virtual_env")
+
+    def get_local_file_path(self, relative_path: str) -> Path:
+        """
+        `relative_path` must have the form [./]package_name/path_to_file
+        """
+        relative_path = Path(relative_path)
+        assert not relative_path.is_absolute()
+        assert self.virtual_env.path.is_dir()
+        package_name = relative_path.parts[0]
+        py_dir = (
+            f"python{self.virtual_env.python_executable.major_version}."
+            f"{self.virtual_env.python_executable.minor_version}"
+        )
+        pkgs = self.virtual_env.venv_path / "lib" / py_dir / "site-packages"
+        for child in pkgs.iterdir():
+            if child.name == package_name:
+                return child.joinpath(*relative_path.parts[1:])
+            elif child.name == f"{package_name}.egg-link":
+                with child.open() as f:
+                    # For more about the format of "egg links", see https://setuptools.pypa.io/en/latest/deprecated/python_eggs.html#egg-links  # noqa: E501
+                    # TODO: deal with the case where this is a relative path.
+                    pkg_path = f.readline().strip()
+                return Path(pkg_path).joinpath(*relative_path.parts[1:])
+        raise FileNotFoundError(
+            f"VirtualEnv cannot resolve: {relative_path} not found"
+        )

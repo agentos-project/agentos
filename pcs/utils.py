@@ -19,6 +19,10 @@ class PCSException(Exception):
     pass
 
 
+class PCSVirtualEnvInstallException(Exception):
+    pass
+
+
 def is_spec_body(item: Any) -> bool:
     if not isinstance(item, Mapping):
         return False

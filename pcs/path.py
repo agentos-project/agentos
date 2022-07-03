@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 from pcs.component import Component
-from pcs.repo import Repo
 
 if TYPE_CHECKING:
     from pathlib import Path as PathlibPath
+    from pcs.repo import Repo
 
 
 class Path(Component):
-    def __init__(self, relative_path: str, repo: Repo):
+    def __init__(self, repo: "Repo", relative_path: str):
         """
         :param repo: Repo where this Module's source file can be found. The
             ``file_path`` argument is relative to the root this Repo.

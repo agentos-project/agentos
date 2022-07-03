@@ -19,11 +19,19 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class ObjectManager(abc.ABC, Component):
+class ObjectManager(Component, abc.ABC):
     """
     ObjectManagers manage an underlying Python object (i.e. a module, class,
     or class instance). They can also run a method that is an attribute on
     their underlying object. Runs can take an argument set.
+
+    ObjectManagers provide reproducibility by returning an Output Component
+    containing all of the dependencies of the Run, including: (1) the code of
+    the object being run (i.e., ObjectManager) and the function_name, (2) the
+    full DAG of other objects it depends on (i.e., DAG of other Components),
+    (3) the set of arguments (literally a
+    :py:func:`pcs.argument_set.ArgumentSet`) used during initialization of
+    the managed object and all Components it transitively depends on.
     """
 
     def __init__(self):
