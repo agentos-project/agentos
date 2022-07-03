@@ -332,9 +332,12 @@ class ManagedVirtualEnv(VirtualEnv):
         requirements_files: List[PathComponent] = None,
     ):
         self._env_cache_path = AOS_GLOBAL_REQS_DIR
-        hashed = self._hash_req_paths(
-            [p.get() for p in requirements_files]
-        )
+        if requirements_files:
+            hashed = self._hash_req_paths(
+                [p.get() for p in requirements_files]
+            )
+        else:
+            hashed = None
         path = self.env_cache_path / hashed
         try:
             super().__init__(
@@ -420,7 +423,10 @@ class NoOpVirtualEnv(VirtualEnv):
 
 
 @contextmanager
-def auto_revert_venv():
+def auto_revert_venv(
+    python_version: str = None,
+    requirements_files: List[PathComponent] = None,
+):
     """
     Use this context manager when you need to revert the Python environment to
     whatever was in place before the managed block.  Useful in tests when an
@@ -434,10 +440,11 @@ def auto_revert_venv():
             # Do something here that may fail, leaving the env in a bad state
         # Env guaranteed to be reset to its pre-managed-block state here
     """
-    venv = VirtualEnv()
-    venv._save_default_env_info()
-    venv._venv_is_active = True
+    venv = ManagedVirtualEnv(
+        python_version=python_version, requirements_files=requirements_files
+    )
+    venv.activate()
     try:
-        yield
+        yield venv
     finally:
         venv.deactivate()

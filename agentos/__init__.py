@@ -21,7 +21,7 @@ __all__ = [
     "Environment",
     "EnvironmentSpec",
     "Policy",
-    "Runnable, VirtualEnvLibRepo",
+    "Runnable",
     "Trainer",
     "rollout",
     "rollouts",

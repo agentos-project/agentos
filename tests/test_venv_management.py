@@ -71,7 +71,7 @@ def test_venv_management(cli_runner, tmpdir):
         touch_test = env_cache_path / "test_file.out"
         touch_test.touch()
         assert touch_test.exists()
-        VirtualEnv.clear_env_cache(
+        ManagedVirtualEnv.clear_env_cache(
             env_cache_path=env_cache_path, assume_yes=True
         )
         Repo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
