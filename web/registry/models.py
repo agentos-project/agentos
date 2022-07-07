@@ -39,6 +39,14 @@ class Component(TimeStampedModel):
 
     objects = ComponentManager()
 
+    def __repr__(self):
+        return (
+            "Component<"
+            f"id:{self.identifier}, "
+            f'type:{self.body.get("type", "unknown")}'
+            ">"
+        )
+
     @property
     def model_input_run_identifier(self):
         input_id = self.body["model_input_run"]
