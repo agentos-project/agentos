@@ -9,6 +9,7 @@ import tempfile
 from collections import defaultdict, deque
 from pathlib import Path, PurePath
 from typing import (
+    Callable,
     TYPE_CHECKING,
     Dict,
     List,
@@ -56,8 +57,9 @@ class Registry(abc.ABC):
     def from_yaml(file_path: str) -> "Registry":
         with open(file_path) as file_in:
             config = yaml.safe_load(file_in)
-        reg = InMemoryRegistry.from_dict(config)
-        reg._make_relative_local_repo_paths_absolute(Path(file_path).parent)
+        reg = InMemoryRegistry.from_dict(
+            config, base_path=Path(file_path).parent
+        )
         return reg
 
     @staticmethod
@@ -166,9 +168,9 @@ class Registry(abc.ABC):
     def to_dict(self) -> Dict:
         raise NotImplementedError
 
-    def to_yaml(self, filename: str = None) -> None:
+    def to_yaml(self, filename: str = None, mode: str = "w") -> None:
         if filename:
-            with open(filename, "w") as file:
+            with open(filename, mode=mode) as file:
                 yaml.dump(self.to_dict(), file)
         else:
             return yaml.dump(self.to_dict())
@@ -221,7 +223,7 @@ class Registry(abc.ABC):
             )
         else:
             return None
-        spec = Spec.from_flat(body)
+        spec = Spec.from_body(body)
         return spec.to_flat() if flatten else spec
 
     def get_specs_transitively_by_id(
@@ -294,7 +296,9 @@ class InMemoryRegistry(Registry):
         )  # {id: set(ids that it depends on)}
 
     @classmethod
-    def from_dict(cls, input_dict: Dict) -> "InMemoryRegistry":
+    def from_dict(
+        cls, input_dict: Dict, base_path: Path
+    ) -> "InMemoryRegistry":
         reg = cls()
         for key in input_dict.keys():
             assert key == reg.SPECS_KEY or key == reg.ALIASES_KEY, (
@@ -308,6 +312,9 @@ class InMemoryRegistry(Registry):
             reg._registry[cls.SPECS_KEY] = input_dict[cls.SPECS_KEY]
         reg._resolve_inline_spec_bodies()
         reg._resolve_aliases()
+        reg._update_helpers()
+        reg._make_relative_local_repo_paths_absolute(base_path)
+        reg._resolve_alias_references()
         reg._update_helpers()
         return reg
 
@@ -395,7 +402,8 @@ class InMemoryRegistry(Registry):
                     to_handle.append((new_specs[alias], k, v))
             elif elt and isinstance(elt, dict):  # handle non-spec body dict
                 try:
-                    struct[key]
+                    if struct[key] is None:
+                        struct[key] = {}
                 except (IndexError, KeyError):
                     struct[key] = {}
                 for attr_key, attr_val in elt.items():
@@ -412,7 +420,7 @@ class InMemoryRegistry(Registry):
 
         self._registry[self.SPECS_KEY] = new_specs
 
-    def _resolve_aliases(self):
+    def _resolve_aliases(self) -> None:
         """
         To make it easier for developers to write specs, we allow for
         the input dictionary to have specs where the identifier is an
@@ -449,7 +457,7 @@ class InMemoryRegistry(Registry):
 
         for id_or_alias, body in self.specs.items():
             assert is_spec_body(body), (
-                "Trying to resolve aliases in something that is not spec "
+                "Trying to resolve aliases in something that is not a spec "
                 f"body: {body}"
             )
             hash = Component.spec_body_to_identifier(body)
@@ -466,8 +474,11 @@ class InMemoryRegistry(Registry):
         if new_aliases:
             self._registry[self.ALIASES_KEY] = new_aliases
 
+    def _resolve_alias_references(self):
+        from pcs.component import Component  # Avoid circular import.
+
         # replace uses of aliases within spec bodies.
-        to_resolve = [Spec.from_flat(body) for body in self.specs.values()]
+        to_resolve = [Spec.from_body(body) for body in self.specs.values()]
         while to_resolve:
             curr_spec = to_resolve.pop()
             component = Component.from_spec(curr_spec, self)
@@ -494,7 +505,7 @@ class InMemoryRegistry(Registry):
                 p = PurePath(spec_body["path"])
                 if not p.is_absolute():
                     abs_path = (base_path / p).resolve()
-                    updated_spec = Spec.from_flat(spec_body)
+                    updated_spec = Spec.from_body(spec_body)
                     updated_spec.update_body({"path": str(abs_path)})
                     updated_specs.append((spec_id, updated_spec))
         for old_id, updated in updated_specs:
@@ -522,7 +533,9 @@ class InMemoryRegistry(Registry):
     def to_dict(self) -> Dict:
         return self._registry
 
-    def replace_spec(self, identifier, new_spec):
+    def replace_spec(
+        self, identifier: str, new_spec: Dict, remove_old_spec: bool = True
+    ):
         """
         Adds replacements for, but does not remove, spec with `identifier`
         and all of its ancestors.
@@ -541,6 +554,8 @@ class InMemoryRegistry(Registry):
             identifier = self.aliases[identifier]
         # add the new node and enqueue its new parents.
         self.add_spec(new_spec)
+        if remove_old_spec:
+            self._registry[self.SPECS_KEY].pop(identifier)
         self._update_aliases(identifier, new_spec.identifier)
         parent_ids = self._dependee_ids[identifier]
         replacements_to_do = deque(parent_ids)
@@ -549,9 +564,7 @@ class InMemoryRegistry(Registry):
         while replacements_to_do:
             # dequeue ident of spec that is being replaced
             ident_to_replace = replacements_to_do.popleft()
-            replacement_spec = Spec(
-                {ident_to_replace: self.specs[ident_to_replace]}
-            )
+            replacement_spec = Spec.from_body(self.specs[ident_to_replace])
             # find and enqueue its parents
             replacements_to_do += self._dependee_ids[ident_to_replace]
             # Update body of spec replacing all child refs found in old_to_new,
@@ -579,6 +592,8 @@ class InMemoryRegistry(Registry):
                 self._dependee_ids[child_id].add(replacement_spec.identifier)
             # add new spec (identifier->updated_body) to graph
             self.add_spec(replacement_spec)
+            if remove_old_spec:
+                self._registry[self.SPECS_KEY].pop(ident_to_replace)
             # update aliases
             self._update_aliases(ident_to_replace, replacement_spec.identifier)
 

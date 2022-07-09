@@ -15,7 +15,7 @@ from pcs.component import Component
 from pcs.path import Path as PathComponent
 from pcs.python_executable import PythonExecutable
 from pcs.utils import (
-    AOS_GLOBAL_REQS_DIR,
+    AOS_GLOBAL_VENV_DIR,
     PCSVirtualEnvInstallException,
     clear_cache_path,
 )
@@ -28,16 +28,17 @@ class VirtualEnv(Component):
     This class manages a Python virtual environment. It provides methods to
     setup, enable, and disable a virtual environment.
     """
+    PCS_REG_FILENAME = "pcs_registry.yaml"
     def __init__(
         self,
-        path: Path,
         python_version: str = None,
         requirements_files: List[PathComponent] = None,
     ):
         """
         Creates a new virtual environment.
 
-        :param path: the path to the root dir of this venv.
+        :param path: the path to the root dir of this venv. If this is None,
+            the path will be managed automatically.
         :param python_version: The version of Python to init this venv with.
         :param requirements_files: a sequence of `pcs.path.Path`s
             to be installed into this environment.
@@ -46,34 +47,68 @@ class VirtualEnv(Component):
         self._saved_venv_sys_path = None
         self._venv_is_active = False
         self._python_executable = None  # Set in self.python_executable()
-        self.path = path
-        assert self.path
-        if self.path.exists():
-            # TODO: I'm not sure which version of virtualenv added pyenv.cfg.
-            assert (
-                (
-                    (self.path / "bin").exists() or
-                    (self.path / "Scripts").exists()
-                ) and
-                (self.path / "lib").is_dir() and
-                (self.path / "pyvenv.cfg").exists()
-            ), f"'{self.path}' is no a valid virtualenv."
-            assert not python_version and not requirements_files, (
-                f"virtualenv '{self.path}' already exists, so "
-                "'python_version' and 'requirements_files' args must be None."
-            )
-            return
+        self._env_cache_path = AOS_GLOBAL_VENV_DIR
+        if python_version:
+            assert re.fullmatch(r"\d+\.\d+\.\d+", python_version)
         else:
-            if python_version:
-                assert re.fullmatch(r"\d+\.\d+\.\d+", python_version)
-            else:
-                py_ver = sys.version_info
-                full_ver = f"{py_ver.major}.{py_ver.minor}.{py_ver.micro}"
-                python_version = full_ver
+            ver = sys.version_info
+            python_version = f"{ver.major}.{ver.minor}.{ver.micro}"
+        self.python_version = python_version
+        if requirements_files:
             self.requirements_files = requirements_files
-            req_paths = [p.get() for p in self.requirements_files]
-            self._build_virtual_env(python_version, req_paths)
-            self.register_attributes(["python_version", "requirements_files"])
+        else:
+            self.requirements_files = []
+        self.register_attributes(["python_version", "requirements_files"])
+        try:
+            self._build_virtual_env()
+        except PCSVirtualEnvInstallException as e:
+            self._delete_virtual_env()
+            raise PCSVirtualEnvInstallException(
+                "Creating VirtualEnv failed. Removed VirtualEnv that "
+                f"was in bad state: {self.path}"
+            ) from e
+
+    @property
+    def path(self) -> Path:
+        return self._env_cache_path / self.identifier
+
+    @classmethod
+    def from_existing_venv(cls, existing_venv_path: Path) -> "VirtualEnv":
+        assert existing_venv_path.exists()
+        # TODO: I'm not sure which version of virtualenv added pyenv.cfg.
+        assert (
+            (
+                (existing_venv_path / "bin").exists() or
+                (existing_venv_path / "Scripts").exists()
+            ) and
+            (existing_venv_path / "lib").is_dir() and
+            (existing_venv_path / "pyvenv.cfg").exists()
+        ), f"'{existing_venv_path}' is not a valid virtualenv."
+        if existing_venv_path.is_relative_to(AOS_GLOBAL_VENV_DIR):
+            reg_file = existing_venv_path / cls.PCS_REG_FILENAME
+            assert reg_file.exists(), (
+                f"VirtualEnvs that exist within {AOS_GLOBAL_VENV_DIR} should "
+                "all have a registry file written within them."
+            )
+            return Component.from_yaml(reg_file)
+        else:
+            # TODO: Infer a VirtualEnv Component that represents the existing
+            #     VirtualEnv by pip listing it's modules and
+            raise NotImplementedError
+
+    def _write_reg_file(self) -> None:
+        self.to_yaml_file(str(self.reg_file_path))
+
+    @property
+    def reg_file_path(self) -> Path:
+        reg_file = self.path / self.PCS_REG_FILENAME
+        if reg_file.exists():
+            assert reg_file.is_file()
+        return reg_file
+
+    @staticmethod
+    def from_existing(existing_venv_path: Path):
+        return VirtualEnv(path=existing_venv_path)
 
     def __enter__(self):
         """
@@ -90,10 +125,6 @@ class VirtualEnv(Component):
     def __exit__(self, exc_type, exc_value, exc_tb):
         """Deactivates the virtual environment on context exit."""
         self.deactivate()
-
-    @property
-    def python_version(self):
-        return self.python_executable.version
 
     @property
     def python_executable(self):
@@ -119,7 +150,8 @@ class VirtualEnv(Component):
         """
         if self._venv_is_active:
             return
-        assert self.path.exists(), f"{self.path} does not exist!"
+        if not self.path.exists():
+            self._build_virtual_env()
         self._save_default_env_info()
         self._exec_activate_this_script()
         self._venv_is_active = True
@@ -185,13 +217,17 @@ class VirtualEnv(Component):
         if self._default_os_underscore:
             os.environ["_"] = self._default_os_underscore
 
-    def _build_virtual_env(self, python_version: str, req_paths: Sequence):
+    def _build_virtual_env(self) -> None:
         assert self.path is not None
-        if not self.path.exists():
+        if self.path.exists():
+            assert self.reg_file_path
+        else:
             subprocess.run(
-                ["virtualenv", "-p", python_version, self.path])
+                ["virtualenv", "-p", self.python_version, self.path])
+            req_paths = [p.get() for p in self.requirements_files]
             for req_path in self._sort_req_paths(req_paths):
                 self.install_requirements_file(req_path)
+            self._write_reg_file()
 
     def install_requirements_file(
         self,
@@ -316,42 +352,18 @@ class VirtualEnv(Component):
         return flag_dict
 
     @staticmethod
+    def _sort_req_paths(req_paths: Sequence) -> list:
+        req_paths = set(req_paths)
+        return sorted(p for p in req_paths)
+
+    @staticmethod
     def no_op_venv() -> "VirtualEnv":
         return NoOpVirtualEnv()
 
-
-class ManagedVirtualEnv(VirtualEnv):
-    """
-    This wraps a VirtualEnv but manages it's location (i.e., it's path)
-    automatically so that the user doesn't have to. All `ManagedVirtualEnv`s
-    are created in a cache.
-    """
-    def __init__(
-        self,
-        python_version: str = None,
-        requirements_files: List[PathComponent] = None,
-    ):
-        self._env_cache_path = AOS_GLOBAL_REQS_DIR
-        if requirements_files:
-            hashed = self._hash_req_paths(
-                [p.get() for p in requirements_files]
-            )
-        else:
-            hashed = None
-        path = self.env_cache_path / hashed
-        try:
-            super().__init__(
-                path=path,
-                python_version=python_version,
-                requirements_files=requirements_files,
-            )
-        except PCSVirtualEnvInstallException as e:
-            self._delete_virtual_env()
-            raise PCSVirtualEnvInstallException(
-                "Removed ManagedVirtualEnv that was in bad "
-                f"state: {self.path}"
-            ) from e
-
+    # ------------------------------------------------------------------------
+    # The rest of this class (i.e, the code below this point) is functionality
+    # specific to automatically managing the location of a virtualenv.
+    # ------------------------------------------------------------------------
     @property
     def env_cache_path(self):
         return self._env_cache_path
@@ -372,30 +384,28 @@ class ManagedVirtualEnv(VirtualEnv):
         Completely removes all the virtual environments that have been created
         for Components.  Pass True to ``assume_yes`` to run non-interactively.
         """
-        env_cache_path = env_cache_path or AOS_GLOBAL_REQS_DIR
+        env_cache_path = env_cache_path or AOS_GLOBAL_VENV_DIR
         clear_cache_path(env_cache_path, assume_yes)
 
-
     def _delete_virtual_env(self):
-        assert self.path.relative_to(AOS_GLOBAL_REQS_DIR), (
+        assert self.path.relative_to(AOS_GLOBAL_VENV_DIR), (
             "Cannot delete folders or directories that are not in "
-            "{AOS_GLOBAL_REQS_DIR}."
+            "{AOS_GLOBAL_VENV_DIR}."
         )
         shutil.rmtree(self.path)
 
-    def _hash_req_paths(self, req_paths: Sequence) -> str:
-        sorted_req_paths = self._sort_req_paths(req_paths)
+    def _hash_venv(
+        self, req_paths: Sequence, python_version: str
+    ) -> str:
         to_hash = hashlib.sha256()
-        to_hash.update(b"empty")
-        for req_path in sorted_req_paths:
-            with req_path.open() as file_in:
-                reqs_data = file_in.read()
-                to_hash.update(reqs_data.encode("utf-8"))
+        to_hash.update(python_version.encode("utf-8"))
+        if req_paths:
+            sorted_req_paths = self._sort_req_paths(req_paths)
+            for req_path in sorted_req_paths:
+                with req_path.open() as file_in:
+                    reqs_data = file_in.read()
+                    to_hash.update(reqs_data.encode("utf-8"))
         return to_hash.hexdigest()
-
-    def _sort_req_paths(self, req_paths: Sequence) -> list:
-        req_paths = set(req_paths)
-        return sorted(p for p in req_paths)
 
 
 class NoOpVirtualEnv(VirtualEnv):
@@ -440,7 +450,7 @@ def auto_revert_venv(
             # Do something here that may fail, leaving the env in a bad state
         # Env guaranteed to be reset to its pre-managed-block state here
     """
-    venv = ManagedVirtualEnv(
+    venv = VirtualEnv(
         python_version=python_version, requirements_files=requirements_files
     )
     venv.activate()

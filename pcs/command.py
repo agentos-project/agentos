@@ -44,18 +44,18 @@ class Command(Component):
     def __init__(
         self,
         component: "Module",
-        function_name: str,
-        argument_set: "ArgumentSet",
-        log_return_value: bool,
+        function_name: str = None,
+        argument_set: "ArgumentSet" = None,
+        log_return_value: bool = True,
     ):
         """
-        Command constructor.
+        Command constructor. See the class docstring for more details.
 
         :param component: The Component whose managed object we are going to
             call a function on.
         :param function_name: The function being run.
         :param argument_set: Arguments to be passed to the function being run.
-        :param log_return_value: Whether or not to log the return value
+        :param log_return_value: Whether to log the return value
             of the Entry point as part of this run. If True, the return
             value will be serialized to a file per the default value of
             the `return_value_log_format` parameter of

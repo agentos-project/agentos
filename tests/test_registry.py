@@ -23,17 +23,37 @@ def test_resolve_inline_specs():
         "outer_spec": {
             "type": "ArgumentSet",
             "kwargs": {"other_spec": {"type": "LocalRepo", "path": "./1"}},
-            "args": [{"type": "LocalRepo", "path": "./2"}],
+            "args": [
+                {
+                    "type": "Path",
+                    "relative_path": "./requirements.txt",
+                    "repo": {"type": "LocalRepo", "path": "./2"}
+                },
+                {
+                    "another_dict_key1": "another_dict_value1",
+                    "another_dict_key2": "another_dict_value2"
+                }
+            ],
         }
     }
     r = Registry.from_dict({"specs": test_spec_dict})
 
     outer = r.get_spec("outer_spec")
-    inner_id = extract_identifier(outer.body["args"][0])
-    assert len(r.aliases) == 3
-    assert inner_id in r
-    assert inner_id in r.specs
-    assert r.get_spec(inner_id).to_flat()["type"] == "LocalRepo"
+    # First test some complex nesting of an attribute that is a list of dicts.
+    assert outer.body["args"][1]["another_dict_key1"] == "another_dict_value1"
+    path_spec_id = extract_identifier(outer.body["args"][0])
+    assert len(r.aliases) == 4
+    assert path_spec_id in r
+    assert path_spec_id in r.specs
+    path_spec = r.get_spec(path_spec_id)
+    assert path_spec.to_flat()["type"] == "Path"
+    local_repo2_id = extract_identifier(path_spec.body["repo"])
+    assert local_repo2_id in r
+    assert local_repo2_id in r.specs
+    local_repo2_spec = r.get_spec(local_repo2_id)
+    assert local_repo2_spec.to_flat()["type"] == "LocalRepo"
+
+
 
 
 def test_resolve_inline_aliases():
@@ -115,6 +135,6 @@ specs:
 """
     reg = Registry.from_dict(yaml.load(registry_yaml))
     pprint.pprint(reg.to_dict())
-    replacement_spec = Spec.from_flat({"type": "LocalRepo", "path": "/tmp"})
+    replacement_spec = Spec.from_body({"type": "LocalRepo", "path": "/tmp"})
     reg.replace_spec("one", replacement_spec)
     assert reg.get_spec("one").to_flat()["path"] == "/tmp"

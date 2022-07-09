@@ -19,5 +19,15 @@ class Path(Component):
         self.repo = repo
         self.register_attributes(["relative_path", "repo"])
 
+    @classmethod
+    def from_local_path(cls, path: "PathlibPath"):
+        assert path.exists()
+        from pcs.repo import LocalRepo  # Avoid circular dependency.
+
+        if path.is_dir():
+            return cls(LocalRepo(str(path)), ".")
+        else:
+            return cls(LocalRepo(str(path.parent)), path.name)
+
     def get(self) -> "PathlibPath":
         return self.repo.get_local_file_path(self.relative_path)

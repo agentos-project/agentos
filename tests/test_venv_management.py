@@ -15,7 +15,6 @@ from pcs.repo import Repo, LocalRepo
 from pcs.specs import Spec
 from pcs.virtual_env import (
     VirtualEnv,
-    ManagedVirtualEnv,
     auto_revert_venv,
 )
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
@@ -45,7 +44,7 @@ def test_venv_module(tmp_path):
 
     repo = LocalRepo(path=tmp_path)
     path = PathComponent(repo=repo, relative_path=filename)
-    venv = ManagedVirtualEnv(requirements_files=[path])
+    venv = VirtualEnv(requirements_files=[path])
     venv_module = VirtualEnvModule(virtual_env=venv, name="pycowsay.main")
     print(venv_module)
     print(venv_module.get_object())
@@ -59,23 +58,17 @@ def test_venv_module(tmp_path):
     assert pycow_eyes in pycowmain_returned
 
 
-def test_venv_management(cli_runner, tmpdir):
-    with auto_revert_venv():
+def test_venv_cache_clearing():
+    venv = VirtualEnv()
+    assert venv.path.exists()
+    VirtualEnv.clear_env_cache(assume_yes=True)
+    assert not venv.path.exists()
+
+
+def test_venv_management(cli_runner):
+    with auto_revert_venv() as venv:
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        tmp_path = Path(tmpdir)
-        env_cache_path = tmp_path / "test_requirements"
-        env_cache_path.mkdir(parents=True, exist_ok=True)
-
-        # Test cache clearing
-        touch_test = env_cache_path / "test_file.out"
-        touch_test.touch()
-        assert touch_test.exists()
-        ManagedVirtualEnv.clear_env_cache(
-            env_cache_path=env_cache_path, assume_yes=True
-        )
-        Repo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
-        assert not touch_test.exists()
 
         test_kwargs = {
             "--registry-file": str(TEST_VENV_AGENT_DIR / "components.yaml")
@@ -91,10 +84,8 @@ def test_venv_repl(tmpdir):
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        venv_path = Path(tmpdir) / "reqs"
-        assert not venv_path.exists()
-        venv = VirtualEnv(venv_path=venv_path)
-        assert venv_path.exists()
+        venv = VirtualEnv()
+        assert venv.path.exists()
 
         # These packages are not found in our venv either
         with venv:
@@ -121,7 +112,7 @@ def test_setup_py_agent():
     with auto_revert_venv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        local_repo_spec = Spec.from_flat(
+        local_repo_spec = Spec.from_body(
             {
                 Component.TYPE_KEY: "LocalRepo",
                 "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",

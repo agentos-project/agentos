@@ -8,7 +8,7 @@ from deepdiff import grep
 AOS_ROOT = Path(__file__).parent.absolute()
 AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
-AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
+AOS_GLOBAL_VENV_DIR = AOS_GLOBAL_CACHE_DIR / "virtual_envs_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
 IDENTIFIER_REF_PREFIX = "spec:"
@@ -28,10 +28,7 @@ def is_spec_body(item: Any) -> bool:
         return False
     from pcs.component import Component  # Avoid circular import
 
-    type_attr = item.get(Component.TYPE_KEY, None)
-    import pcs
-
-    return type_attr and hasattr(pcs, type_attr)
+    return item.get(Component.TYPE_KEY, None) is not None
 
 
 def is_identifier(token: Any) -> bool:

@@ -272,7 +272,13 @@ class Component:
         )
         comp_cls = getattr(pcs, spec.type)
         logger.debug(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
-        comp_class = comp_cls(**spec.as_kwargs)
+        try:
+            comp_class = comp_cls(**spec.as_kwargs)
+        except Exception as e:
+            raise Exception(
+                f"failed to initialize Component class {comp_cls} "
+                f"with kwargs: {spec.as_kwargs}"
+            ) from e
         return comp_class
 
     @classmethod
@@ -287,7 +293,9 @@ class Component:
             "spec that has dependencies."
         )
         dep_spec = registry.get_spec(identifier, flatten=True)
-        assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
+        assert hasattr(pcs, dep_spec[cls.TYPE_KEY]), (
+            f"Cannot find pcs.{dep_spec[cls.TYPE_KEY]}."
+        )
         dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
         assert issubclass(dep_comp_cls, Component)
         dep = dep_comp_cls._from_spec(
@@ -310,8 +318,7 @@ class Component:
         return yaml.dump(self.to_spec())
 
     def to_yaml_file(self, filename: str) -> None:
-        with open(filename, "w") as f:
-            yaml.dump(self.to_spec(), f)
+        self.to_registry().to_yaml(filename)
 
     def publish(self) -> Registry:
         self.to_registry(Registry.from_default())

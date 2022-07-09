@@ -2,7 +2,6 @@ specs:
     cmd:
         type: Command
         component: spec:test_venv_agent
-
     test_venv_agent:
         type: Instance
         instance_of:
@@ -11,18 +10,11 @@ specs:
             module:
                 type: VirtualEnvModule
                 name: tests.test_agents.venv_agent.agent
-                virtual_env: spec:venv
-
-    venv:
-        type: ManagedVirtualEnv
-            version: null
-            requirements_files:
-                - type: Path
-                  relative_path: ./requirements.txt  # contains: arrow & -e ../../..
-                  repo:
-                      type: LocalRepo
-                      path: .
-             #packages:
-             #    - type: PyPIPackage
-             #      name: bottle
-             #      version: null
+                virtual_env:
+                    type: VirtualEnv
+                    requirements_files:
+                        - type: Path
+                          relative_path: ./requirements.txt
+                          repo:
+                              type: LocalRepo
+                              path: .

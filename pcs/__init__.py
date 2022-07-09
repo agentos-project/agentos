@@ -6,14 +6,15 @@ from pcs.command import Command
 from pcs.component import Component
 from pcs.instance_manager import Instance
 from pcs.mlflow_run import MLflowRun
-from pcs.module_manager import Module
+from pcs.module_manager import Module, VirtualEnvModule
 from pcs.output import Output, active_output
 from pcs.registry import Registry
+from pcs.path import Path
 from pcs.python_executable import PythonExecutable
 from pcs.repo import GitRepo, LocalRepo, Repo
 from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.version import VERSION as __version__  # noqa: F401
-from pcs.virtual_env import ManagedVirtualEnv
+from pcs.virtual_env import VirtualEnv
 
 __all__ = [
     "ArgumentSet",
@@ -23,14 +24,16 @@ __all__ = [
     "GitRepo",
     "Instance",
     "LocalRepo",
+    "VirtualEnv",
     "MLflowRun",
     "Module",
     "Output",
+    "Path",
     "PythonExecutable",
     "Registry",
     "Repo",
     "Spec",
-    "ManagedVirtualEnv",
+    "VirtualEnvModule",
     "active_output",
     "flatten_spec",
     "unflatten_spec",

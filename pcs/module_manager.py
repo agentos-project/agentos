@@ -8,7 +8,7 @@ from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
 from pcs.repo import GitRepo, Repo
 from pcs.utils import parse_github_web_ui_url
-from pcs.virtual_env import ManagedVirtualEnv
+from pcs.virtual_env import VirtualEnv
 
 
 class Module(ObjectManager):
@@ -110,11 +110,11 @@ class FileModule(Module):
 
 
 class VirtualEnvModule(Module):
-    def __init__(self, name: str, virtual_env: ManagedVirtualEnv):
+    def __init__(self, name: str, virtual_env: VirtualEnv):
         super().__init__()
         self.name = name
         self.virtual_env = virtual_env
-        self.register_attribute("virtual_env")
+        self.register_attributes(["name", "virtual_env"])
 
     def get_object(self) -> Any:
         self.virtual_env.activate()
