@@ -1,4 +1,6 @@
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
@@ -11,6 +13,7 @@ AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
 AOS_GLOBAL_VENV_DIR = AOS_GLOBAL_CACHE_DIR / "virtual_envs_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
+PIP_COMMAND = "pip"
 IDENTIFIER_REF_PREFIX = "spec:"
 HASH_REGEXES = ["^[a-fA-F0-9]{32}$", "^[a-fA-F0-9]{40}$", "^[a-fA-F0-9]{64}$"]
 
@@ -291,3 +294,31 @@ def copy_find_and_replace_leaves(
 def pad_list_if_necessary(list_in, index):
     while index >= len(list_in):  # List too short
         list_in.append(None)
+
+
+def pipe_and_check_popen(args: List[str], **kwargs):
+    if "stdout" not in kwargs:
+        kwargs["stdout"] = subprocess.PIPE
+    if "stderr" not in kwargs:
+        kwargs["stderr"] = subprocess.PIPE
+    proc = subprocess.Popen(args, **kwargs)
+    stdout = stderr = ""
+    while proc.poll() is None:
+        stdout_line = proc.stdout.readline().decode()  # blocks until newline.
+        if stdout_line:
+            print(stdout_line, end="")
+            stdout += stdout_line
+        stderr_line = proc.stdout.readline().decode()  # blocks until newline.
+        if stderr_line:
+            print(stderr_line, file=sys.stderr, end="")
+            stderr += stderr_line
+    # When the subprocess terminates there might be unconsumed output
+    # that still needs to be processed.
+    print(proc.stdout.read(), end="")
+    print(proc.stdout.read(), end="")
+    if proc.returncode != 0:
+        raise PCSException(
+            f"The following subprocess finished with a non-zero "
+            f"({proc.returncode}) return code: {' '.join(args)}"
+        )
+    return proc, stdout, stderr

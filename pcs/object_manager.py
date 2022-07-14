@@ -21,7 +21,7 @@ T = TypeVar("T")
 
 class ObjectManager(Component, abc.ABC):
     """
-    ObjectManagers manage an underlying Python object (i.e. a module, class,
+    ObjectManagers manage an underlying Python object (i.e., a module, class,
     or class instance). They can also run a method that is an attribute on
     their underlying object. Runs can take an argument set.
 
@@ -37,6 +37,7 @@ class ObjectManager(Component, abc.ABC):
     def __init__(self):
         Component.__init__(self)
         self.active_output = None
+        self._obj = None  # Set by get_object()
 
     def get_default_function_name(self):
         try:
@@ -118,14 +119,15 @@ class ObjectManager(Component, abc.ABC):
         with Output.from_command(command) as output:
             for c in self.dependency_list():
                 c.active_output = output
-            obj = self.get_object()
-            res = self.call_function_with_arg_set(obj, function_name, arg_set)
+            with self as obj:
+                res = self.call_function_with_arg_set(obj, function_name, arg_set)
             if log_return_value:
                 output.log_return_value(res, return_value_log_format)
             for c in self.dependency_list():
                 c.active_output = None
             if publish_to:
                 output.to_registry(publish_to)
+            del obj  # Any virtual_envs that were activated are deactivated.
             return output
 
     def call_function_with_arg_set(
@@ -140,9 +142,24 @@ class ObjectManager(Component, abc.ABC):
         result = fn(*arg_set.get_arg_objs(), **arg_set.get_kwarg_objs())
         return result
 
+    def __enter__(self) -> Any:
+        return self.get_object(force_new=True)
+
+    def __exit__(self, type, value, traceback) -> None:
+        self.reset_object()
+
+    def get_object(self, force_new: bool = False) -> Any:
+        if not self._obj or force_new:
+            self._obj = self.get_new_object()
+        return self._obj
+
     @abc.abstractmethod
-    def get_object(self) -> Any:
+    def get_new_object(self) -> Any:
         raise NotImplementedError
+
+    def reset_object(self):
+        if self._obj:
+            self._obj = None
 
     @abc.abstractmethod
     def freeze(self: T, force: bool = False) -> T:

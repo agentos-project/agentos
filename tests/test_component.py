@@ -10,7 +10,7 @@ from pcs.output import Output
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.utils import extract_identifier
-from pcs.virtual_env import auto_revert_venv
+from pcs.virtual_env import VirtualEnv
 from tests.utils import (
     TESTING_BRANCH_NAME,
     TESTING_GITHUB_ACCOUNT,
@@ -127,7 +127,7 @@ def test_component_freezing(cli_runner, tmpdir):
 
 
 def test_component_from_github_with_venv():
-    with auto_revert_venv():
+    with VirtualEnv():
         random_url = (
             f"https://github.com/{TESTING_GITHUB_ACCOUNT}/"
             f"{TESTING_GITHUB_REPO}/blob/{TESTING_BRANCH_NAME}/"

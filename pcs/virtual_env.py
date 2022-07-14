@@ -16,8 +16,11 @@ from pcs.path import Path as PathComponent
 from pcs.python_executable import PythonExecutable
 from pcs.utils import (
     AOS_GLOBAL_VENV_DIR,
+    PIP_COMMAND,
+    PCSException,
     PCSVirtualEnvInstallException,
     clear_cache_path,
+    pipe_and_check_popen
 )
 
 logger = logging.getLogger(__name__)
@@ -29,10 +32,12 @@ class VirtualEnv(Component):
     setup, enable, and disable a virtual environment.
     """
     PCS_REG_FILENAME = "pcs_registry.yaml"
+
     def __init__(
         self,
         python_version: str = None,
         requirements_files: List[PathComponent] = None,
+        local_packages: List[Path] = None,
     ):
         """
         Creates a new virtual environment.
@@ -58,7 +63,10 @@ class VirtualEnv(Component):
             self.requirements_files = requirements_files
         else:
             self.requirements_files = []
-        self.register_attributes(["python_version", "requirements_files"])
+        self.local_packages = local_packages if local_packages else []
+        self.register_attributes(
+            ["python_version", "requirements_files", "local_packages"]
+        )
         try:
             self._build_virtual_env()
         except PCSVirtualEnvInstallException as e:
@@ -71,6 +79,27 @@ class VirtualEnv(Component):
     @property
     def path(self) -> Path:
         return self._env_cache_path / self.identifier
+
+    @property
+    def bin_path(self) -> Path:
+        bin_path = self.path / "bin"
+        if sys.platform in ["win32", "win64"]:
+            bin_path = self.path / "Scripts"
+        return bin_path
+
+    @property
+    def python_executable(self) -> PythonExecutable:
+        if not self._python_executable:
+            py_path = self.bin_path / "python"
+            if sys.platform in ["win32", "win64"]:
+                py_path = self.bin_path / "python.exe"
+            assert py_path.exists()
+            self._python_executable = PythonExecutable(py_path)
+        return self._python_executable
+
+    @property
+    def python_path(self) -> Path:
+        return self.python_executable.path
 
     @classmethod
     def from_existing_venv(cls, existing_venv_path: Path) -> "VirtualEnv":
@@ -121,18 +150,11 @@ class VirtualEnv(Component):
         ```
         """
         self.activate()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         """Deactivates the virtual environment on context exit."""
         self.deactivate()
-
-    @property
-    def python_executable(self):
-        if not self._python_executable:
-            py_path = self.path / "bin" / "python"
-            assert py_path.exists()
-            self._python_executable = PythonExecutable(py_path)
-        return self._python_executable
 
     def _save_default_env_info(self):
         self._default_sys_path = [p for p in sys.path]
@@ -156,6 +178,10 @@ class VirtualEnv(Component):
         self._exec_activate_this_script()
         self._venv_is_active = True
         logger.info(f"VirtualEnv: Running in Python venv at {self.venv_path}")
+
+    @property
+    def is_active(self):
+        return self._venv_is_active
 
     def _exec_activate_this_script(self):
         """
@@ -222,18 +248,32 @@ class VirtualEnv(Component):
         if self.path.exists():
             assert self.reg_file_path
         else:
+            # Create the Venv
             subprocess.run(
-                ["virtualenv", "-p", self.python_version, self.path])
+                ["virtualenv", "-p", self.python_version, self.path],
+                check=True,
+                capture_output=True
+            )
+            # Install req files
             req_paths = [p.get() for p in self.requirements_files]
             for req_path in self._sort_req_paths(req_paths):
-                self.install_requirements_file(req_path)
+                self._install_requirements_file(req_path)
             self._write_reg_file()
+            # Install local packages
+            for pkg_path in self.local_packages:
+                self._install_local_package(pkg_path.get())
 
-    def install_requirements_file(
+    def add_requirements_file(self, req_file: PathComponent) -> None:
+        self.add_requirements_files([req_file])
+
+    def add_requirements_files(self, req_files: List[PathComponent]) -> None:
+        self.requirements_files += req_files
+        self._build_virtual_env()
+
+    def _install_requirements_file(
         self,
         req_path: Path,
         pip_flags: dict = None,
-        pipe_stdout_and_err: bool = True,
     ) -> None:
         """
         Installs the requirements_file pointed at by `req_path` into the
@@ -251,57 +291,41 @@ class VirtualEnv(Component):
         ```
         """
         pip_flags = pip_flags or {}
-        python_path = self.path / "bin" / "python"
-        if sys.platform in ["win32", "win64"]:
-            python_path = self.path / "Scripts" / "python.exe"
-
         install_flag = "-r"
         install_path = str(req_path)
         if req_path.name == "setup.py":
             install_flag = "-e"
             install_path = str(req_path.parent)
-        cmd = [
-            str(python_path),
-            "-m",
-            "pip",
-            "install",
-            install_flag,
-            install_path,
-        ]
+        pip_args = ["install", install_flag, install_path]
         embedded_pip_flags = self._get_embedded_pip_flags(req_path)
         for flag, value in embedded_pip_flags.items():
-            cmd.append(flag)
-            cmd.append(value)
+            pip_args.append(flag)
+            pip_args.append(value)
 
         for flag, value in pip_flags.items():
-            cmd.append(flag)
-            cmd.append(value)
-        bin_path = self.path / "bin"
-        if sys.platform in ["win32", "win64"]:
-            bin_path = self.path / "Scripts"
+            pip_args.append(flag)
+            pip_args.append(value)
+        self.bin_path
+        try:
+            self._exec_pip(pip_args, cwd=req_path.parent)
+        except PCSException as e:
+            raise PCSVirtualEnvInstallException(
+                "Virtualenv install requirements failed."
+            ) from e
+
+    def _install_local_package(self, path: Path) -> None:
+        self._exec_pip(["install", str(path)])
+
+    def _exec_pip(self, args, **kwargs):
         component_env = {
             "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),  # win32
             "VIRTUAL_ENV": str(self.path),
-            "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
+            "PATH": f"{str(self.bin_path)}:{os.environ.get('PATH')}",
         }
-        print(f"Running {cmd}")
-        proc = subprocess.Popen(
-            cmd, env=component_env, stdout=subprocess.PIPE, cwd=req_path.parent
-        )
-        # Copied from https://stackoverflow.com/questions/17411966/printing-stdout-in-realtime-from-a-subprocess-that-requires-stdin/17413045#17413045  # noqa: E501
-        # Grab stdout line by line as it becomes available. This will loop
-        # until proc terminates.
-        while proc.poll() is None:
-            if pipe_stdout_and_err:
-                line = proc.stdout.readline()  # block until newline.
-                print(line.decode(), end="")
-        # When the subprocess terminates there might be unconsumed output
-        # that still needs to be processed.
-        print(proc.stdout.read(), end="")
-        if proc.returncode != 0:
-            raise PCSVirtualEnvInstallException(
-                "virtualenv install requirements failed."
-            )
+        prefix_args = [str(self.python_path), "-m", PIP_COMMAND]
+        cmd = prefix_args + args
+        print(f"Running: {cmd}")
+        pipe_and_check_popen(cmd, env=component_env, **kwargs)
 
     def _get_embedded_pip_flags(self, req_path: Path) -> dict:
         """

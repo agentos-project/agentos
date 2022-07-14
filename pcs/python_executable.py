@@ -4,7 +4,6 @@ import sys
 from typing import List, TYPE_CHECKING, Union
 
 from pcs.component import Component
-from pcs.utils import PCSException
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -17,11 +16,11 @@ class PythonExecutable:
         self._version = None  # Set by self.version()
 
     @property
-    def path(self):
+    def path(self) -> "Path":
         return self._path
 
     @property
-    def version(self):
+    def version(self) -> str:
         if not self._version:
             # TODO(andyk): Support pre-releases, release candidates, etc.
             ver_str = self.exec_python(["--version"]).stdout.decode().strip()
@@ -31,19 +30,19 @@ class PythonExecutable:
         return self._version
 
     @property
-    def major_version(self):
+    def major_version(self) -> str:
         res = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", self.version)
         assert res, "version must be of the form N.N.N (e.g. 3.9.10)"
         return res.group(1)
 
     @property
-    def minor_version(self):
+    def minor_version(self) -> str:
         res = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", self.version)
         assert res, "version must be of the form N.N.N (e.g. 3.9.10)"
         return res.group(2)
 
     @property
-    def micro_version(self):
+    def micro_version(self) -> str:
         res = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", self.version)
         assert res, "version must be of the form N.N.N (e.g. 3.9.10)"
         return res.group(3)
@@ -56,7 +55,7 @@ class PythonExecutable:
         accepted formats to `subprocess.Popen()` (the recommended one).
         :return: a subprocess.CompletedProcess.
         """
-        assert isinstance(args, List), "args must be either str or sequence."
+        assert isinstance(args, List), "'args' must be a list of strings."
         cmd = [self.path] + args
         return subprocess.run(cmd, check=True, capture_output=True)
 

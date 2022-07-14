@@ -70,13 +70,17 @@ class Class(ObjectManager):
             name=name,
         )
 
-    def get_object(self):
-        module = self.module.get_object()
+    def get_new_object(self):
+        module = self.module.get_object(force_new=True)
         cls = getattr(module, self.name)
         setattr(cls, "__component__", self)
         return cls
 
-    def instantiate(self, argument_set: ArgumentSet):
+    def reset_object(self):
+        self.module.reset_object()
+        super().reset_object()
+
+    def instantiate(self, argument_set: ArgumentSet, name: str = None):
         from pcs.instance_manager import Instance
 
         return Instance(self, argument_set=argument_set)

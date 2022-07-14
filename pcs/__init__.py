@@ -9,7 +9,7 @@ from pcs.mlflow_run import MLflowRun
 from pcs.module_manager import Module, VirtualEnvModule
 from pcs.output import Output, active_output
 from pcs.registry import Registry
-from pcs.path import Path
+from pcs.path import RelativePath
 from pcs.python_executable import PythonExecutable
 from pcs.repo import GitRepo, LocalRepo, Repo
 from pcs.specs import Spec, flatten_spec, unflatten_spec
@@ -28,7 +28,7 @@ __all__ = [
     "MLflowRun",
     "Module",
     "Output",
-    "Path",
+    "RelativePath",
     "PythonExecutable",
     "Registry",
     "Repo",

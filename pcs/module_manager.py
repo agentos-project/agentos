@@ -1,24 +1,31 @@
-import abc
 import importlib
 import sys
 from pathlib import Path
+import pytoml
 from typing import Any, Dict
 
 from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
 from pcs.repo import GitRepo, Repo
-from pcs.utils import parse_github_web_ui_url
+from pcs.utils import (
+    PIP_COMMAND,
+    parse_github_web_ui_url,
+    pipe_and_check_popen,
+)
 from pcs.virtual_env import VirtualEnv
 
 
 class Module(ObjectManager):
     """
-    A Module is an object manager. Objects can be Python Modules, Python
-    Classes, or Python Class Instances. The Module abstraction provides a
-    standard programmatic mechanism for managing dependencies between these
-    objects, reproducibly creating/initializing them and executing their
-    methods. You can think of methods on a managed object as "managed methods".
-    We call the execution of a function a "Run".
+    A Module is an Abstract Base Class (ABC) that inherits from ObjectManager.
+    A PCS Module wraps a Python Module object and provides a
+    standard programmatic mechanism for managing the dependencies a Module
+    has on other Modules (via import statements).
+
+    Note that because this class inherits from ObjectManager, which is itself
+    an ABC, but *does not* provide implementations of ObjectManager's
+    abstract methods `get_new_object()` or `freeze()`, that this is therefore
+    (implicitly) an ABC as well.
     """
 
     DUNDER_NAME = "__component__"
@@ -62,6 +69,9 @@ class Module(ObjectManager):
         return managed_obj
 
 
+# TODO: Replace use of `repo` and `file_path` args with pcs.Path.Path since
+#     pcs.repo.Repo and pcs.path.RelativePath are now sub-types
+#     of pcs.Path.Path.
 class FileModule(Module):
     def __init__(
         self,
@@ -116,9 +126,14 @@ class VirtualEnvModule(Module):
         self.virtual_env = virtual_env
         self.register_attributes(["name", "virtual_env"])
 
-    def get_object(self) -> Any:
+    def get_new_object(self) -> Any:
         self.virtual_env.activate()
         return importlib.import_module(self.name)
+
+    def reset_object(self):
+        if self.virtual_env.is_active:
+            self.virtual_env.deactivate()
+        super().reset_object()
 
     def freeze(self: T) -> T:
         raise NotImplementedError

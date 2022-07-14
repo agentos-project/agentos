@@ -27,6 +27,7 @@ setup(
         "dulwich==0.20.28",
         "requests>=2.21.0",
         "python-dotenv>=0.19.1",
+        "pytoml==0.1.21",
         "protobuf==3.20.1",
         "regex==2021.8.28",
         "rich>=10.15.2",

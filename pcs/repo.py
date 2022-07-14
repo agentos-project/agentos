@@ -7,6 +7,7 @@ from typing import Tuple, TypeVar
 
 from pcs.component import Component
 from pcs.git_manager import GitManager
+from pcs.path import Path as PathComponent
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
 from pcs.virtual_env import VirtualEnv
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Repo(Component, abc.ABC):
+class Repo(Component, PathComponent):
     """
     Base class for Components that represent a filestore that files can be
     retrieved from.
@@ -27,6 +28,9 @@ class Repo(Component, abc.ABC):
     @abc.abstractmethod
     def get_local_file_path(self, relative_path: str) -> Path:
         raise NotImplementedError()
+
+    def get(self) -> Path:
+        return self.get_local_file_path(".")
 
     def __contains__(self, item):
         return self.get_local_file_path(str(item)).exists()
