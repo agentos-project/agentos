@@ -291,7 +291,7 @@ class InMemoryRegistry(Registry):
 
     @classmethod
     def from_dict(
-        cls, input_dict: Dict, base_path: Path
+        cls, input_dict: Dict, base_path: Path = None
     ) -> "InMemoryRegistry":
         reg = cls()
         for key in input_dict.keys():
@@ -307,7 +307,8 @@ class InMemoryRegistry(Registry):
         reg._resolve_inline_spec_bodies()
         reg._resolve_aliases()
         reg._update_helpers()
-        reg._make_relative_local_repo_paths_absolute(base_path)
+        if base_path:
+            reg._make_relative_local_repo_paths_absolute(base_path)
         reg._resolve_alias_references()
         reg._update_helpers()
         return reg

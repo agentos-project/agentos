@@ -134,31 +134,29 @@ def test_component_from_github_with_venv():
 
 
 def test_module_component_from_agentos_github_repo():
-    repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    repo = Repo.from_github(
+        TESTING_GITHUB_ACCOUNT,
+        TESTING_GITHUB_REPO,
+        TESTING_BRANCH_NAME
+    )
     f_pref = "example_agents/random/"
 
     env = Instance(
         instance_of=Class(
             name="Corridor",
-            module=FileModule.from_repo(
-                repo, TESTING_BRANCH_NAME, f"{f_pref}environment.py"
-            ),
+            module=FileModule.from_repo(repo, f"{f_pref}environment.py"),
         )
     )
     ds = Instance(
         instance_of=Class(
             name="BasicDataset",
-            module=FileModule.from_repo(
-                repo, TESTING_BRANCH_NAME, f"{f_pref}dataset.py"
-            ),
+            module=FileModule.from_repo(repo, f"{f_pref}dataset.py"),
         )
     )
     pol = Instance(
         instance_of=Class(
             name="RandomPolicy",
-            module=FileModule.from_repo(
-                repo, TESTING_BRANCH_NAME, f"{f_pref}policy.py"
-            ),
+            module=FileModule.from_repo(repo, f"{f_pref}policy.py"),
         ),
         argument_set=ArgumentSet(
             kwargs={
@@ -169,9 +167,7 @@ def test_module_component_from_agentos_github_repo():
     agent = Instance(
         instance_of=Class(
             name="BasicAgent",
-            module=FileModule.from_repo(
-                repo, TESTING_BRANCH_NAME, f"{f_pref}agent.py"
-            ),
+            module=FileModule.from_repo(repo, f"{f_pref}agent.py"),
         ),
         argument_set=ArgumentSet(
             kwargs={

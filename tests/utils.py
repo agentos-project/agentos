@@ -20,7 +20,7 @@ TESTING_GITHUB_REPO = "agentos"
 TESTING_GITHUB_REPO_URL = (
     f"https://github.com/{TESTING_GITHUB_ACCOUNT}/{TESTING_GITHUB_REPO}"
 )
-TESTING_BRANCH_NAME = "test_prod"
+TESTING_BRANCH_NAME = "virtual_env_component"
 
 
 def run_test_command(cli_runner, cmd, cli_args=None, cli_kwargs=None):
