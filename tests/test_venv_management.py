@@ -6,9 +6,10 @@ from pathlib import Path
 import pytest
 
 from agentos.cli import run
-from pcs import Class, Instance
+from pcs.class_manager import Class
 from pcs.component import Component
-from pcs.module_manager import VirtualEnvModule, LocalPackage
+from pcs.instance_manager import Instance
+from pcs.module_manager import VirtualEnvModule
 from pcs.path import Path as PathComponent, RelativePath
 from pcs.repo import Repo, LocalRepo
 from pcs.specs import Spec

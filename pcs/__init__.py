@@ -6,7 +6,7 @@ from pcs.command import Command
 from pcs.component import Component
 from pcs.instance_manager import Instance
 from pcs.mlflow_run import MLflowRun
-from pcs.module_manager import Module, VirtualEnvModule
+from pcs.module_manager import FileModule, VirtualEnvModule
 from pcs.output import Output, active_output
 from pcs.registry import Registry
 from pcs.path import RelativePath
@@ -21,12 +21,12 @@ __all__ = [
     "Class",
     "Command",
     "Component",
+    "FileModule",
     "GitRepo",
     "Instance",
     "LocalRepo",
     "VirtualEnv",
     "MLflowRun",
-    "Module",
     "Output",
     "RelativePath",
     "PythonExecutable",

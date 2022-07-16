@@ -20,12 +20,12 @@ In the example below we first define a very basic class called ``Adder``.
 Then we use PCS to track the execution of a method on this class and share the
 results::
 
-  >>> from pcs import Module
+  >>> from pcs import FileModule
   >>> class Adder:
   ...     def add_one(self, x):
   ...         return x + 1
   ...
-  >>> adder_component = Module.from_class(Adder, instantiate=True)
+  >>> adder_component = FileModule.from_class(Adder, instantiate=True)
   >>> adder_component.run_with_arg_set('add_one', {'Adder':{'add_one':{'x':1}}})
 
 Let's break down the example above. First we import one of the core PCS

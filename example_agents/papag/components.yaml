@@ -6,20 +6,23 @@ specs:
     openai_gym:
         type: GitRepo
         url: git@github.com:openai/gym.git
+        version: c755d5c35a25ab118746e2ba885894ff66fb8c43
 
     ikostrikov_papag:
         type: GitRepo
         url: git@github.com:ikostrikov/pytorch-a2c-ppo-acktr-gail.git
+        version: 41332b78dfb50321c29bade65f9d244387f68a60
 
     mgbellemare_ale:
         type: GitRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
+        version: db3728264f382402120913d76c4fa0dc320ef59f
 
     papag_class:
         type: Class
         name: PAPAGAgent
         module:
-            type: Module
+            type: FileModule
             repo: spec:papag_agent_dir
             file_path: agent.py
             requirements_path: ./requirements.txt
@@ -40,7 +43,7 @@ specs:
         type: Class
         name: PAPAGRun
         module:
-            type: Module
+            type: FileModule
             repo: spec:papag_agent_dir
             file_path: papag_output.py
 
@@ -48,34 +51,30 @@ specs:
         type: Class
         name: AtariEnv
         module:
-            type: Module
+            type: FileModule
             repo: spec:mgbellemare_ale
             file_path: ./src/gym/envs/atari/environment.py
-            version: db3728264f382402120913d76c4fa0dc320ef59f
 
     CartPoleEnv:
         type: Class
         name: CartPoleEnv
         module:
-            type: Module
+            type: FileModule
             repo: spec:openai_gym
             file_path: ./gym/envs/classic_control/cartpole.py
-            version: c755d5c35a25ab118746e2ba885894ff66fb8c43
 
     A2C_ACKTR:
         type: Class
         name: A2C_ACKTR
         module:
-            type: Module
+            type: FileModule
             repo: spec:ikostrikov_papag
             file_path: ./a2c_ppo_acktr/algo/a2c_acktr.py
-            version: 41332b78dfb50321c29bade65f9d244387f68a60
 
     PPO:
         type: Class
         name: PPO
         module:
-            type: Module
+            type: FileModule
             repo: spec:ikostrikov_papag
             file_path: ./a2c_ppo_acktr/algo/ppo.py
-            version: 41332b78dfb50321c29bade65f9d244387f68a60

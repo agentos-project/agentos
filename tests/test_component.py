@@ -2,14 +2,13 @@
 from unittest.mock import DEFAULT, patch
 
 from agentos.cli import init
-from pcs import Class, Instance, Module
+from pcs import Class, Instance, FileModule
 from pcs.argument_set import ArgumentSet
 from pcs.command import Command
 from pcs.component import Component
 from pcs.output import Output
 from pcs.registry import Registry
 from pcs.repo import Repo
-from pcs.utils import extract_identifier
 from pcs.virtual_env import VirtualEnv
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -100,7 +99,7 @@ def test_component_repl_demo():
 def test_component_freezing(cli_runner, tmpdir):
     with run_in_dir(tmpdir):
         run_test_command(cli_runner, init)
-        c = Module.from_registry_file("components.yaml", "agent")
+        c = FileModule.from_registry_file("components.yaml", "agent")
         with patch.multiple(
             "pcs.repo.Repo",
             get_version_from_git=DEFAULT,
@@ -115,14 +114,11 @@ def test_component_freezing(cli_runner, tmpdir):
             ].return_value = "freeze/test.py"
             frozen_inst = c.freeze()
             reg = frozen_inst.to_registry()
-            agent_spec = reg.get_spec(frozen_inst.identifier, flatten=True)
-            class_id = agent_spec["instance_of"]
-            mod_id = reg.get_spec(extract_identifier(class_id), flatten=True)[
-                "module"
-            ]
-            version = reg.get_spec(extract_identifier(mod_id), flatten=True)[
-                "version"
-            ]
+            agent_spec = reg.get_spec(frozen_inst.identifier)
+            class_id = agent_spec.get_and_extract_ident("instance_of")
+            mod_id = reg.get_spec(class_id).get_and_extract_ident("module")
+            repo_id = reg.get_spec(mod_id).get_and_extract_ident("repo")
+            version = reg.get_spec(repo_id).body["version"]
             assert version == "test_freezing_version"
 
 
@@ -133,7 +129,7 @@ def test_component_from_github_with_venv():
             f"{TESTING_GITHUB_REPO}/blob/{TESTING_BRANCH_NAME}/"
             "example_agents/random/components.yaml"
         )
-        random_component = Module.from_github_registry(random_url, "agent")
+        random_component = FileModule.from_github_registry(random_url, "agent")
         random_component.run_with_arg_set("run_episodes")
 
 
@@ -144,7 +140,7 @@ def test_module_component_from_agentos_github_repo():
     env = Instance(
         instance_of=Class(
             name="Corridor",
-            module=Module.from_repo(
+            module=FileModule.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}environment.py"
             ),
         )
@@ -152,7 +148,7 @@ def test_module_component_from_agentos_github_repo():
     ds = Instance(
         instance_of=Class(
             name="BasicDataset",
-            module=Module.from_repo(
+            module=FileModule.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}dataset.py"
             ),
         )
@@ -160,7 +156,7 @@ def test_module_component_from_agentos_github_repo():
     pol = Instance(
         instance_of=Class(
             name="RandomPolicy",
-            module=Module.from_repo(
+            module=FileModule.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}policy.py"
             ),
         ),
@@ -173,7 +169,7 @@ def test_module_component_from_agentos_github_repo():
     agent = Instance(
         instance_of=Class(
             name="BasicAgent",
-            module=Module.from_repo(
+            module=FileModule.from_repo(
                 repo, TESTING_BRANCH_NAME, f"{f_pref}agent.py"
             ),
         ),

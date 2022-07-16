@@ -8,7 +8,7 @@ from typing import Type, TypeVar
 from dill.source import getsource as dill_getsource
 
 from pcs.argument_set import ArgumentSet
-from pcs.module_manager import Module
+from pcs.module_manager import Module, FileModule
 from pcs.object_manager import ObjectManager
 from pcs.repo import LocalRepo, Repo
 
@@ -33,7 +33,7 @@ class Class(ObjectManager):
         cls,
         class_obj: Type[T],
         repo: Repo = None,
-    ) -> "Module":
+    ) -> "Class":
         name = class_obj.__name__
         if class_obj.__module__ == "__main__":
             # handle classes defined in REPL.
@@ -66,7 +66,7 @@ class Class(ObjectManager):
             )
 
         return cls(
-            module=Module(repo=repo, file_path=src_file.name),
+            module=FileModule(repo=repo, file_path=src_file.name),
             name=name,
         )
 

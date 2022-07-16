@@ -18,7 +18,7 @@ specs:
             type: Class
             name: AcmeR2D2Agent
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./agent.py
                 requirements_path: ./requirements.txt
@@ -30,7 +30,7 @@ specs:
             type: Class
             name: CartPole
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ../acme_dqn/environment.py
 
@@ -47,7 +47,7 @@ specs:
             type: Class
             name: R2D2Policy
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./policy.py
 
@@ -62,7 +62,7 @@ specs:
             type: Class
             name: R2D2Network
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./network.py
 
@@ -70,7 +70,7 @@ specs:
         type: Class
         name: TFModelSaver
         module:
-            type: Module
+            type: FileModule
             repo: spec:local_dir
             file_path: ../acme_dqn/network.py
 
@@ -89,7 +89,7 @@ specs:
             type: Class
             name: ReverbDataset
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./dataset.py
 
@@ -106,7 +106,7 @@ specs:
             type: Class
             name: R2D2Trainer
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./trainer.py
 
@@ -114,6 +114,6 @@ specs:
         type: Class
         name: AcmeRun
         module:
-            type: Module
+            type: FileModule
             repo: spec:local_dir
             file_path: ../acme_dqn/run.py

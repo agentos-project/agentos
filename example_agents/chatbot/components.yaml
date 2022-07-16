@@ -12,7 +12,7 @@ specs:
             type: Class
             name: ChatBot
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_repo
                 file_path: ./main.py
 
@@ -22,6 +22,6 @@ specs:
             type: Class
             name: MultiChatEnv
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_repo
                 file_path: ./env.py

@@ -13,7 +13,7 @@ specs:
             type: Class
             name: RLlibAgent
             module:
-                type: Module
+                type: FileModule
                 repo: spec:sb3_agent_dir
                 file_path: ./main.py
 
@@ -23,6 +23,6 @@ specs:
             type: Class
             name: CartPole
             module:
-                type: Module
+                type: FileModule
                 repo: spec:sb3_agent_dir
                 file_path: ./cartpole.py

@@ -4,7 +4,7 @@ import pprint
 
 import yaml
 
-from pcs import Module
+from pcs.component import Component
 from pcs.registry import Registry
 from pcs.repo import Repo
 from pcs.specs import Spec
@@ -83,14 +83,14 @@ def test_registry_from_file():
     from pcs.argument_set import ArgumentSet
 
     r = Registry.from_yaml(RANDOM_AGENT_DIR / "components.yaml")
-    random_local_ag = Module.from_registry(r, "agent")
+    random_local_ag = Component.from_registry(r, "agent")
     assert "environment_cls" in random_local_ag.argument_set.kwargs
     random_local_ag.run_with_arg_set(
         "evaluate", ArgumentSet(kwargs={"num_episodes": 5})
     )
 
     # Test publishing a component to an InMemoryRegistry
-    chatbot_agent = Module.from_registry_file(
+    chatbot_agent = Component.from_registry_file(
         CHATBOT_AGENT_DIR / "components.yaml", "chatbot"
     )
     r.add_component(chatbot_agent)

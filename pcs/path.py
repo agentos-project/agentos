@@ -29,7 +29,6 @@ class RelativePath(Component, Path):
         :param repo: Repo where this Module's source file can be found. The
             ``file_path`` argument is relative to the root this Repo.
         :param path: Path to Python module file this Module manages.
-        :version: Version of file.
         """
         super().__init__()
         self.relative_path = relative_path

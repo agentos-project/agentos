@@ -10,7 +10,7 @@ import copy
 from collections import UserDict
 from typing import Callable, Dict, Mapping
 
-from pcs.utils import find_and_replace_leaves, is_spec_body
+from pcs.utils import extract_identifier, find_and_replace_leaves, is_spec_body
 
 
 class Spec(UserDict):
@@ -74,6 +74,9 @@ class Spec(UserDict):
             return result
         else:
             return {self.identifier[:]: self.body.copy()}
+
+    def get_and_extract_ident(self, key: str) -> str:
+        return extract_identifier(self.body.get(key))
 
     def _check_format(self) -> None:
         assert len(self.data) == 1, (

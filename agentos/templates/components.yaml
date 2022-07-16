@@ -4,17 +4,14 @@ specs:
         path: .
 
     virtual_env:
-        type: VirtualEnvComponent
-        runtime:
-            type: PythonRuntime
-            version: null
+        type: VirtualEnv
         requirements_files:
-            - type: Path
-              relative_path: ./requirements.txt
+            - type: RelativePath
               repo: spec:local_dir
+              relative_path: ./requirements.txt
 
     agent_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./agent.py
 
@@ -37,7 +34,7 @@ specs:
         argument_set: spec:agent_argument_set
 
     environment_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./environment.py
 
@@ -47,7 +44,7 @@ specs:
         name: Corridor
 
     policy_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./policy.py
 
@@ -65,7 +62,7 @@ specs:
                 environment_cls: spec:environment_class
 
     dataset_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./dataset.py
 

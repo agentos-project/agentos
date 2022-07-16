@@ -96,16 +96,16 @@ class Registry(abc.ABC):
         :param format: Optionally specify the format of the registry file.
         :return: a new Registry object.
         """
-        assert (
-            format == "yaml"
-        ), "YAML is the only registry file format supported currently"
-        return cls.from_yaml(repo.get_local_repo_dir(version) / file_path)
+        assert (format == "yaml"), (
+            f"{format} not supported. YAML is the only registry file format "
+            "supported currently"
+        )
+        return cls.from_yaml(repo.get() / file_path)
 
     @classmethod
     def from_repo_inferred(
         cls,
         repo: "Repo",
-        version: str = None,
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
@@ -115,22 +115,16 @@ class Registry(abc.ABC):
         # get list of python files in Repo
         py_files = set()
         for suff in py_file_suffixes:
-            found = repo.get_local_repo_dir(version=version).rglob(f"*{suff}")
+            found = repo.get().rglob(f"*{suff}")
             py_files = py_files.union(set(found))
         # create and register module, class, and class instance components
         for f in py_files:
-            relative_path = f.relative_to(
-                repo.get_local_repo_dir(version=version)
-            )
-            mod_version = version if version else repo.default_version
+            relative_path = f.relative_to(repo.get())
             module_kwargs = {
                 "repo": repo,
                 "file_path": str(relative_path).replace("\\", "/"),
-                "version": mod_version,
             }
-            if repo.get_local_file_path(
-                requirements_file, version=mod_version
-            ).is_file():
+            if repo.get_local_file_path(requirements_file).is_file():
                 module_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )

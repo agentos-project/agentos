@@ -14,7 +14,7 @@ from agentos.agent_run import AgentRun
 from pcs.argument_set import ArgumentSet
 from pcs.component import Component
 from pcs.mlflow_run import MLflowRun
-from pcs.module_manager import Module
+from pcs.module_manager import FileModule
 from pcs.output import Output
 from pcs.registry import InMemoryRegistry, Registry
 from pcs.repo import Repo
@@ -250,7 +250,7 @@ def rerun(identifier):
 @_option_output_file
 def freeze(identifier, registry_file, force, output_file):
     """
-    Creates a version of ``registry_file`` for Module
+    Creates a version of ``registry_file`` for FileModule
     ``identifier`` where all Components in the dependency tree are
     associated with a specific git commit.  The resulting
     ``registry_file`` can be run on any machine with AgentOS installed.
@@ -265,7 +265,7 @@ def freeze(identifier, registry_file, force, output_file):
     registry = InMemoryRegistry()
     for reg in registry_file:
         registry.update(Registry.from_yaml(reg))
-    module = Module.from_registry(registry, identifier)
+    module = FileModule.from_registry(registry, identifier)
     frozen_reg = module.freeze(force=force).to_registry()
     if output_file:
         with open(output_file, "w") as f:

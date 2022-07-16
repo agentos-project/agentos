@@ -5,9 +5,7 @@ specs:
 
     virtual_env:
         type: VirtualEnvComponent
-        runtime:
-            type: PythonRuntime
-            version: 3.9.10
+        python_version: 3.9.10
         requirements_files:
             - type: Path
               relative_path: ./requirements.txt
@@ -30,7 +28,7 @@ specs:
             type: Class
             name: AcmeDQNAgent
             module:
-                type: Module
+                type: FileModule
                 file_path: ./agent.py
                 repo:
                     repo: spec:virtual_env
@@ -47,7 +45,7 @@ specs:
             type: Class
             name: AcmeDQNNetwork
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./network.py
 
@@ -61,7 +59,7 @@ specs:
             type: Class
             name: CartPole
             module:
-                type: Module
+                type: FileModule
                 repo: spec:local_dir
                 file_path: ./environment.py
 
@@ -69,7 +67,7 @@ specs:
         type: Class
         name: AcmeRun
         module:
-            type: Module
+            type: FileModule
             repo: spec:local_dir
             file_path: ./run.py
 

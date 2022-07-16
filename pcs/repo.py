@@ -55,7 +55,7 @@ class Repo(Component, PathComponent):
 
     def to_gitrepo(self, force: bool = False) -> "GitRepo":
         repo_url, version = self.get_version_from_git(
-            self.file_path, force=force
+            self.path, force=force
         )
         return GitRepo(repo_url, version=version)
 
@@ -99,7 +99,7 @@ class Repo(Component, PathComponent):
 
 class GitRepo(Repo):
     """
-    A Module with a GitRepo can be found on GitHub.
+    A GitRepo optionally can be found on GitHub.
     """
 
     def __init__(self, url: str, version: str = "master"):
@@ -122,8 +122,7 @@ class GitRepo(Repo):
         return local_repo_path
 
     def get_local_file_path(self, file_path: str) -> Path:
-        version = self._get_valid_version_sha1()
-        local_repo_path = self.get_local_dir(version)
+        local_repo_path = self.get_local_dir()
         return (local_repo_path / file_path).absolute()
 
     def _get_valid_version_sha1(self):

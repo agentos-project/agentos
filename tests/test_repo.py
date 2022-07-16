@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pcs.class_manager import Class
 from pcs.component import Component
-from pcs.module_manager import Module
+from pcs.module_manager import FileModule
 from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -17,7 +17,7 @@ def test_repo_from_github():
     print(aos_repo.to_spec())
     agent_class = Class(
         name="Agent",
-        module=Module.from_repo(
+        module=FileModule.from_repo(
             aos_repo,
             version=TESTING_BRANCH_NAME,
             file_path="agentos/core.py",

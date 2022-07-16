@@ -4,7 +4,7 @@ specs:
         path: .
 
     agent_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./agent.py
         requirements_path: ./requirements.txt
@@ -28,7 +28,7 @@ specs:
         argument_set: spec:agent_argument_set
 
     environment_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./environment.py
 
@@ -38,7 +38,7 @@ specs:
         name: Corridor
 
     policy_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./policy.py
 
@@ -56,7 +56,7 @@ specs:
                 environment_cls: spec:environment_class
 
     dataset_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./dataset.py
 
@@ -71,7 +71,7 @@ specs:
         argument_set: null
 
     run_module:
-        type: Module
+        type: FileModule
         repo: spec:local_dir
         file_path: ./run.py
 
@@ -79,5 +79,3 @@ specs:
         type: Class
         module: spec:run_module
         name: BasicRun
-
-

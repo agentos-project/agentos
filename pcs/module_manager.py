@@ -1,17 +1,12 @@
 import importlib
 import sys
 from pathlib import Path
-import pytoml
 from typing import Any, Dict
 
 from pcs.object_manager import ObjectManager, T
 from pcs.registry import Registry
 from pcs.repo import GitRepo, Repo
-from pcs.utils import (
-    PIP_COMMAND,
-    parse_github_web_ui_url,
-    pipe_and_check_popen,
-)
+from pcs.utils import parse_github_web_ui_url
 from pcs.virtual_env import VirtualEnv
 
 
@@ -46,8 +41,8 @@ class Module(ObjectManager):
         project, repo_name, branch, reg_file_path = parse_github_web_ui_url(
             github_url
         )
-        repo = Repo.from_github(project, repo_name)
-        registry = Registry.from_file_in_repo(repo, reg_file_path, branch)
+        repo = Repo.from_github(project, repo_name, branch)
+        registry = Registry.from_file_in_repo(repo, reg_file_path)
         module = FileModule.from_registry(registry, identifier)
         return module
 
@@ -96,12 +91,12 @@ class FileModule(Module):
         self.imports = imports if imports else {}
         self.register_attributes(["repo", "file_path", "imports"])
 
-    def get_object(self) -> Any:
+    def get_new_object(self) -> Any:
         """Return managed Python Module."""
         full_path = self.repo.get_local_file_path(self.file_path)
         return self._get_object_from_path(full_path)
 
-    def freeze(self: T) -> T:
+    def freeze(self: T, force: bool = False) -> T:
         """
         Return a copy of self that has a GitRepo.
         """
@@ -135,5 +130,5 @@ class VirtualEnvModule(Module):
             self.virtual_env.deactivate()
         super().reset_object()
 
-    def freeze(self: T) -> T:
+    def freeze(self: T, force: bool = False) -> T:
         raise NotImplementedError
