@@ -3,9 +3,6 @@ import json
 import logging
 import os
 import pprint
-import shutil
-import tarfile
-import tempfile
 from collections import defaultdict, deque
 from pathlib import Path, PurePath
 from typing import (
@@ -672,23 +669,6 @@ class WebRegistry(Registry):
                 raise LookupError(response.text)
             else:
                 return False
-
-    def add_run_artifacts(
-        self, run_id: int, run_artifact_paths: Sequence[str]
-    ) -> Sequence:
-        try:
-            tmp_dir_path = Path(tempfile.mkdtemp())
-            tar_gz_path = tmp_dir_path / f"run_{run_id}_artifacts.tar.gz"
-            with tarfile.open(tar_gz_path, "w:gz") as tar:
-                for artifact_path in run_artifact_paths:
-                    tar.add(artifact_path, arcname=artifact_path.name)
-            files = {"tarball": open(tar_gz_path, "rb")}
-            url = f"{self.root_api_url}/runs/{run_id}/upload_artifact/"
-            response = requests.post(url, files=files)
-            result = json.loads(response.content)
-            return result
-        finally:
-            shutil.rmtree(tmp_dir_path)
 
     def to_dict(self) -> Dict:
         raise Exception("to_dict() is not supported on WebRegistry.")

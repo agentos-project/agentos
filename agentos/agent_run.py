@@ -1,12 +1,19 @@
+import json
+import shutil
 import statistics
+import tarfile
+import tempfile
 from collections import namedtuple
+from pathlib import Path
 from typing import Optional
 
+import requests
 from mlflow.entities import RunStatus
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID, MLFLOW_RUN_NAME
 
 from pcs.mlflow_run import MLflowRun
 from pcs.output import Output
+from pcs.registry import Registry, WebRegistry
 
 _EPISODE_KEY = "episode_count"
 _STEP_KEY = "step_count"
@@ -287,6 +294,41 @@ class AgentRun(MLflowRun):
         run._register_attributes(SPEC_ATTRS)
         run._check_initialization()
         return run
+
+    def to_registry(
+        self,
+        registry: Registry = None,
+        recurse: bool = True,
+        dry_run: bool = False,
+    ) -> Registry:
+        registry = super().to_registry(registry, recurse, dry_run)
+        self.add_run_artifacts(registry)
+
+    def add_run_artifacts(self, registry: Registry) -> None:
+        if type(registry) is not WebRegistry:
+            print(f"AgentRun: cannot upload artifacts to {type(registry)}")
+            return
+        if self.model_input_run:
+            run_artifact_paths = self.model_input_run._get_artifact_paths()
+        else:
+            run_artifact_paths = self._get_artifact_paths()
+        if not run_artifact_paths:
+            return
+        try:
+            tmp_dir_path = Path(tempfile.mkdtemp())
+            run_id = self.identifier
+            tar_gz_path = tmp_dir_path / f"run_{run_id}_artifacts.tar.gz"
+            with tarfile.open(tar_gz_path, "w:gz") as tar:
+                for artifact_path in run_artifact_paths:
+                    tar.add(artifact_path, arcname=artifact_path.name)
+            files = {"tarball": open(tar_gz_path, "rb")}
+            api_root = registry.root_api_url
+            url = f"{api_root}/components/{run_id}/upload_artifact/"
+            response = requests.post(url, files=files)
+            result = json.loads(response.content)
+            return result
+        finally:
+            shutil.rmtree(tmp_dir_path)
 
     def __enter__(self) -> "AgentRun":
         return self

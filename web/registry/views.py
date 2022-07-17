@@ -37,7 +37,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def upload_artifact(self, request: Request, pk=None) -> Response:
         component = self.get_object()
-        file_name = "component{component.identifier}_artifacts.tar.gz"
+        file_name = f"component_{component.identifier}_artifacts.tar.gz"
         component.artifact_tarball.save(file_name, request.data["tarball"])
         component.save()
         return Response(ComponentSerializer(component).data)
