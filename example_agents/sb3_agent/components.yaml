@@ -31,12 +31,18 @@ specs:
             type: Class
             name: SB3PPOAgent
             module:
-                type: FileModule
-                repo: spec:sb3_agent_dir
-                file_path: agent.py
-                requirements_path: ./requirements.txt
+                type: VirtualEnvModule
+                name: agent
+                virtual_env:
+                    type: VirtualEnv
+                    requirements_paths:
+                        - type: RelativePath
+                          repo: spec:sb3_agent_dir
+                          relative_path: ./requirements.txt
+                    local_packages:
+                        - spec:sb3_agent_dir
 
-    AtariEnv:
+        AtariEnv:
         type: Class
         name: AtariEnv
         module:

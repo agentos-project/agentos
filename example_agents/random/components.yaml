@@ -11,7 +11,7 @@ specs:
     agent_file:
         type: RelativePath
         repo: spec:local_dir
-        file_path: ./agent.py
+        relative_path: ./agent.py
 
     virtual_env:
         type: VirtualEnv
