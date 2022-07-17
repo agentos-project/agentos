@@ -42,7 +42,7 @@ specs:
                     local_packages:
                         - spec:sb3_agent_dir
 
-        AtariEnv:
+    AtariEnv:
         type: Class
         name: AtariEnv
         module:
