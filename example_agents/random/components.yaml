@@ -15,7 +15,7 @@ specs:
 
     virtual_env:
         type: VirtualEnv
-        requirements_paths:
+        requirements_files:
           - spec:req_file
         local_packages:
           - spec:agent_file

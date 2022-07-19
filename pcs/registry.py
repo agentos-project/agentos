@@ -9,7 +9,6 @@ import tempfile
 from collections import defaultdict, deque
 from pathlib import Path, PurePath
 from typing import (
-    Callable,
     TYPE_CHECKING,
     Dict,
     List,
@@ -33,7 +32,6 @@ from pcs.utils import (
     is_identifier,
     is_spec_body,
     make_identifier_ref,
-    pad_list_if_necessary,
 )
 
 logger = logging.getLogger(__name__)

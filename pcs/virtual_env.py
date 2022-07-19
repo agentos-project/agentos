@@ -177,7 +177,7 @@ class VirtualEnv(Component):
         self._save_default_env_info()
         self._exec_activate_this_script()
         self._venv_is_active = True
-        logger.info(f"VirtualEnv: Running in Python venv at {self.venv_path}")
+        logger.info(f"VirtualEnv: Running in Python venv at {self.path}")
 
     @property
     def is_active(self):

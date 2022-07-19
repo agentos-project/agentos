@@ -80,7 +80,7 @@ class Class(ObjectManager):
         self.module.reset_object()
         super().reset_object()
 
-    def instantiate(self, argument_set: ArgumentSet, name: str = None):
+    def instantiate(self, argument_set: ArgumentSet):
         from pcs.instance_manager import Instance
 
         return Instance(self, argument_set=argument_set)
