@@ -3,27 +3,10 @@ specs:
         type: LocalRepo
         path: .
 
-    req_file:
-        type: RelativePath
-        repo: spec:local_dir
-        relative_path: ./requirements.txt
-
-    agent_file:
-        type: RelativePath
-        repo: spec:local_dir
-        relative_path: ./agent.py
-
-    virtual_env:
-        type: VirtualEnv
-        requirements_files:
-          - spec:req_file
-        local_packages:
-          - spec:agent_file
-
     agent_module:
-      type: VirtualEnvModule
-      name: agent
-      virtual_env: spec:virtual_env
+        type: FileModule
+        repo: spec:local_dir
+        file_path: ./agent.py
 
     agent_class:
         type: Class

@@ -48,7 +48,3 @@ agent:
 
 * `policy.py` - This Module contains the random policy that the agent uses
   to decide what action to take in the environment at each timestep. 
-
-* `requirements.txt` - A text file listing the external pip dependencies of
-  this agent.  In this case, the file is empty because no external dependencies
-  are required to run this agent.
