@@ -73,6 +73,7 @@ class FileModule(Module):
         repo: Repo,
         file_path: str,
         imports: Dict[str, "Module"] = None,
+        virtual_env: VirtualEnv = None,
     ):
         """
         :param repo: Repo where this Module's source file can be found. The
@@ -89,12 +90,22 @@ class FileModule(Module):
         self.repo = repo
         self.file_path = file_path
         self.imports = imports if imports else {}
-        self.register_attributes(["repo", "file_path", "imports"])
+        self.virtual_env = virtual_env
+        self.register_attributes(
+            ["repo", "file_path", "imports", "virtual_env"]
+        )
 
     def get_new_object(self) -> Any:
         """Return managed Python Module."""
+        if self.virtual_env and not self.virtual_env.is_active:
+            self.virtual_env.activate()
         full_path = self.repo.get_local_file_path(self.file_path)
         return self._get_object_from_path(full_path)
+
+    def reset_object(self):
+        if self.virtual_env and self.virtual_env.is_active:
+            self.virtual_env.deactivate()
+        super().reset_object()
 
     def freeze(self: T, force: bool = False) -> T:
         """

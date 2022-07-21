@@ -107,7 +107,7 @@ class Registry(abc.ABC):
         py_file_suffixes: Tuple[str] = (".py", ".python"),
         requirements_file: str = "requirements.txt",
     ):
-        from pcs.module_manager import Module  # Avoid circular ref.
+        from pcs.module_manager import FileModule  # Avoid circular ref.
 
         reg = InMemoryRegistry()
         # get list of python files in Repo
@@ -126,7 +126,7 @@ class Registry(abc.ABC):
                 module_kwargs.update(
                     {"requirements_path": str(requirements_file)}
                 )
-            mod_component = Module(**module_kwargs)
+            mod_component = FileModule(**module_kwargs)
             # TODO: add dependencies to component for every import
             #       statement in the file (or just the ones at the
             #       module level?)

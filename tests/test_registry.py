@@ -25,7 +25,7 @@ def test_resolve_inline_specs():
             "kwargs": {"other_spec": {"type": "LocalRepo", "path": "./1"}},
             "args": [
                 {
-                    "type": "Path",
+                    "type": "RelativePath",
                     "relative_path": "./requirements.txt",
                     "repo": {"type": "LocalRepo", "path": "./2"}
                 },
@@ -46,7 +46,7 @@ def test_resolve_inline_specs():
     assert path_spec_id in r
     assert path_spec_id in r.specs
     path_spec = r.get_spec(path_spec_id)
-    assert path_spec.to_flat()["type"] == "Path"
+    assert path_spec.to_flat()["type"] == "RelativePath"
     local_repo2_id = extract_identifier(path_spec.body["repo"])
     assert local_repo2_id in r
     assert local_repo2_id in r.specs
@@ -100,11 +100,14 @@ def test_registry_from_file():
 
 
 def test_registry_from_repo():
-    repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    repo = Repo.from_github(
+        TESTING_GITHUB_ACCOUNT,
+        TESTING_GITHUB_REPO,
+        version=TESTING_BRANCH_NAME,
+    )
     reg = Registry.from_repo_inferred(
         repo,
         requirements_file="dev-requirements.txt",
-        version=TESTING_BRANCH_NAME,
     )
     assert "pcs/component.py" in [
         body["file_path"] for body in reg.specs.values() if "file_path" in body

@@ -130,7 +130,7 @@ def test_component_from_github_with_venv():
             "example_agents/random/components.yaml"
         )
         random_component = FileModule.from_github_registry(random_url, "agent")
-        random_component.run_with_arg_set("run_episodes")
+        random_component.run_with_arg_set("evaluate")
 
 
 def test_module_component_from_agentos_github_repo():
@@ -141,11 +141,9 @@ def test_module_component_from_agentos_github_repo():
     )
     f_pref = "example_agents/random/"
 
-    env = Instance(
-        instance_of=Class(
-            name="Corridor",
-            module=FileModule.from_repo(repo, f"{f_pref}environment.py"),
-        )
+    env_cls = Class(
+        name="Corridor",
+        module=FileModule.from_repo(repo, f"{f_pref}environment.py"),
     )
     ds = Instance(
         instance_of=Class(
@@ -160,10 +158,15 @@ def test_module_component_from_agentos_github_repo():
         ),
         argument_set=ArgumentSet(
             kwargs={
-                "environment": env,
+                "environment_cls": env_cls,
             }
         ),
     )
+    run_cls = Class(
+        name="BasicRun",
+        module=FileModule.from_repo(repo, f"{f_pref}run.py"),
+    )
+
     agent = Instance(
         instance_of=Class(
             name="BasicAgent",
@@ -171,13 +174,14 @@ def test_module_component_from_agentos_github_repo():
         ),
         argument_set=ArgumentSet(
             kwargs={
-                "environment": env,
+                "environment_cls": env_cls,
                 "policy": pol,
                 "dataset": ds,
+                "run_cls": run_cls,
             }
         ),
     )
-    agent.run("run_episode")
+    agent.run("evaluate")
 
 
 def test_diamond_dependencies():

@@ -13,13 +13,16 @@ from tests.utils import (
 
 
 def test_repo_from_github():
-    aos_repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    aos_repo = Repo.from_github(
+        TESTING_GITHUB_ACCOUNT,
+        TESTING_GITHUB_REPO,
+        version=TESTING_BRANCH_NAME,
+    )
     print(aos_repo.to_spec())
     agent_class = Class(
         name="Agent",
         module=FileModule.from_repo(
             aos_repo,
-            version=TESTING_BRANCH_NAME,
             file_path="agentos/core.py",
         ),
     )
