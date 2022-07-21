@@ -77,8 +77,7 @@ class Registry(abc.ABC):
                     input_dict[SPECS_KEY].update(file_dict[SPECS_KEY])
                 if ALIASES_KEY in file_dict:
                     input_dict[ALIASES_KEY].update(file_dict[ALIASES_KEY])
-        reg = InMemoryRegistry.from_dict(input_dict)
-        reg._make_relative_local_repo_paths_absolute(parent_path)
+        reg = InMemoryRegistry.from_dict(input_dict, parent_path)
         return reg
 
     @classmethod

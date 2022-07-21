@@ -321,6 +321,8 @@ def pipe_and_check_popen(args: List[str], **kwargs):
     if proc.returncode != 0:
         raise PCSException(
             f"The following subprocess finished with a non-zero "
-            f"({proc.returncode}) return code: {' '.join(args)}"
+            f"({proc.returncode}) return code: {' '.join(args)}."
+            f"stdout:\n{stdout}\n\n"
+            f"stderr:\n{stderr}\n\n"
         )
     return proc, stdout, stderr
