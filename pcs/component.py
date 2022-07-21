@@ -1,15 +1,7 @@
 import copy
 import logging
 import numbers
-from typing import (
-    Collection,
-    Dict,
-    List,
-    Mapping,
-    Sequence,
-    Type,
-    TypeVar,
-)
+from typing import Collection, Dict, List, Mapping, Sequence, Type, TypeVar
 
 import yaml
 from deepdiff import DeepDiff, DeepHash

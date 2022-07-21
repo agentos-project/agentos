@@ -350,8 +350,7 @@ class InMemoryRegistry(Registry):
         spec_body = self._registry[self.SPECS_KEY].pop(identifier)
         for _, spec_ref in filter_leaves(
             spec_body,
-            lambda x: type(x) == str
-                and x.startswith(IDENTIFIER_REF_PREFIX),
+            lambda x: type(x) == str and x.startswith(IDENTIFIER_REF_PREFIX),
         ).items():
             ref_id = extract_identifier(spec_ref)
             self._dependee_ids[ref_id].remove(identifier)
