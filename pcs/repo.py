@@ -121,6 +121,13 @@ class GitRepo(Repo):
         sys.stdout.flush()
         return local_repo_path
 
+    def clone_at_version(self, version: str) -> "GitRepo":
+        """Return a new GitRepo at the provided version"""
+        if version == self.version:
+            return self
+        else:
+            return self.__class__(self.url, version=version)
+
     def get_local_file_path(self, file_path: str) -> Path:
         local_repo_path = self.get_local_dir()
         return (local_repo_path / file_path).absolute()

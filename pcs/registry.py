@@ -114,16 +114,29 @@ class Registry(abc.ABC):
         for suff in py_file_suffixes:
             found = repo.get().rglob(f"*{suff}")
             py_files = py_files.union(set(found))
-        # create and register module, class, and class instance components
+        virtual_env_component = None
+        if repo.get_local_file_path(requirements_file).is_file():
+            from pcs.path import RelativePath  # Avoid circular import.
+            from pcs.virtual_env import VirtualEnv
+
+            virtual_env_component = VirtualEnv(
+            requirements_files=[
+                    RelativePath(
+                        repo=repo,
+                        relative_path=str(requirements_file),
+                    )
+                ]
+            )
+        # create and register FileModule components
         for f in py_files:
             relative_path = f.relative_to(repo.get())
             module_kwargs = {
                 "repo": repo,
                 "file_path": str(relative_path).replace("\\", "/"),
             }
-            if repo.get_local_file_path(requirements_file).is_file():
+            if virtual_env_component:
                 module_kwargs.update(
-                    {"requirements_path": str(requirements_file)}
+                    {"virtual_env": virtual_env_component.identifier}
                 )
             mod_component = FileModule(**module_kwargs)
             # TODO: add dependencies to component for every import

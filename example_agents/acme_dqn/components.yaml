@@ -4,8 +4,7 @@ specs:
         path: .
 
     virtual_env:
-        type: VirtualEnvComponent
-        python_version: 3.9.10
+        type: VirtualEnv
         requirements_files:
             - type: Path
               relative_path: ./requirements.txt
@@ -30,9 +29,8 @@ specs:
             module:
                 type: FileModule
                 file_path: ./agent.py
-                repo:
-                    repo: spec:virtual_env
-                    path: agentos/example_agents/acme_dqn/agent.py
+                repo: spec:local_dir
+                virtual_env: spec:virtual_env
 
     network:
         type: Instance
