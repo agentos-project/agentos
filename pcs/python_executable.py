@@ -1,12 +1,13 @@
 import re
 import subprocess
 import sys
-from typing import List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, List, Union
 
 from pcs.component import Component
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from pcs.virtual_env import VirtualEnvComponent
 
 

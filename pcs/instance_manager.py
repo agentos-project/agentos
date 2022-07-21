@@ -1,4 +1,3 @@
-import copy
 from typing import TypeVar
 
 from pcs.class_manager import ArgumentSet, Class

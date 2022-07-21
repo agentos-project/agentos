@@ -1,14 +1,13 @@
 import abc
 import logging
 from functools import partial
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pcs.argument_set import ArgumentSet
 from pcs.command import Command
 from pcs.component import Component
 from pcs.output import Output
 from pcs.registry import Registry
-from pcs.python_executable import PythonExecutable
 
 if TYPE_CHECKING:
     from pcs.python_executable import PythonExecutable
@@ -120,7 +119,9 @@ class ObjectManager(Component, abc.ABC):
             for c in self.dependency_list():
                 c.active_output = output
             with self as obj:
-                res = self.call_function_with_arg_set(obj, function_name, arg_set)
+                res = self.call_function_with_arg_set(
+                    obj, function_name, arg_set
+                )
             if log_return_value:
                 output.log_return_value(res, return_value_log_format)
             for c in self.dependency_list():

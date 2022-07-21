@@ -1,4 +1,3 @@
-import copy
 import logging
 import sys
 from hashlib import sha1
@@ -8,7 +7,7 @@ from typing import Type, TypeVar
 from dill.source import getsource as dill_getsource
 
 from pcs.argument_set import ArgumentSet
-from pcs.module_manager import Module, FileModule
+from pcs.module_manager import FileModule, Module
 from pcs.object_manager import ObjectManager
 from pcs.repo import LocalRepo, Repo
 

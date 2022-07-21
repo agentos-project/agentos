@@ -2,7 +2,7 @@
 from unittest.mock import DEFAULT, patch
 
 from agentos.cli import init
-from pcs import Class, Instance, FileModule
+from pcs import Class, FileModule, Instance
 from pcs.argument_set import ArgumentSet
 from pcs.command import Command
 from pcs.component import Component
@@ -135,9 +135,7 @@ def test_component_from_github_with_venv():
 
 def test_module_component_from_agentos_github_repo():
     repo = Repo.from_github(
-        TESTING_GITHUB_ACCOUNT,
-        TESTING_GITHUB_REPO,
-        TESTING_BRANCH_NAME
+        TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO, TESTING_BRANCH_NAME
     )
     f_pref = "example_agents/random/"
 

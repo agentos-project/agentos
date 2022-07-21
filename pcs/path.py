@@ -1,9 +1,11 @@
 import abc
 from typing import TYPE_CHECKING
+
 from pcs.component import Component
 
 if TYPE_CHECKING:
     from pathlib import Path as PathlibPath
+
     from pcs.repo import Repo
 
 

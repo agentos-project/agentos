@@ -20,7 +20,7 @@ from pcs.utils import (
     PCSException,
     PCSVirtualEnvInstallException,
     clear_cache_path,
-    pipe_and_check_popen
+    pipe_and_check_popen,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ class VirtualEnv(Component):
     This class manages a Python virtual environment. It provides methods to
     setup, enable, and disable a virtual environment.
     """
+
     PCS_REG_FILENAME = "pcs_registry.yaml"
 
     def __init__(
@@ -107,11 +108,11 @@ class VirtualEnv(Component):
         # TODO: I'm not sure which version of virtualenv added pyenv.cfg.
         assert (
             (
-                (existing_venv_path / "bin").exists() or
-                (existing_venv_path / "Scripts").exists()
-            ) and
-            (existing_venv_path / "lib").is_dir() and
-            (existing_venv_path / "pyvenv.cfg").exists()
+                (existing_venv_path / "bin").exists()
+                or (existing_venv_path / "Scripts").exists()
+            )
+            and (existing_venv_path / "lib").is_dir()
+            and (existing_venv_path / "pyvenv.cfg").exists()
         ), f"'{existing_venv_path}' is not a valid virtualenv."
         if existing_venv_path.is_relative_to(AOS_GLOBAL_VENV_DIR):
             reg_file = existing_venv_path / cls.PCS_REG_FILENAME
@@ -252,7 +253,7 @@ class VirtualEnv(Component):
             subprocess.run(
                 ["virtualenv", "-p", self.python_version, self.path],
                 check=True,
-                capture_output=True
+                capture_output=True,
             )
             # Install req files
             req_paths = [p.get() for p in self.requirements_files]
@@ -418,9 +419,7 @@ class VirtualEnv(Component):
         )
         shutil.rmtree(self.path)
 
-    def _hash_venv(
-        self, req_paths: Sequence, python_version: str
-    ) -> str:
+    def _hash_venv(self, req_paths: Sequence, python_version: str) -> str:
         to_hash = hashlib.sha256()
         to_hash.update(python_version.encode("utf-8"))
         if req_paths:

@@ -113,9 +113,9 @@ class Spec(UserDict):
     def from_body(cls, body: Dict) -> "Spec":
         from pcs.component import Component  # Avoid circular import.
 
-        assert is_spec_body(body), (
-            "The dict provided is not a valid spec body."
-        )
+        assert is_spec_body(
+            body
+        ), "The dict provided is not a valid spec body."
         ident_computed = Component.spec_body_to_identifier(body)
         return cls({ident_computed: body})
 

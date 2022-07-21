@@ -8,9 +8,9 @@ from pcs.instance_manager import Instance
 from pcs.mlflow_run import MLflowRun
 from pcs.module_manager import FileModule, VirtualEnvModule
 from pcs.output import Output, active_output
-from pcs.registry import Registry
 from pcs.path import RelativePath
 from pcs.python_executable import PythonExecutable
+from pcs.registry import Registry
 from pcs.repo import GitRepo, LocalRepo, Repo
 from pcs.specs import Spec, flatten_spec, unflatten_spec
 from pcs.version import VERSION as __version__  # noqa: F401

@@ -27,12 +27,12 @@ def test_resolve_inline_specs():
                 {
                     "type": "RelativePath",
                     "relative_path": "./requirements.txt",
-                    "repo": {"type": "LocalRepo", "path": "./2"}
+                    "repo": {"type": "LocalRepo", "path": "./2"},
                 },
                 {
                     "another_dict_key1": "another_dict_value1",
-                    "another_dict_key2": "another_dict_value2"
-                }
+                    "another_dict_key2": "another_dict_value2",
+                },
             ],
         }
     }
@@ -52,8 +52,6 @@ def test_resolve_inline_specs():
     assert local_repo2_id in r.specs
     local_repo2_spec = r.get_spec(local_repo2_id)
     assert local_repo2_spec.to_flat()["type"] == "LocalRepo"
-
-
 
 
 def test_resolve_inline_aliases():

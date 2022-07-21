@@ -10,8 +10,9 @@ from pcs.class_manager import Class
 from pcs.component import Component
 from pcs.instance_manager import Instance
 from pcs.module_manager import VirtualEnvModule
-from pcs.path import Path as PathComponent, RelativePath
-from pcs.repo import Repo, LocalRepo
+from pcs.path import Path as PathComponent
+from pcs.path import RelativePath
+from pcs.repo import LocalRepo, Repo
 from pcs.specs import Spec
 from pcs.virtual_env import VirtualEnv
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
@@ -124,10 +125,7 @@ def test_setup_py_agent():
         agent_instance = Instance(
             instance_of=Class(
                 name="BasicAgent",
-                module=VirtualEnvModule(
-                    name="agent",
-                    virtual_env=venv
-                )
+                module=VirtualEnvModule(name="agent", virtual_env=venv),
             )
         )
         agent_instance.run("evaluate")

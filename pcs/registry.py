@@ -93,7 +93,7 @@ class Registry(abc.ABC):
         :param format: Optionally specify the format of the registry file.
         :return: a new Registry object.
         """
-        assert (format == "yaml"), (
+        assert format == "yaml", (
             f"{format} not supported. YAML is the only registry file format "
             "supported currently"
         )
@@ -120,7 +120,7 @@ class Registry(abc.ABC):
             from pcs.virtual_env import VirtualEnv
 
             virtual_env_component = VirtualEnv(
-            requirements_files=[
+                requirements_files=[
                     RelativePath(
                         repo=repo,
                         relative_path=str(requirements_file),

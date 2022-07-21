@@ -54,9 +54,7 @@ class Repo(Component, PathComponent):
         cls.GIT.clear_repo_cache(repo_cache_path, assume_yes)
 
     def to_gitrepo(self, force: bool = False) -> "GitRepo":
-        repo_url, version = self.get_version_from_git(
-            self.path, force=force
-        )
+        repo_url, version = self.get_version_from_git(self.path, force=force)
         return GitRepo(repo_url, version=version)
 
     def get_version_from_git(
@@ -76,9 +74,7 @@ class Repo(Component, PathComponent):
         assert full_path.exists(), f"Path {full_path} does not exist"
         return self.GIT.get_public_url_and_hash(full_path, force)
 
-    def get_prefixed_path_from_repo_root(
-        self, file_path: str
-    ) -> Path:
+    def get_prefixed_path_from_repo_root(self, file_path: str) -> Path:
         """
         Finds the 'module_path' relative to the repo containing the
         Module.  For example, if ``module_path`` is::

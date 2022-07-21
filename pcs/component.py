@@ -2,7 +2,6 @@ import copy
 import logging
 import numbers
 from typing import (
-    TYPE_CHECKING,
     Collection,
     Dict,
     List,
@@ -265,7 +264,8 @@ class Component:
             ),
         )
         assert hasattr(pcs, spec.type), (
-            f"No Component type '{spec.type}' found in " "module 'pcs'. "
+            f"No Component type '{spec.type}' found in "
+            "module 'pcs'. "
             "You may need to add it to pcs/__init__.py."
         )
         comp_cls = getattr(pcs, spec.type)
@@ -291,9 +291,9 @@ class Component:
             "spec that has dependencies."
         )
         dep_spec = registry.get_spec(identifier, flatten=True)
-        assert hasattr(pcs, dep_spec[cls.TYPE_KEY]), (
-            f"Cannot find pcs.{dep_spec[cls.TYPE_KEY]}."
-        )
+        assert hasattr(
+            pcs, dep_spec[cls.TYPE_KEY]
+        ), f"Cannot find pcs.{dep_spec[cls.TYPE_KEY]}."
         dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
         assert issubclass(dep_comp_cls, Component)
         dep = dep_comp_cls._from_spec(

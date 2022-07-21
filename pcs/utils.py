@@ -59,9 +59,9 @@ def is_identifier_ref(token: Any) -> bool:
 
 # Probably should rename to extract_identifier_from_ref.
 def extract_identifier(identifier_ref: str) -> str:
-    assert is_identifier_ref(identifier_ref), (
-        f"'{identifier_ref}' is not an identifier"
-    )
+    assert is_identifier_ref(
+        identifier_ref
+    ), f"'{identifier_ref}' is not an identifier"
     prefix_len = len(IDENTIFIER_REF_PREFIX)
     return identifier_ref[prefix_len:]
 
