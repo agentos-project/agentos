@@ -291,6 +291,9 @@ class InMemoryRegistry(Registry):
 
     def __init__(self):
         self._registry = {self.SPECS_KEY: {}, self.ALIASES_KEY: {}}
+        self._init_helper_dicts()
+
+    def _init_helper_dicts(self):
         # Setup helper dicts (for performance).
         self._dependee_ids = defaultdict(
             set
@@ -324,7 +327,11 @@ class InMemoryRegistry(Registry):
         return reg
 
     def _update_helpers(self, specs_dict: Dict = None) -> None:
-        specs_dict = specs_dict if specs_dict else self.specs
+        if specs_dict:
+            specs_dict = specs_dict
+        else:
+            self._init_helper_dicts()
+            specs_dict = self.specs
         for ident, spec_body in specs_dict.items():
             for _, spec_ref in filter_leaves(
                 spec_body,
@@ -334,6 +341,21 @@ class InMemoryRegistry(Registry):
                 ref_id = extract_identifier(spec_ref)
                 self._dependee_ids[ref_id].add(ident)
                 self._dependency_ids[ident].add(ref_id)
+
+    def _remove_spec(self, identifier: str) -> None:
+        """
+        Removes spec and updates helper dicts to remove the edges they
+        are tracking between the spec and its dependencies.
+        """
+        spec_body = self._registry[self.SPECS_KEY].pop(identifier)
+        for _, spec_ref in filter_leaves(
+            spec_body,
+            lambda x: type(x) == str
+                and x.startswith(IDENTIFIER_REF_PREFIX),
+        ).items():
+            ref_id = extract_identifier(spec_ref)
+            self._dependee_ids[ref_id].remove(identifier)
+            self._dependency_ids[identifier].remove(ref_id)
 
     @property
     def specs(self) -> Mapping:
@@ -557,26 +579,28 @@ class InMemoryRegistry(Registry):
             new_spec = Spec(input_dict=new_spec)
         while identifier in self.aliases:
             identifier = self.aliases[identifier]
-        # add the new node and enqueue its new parents.
+        # add the new node (which updates helpers) and enqueue its new parents.
         self.add_spec(new_spec)
-        if remove_old_spec:
-            self._registry[self.SPECS_KEY].pop(identifier)
         self._update_aliases(identifier, new_spec.identifier)
         parent_ids = self._dependee_ids[identifier]
         replacements_to_do = deque(parent_ids)
+        if remove_old_spec:
+            self._remove_spec(identifier)
         old_ident_to_new = {identifier: new_spec.identifier}
 
         while replacements_to_do:
             # dequeue ident of spec that is being replaced
-            ident_to_replace = replacements_to_do.popleft()
-            replacement_spec = Spec.from_body(self.specs[ident_to_replace])
+            id_to_replace = replacements_to_do.popleft()
+            while id_to_replace in old_ident_to_new:
+                id_to_replace = old_ident_to_new[id_to_replace]
+            replacement_spec = Spec.from_body(self.specs[id_to_replace])
             # find and enqueue its parents
-            replacements_to_do += self._dependee_ids[ident_to_replace]
+            replacements_to_do += self._dependee_ids[id_to_replace]
             # Update body of spec replacing all child refs found in old_to_new,
             # making sure to follow references in old_to_new till no more are
             # found.
             children_to_update = set()
-            for dependency_id in self._dependency_ids[ident_to_replace]:
+            for dependency_id in self._dependency_ids[id_to_replace]:
                 new_ident = dependency_id
                 while new_ident in old_ident_to_new:
                     new_ident = old_ident_to_new[new_ident]
@@ -587,8 +611,8 @@ class InMemoryRegistry(Registry):
                     )
                     children_to_update.add(new_ident)
             # Store new mapping into old_to_new
-            assert ident_to_replace != replacement_spec.identifier
-            old_ident_to_new[ident_to_replace] = replacement_spec.identifier
+            if id_to_replace != replacement_spec.identifier:
+                old_ident_to_new[id_to_replace] = replacement_spec.identifier
             # Update `dependee_ids` helper dict since this node's children
             # didn't know the new identifier of their to-be-updated parents
             # when they were added to the graph, so we couldn't have updated
@@ -598,9 +622,9 @@ class InMemoryRegistry(Registry):
             # add new spec (identifier->updated_body) to graph
             self.add_spec(replacement_spec)
             if remove_old_spec:
-                self._registry[self.SPECS_KEY].pop(ident_to_replace)
+                self._remove_spec(id_to_replace)
             # update aliases
-            self._update_aliases(ident_to_replace, replacement_spec.identifier)
+            self._update_aliases(id_to_replace, replacement_spec.identifier)
 
 
 class WebRegistry(Registry):

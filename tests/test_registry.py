@@ -115,9 +115,14 @@ def test_registry_from_repo():
 def test_triangle_dependency_graphs():
     registry_yaml = """
 specs:
-    one:
+    zero:
         type: LocalRepo
         path: .
+    one:
+        type: ArgumentSet
+        args:
+            - spec:zero
+            - this is one
     two:
         type: ArgumentSet
         args:
@@ -131,11 +136,20 @@ specs:
     four:
         type: ArgumentSet
         args:
-            - spec:two
             - spec:three
+            - this is four
+    five:
+        type: ArgumentSet
+        args:
+            - spec:four
+            - spec:two
 """
     reg = Registry.from_dict(yaml.load(registry_yaml))
     pprint.pprint(reg.to_dict())
     replacement_spec = Spec.from_body({"type": "LocalRepo", "path": "/tmp"})
-    reg.replace_spec("one", replacement_spec)
-    assert reg.get_spec("one").to_flat()["path"] == "/tmp"
+    orig_one = reg.get_spec("one")
+    orig_two = reg.get_spec("two")
+    reg.replace_spec("one", replacement_spec, remove_old_spec=True)
+    assert reg.get_spec("one").body["path"] == "/tmp"
+    assert orig_one.identifier not in reg
+    assert orig_two.identifier not in reg
