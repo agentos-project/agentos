@@ -6,7 +6,7 @@ specs:
     virtual_env:
         type: VirtualEnv
         requirements_files:
-            - type: Path
+            - type: RelativePath
               relative_path: ./requirements.txt
               repo: spec:local_cir
 
