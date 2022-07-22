@@ -8,7 +8,7 @@ specs:
         requirements_files:
             - type: RelativePath
               relative_path: ./requirements.txt
-              repo: spec:local_cir
+              repo: spec:local_dir
 
     agent:
         type: Instance
