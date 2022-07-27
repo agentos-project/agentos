@@ -371,7 +371,7 @@ class VirtualEnv(Component):
                 flag_lines.append(line)
         return flag_dict
 
-    @ staticmethod
+    @staticmethod
     def _sort_req_paths(req_paths: Sequence) -> list:
         req_paths = set(req_paths)
         return sorted(p for p in req_paths)
