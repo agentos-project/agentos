@@ -136,10 +136,6 @@ class VirtualEnv(Component):
             assert reg_file.is_file()
         return reg_file
 
-    @staticmethod
-    def from_existing(existing_venv_path: Path):
-        return VirtualEnv(path=existing_venv_path)
-
     def __enter__(self):
         """
         Activates the virtual environment on context entry. Use as follows:
@@ -376,15 +372,6 @@ class VirtualEnv(Component):
                 flag_lines.append(line)
         return flag_dict
 
-    @staticmethod
-    def _sort_req_paths(req_paths: Sequence) -> list:
-        req_paths = set(req_paths)
-        return sorted(p for p in req_paths)
-
-    @staticmethod
-    def no_op_venv() -> "VirtualEnv":
-        return NoOpVirtualEnv()
-
     # ------------------------------------------------------------------------
     # The rest of this class (i.e, the code below this point) is functionality
     # specific to automatically managing the location of a virtualenv.
@@ -418,41 +405,6 @@ class VirtualEnv(Component):
             "{AOS_GLOBAL_VENV_DIR}."
         )
         shutil.rmtree(self.path)
-
-    def _hash_venv(self, req_paths: Sequence, python_version: str) -> str:
-        to_hash = hashlib.sha256()
-        to_hash.update(python_version.encode("utf-8"))
-        if req_paths:
-            sorted_req_paths = self._sort_req_paths(req_paths)
-            for req_path in sorted_req_paths:
-                with req_path.open() as file_in:
-                    reqs_data = file_in.read()
-                    to_hash.update(reqs_data.encode("utf-8"))
-        return to_hash.hexdigest()
-
-
-class NoOpVirtualEnv(VirtualEnv):
-    """
-    This class implements the VirtualEnv interface, but does not actually
-    modify the Python environment in which the program is executing.  Use this
-    class anywhere you need a VirtualEnv object but where you also do not want
-    to modify the execution environment (i.e. you just want to run code in the
-    existing Python environment).
-    """
-
-    def activate(self) -> None:
-        print("VirtualEnv: Running in outer Python environment")
-
-    def deactivate(self) -> None:
-        pass
-
-    def create_virtual_env(self) -> None:
-        pass
-
-    def install_requirements_file(
-        self, req_path: Path, pip_flags: dict = None
-    ) -> None:
-        pass
 
 
 @contextmanager
