@@ -10,7 +10,7 @@ import copy
 from collections import UserDict
 from typing import Callable, Dict, Mapping
 
-from pcs.utils import find_and_replace_leaves
+from pcs.utils import extract_identifier, find_and_replace_leaves, is_spec_body
 
 
 class Spec(UserDict):
@@ -35,10 +35,11 @@ class Spec(UserDict):
         {identifier: <str>, type: <str>, <other key->val flat_spec>}
     """
 
-    def __init__(self, input_dict: Dict):
+    def __init__(self, input_dict: Dict, check_format: bool = True):
         super().__init__()
         self.data = copy.deepcopy(input_dict)
-        self._check_format()
+        if check_format:
+            self._check_format()
 
     @property
     def identifier(self) -> str:
@@ -74,6 +75,9 @@ class Spec(UserDict):
         else:
             return {self.identifier[:]: self.body.copy()}
 
+    def get_and_extract_ident(self, key: str) -> str:
+        return extract_identifier(self.body.get(key))
+
     def _check_format(self) -> None:
         assert len(self.data) == 1, (
             f"len(self.data) must be 1, but is {len(self.data)}. self.data "
@@ -106,19 +110,31 @@ class Spec(UserDict):
         return found
 
     @classmethod
+    def from_body(cls, body: Dict) -> "Spec":
+        from pcs.component import Component  # Avoid circular import.
+
+        assert is_spec_body(
+            body
+        ), "The dict provided is not a valid spec body."
+        ident_computed = Component.spec_body_to_identifier(body)
+        return cls({ident_computed: body})
+
+    @classmethod
     def from_flat(cls, flat_spec: Dict) -> "Spec":
         from pcs.component import Component  # Avoid circular import.
 
-        assert Component.TYPE_KEY in flat_spec
-        ident_computed = Component.spec_body_to_identifier(flat_spec)
-        if Component.IDENTIFIER_KEY in flat_spec:
-            ident_in = flat_spec[Component.IDENTIFIER_KEY]
-            assert ident_computed == ident_in, (
-                "The identifier in the provided dict does not match the "
-                "hash of the other contents (i.e. the attributes) of the "
-                "dict provided."
-            )
-        return cls({ident_computed: flat_spec})
+        assert Component.IDENTIFIER_KEY in flat_spec, (
+            f"Key '{Component.IDENTIFIER_KEY}' not found in flat spec, "
+            "you probably want to use Spec.from_body() instead."
+        )
+        ident_in = flat_spec.pop(Component.IDENTIFIER_KEY)
+        spec = cls.from_body(flat_spec)
+        assert spec.identifier == ident_in, (
+            "The identifier in the provided flat_spec does not match the "
+            "hash of the body (i.e. the dict provided minus the identifier) "
+            "of the flat_spec provided."
+        )
+        return spec
 
     def to_flat(self) -> Dict:
         return flatten_spec(self.data)

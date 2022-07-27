@@ -1,4 +1,6 @@
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
@@ -8,11 +10,20 @@ from deepdiff import grep
 AOS_ROOT = Path(__file__).parent.absolute()
 AOS_GLOBAL_CONFIG_DIR = Path.home() / ".agentos"
 AOS_GLOBAL_CACHE_DIR = AOS_GLOBAL_CONFIG_DIR / "cache"
-AOS_GLOBAL_REQS_DIR = AOS_GLOBAL_CACHE_DIR / "requirements_cache"
+AOS_GLOBAL_VENV_DIR = AOS_GLOBAL_CACHE_DIR / "virtual_envs_cache"
 AOS_GLOBAL_REPOS_DIR = AOS_GLOBAL_CACHE_DIR / "repos_cache"
 
+PIP_COMMAND = "pip"
 IDENTIFIER_REF_PREFIX = "spec:"
 HASH_REGEXES = ["^[a-fA-F0-9]{32}$", "^[a-fA-F0-9]{40}$", "^[a-fA-F0-9]{64}$"]
+
+
+class PCSException(Exception):
+    pass
+
+
+class PCSVirtualEnvInstallException(Exception):
+    pass
 
 
 def is_spec_body(item: Any) -> bool:
@@ -20,10 +31,7 @@ def is_spec_body(item: Any) -> bool:
         return False
     from pcs.component import Component  # Avoid circular import
 
-    type_attr = item.get(Component.TYPE_KEY, None)
-    import pcs
-
-    return type_attr and hasattr(pcs, type_attr)
+    return item.get(Component.TYPE_KEY, None) is not None
 
 
 def is_identifier(token: Any) -> bool:
@@ -51,7 +59,9 @@ def is_identifier_ref(token: Any) -> bool:
 
 # Probably should rename to extract_identifier_from_ref.
 def extract_identifier(identifier_ref: str) -> str:
-    assert identifier_ref.startswith(IDENTIFIER_REF_PREFIX)
+    assert is_identifier_ref(
+        identifier_ref
+    ), f"'{identifier_ref}' is not an identifier"
     prefix_len = len(IDENTIFIER_REF_PREFIX)
     return identifier_ref[prefix_len:]
 
@@ -281,3 +291,38 @@ def copy_find_and_replace_leaves(
         else:
             transform_leaf(data_struct, copy_struct, leaf_list, lambda x: x)
     return match_found, copy_struct
+
+
+def pad_list_if_necessary(list_in, index):
+    while index >= len(list_in):  # List too short
+        list_in.append(None)
+
+
+def pipe_and_check_popen(args: List[str], **kwargs):
+    if "stdout" not in kwargs:
+        kwargs["stdout"] = subprocess.PIPE
+    if "stderr" not in kwargs:
+        kwargs["stderr"] = subprocess.PIPE
+    proc = subprocess.Popen(args, **kwargs)
+    stdout = stderr = ""
+    while proc.poll() is None:
+        stdout_line = proc.stdout.readline().decode()  # blocks until newline.
+        if stdout_line:
+            print(stdout_line, end="")
+            stdout += stdout_line
+        stderr_line = proc.stdout.readline().decode()  # blocks until newline.
+        if stderr_line:
+            print(stderr_line, file=sys.stderr, end="")
+            stderr += stderr_line
+    # When the subprocess terminates there might be unconsumed output
+    # that still needs to be processed.
+    print(proc.stdout.read(), end="")
+    print(proc.stdout.read(), end="")
+    if proc.returncode != 0:
+        raise PCSException(
+            f"The following subprocess finished with a non-zero "
+            f"({proc.returncode}) return code: {' '.join(args)}."
+            f"stdout:\n{stdout}\n\n"
+            f"stderr:\n{stderr}\n\n"
+        )
+    return proc, stdout, stderr

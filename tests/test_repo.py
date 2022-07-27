@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pcs.class_manager import Class
 from pcs.component import Component
-from pcs.module_manager import Module
+from pcs.module_manager import FileModule
 from pcs.repo import LocalRepo, Repo
 from tests.utils import (
     TESTING_BRANCH_NAME,
@@ -13,20 +13,23 @@ from tests.utils import (
 
 
 def test_repo_from_github():
-    aos_repo = Repo.from_github(TESTING_GITHUB_ACCOUNT, TESTING_GITHUB_REPO)
+    aos_repo = Repo.from_github(
+        TESTING_GITHUB_ACCOUNT,
+        TESTING_GITHUB_REPO,
+        version=TESTING_BRANCH_NAME,
+    )
     print(aos_repo.to_spec())
     agent_class = Class(
         name="Agent",
-        module=Module.from_repo(
+        module=FileModule.from_repo(
             aos_repo,
-            version=TESTING_BRANCH_NAME,
             file_path="agentos/core.py",
         ),
     )
     print("===============")
     print(pprint.pprint(agent_class.to_registry().to_dict()))
     assert hasattr(agent_class.get_object(), "evaluate")
-    assert agent_class.module.version == TESTING_BRANCH_NAME
+    assert agent_class.module.repo.version == TESTING_BRANCH_NAME
     assert agent_class.module.repo.identifier == aos_repo.identifier
 
 
@@ -44,13 +47,11 @@ def test_repo_checkout_bug():
     pcs_component_path = Path("pcs") / Path("component.py")
     # pcs/component.py exists in 4e12203
     exists_version = "4e12203faaf84361af9432271e013ddfb927f75d"
-    exists_path = aos_repo.get_local_file_path(
-        pcs_component_path, version=exists_version
-    )
+    exists_repo = aos_repo.clone_at_version(exists_version)
+    exists_path = exists_repo.get_local_file_path(pcs_component_path)
     assert exists_path.exists()
     # pcs/component.py does NOT exist in 07bc713
     not_exists_version = "07bc71358b4360092b58d78f9eee6dc939e90b10"
-    not_exists_path = aos_repo.get_local_file_path(
-        pcs_component_path, version=not_exists_version
-    )
+    not_exists_repo = aos_repo.clone_at_version(not_exists_version)
+    not_exists_path = not_exists_repo.get_local_file_path(pcs_component_path)
     assert not not_exists_path.exists()

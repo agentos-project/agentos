@@ -1,15 +1,15 @@
 import requests
 
-from pcs import Module
+from pcs import FileModule
 
 # from pcs.registry import WebRegistry
 
 requests.get("http://localhost:8000/empty_database")
-random_agent = Module.from_registry_file(
+random_agent = FileModule.from_registry_file(
     "example_agents/sb3_agent/components.yaml", "sb3_agent"
-).to_versioned_module()
+)
 
-# This first run will be start training an agent from stractch.
+# This first run will be start training an agent from scratch.
 learning_run = random_agent.run_with_arg_set(
     "learn",
     {

@@ -1,16 +1,7 @@
 import copy
 import logging
 import numbers
-from typing import (
-    TYPE_CHECKING,
-    Collection,
-    Dict,
-    List,
-    Mapping,
-    Sequence,
-    Type,
-    TypeVar,
-)
+from typing import Collection, Dict, List, Mapping, Sequence, Type, TypeVar
 
 import yaml
 from deepdiff import DeepDiff, DeepHash
@@ -27,9 +18,6 @@ from pcs.utils import (
     is_identifier_ref,
     make_identifier_ref,
 )
-
-if TYPE_CHECKING:
-    from pcs import Module
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +111,9 @@ class Component:
         if hasattr(self, "_spec_attr_names") and name in self._spec_attr_names:
             self._update_body()
             self._update_identifier()
+
+    def copy(self):
+        return self.from_registry(self.to_registry(), self.identifier)
 
     @property
     def type(self):
@@ -231,7 +222,7 @@ class Component:
         return cls.from_spec(registry.get_spec(identifier), registry)
 
     @classmethod
-    def from_default_registry(cls, identifier: str) -> "Module":
+    def from_default_registry(cls, identifier: str) -> "Component":
         return cls.from_registry(Registry.from_default(), identifier)
 
     @classmethod
@@ -239,7 +230,7 @@ class Component:
         cls,
         yaml_file: str,
         identifier: str,
-    ) -> "Module":
+    ) -> "Component":
         registry = Registry.from_yaml(yaml_file)
         return cls.from_registry(registry, identifier)
 
@@ -265,11 +256,19 @@ class Component:
             ),
         )
         assert hasattr(pcs, spec.type), (
-            f"No Component type '{spec.type}' found in " "module 'pcs'."
+            f"No Component type '{spec.type}' found in "
+            "module 'pcs'. "
+            "You may need to add it to pcs/__init__.py."
         )
         comp_cls = getattr(pcs, spec.type)
         logger.debug(f"creating cls {comp_cls} with kwargs {spec.as_kwargs}")
-        comp_class = comp_cls(**spec.as_kwargs)
+        try:
+            comp_class = comp_cls(**spec.as_kwargs)
+        except Exception as e:
+            raise Exception(
+                f"failed to initialize Component class {comp_cls} "
+                f"with kwargs: {spec.as_kwargs}"
+            ) from e
         return comp_class
 
     @classmethod
@@ -284,7 +283,9 @@ class Component:
             "spec that has dependencies."
         )
         dep_spec = registry.get_spec(identifier, flatten=True)
-        assert hasattr(pcs, dep_spec[cls.TYPE_KEY])
+        assert hasattr(
+            pcs, dep_spec[cls.TYPE_KEY]
+        ), f"Cannot find pcs.{dep_spec[cls.TYPE_KEY]}."
         dep_comp_cls = getattr(pcs, dep_spec[cls.TYPE_KEY])
         assert issubclass(dep_comp_cls, Component)
         dep = dep_comp_cls._from_spec(
@@ -307,8 +308,7 @@ class Component:
         return yaml.dump(self.to_spec())
 
     def to_yaml_file(self, filename: str) -> None:
-        with open(filename, "w") as f:
-            yaml.dump(self.to_spec(), f)
+        self.to_registry().to_yaml(filename)
 
     def publish(self) -> Registry:
         self.to_registry(Registry.from_default())
@@ -326,9 +326,9 @@ class Component:
         :param include_root: Whether to include root component in the list.
             If True, self is included in the list returned.
         :param include_parents: If True, then recursively include all parents
-            of this component (and their parents, etc). A parent of this Module
-            is a Module which depends on this Module.  Ultimately, if True, all
-            Components in the DAG will be returned.
+            of this component (and their parents, etc). A parent of this
+            Component is a Component which depends on this. Ultimately,
+            if True, all Components in the DAG will be returned.
         :param filter_by_types: list of classes whose type is 'type'.
 
         :return: a list containing all all of the transitive dependencies
@@ -362,40 +362,3 @@ class Component:
         for dep_attr_name, dep_module in self.dependencies().items():
             dep_module.get_status_tree(parent_tree=self_tree)
         return self_tree
-
-
-def test_spec_object():
-    class GitHubComponent(Component):
-        ATTRIBUTES = ["url"]
-
-        def __init__(self, url: str):
-            self.url = url
-            super().__init__()
-
-    r = GitHubComponent(url="https://github.com/agentos-project/agentos")
-    assert r.type == "GitHubComponent"
-
-    class ModuleComponent(Component):
-        ATTRIBUTES = ["repo", "version", "module_path"]
-
-        def __init__(
-            self, repo: GitHubComponent, version: str, module_path: str
-        ):
-            self.repo = repo
-            self.version = version
-            self.module_path = module_path
-            super().__init__()
-
-    c = ModuleComponent(
-        repo=r, version="master", module_path="example_agents/random/agent.py"
-    )
-    assert c.repo is r
-    reg = c.to_registry()
-    print(reg.to_yaml())
-    print("=======")
-    print(c.to_registry(reg))
-    print("=======")
-    c_two = ModuleComponent(
-        repo=r, version="master", module_path="example_agents/random/agent.py"
-    )
-    print(c_two.to_registry(reg))

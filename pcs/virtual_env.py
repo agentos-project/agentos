@@ -1,33 +1,139 @@
-import hashlib
 import logging
 import os
+import re
+import shutil
 import subprocess
 import sys
-import sysconfig
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Sequence
+from typing import List, Sequence
 
 import yaml
 
-from pcs.utils import AOS_GLOBAL_REQS_DIR, clear_cache_path
+from pcs.component import Component
+from pcs.path import Path as PathComponent
+from pcs.python_executable import PythonExecutable
+from pcs.utils import (
+    AOS_GLOBAL_VENV_DIR,
+    PIP_COMMAND,
+    PCSException,
+    PCSVirtualEnvInstallException,
+    clear_cache_path,
+    pipe_and_check_popen,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class VirtualEnv:
+class VirtualEnv(Component):
     """
     This class manages a Python virtual environment. It provides methods to
-    setup, enable, and disable virtual environments as well as utility methods
-    such as one to clear the whole virtual environment cache.
+    setup, enable, and disable a virtual environment.
     """
 
-    def __init__(self, venv_path: Path = None):
-        self.venv_path = venv_path
+    PCS_REG_FILENAME = "pcs_registry.yaml"
+
+    def __init__(
+        self,
+        python_version: str = None,
+        requirements_files: List[PathComponent] = None,
+        local_packages: List[Path] = None,
+    ):
+        """
+        Creates a new virtual environment.
+
+        :param path: the path to the root dir of this venv. If this is None,
+            the path will be managed automatically.
+        :param python_version: The version of Python to init this venv with.
+        :param requirements_files: a sequence of `pcs.path.Path`s
+            to be installed into this environment.
+        """
+        super().__init__()
         self._saved_venv_sys_path = None
         self._venv_is_active = False
-        self.set_env_cache_path(AOS_GLOBAL_REQS_DIR)
-        self._py_version = f"python{sysconfig.get_python_version()}"
+        self._python_executable = None  # Set in self.python_executable()
+        self._env_cache_path = AOS_GLOBAL_VENV_DIR
+        if python_version:
+            assert re.fullmatch(r"\d+\.\d+\.\d+", python_version)
+        else:
+            ver = sys.version_info
+            python_version = f"{ver.major}.{ver.minor}.{ver.micro}"
+        self.python_version = python_version
+        if requirements_files:
+            self.requirements_files = requirements_files
+        else:
+            self.requirements_files = []
+        self.local_packages = local_packages if local_packages else []
+        self.register_attributes(
+            ["python_version", "requirements_files", "local_packages"]
+        )
+        try:
+            self._build_virtual_env()
+        except PCSVirtualEnvInstallException as e:
+            self._delete_virtual_env()
+            raise PCSVirtualEnvInstallException(
+                "Creating VirtualEnv failed. Removed VirtualEnv that "
+                f"was in bad state: {self.path}"
+            ) from e
+
+    @property
+    def path(self) -> Path:
+        return self._env_cache_path / self.identifier
+
+    @property
+    def bin_path(self) -> Path:
+        bin_path = self.path / "bin"
+        if sys.platform in ["win32", "win64"]:
+            bin_path = self.path / "Scripts"
+        return bin_path
+
+    @property
+    def python_executable(self) -> PythonExecutable:
+        if not self._python_executable:
+            py_path = self.bin_path / "python"
+            if sys.platform in ["win32", "win64"]:
+                py_path = self.bin_path / "python.exe"
+            assert py_path.exists()
+            self._python_executable = PythonExecutable(py_path)
+        return self._python_executable
+
+    @property
+    def python_path(self) -> Path:
+        return self.python_executable.path
+
+    @classmethod
+    def from_existing_venv(cls, existing_venv_path: Path) -> "VirtualEnv":
+        assert existing_venv_path.exists()
+        # TODO: I'm not sure which version of virtualenv added pyenv.cfg.
+        assert (
+            (
+                (existing_venv_path / "bin").exists()
+                or (existing_venv_path / "Scripts").exists()
+            )
+            and (existing_venv_path / "lib").is_dir()
+            and (existing_venv_path / "pyvenv.cfg").exists()
+        ), f"'{existing_venv_path}' is not a valid virtualenv."
+        if existing_venv_path.is_relative_to(AOS_GLOBAL_VENV_DIR):
+            reg_file = existing_venv_path / cls.PCS_REG_FILENAME
+            assert reg_file.exists(), (
+                f"VirtualEnvs that exist within {AOS_GLOBAL_VENV_DIR} should "
+                "all have a registry file written within them."
+            )
+            return Component.from_yaml(reg_file)
+        else:
+            # TODO: Infer a VirtualEnv Component that represents the existing
+            #     VirtualEnv by pip listing it's modules and
+            raise NotImplementedError
+
+    def _write_reg_file(self) -> None:
+        self.to_yaml_file(str(self.reg_file_path))
+
+    @property
+    def reg_file_path(self) -> Path:
+        reg_file = self.path / self.PCS_REG_FILENAME
+        if reg_file.exists():
+            assert reg_file.is_file()
+        return reg_file
 
     def __enter__(self):
         """
@@ -40,44 +146,11 @@ class VirtualEnv:
         ```
         """
         self.activate()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         """Deactivates the virtual environment on context exit."""
         self.deactivate()
-
-    @classmethod
-    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
-        """
-        Takes a sequence of full paths to pip-compatible requirements files,
-        creates a new virtual environment, installs all those requirements into
-        that environment, and then returns a VirtualEnv object corresponding to
-        that virtual environment.
-        """
-        venv = cls()
-        if not req_paths:
-            logger.info(
-                "VirtualEnv: no requirement paths; Running in an empty env!"
-            )
-        venv._build_virtual_env(req_paths)
-        return venv
-
-    def set_env_cache_path(self, env_cache_path: Path) -> None:
-        """
-        Allows overriding of the path of the environment cache. The environment
-        cache is where all the virtual environments for Components are created.
-        """
-        self._env_cache_path = env_cache_path
-
-    @staticmethod
-    def clear_env_cache(
-        env_cache_path: Path = None, assume_yes: bool = False
-    ) -> None:
-        """
-        Completely removes all the virtual environments that have been created
-        for Components.  Pass True to ``assume_yes`` to run non-interactively.
-        """
-        env_cache_path = env_cache_path or AOS_GLOBAL_REQS_DIR
-        clear_cache_path(env_cache_path, assume_yes)
 
     def _save_default_env_info(self):
         self._default_sys_path = [p for p in sys.path]
@@ -95,11 +168,16 @@ class VirtualEnv:
         """
         if self._venv_is_active:
             return
-        assert self.venv_path.exists(), f"{self.venv_path} does not exist!"
+        if not self.path.exists():
+            self._build_virtual_env()
         self._save_default_env_info()
         self._exec_activate_this_script()
         self._venv_is_active = True
-        logger.info(f"VirtualEnv: Running in Python venv at {self.venv_path}")
+        logger.info(f"VirtualEnv: Running in Python venv at {self.path}")
+
+    @property
+    def is_active(self):
+        return self._venv_is_active
 
     def _exec_activate_this_script(self):
         """
@@ -110,9 +188,9 @@ class VirtualEnv:
         For example, if your virtual environment is found at ``/foo/bar/venv``,
         then you can find the script at ``/foo/bar/venv/bin/activate_this.py``.
         """
-        scripts_path = self.venv_path / "bin"
+        scripts_path = self.path / "bin"
         if sys.platform in ["win32", "win64"]:
-            scripts_path = self.venv_path / "Scripts"
+            scripts_path = self.path / "Scripts"
         activate_script_path = scripts_path / "activate_this.py"
         with open(activate_script_path) as file_in:
             exec(file_in.read(), {"__file__": activate_script_path})
@@ -122,14 +200,14 @@ class VirtualEnv:
             sys.path.pop()
 
     def _set_venv_sys_attributes(self):
-        sys.prefix = str(self.venv_path)
-        sys.exec_prefix = str(self.venv_path)
+        sys.prefix = str(self.path)
+        sys.exec_prefix = str(self.path)
 
     def _set_venv_sys_environment(self):
-        os.environ["VIRTUAL_ENV"] = str(self.venv_path)
-        venv_bin_path = self.venv_path / "bin"
+        os.environ["VIRTUAL_ENV"] = str(self.path)
+        venv_bin_path = self.path / "bin"
         os.environ["PATH"] = f'{str(venv_bin_path)}:{os.environ.get("PATH")}'
-        os.environ["_"] = f"{str(self.venv_path)}/bin/python"
+        os.environ["_"] = f"{str(self.path)}/bin/python"
 
     def deactivate(self) -> None:
         """
@@ -161,19 +239,37 @@ class VirtualEnv:
         if self._default_os_underscore:
             os.environ["_"] = self._default_os_underscore
 
-    def create_virtual_env(self) -> None:
-        """
-        Creates the directory and objects that back the virtual environment.
-        """
-        assert self.venv_path is not None
-        assert not self.venv_path.exists(), f"{self.venv_path} exists already!"
-        subprocess.run(["virtualenv", "-p", sys.executable, self.venv_path])
+    def _build_virtual_env(self) -> None:
+        assert self.path is not None
+        if self.path.exists():
+            assert self.reg_file_path
+        else:
+            # Create the Venv
+            subprocess.run(
+                ["virtualenv", "-p", self.python_version, self.path],
+                check=True,
+                capture_output=True,
+            )
+            # Install req files
+            req_paths = [p.get() for p in self.requirements_files]
+            for req_path in self._sort_req_paths(req_paths):
+                self._install_requirements_file(req_path)
+            self._write_reg_file()
+            # Install local packages
+            for pkg_path in self.local_packages:
+                self._install_local_package(pkg_path.get())
 
-    def install_requirements_file(
+    def add_requirements_file(self, req_file: PathComponent) -> None:
+        self.add_requirements_files([req_file])
+
+    def add_requirements_files(self, req_files: List[PathComponent]) -> None:
+        self.requirements_files += req_files
+        self._build_virtual_env()
+
+    def _install_requirements_file(
         self,
         req_path: Path,
         pip_flags: dict = None,
-        pipe_stdout_and_err: bool = True,
     ) -> None:
         """
         Installs the requirements_file pointed at by `req_path` into the
@@ -191,74 +287,41 @@ class VirtualEnv:
         ```
         """
         pip_flags = pip_flags or {}
-        python_path = self.venv_path / "bin" / "python"
-        if sys.platform in ["win32", "win64"]:
-            python_path = self.venv_path / "Scripts" / "python.exe"
-
         install_flag = "-r"
         install_path = str(req_path)
         if req_path.name == "setup.py":
             install_flag = "-e"
             install_path = str(req_path.parent)
-        cmd = [
-            str(python_path),
-            "-m",
-            "pip",
-            "install",
-            install_flag,
-            install_path,
-        ]
+        pip_args = ["install", install_flag, install_path]
         embedded_pip_flags = self._get_embedded_pip_flags(req_path)
         for flag, value in embedded_pip_flags.items():
-            cmd.append(flag)
-            cmd.append(value)
+            pip_args.append(flag)
+            pip_args.append(value)
 
         for flag, value in pip_flags.items():
-            cmd.append(flag)
-            cmd.append(value)
-        bin_path = self.venv_path / "bin"
-        if sys.platform in ["win32", "win64"]:
-            bin_path = self.venv_path / "Scripts"
+            pip_args.append(flag)
+            pip_args.append(value)
+        self.bin_path
+        try:
+            self._exec_pip(pip_args, cwd=req_path.parent)
+        except PCSException as e:
+            raise PCSVirtualEnvInstallException(
+                "Virtualenv install requirements failed."
+            ) from e
+
+    def _install_local_package(self, path: Path) -> None:
+        self._exec_pip(["install", str(path)])
+
+    def _exec_pip(self, args, **kwargs):
         component_env = {
             "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),  # win32
-            "VIRTUAL_ENV": str(self.venv_path),
-            "PATH": f"{str(bin_path)}:{os.environ.get('PATH')}",
+            "VIRTUAL_ENV": str(self.path),
+            "PATH": f"{str(self.bin_path)}:{os.environ.get('PATH')}",
         }
-        print(f"Running {cmd}")
-        proc = subprocess.Popen(cmd, env=component_env, stdout=subprocess.PIPE)
-        # Copied from https://stackoverflow.com/questions/17411966/printing-stdout-in-realtime-from-a-subprocess-that-requires-stdin/17413045#17413045  # noqa: E501
-        # Grab stdout line by line as it becomes available. This will loop
-        # until proc terminates.
-        while proc.poll() is None:
-            if pipe_stdout_and_err:
-                line = proc.stdout.readline()  # block until newline.
-                print(line.decode(), end="")
-        # When the subprocess terminates there might be unconsumed output
-        # that still needs to be processed.
-        print(proc.stdout.read(), end="")
-        assert proc.returncode == 0, "virtualenv install requirements failed."
-
-    def _build_virtual_env(self, req_paths: Sequence):
-        hashed = self._hash_req_paths(req_paths)
-        self.venv_path = self._env_cache_path / self._py_version / hashed
-        if not self.venv_path.exists():
-            self.create_virtual_env()
-            for req_path in self._sort_req_paths(req_paths):
-                self.install_requirements_file(req_path)
-
-    def _hash_req_paths(self, req_paths: Sequence) -> str:
-        sorted_req_paths = self._sort_req_paths(req_paths)
-        to_hash = hashlib.sha256()
-        to_hash.update(b"empty")
-        for req_path in sorted_req_paths:
-            with req_path.open() as file_in:
-                reqs_data = file_in.read()
-                to_hash.update(reqs_data.encode("utf-8"))
-        return to_hash.hexdigest()
-
-    def _sort_req_paths(self, req_paths: Sequence) -> list:
-        req_paths = set(req_paths)
-        return sorted(p for p in req_paths)
+        prefix_args = [str(self.python_path), "-m", PIP_COMMAND]
+        cmd = prefix_args + args
+        print(f"Running: {cmd}")
+        pipe_and_check_popen(cmd, env=component_env, **kwargs)
 
     def _get_embedded_pip_flags(self, req_path: Path) -> dict:
         """
@@ -308,37 +371,51 @@ class VirtualEnv:
                 flag_lines.append(line)
         return flag_dict
 
+    @staticmethod
+    def _sort_req_paths(req_paths: Sequence) -> list:
+        req_paths = set(req_paths)
+        return sorted(p for p in req_paths)
 
-class NoOpVirtualEnv(VirtualEnv):
-    """
-    This class implements the VirtualEnv interface, but does not actually
-    modify the Python environment in which the program is executing.  Use this
-    class anywhere you need a VirtualEnv object but where you also do not want
-    to modify the execution environment (i.e. you just want to run code in the
-    existing Python environment).
-    """
+    # ------------------------------------------------------------------------
+    # The rest of this class (i.e, the code below this point) is functionality
+    # specific to automatically managing the location of a virtualenv.
+    # ------------------------------------------------------------------------
+    @property
+    def env_cache_path(self):
+        return self._env_cache_path
 
-    @classmethod
-    def from_requirements_paths(cls, req_paths: Sequence) -> "VirtualEnv":
-        return cls()
+    @env_cache_path.setter
+    def env_cache_path(self, env_cache_path: Path) -> None:
+        """
+        Allows overriding of the path of the environment cache. The environment
+        cache is where all the virtual environments for Components are created.
+        """
+        self._env_cache_path = env_cache_path
 
-    def activate(self) -> None:
-        print("VirtualEnv: Running in outer Python environment")
-
-    def deactivate(self) -> None:
-        pass
-
-    def create_virtual_env(self) -> None:
-        pass
-
-    def install_requirements_file(
-        self, req_path: Path, pip_flags: dict = None
+    @staticmethod
+    def clear_env_cache(
+        env_cache_path: Path = None, assume_yes: bool = False
     ) -> None:
-        pass
+        """
+        Completely removes all the virtual environments that have been created
+        for Components.  Pass True to ``assume_yes`` to run non-interactively.
+        """
+        env_cache_path = env_cache_path or AOS_GLOBAL_VENV_DIR
+        clear_cache_path(env_cache_path, assume_yes)
+
+    def _delete_virtual_env(self):
+        assert self.path.relative_to(AOS_GLOBAL_VENV_DIR), (
+            "Cannot delete folders or directories that are not in "
+            "{AOS_GLOBAL_VENV_DIR}."
+        )
+        shutil.rmtree(self.path)
 
 
 @contextmanager
-def auto_revert_venv():
+def auto_revert_venv(
+    python_version: str = None,
+    requirements_files: List[PathComponent] = None,
+):
     """
     Use this context manager when you need to revert the Python environment to
     whatever was in place before the managed block.  Useful in tests when an
@@ -352,10 +429,11 @@ def auto_revert_venv():
             # Do something here that may fail, leaving the env in a bad state
         # Env guaranteed to be reset to its pre-managed-block state here
     """
-    venv = VirtualEnv()
-    venv._save_default_env_info()
-    venv._venv_is_active = True
+    venv = VirtualEnv(
+        python_version=python_version, requirements_files=requirements_files
+    )
+    venv.activate()
     try:
-        yield
+        yield venv
     finally:
         venv.deactivate()

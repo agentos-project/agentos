@@ -1,14 +1,20 @@
 import sys
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 
 import pytest
 
 from agentos.cli import run
-from pcs import Class, Instance, Module
+from pcs.class_manager import Class
 from pcs.component import Component
-from pcs.repo import Repo
+from pcs.instance_manager import Instance
+from pcs.module_manager import VirtualEnvModule
+from pcs.path import Path as PathComponent
+from pcs.path import RelativePath
+from pcs.repo import LocalRepo, Repo
 from pcs.specs import Spec
-from pcs.virtual_env import VirtualEnv, auto_revert_venv
+from pcs.virtual_env import VirtualEnv
 from tests.utils import TEST_VENV_AGENT_DIR, run_test_command
 
 
@@ -29,23 +35,38 @@ def _confirm_modules_not_in_env():
         import bottle  # noqa: F401
 
 
-def test_venv_management(cli_runner, tmpdir):
-    with auto_revert_venv():
+def test_venv_module(tmp_path):
+    filename = "requirements.txt"
+    req_file = tmp_path / filename
+    req_file.write_text("pycowsay")
+
+    repo = LocalRepo(path=tmp_path)
+    path = RelativePath(repo=repo, relative_path=filename)
+    venv = VirtualEnv(requirements_files=[path])
+    venv_module = VirtualEnvModule(virtual_env=venv, name="pycowsay.main")
+    print(venv_module)
+    print(venv_module.get_object())
+    assert type(venv_module.get_object()) is type(sys)
+    # See the pycow ascii art at:
+    # https://github.com/cs01/pycowsay/blob/master/pycowsay/main.py
+    pycow_eyes = "(oo)"
+    with redirect_stdout(StringIO()) as f:
+        venv_module.get_object().main()
+    pycowmain_returned = f.getvalue()
+    assert pycow_eyes in pycowmain_returned
+
+
+def test_venv_cache_clearing():
+    venv = VirtualEnv()
+    assert venv.path.exists()
+    VirtualEnv.clear_env_cache(assume_yes=True)
+    assert not venv.path.exists()
+
+
+def test_venv_management(cli_runner):
+    with VirtualEnv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        tmp_path = Path(tmpdir)
-        env_cache_path = tmp_path / "test_requirements"
-        env_cache_path.mkdir(parents=True, exist_ok=True)
-
-        # Test cache clearing
-        touch_test = env_cache_path / "test_file.out"
-        touch_test.touch()
-        assert touch_test.exists()
-        VirtualEnv.clear_env_cache(
-            env_cache_path=env_cache_path, assume_yes=True
-        )
-        Repo.clear_repo_cache(repo_cache_path=env_cache_path, assume_yes=True)
-        assert not touch_test.exists()
 
         test_kwargs = {
             "--registry-file": str(TEST_VENV_AGENT_DIR / "components.yaml")
@@ -58,21 +79,23 @@ def test_venv_management(cli_runner, tmpdir):
 
 
 def test_venv_repl(tmpdir):
-    with auto_revert_venv():
+    with VirtualEnv():
         _clean_up_sys_modules()
         _confirm_modules_not_in_env()
-        venv_path = Path(tmpdir) / "reqs"
-        venv = VirtualEnv(venv_path=venv_path)
-        assert not venv_path.exists()
-        venv.create_virtual_env()
-        assert venv_path.exists()
+        venv = VirtualEnv()
+        assert venv.path.exists()
+        orig_ident = venv.identifier
 
         # These packages are not found in our venv either
         with venv:
             _confirm_modules_not_in_env()
 
         req_file = TEST_VENV_AGENT_DIR / "requirements.txt"
-        venv.install_requirements_file(req_file)
+        new_req = PathComponent.from_local_path(req_file)
+        venv.add_requirements_file(new_req)
+
+        # Adding a req file should change the identifier.
+        assert venv.identifier != orig_ident
 
         # import success
         with venv:
@@ -89,25 +112,21 @@ def test_venv_repl(tmpdir):
 
 
 def test_setup_py_agent():
-    with auto_revert_venv():
-        _clean_up_sys_modules()
-        _confirm_modules_not_in_env()
-        local_repo_spec = Spec.from_flat(
-            {
-                Component.TYPE_KEY: "LocalRepo",
-                "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
-            }
-        )
-        agent_repo = Repo.from_spec(local_repo_spec)
+    _clean_up_sys_modules()
+    _confirm_modules_not_in_env()
+    local_repo_spec = Spec.from_body(
+        {
+            Component.TYPE_KEY: "LocalRepo",
+            "path": f"{Path(__file__).parent}/test_agents/setup_py_agent/",
+        }
+    )
+    agent_repo = Repo.from_spec(local_repo_spec)
+    with VirtualEnv(local_packages=[agent_repo]) as venv:
         agent_instance = Instance(
             instance_of=Class(
                 name="BasicAgent",
-                module=Module.from_repo(
-                    repo=agent_repo,
-                    version=None,
-                    file_path="./agent.py",
-                    requirements_path="./setup.py",
-                ),
+                module=VirtualEnvModule(name="agent", virtual_env=venv),
             )
         )
         agent_instance.run("evaluate")
+    assert not venv.is_active

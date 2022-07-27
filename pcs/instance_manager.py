@@ -1,4 +1,3 @@
-import copy
 from typing import TypeVar
 
 from pcs.class_manager import ArgumentSet, Class
@@ -27,11 +26,11 @@ class Instance(ObjectManager):
         self.register_attributes(["instance_of", "argument_set"])
         self._instance = None
 
-    def get_object(self):
+    def get_new_object(self):
         if self._instance:
             return self._instance
         else:
-            cls = self.instance_of.get_object()
+            cls = self.instance_of.get_object(force_new=True)
             self._instance = cls(
                 *self.argument_set.get_arg_objs(),
                 **self.argument_set.get_kwarg_objs()
@@ -39,8 +38,12 @@ class Instance(ObjectManager):
             setattr(self._instance, "__component__", self)
             return self._instance
 
+    def reset_object(self):
+        self.instance_of.reset_object()
+        super().reset_object()
+
     def freeze(self: T, force: bool = False) -> T:
-        self_copy = copy.deepcopy(self)
+        self_copy = self.copy()
         self_copy.instance_of = self.instance_of.freeze(force)
         for i in [self_copy.argument_set.args, self_copy.argument_set.kwargs]:
             find_and_replace_leaves(

@@ -1,19 +1,23 @@
 specs:
     aos_github:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/agentos-project/agentos.git
+        version: test_prod
 
     openai_gym:
-        type: GitHubRepo
+        type: GitRepo
         url: git@github.com:openai/gym.git
+        version: 4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
 
     stable_baselines3:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/DLR-RM/stable-baselines3.git
+        version: 21f6a474a4755996709efee8c0aab309df905cbf
 
     mgbellemare_ale:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
+        version: db3728264f382402120913d76c4fa0dc320ef59f
 
     agent:
         type: Instance
@@ -28,17 +32,15 @@ specs:
             type: Class
             name: SB3PPOAgent
             module:
-                type: Module
+                type: FileModule
                 repo: spec:aos_github
                 file_path: example_agents/sb3_agent/agent.py
-                version: test_prod
 
     AtariEnv:
         type: Class
         name: AtariEnv
         module:
-            type: Module
-            version: db3728264f382402120913d76c4fa0dc320ef59f
+            type: FileModule
             repo: spec:mgbellemare_ale
             file_path: ./src/gym/envs/atari/environment.py
 
@@ -46,8 +48,7 @@ specs:
         type: Class
         name: CartPoleEnv
         module:
-            type: Module
-            version: 4ede9280f9c477f1ca09929d10cdc1e1ba1129f1
+            type: FileModule
             repo: spec:openai_gym
             file_path: ./gym/envs/classic_control/cartpole.py
 
@@ -55,8 +56,7 @@ specs:
         type: Class
         name: PPO
         module:
-            type: Module
-            version: 21f6a474a4755996709efee8c0aab309df905cbf
+            type: FileModule
             repo: spec:stable_baselines3
             file_path: ./stable_baselines3/ppo/ppo.py
 
@@ -64,7 +64,6 @@ specs:
         type: Class
         name: SB3Run
         module:
-            type: Module
+            type: FileModule
             repo: spec:aos_github
             file_path: example_agents/sb3_agent/sb3_run.py
-            version: test_prod

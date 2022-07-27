@@ -198,17 +198,17 @@ def active_output(caller: Any, fail_if_none: bool = False) -> Optional[Output]:
         instead of returning None.
     :return: the active component run if it exists, else None.
     """
-    from pcs import Module
+    from pcs.object_manager import ObjectManager
 
-    if isinstance(caller, Module):
+    if isinstance(caller, ObjectManager):
         component = caller
     else:
         try:
             component = caller.__component__
         except AttributeError:
             raise PythonComponentSystemException(
-                "active_output() was called on an object that is not "
-                "managed by a Module. Specifically, the object passed "
+                "active_output() was called on an object that is not managed "
+                "by an ObjectManager. Specifically, the object passed "
                 "to active_output() must have a ``__component__`` attribute."
             )
     if not component.active_output:

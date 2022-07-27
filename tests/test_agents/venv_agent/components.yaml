@@ -1,13 +1,20 @@
 specs:
+    cmd:
+        type: Command
+        component: spec:test_venv_agent
     test_venv_agent:
         type: Instance
         instance_of:
             type: Class
             name: BasicAgent
             module:
-                type: Module
-                file_path: ./agent.py
-                requirements_path: ./requirements.txt
-                repo:
-                    type: LocalRepo
-                    path: .
+                type: VirtualEnvModule
+                name: tests.test_agents.venv_agent.agent
+                virtual_env:
+                    type: VirtualEnv
+                    requirements_files:
+                        - type: RelativePath
+                          relative_path: ./requirements.txt
+                          repo:
+                              type: LocalRepo
+                              path: .

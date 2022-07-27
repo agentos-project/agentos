@@ -1,4 +1,3 @@
-import copy
 import logging
 import sys
 from hashlib import sha1
@@ -8,7 +7,7 @@ from typing import Type, TypeVar
 from dill.source import getsource as dill_getsource
 
 from pcs.argument_set import ArgumentSet
-from pcs.module_manager import Module
+from pcs.module_manager import FileModule, Module
 from pcs.object_manager import ObjectManager
 from pcs.repo import LocalRepo, Repo
 
@@ -33,7 +32,7 @@ class Class(ObjectManager):
         cls,
         class_obj: Type[T],
         repo: Repo = None,
-    ) -> "Module":
+    ) -> "Class":
         name = class_obj.__name__
         if class_obj.__module__ == "__main__":
             # handle classes defined in REPL.
@@ -41,7 +40,7 @@ class Class(ObjectManager):
             if not repo:
                 repo = LocalRepo()
             sha = str(int(sha1(file_contents.encode("utf-8")).hexdigest(), 16))
-            src_file = repo.get_local_repo_dir() / f"{name}-{sha}.py"
+            src_file = repo.get_local_file_path(f"{name}-{sha}.py")
             if src_file.exists():
                 print(f"Re-using existing source file {src_file}.")
             else:
@@ -66,15 +65,19 @@ class Class(ObjectManager):
             )
 
         return cls(
-            module=Module(repo=repo, file_path=src_file.name),
+            module=FileModule(repo=repo, file_path=src_file.name),
             name=name,
         )
 
-    def get_object(self):
-        module = self.module.get_object()
+    def get_new_object(self):
+        module = self.module.get_object(force_new=True)
         cls = getattr(module, self.name)
         setattr(cls, "__component__", self)
         return cls
+
+    def reset_object(self):
+        self.module.reset_object()
+        super().reset_object()
 
     def instantiate(self, argument_set: ArgumentSet):
         from pcs.instance_manager import Instance
@@ -82,6 +85,6 @@ class Class(ObjectManager):
         return Instance(self, argument_set=argument_set)
 
     def freeze(self: T, force: bool = False) -> T:
-        self_copy = copy.deepcopy(self)
-        self_copy.module = self.module.freeze(force)
+        self_copy = self.copy()
+        self_copy.module = self_copy.module.freeze(force)
         return self_copy

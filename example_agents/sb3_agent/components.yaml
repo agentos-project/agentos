@@ -4,16 +4,19 @@ specs:
         path: .
 
     openai_gym:
-        type: GitHubRepo
+        type: GitRepo
         url: git@github.com:openai/gym.git
+        version: c755d5c35a25ab118746e2ba885894ff66fb8c43
 
     stable_baselines3:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/DLR-RM/stable-baselines3.git
+        version: 21f6a474a4755996709efee8c0aab309df905cbf
 
     mgbellemare_ale:
-        type: GitHubRepo
+        type: GitRepo
         url: https://github.com/mgbellemare/Arcade-Learning-Environment.git
+        version: db3728264f382402120913d76c4fa0dc320ef59f
 
     sb3_agent:
         type: Instance
@@ -28,17 +31,21 @@ specs:
             type: Class
             name: SB3PPOAgent
             module:
-                type: Module
+                type: FileModule
                 repo: spec:sb3_agent_dir
                 file_path: agent.py
-                requirements_path: ./requirements.txt
+                virtual_env:
+                    type: VirtualEnv
+                    requirements_files:
+                        - type: RelativePath
+                          repo: spec:sb3_agent_dir
+                          relative_path: ./requirements.txt
 
     AtariEnv:
         type: Class
         name: AtariEnv
         module:
-            type: Module
-            version: db3728264f382402120913d76c4fa0dc320ef59f
+            type: FileModule
             repo: spec:mgbellemare_ale
             file_path: ./src/gym/envs/atari/environment.py
 
@@ -46,8 +53,7 @@ specs:
         type: Class
         name: CartPoleEnv
         module:
-            type: Module
-            version: c755d5c35a25ab118746e2ba885894ff66fb8c43
+            type: FileModule
             repo: spec:openai_gym
             file_path: ./gym/envs/classic_control/cartpole.py
 
@@ -55,8 +61,7 @@ specs:
         type: Class
         name: PPO
         module:
-            type: Module
-            version: 21f6a474a4755996709efee8c0aab309df905cbf
+            type: FileModule
             repo: spec:stable_baselines3
             file_path: ./stable_baselines3/ppo/ppo.py
 
@@ -64,6 +69,6 @@ specs:
         type: Class
         name: SB3Run
         module:
-            type: Module
+            type: FileModule
             repo: spec:sb3_agent_dir
             file_path: sb3_run.py

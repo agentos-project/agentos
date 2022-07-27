@@ -1,4 +1,4 @@
-from pcs import Module
+from pcs import FileModule
 from pcs.argument_set import ArgumentSet
 from pcs.output import Output
 from pcs.registry import Registry, WebRegistry
@@ -8,7 +8,7 @@ sb3_repo = Repo.from_github("DLR-RM", "stable-baselines3")
 sb3_reg = Registry.from_repo(sb3_repo)
 # sb3_reg = Registry.from_yaml("/tmp/sb3_registry_inferred.yaml")
 
-sb3_comp = Module.from_registry(
+sb3_comp = FileModule.from_registry(
     sb3_reg, "module:stable_baselines3____init__.py"
 )
 sb3_comp.class_name = "PPO"

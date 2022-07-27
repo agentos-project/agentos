@@ -1,7 +1,7 @@
 import abc
 import logging
 from functools import partial
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pcs.argument_set import ArgumentSet
 from pcs.command import Command
@@ -9,22 +9,34 @@ from pcs.component import Component
 from pcs.output import Output
 from pcs.registry import Registry
 
+if TYPE_CHECKING:
+    from pcs.python_executable import PythonExecutable
+
 logger = logging.getLogger(__name__)
 
 # Use Python generics (https://mypy.readthedocs.io/en/stable/generics.html)
 T = TypeVar("T")
 
 
-class ObjectManager(abc.ABC, Component):
+class ObjectManager(Component, abc.ABC):
     """
-    ObjectManagers manage an underlying Python object (i.e. a module, class,
+    ObjectManagers manage an underlying Python object (i.e., a module, class,
     or class instance). They can also run a method that is an attribute on
     their underlying object. Runs can take an argument set.
+
+    ObjectManagers provide reproducibility by returning an Output Component
+    containing all of the dependencies of the Run, including: (1) the code of
+    the object being run (i.e., ObjectManager) and the function_name, (2) the
+    full DAG of other objects it depends on (i.e., DAG of other Components),
+    (3) the set of arguments (literally a
+    :py:func:`pcs.argument_set.ArgumentSet`) used during initialization of
+    the managed object and all Components it transitively depends on.
     """
 
     def __init__(self):
         Component.__init__(self)
         self.active_output = None
+        self._obj = None  # Set by get_object()
 
     def get_default_function_name(self):
         try:
@@ -69,6 +81,7 @@ class ObjectManager(abc.ABC, Component):
         publish_to: Registry = None,
         log_return_value: bool = True,
         return_value_log_format: str = "yaml",
+        python_exec: "PythonExecutable" = None,
     ) -> Output:
         """
         Run the specified entry point a new instance of this Module's
@@ -85,10 +98,17 @@ class ObjectManager(abc.ABC, Component):
             to the provided registry.
         :param log_return_value: If True, log the return value of the entry
             point being run.
+        :param python_exec: A component representing the python executable
+            to use when creating this object.
         :param return_value_log_format: Specify which format to use when
             serializing the return value. Only used if ``log_return_value``
             is True.
         """
+        if python_exec:
+            raise NotImplementedError
+            # TODO: run the python runtime provided via subprocess and
+            #       execute this run command inside of it.
+            # TODO: return Output that was generated via that subprocess run.
         assert not self.active_output, (
             f"Module {self.identifier} already has an active_output, so a "
             "new run is not allowed."
@@ -98,14 +118,17 @@ class ObjectManager(abc.ABC, Component):
         with Output.from_command(command) as output:
             for c in self.dependency_list():
                 c.active_output = output
-            obj = self.get_object()
-            res = self.call_function_with_arg_set(obj, function_name, arg_set)
+            with self as obj:
+                res = self.call_function_with_arg_set(
+                    obj, function_name, arg_set
+                )
             if log_return_value:
                 output.log_return_value(res, return_value_log_format)
             for c in self.dependency_list():
                 c.active_output = None
             if publish_to:
                 output.to_registry(publish_to)
+            del obj  # Any virtual_envs that were activated are deactivated.
             return output
 
     def call_function_with_arg_set(
@@ -120,9 +143,24 @@ class ObjectManager(abc.ABC, Component):
         result = fn(*arg_set.get_arg_objs(), **arg_set.get_kwarg_objs())
         return result
 
+    def __enter__(self) -> Any:
+        return self.get_object(force_new=True)
+
+    def __exit__(self, type, value, traceback) -> None:
+        self.reset_object()
+
+    def get_object(self, force_new: bool = False) -> Any:
+        if not self._obj or force_new:
+            self._obj = self.get_new_object()
+        return self._obj
+
     @abc.abstractmethod
-    def get_object(self) -> Any:
+    def get_new_object(self) -> Any:
         raise NotImplementedError
+
+    def reset_object(self):
+        if self._obj:
+            self._obj = None
 
     @abc.abstractmethod
     def freeze(self: T, force: bool = False) -> T:

@@ -7,7 +7,9 @@ from typing import Tuple, TypeVar
 
 from pcs.component import Component
 from pcs.git_manager import GitManager
+from pcs.path import Path as PathComponent
 from pcs.utils import AOS_GLOBAL_REPOS_DIR, parse_github_web_ui_url
+from pcs.virtual_env import VirtualEnv
 
 logger = logging.getLogger(__name__)
 
@@ -15,26 +17,30 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class Repo(Component, abc.ABC):
+class Repo(Component, PathComponent):
     """
-    Base class used to encapsulate information about where a Module
-    is located.
+    Base class for Components that represent a filestore that files can be
+    retrieved from.
     """
 
     GIT = GitManager()
 
-    def __init__(self, default_version: str = None):
-        Component.__init__(self)
-        self.default_version = default_version
-        self.register_attribute("default_version")
+    @abc.abstractmethod
+    def get_local_file_path(self, relative_path: str) -> Path:
+        raise NotImplementedError()
+
+    def get(self) -> Path:
+        return self.get_local_file_path(".")
 
     def __contains__(self, item):
         return self.get_local_file_path(str(item)).exists()
 
     @classmethod
-    def from_github(cls, github_account: str, repo_name: str) -> "GitHubRepo":
+    def from_github(
+        cls, github_account: str, repo_name: str, version: str = None
+    ) -> "GitRepo":
         url = f"https://github.com/{github_account}/{repo_name}"
-        return GitHubRepo(url)
+        return GitRepo(url, version=version)
 
     @classmethod
     def clear_repo_cache(
@@ -47,36 +53,28 @@ class Repo(Component, abc.ABC):
         """
         cls.GIT.clear_repo_cache(repo_cache_path, assume_yes)
 
-    @abc.abstractmethod
-    def get_local_repo_dir(self, version: str = None) -> Path:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
-        raise NotImplementedError()
+    def to_gitrepo(self, force: bool = False) -> "GitRepo":
+        repo_url, version = self.get_version_from_git(self.path, force=force)
+        return GitRepo(repo_url, version=version)
 
     def get_version_from_git(
         self,
         file_path: str,
-        version: str = None,
         force: bool = False,
     ) -> Tuple[str, str]:
         """
-        Given a python Module file, and optionally a version, return a git hash
-        and GitHub repo URL where the current version of the Module is publicly
-        accessible.
+        Given a file_path return a git hash and GitHub repo URL where the
+        current version of the file is publicly accessible.
 
         A number of checks are performed during the course of this operation.
         Pass ``force=True`` to make failure of optional checks non-fatal.  see
         ``GitManager.get_public_url_and_hash()`` for more details.
         """
-        full_path = self.get_local_file_path(file_path, version)
+        full_path = self.get_local_file_path(file_path)
         assert full_path.exists(), f"Path {full_path} does not exist"
         return self.GIT.get_public_url_and_hash(full_path, force)
 
-    def get_prefixed_path_from_repo_root(
-        self, version: str, file_path: str
-    ) -> Path:
+    def get_prefixed_path_from_repo_root(self, file_path: str) -> Path:
         """
         Finds the 'module_path' relative to the repo containing the
         Module.  For example, if ``module_path`` is::
@@ -91,49 +89,55 @@ class Repo(Component, abc.ABC):
 
             baz/my_module.py
         """
-        full_path = self.get_local_file_path(file_path, version)
+        full_path = self.get_local_file_path(file_path)
         return self.GIT.get_prefixed_path_from_repo_root(full_path)
 
 
-class GitHubRepo(Repo):
+class GitRepo(Repo):
     """
-    A Module with an GitHubRepo can be found on GitHub.
+    A GitRepo optionally can be found on GitHub.
     """
 
-    def __init__(self, url: str, default_version: str = "master"):
-        super().__init__(default_version)
+    def __init__(self, url: str, version: str = "master"):
+        super().__init__()
         # https repo link allows for cloning without unlocking your GitHub keys
         url = url.replace("git@github.com:", "https://github.com/")
         self.url = url
-        self.register_attribute("url")
+        self.version = version
+        self.register_attributes(["url", "version"])
         self.org_name, self.project_name, _, _ = parse_github_web_ui_url(url)
         self.local_repo_path = None
         self.porcelain_repo = None
 
-    def get_local_repo_dir(self, version: str = None) -> Path:
-        version = self._get_valid_version_sha1(version)
+    def get_local_dir(self) -> Path:
+        version = self._get_valid_version_sha1()
         local_repo_path = self.GIT.clone_repo(
             self.org_name, self.project_name, version
         )
         sys.stdout.flush()
         return local_repo_path
 
-    def get_local_file_path(self, file_path: str, version: str = None) -> Path:
-        version = self._get_valid_version_sha1(version)
-        local_repo_path = self.get_local_repo_dir(version)
+    def clone_at_version(self, version: str) -> "GitRepo":
+        """Return a new GitRepo at the provided version"""
+        if version == self.version:
+            return self
+        else:
+            return self.__class__(self.url, version=version)
+
+    def get_local_file_path(self, file_path: str) -> Path:
+        local_repo_path = self.get_local_dir()
         return (local_repo_path / file_path).absolute()
 
-    def _get_valid_version_sha1(self, version):
-        version = version if version else self.default_version
+    def _get_valid_version_sha1(self):
         return self.GIT.get_sha1_from_version(
-            self.org_name, self.project_name, version
+            self.org_name, self.project_name, self.version
         )
 
 
-# TODO: Convert LocalRepo to GitRepo and make GitHubRepo a subclass of it
+# TODO: Convert LocalRepo to GitRepo and make GitRepo a subclass of it
 #       So that under the hood all local repos are seamlessly versioned
 #       and publishing any component can be super seamless by easily
-#       converting a GitRepo to some default GitHubRepo where anything that
+#       converting a GitRepo to some default GitRepo where anything that
 #       a user wants to share can be pushed, perhaps something like
 #       github.com/my_username/pcs_repo.
 class LocalRepo(Repo):
@@ -149,9 +153,8 @@ class LocalRepo(Repo):
     def __init__(
         self,
         path: str = None,
-        default_version: str = None,
     ):
-        super().__init__(default_version=default_version)
+        super().__init__()
         if not path:
             path = f"{AOS_GLOBAL_REPOS_DIR}/{uuid.uuid4()}"
         self.path = path
@@ -169,18 +172,41 @@ class LocalRepo(Repo):
                 f"LocalRepo {self.identifier}."
             )
 
-    def get_local_repo_dir(self, version: str = None) -> Path:
-        assert version is None, "LocalRepos don't support versioning."
+    def get_local_dir(self) -> Path:
         return Path(self.path)
 
-    def get_local_file_path(
-        self, relative_path: str, version: str = None
-    ) -> Path:
-        if version is not None:
-            print(
-                "WARNING: version was passed into get_local_path() "
-                "on a LocalRepo, which means it is being ignored. "
-                "If this is actually a versioned repo, use GithubRepo "
-                "or another versioned Repo type."
-            )
+    def get_local_file_path(self, relative_path: str) -> Path:
         return Path(self.path) / relative_path
+
+
+class VirtualEnvLibRepo(Repo):
+    def __init__(self, virtual_env: VirtualEnv):
+        super().__init__()
+        self.virtual_env = virtual_env
+        self.register_attribute("virtual_env")
+
+    def get_local_file_path(self, relative_path: str) -> Path:
+        """
+        `relative_path` must have the form [./]package_name/path_to_file
+        """
+        relative_path = Path(relative_path)
+        assert not relative_path.is_absolute()
+        assert self.virtual_env.path.is_dir()
+        package_name = relative_path.parts[0]
+        py_dir = (
+            f"python{self.virtual_env.python_executable.major_version}."
+            f"{self.virtual_env.python_executable.minor_version}"
+        )
+        pkgs = self.virtual_env.venv_path / "lib" / py_dir / "site-packages"
+        for child in pkgs.iterdir():
+            if child.name == package_name:
+                return child.joinpath(*relative_path.parts[1:])
+            elif child.name == f"{package_name}.egg-link":
+                with child.open() as f:
+                    # For more about the format of "egg links", see https://setuptools.pypa.io/en/latest/deprecated/python_eggs.html#egg-links  # noqa: E501
+                    # TODO: deal with the case where this is a relative path.
+                    pkg_path = f.readline().strip()
+                return Path(pkg_path).joinpath(*relative_path.parts[1:])
+        raise FileNotFoundError(
+            f"VirtualEnv cannot resolve: {relative_path} not found"
+        )
