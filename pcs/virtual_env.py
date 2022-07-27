@@ -372,6 +372,11 @@ class VirtualEnv(Component):
                 flag_lines.append(line)
         return flag_dict
 
+    @ staticmethod
+    def _sort_req_paths(req_paths: Sequence) -> list:
+        req_paths = set(req_paths)
+        return sorted(p for p in req_paths)
+
     # ------------------------------------------------------------------------
     # The rest of this class (i.e, the code below this point) is functionality
     # specific to automatically managing the location of a virtualenv.
