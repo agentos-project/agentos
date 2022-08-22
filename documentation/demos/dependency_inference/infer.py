@@ -5,6 +5,10 @@ import sys
 import tokenize
 from pathlib import Path
 
+if __name__ == "__main__":
+    print("Infer library: import into your code, do not run directly")
+    sys.exit(0)
+
 
 # Let's find the file importing us
 # https://docs.python.org/3/library/inspect.html#the-interpreter-stack
@@ -54,22 +58,34 @@ print(f"Infer library found the following comments: {comment_map}")
 
 original_import = builtins.__import__
 
-activate_test_meta = False
-comment_version_modifier = ""
+
+def handle_user_relevant_import(name, version_modifier):
+    p = subprocess.run(
+        [sys.executable, "-m", "pip", "show", f"{name}"], capture_output=True
+    )
+    installed_version = ""
+    for line in p.stdout.decode().split("\n"):
+        if line.startswith("Version: "):
+            installed_version = line[9:].strip()
+    # TODO - gross string ops here, comment_version_modifier is '==1.2.1'
+    #        if we have wrong version or no version, install package
+    if version_modifier[2:] != installed_version or installed_version == "":
+        cmd = [
+            str(sys.executable),
+            "-m",
+            "pip",
+            "install",
+            f"{name}{version_modifier}",
+        ]
+        subprocess.run(cmd, check=True)
 
 
 def new_import(name, globals=None, locals=None, fromlist=(), level=0):
-    global activate_test_meta
-    global comment_version_modifier
     curr_frame = inspect.currentframe()
     outer = inspect.getframeinfo(curr_frame.f_back)
     if outer.filename == str(importing_file):
         print(f"Infer library detected an import={name}")
-        activate_test_meta = True
-        if outer.lineno in comment_map:
-            comment_version_modifier = comment_map[outer.lineno]
-        else:
-            comment_version_modifier = ""
+        handle_user_relevant_import(name, comment_map.get(outer.lineno, ""))
         module = original_import(
             name,
             globals=globals,
@@ -77,7 +93,6 @@ def new_import(name, globals=None, locals=None, fromlist=(), level=0):
             fromlist=fromlist,
             level=level,
         )
-        activate_test_meta = False
     else:
         module = original_import(
             name,
@@ -94,38 +109,52 @@ builtins.__import__ = new_import
 
 # Based on
 # https://realpython.com/python-import/#example-automatically-install-from-pypi
-class TestMeta:
-    @classmethod
-    def find_spec(cls, name, path, target=None):
-        global activate_test_meta
-        global comment_version_modifier
-        if not activate_test_meta:
-            return
-        # print(f"TestMeta: name={name}, path={path}, target={target}:")
-        module_found = False
-        for meta in sys.meta_path:
-            if meta is cls:
-                continue
-            module_spec = meta.find_spec(name, path, target)
-            # print(f"\t META_SEARCH {meta} -> {module_spec}")
-            if module_spec is not None:
-                module_found = True
-        if not module_found:
-            cmd = [
-                str(sys.executable),
-                "-m",
-                "pip",
-                "install",
-                f"{name}{comment_version_modifier}",
-            ]
-            try:
-                subprocess.run(cmd, check=True)
-            except subprocess.CalledProcessError:
-                return None
-        activate_test_meta = False
+# class TestMeta:
+#     @classmethod
+#     def find_spec(cls, name, path, target=None):
+#         global activate_test_meta
+#         global comment_version_modifier
+#         if not activate_test_meta:
+#             return
+#         # print(f"TestMeta: name={name}, path={path}, target={target}:")
+#         module_found = False
+#         for meta in sys.meta_path:
+#             if meta is cls:
+#                 continue
+#             module_spec = meta.find_spec(name, path, target)
+#             # print(f"\t META_SEARCH {meta} -> {module_spec}")
+#             if module_spec is not None:
+#                 module_found = True
+#         if not module_found:
+#             cmd = [
+#                 str(sys.executable),
+#                 "-m",
+#                 "pip",
+#                 "install",
+#                 f"{name}{comment_version_modifier}",
+#             ]
+#             try:
+#                 subprocess.run(cmd, check=True)
+#             except subprocess.CalledProcessError:
+#                 return None
+#         elif comment_version_modifier:
+#             p = subprocess.run(
+#               [sys.executable, '-m', 'pip', 'show', f'{name}'],
+#               capture_output=True,
+#             )
+#             for line in p.stdout.decode().split('\n'):
+#                 if line.startswith('Version: '):
+#                     installed_version = line[9:].strip()
+#             # TODO - gross string ops here
+#             if comment_version_modifier[2:] != installed_version:
+#                 print(f'BAD INSTALL {name}')
+#                 print(comment_version_modifier)
+#                 print(installed_version)
+#                 print()
+#         activate_test_meta = False
 
 
-sys.meta_path.insert(0, TestMeta)
+# sys.meta_path.insert(0, TestMeta)
 
 # TODO:
 #   * If installed version is as requested, and reinstall if not
