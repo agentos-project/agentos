@@ -70,7 +70,7 @@ mlflow==1.26.1
 msrest==0.6.21
 mypy-extensions==0.4.3
 numpy==1.21.0
-oauthlib==3.1.1
+oauthlib==3.2.1
 opt-einsum==3.3.0
 packaging==20.3
 pandas>=1.1.5
