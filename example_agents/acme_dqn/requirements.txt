@@ -10,7 +10,7 @@ azure-core==1.16.0
 azure-storage-blob==12.8.1
 CacheControl==0.12.6
 cachetools==4.2.2
-certifi==2019.11.28
+certifi==2022.12.7
 cffi==1.14.6
 chardet==3.0.4
 charset-normalizer==2.0.6
