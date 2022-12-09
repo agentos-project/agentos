@@ -2,7 +2,7 @@
 # agentos>=0.0.7
 https://github.com/agentos-project/agentos/tarball/master
 asgiref==3.4.1
-certifi==2021.5.30
+certifi==2022.12.7
 charset-normalizer==2.0.4
 click==8.0.1
 deepdiff==5.8.0
