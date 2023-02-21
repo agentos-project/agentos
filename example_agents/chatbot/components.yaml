@@ -6,6 +6,7 @@ specs:
     chatbot:
         type: Instance
         argument_set:
+            type: ArgumentSet
             kwargs:
                 env_class: spec:env_class
         instance_of:
