@@ -81,7 +81,7 @@ pygame==2.1.2
 progress==1.5
 prometheus-client==0.11.0
 prometheus-flask-exporter==0.18.2
-protobuf==3.20.1
+protobuf==3.20.2
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.20
