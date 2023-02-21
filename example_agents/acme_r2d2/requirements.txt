@@ -113,6 +113,6 @@ toml==0.10.2
 trfl==1.1.0
 webencodings==0.5.1
 websocket-client==1.1.0
-Werkzeug==2.0.1
+Werkzeug==2.2.3
 wrapt==1.12.1
 zipp==3.6.0
