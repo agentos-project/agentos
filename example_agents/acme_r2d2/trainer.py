@@ -67,7 +67,7 @@ class R2D2Trainer(agentos.Trainer):
             core_state = self.network.rnn.initial_state(batch_size)
         target_core_state = tree.map_structure(tf.identity, core_state)
 
-        # Before training, optionally unroll LSTM for a fixed warmup period.
+        # Before training, optionally unroll LSTM for a fixed warm-up period.
         burn_in_length = self.parameters.burn_in_length
         burn_in_obs = tree.map_structure(
             lambda x: x[:burn_in_length], observations
@@ -75,7 +75,7 @@ class R2D2Trainer(agentos.Trainer):
         _, core_state = self._burn_in(burn_in_obs, core_state)
         _, target_core_state = self._burn_in(burn_in_obs, target_core_state)
 
-        # Don't train on the warmup period.
+        # Don't train on the warm-up period.
         observations, actions, rewards, discounts, extra = tree.map_structure(
             lambda x: x[burn_in_length:],
             (observations, actions, rewards, discounts, extra),
